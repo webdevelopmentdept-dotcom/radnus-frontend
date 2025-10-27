@@ -97,7 +97,15 @@ export default function Startup({
           {/* Title - Left aligned */}
           <Row className="justify-content-center text-center">
             <Col lg={9}>
-              <h2 className="fw-bolder text-center text-dark text-nowrap fs-2">
+              <h2
+                className="fw-bolder text-center text-dark fs-2"
+                style={{
+                  wordWrap: "break-word",
+                  whiteSpace: "normal",
+                  fontSize: "clamp(1.2rem, 4vw, 2rem)",
+                  lineHeight: "1.3",
+                }}
+              >
                 Turning Startup Dreams into Reality with{" "}
                 <span
                   className="fw-bolder"

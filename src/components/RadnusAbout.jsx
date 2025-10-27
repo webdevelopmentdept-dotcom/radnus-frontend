@@ -179,6 +179,15 @@ function RadnusAbout() {
             }
           }
         `}</style>
+        <style jsx="true">{`
+          /* ✅ Force hero text to stay white on mobile too */
+          @media (max-width: 768px) {
+            .about-hero-section h1,
+            .about-hero-section p {
+              color: #ffffff !important;
+            }
+          }
+        `}</style>
       </section>
 
       {/* ✅ Exclusive Industry Partnership */}
