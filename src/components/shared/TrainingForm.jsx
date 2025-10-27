@@ -13,16 +13,18 @@ const TrainingForm = ({ course, onCloseForm }) => {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Initialize course prop correctly
+  // Set course from prop if available
   useEffect(() => {
     if (course) setFormData((prev) => ({ ...prev, course }));
   }, [course]);
 
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Validate inputs
   const validate = () => {
     const newErrors = {};
     if (!/^[a-zA-Z\s]+$/.test(formData.name))
@@ -35,6 +37,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
     return newErrors;
   };
 
+  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
@@ -45,20 +48,19 @@ const TrainingForm = ({ course, onCloseForm }) => {
     setErrors({});
 
     try {
-      // Fetch token from localStorage
       const token = localStorage.getItem("token");
 
-      const res = await fetch(
-        "https://radnus-backend.onrender.com/api/applicants",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token && { Authorization: `Bearer ${token}` }), // attach token if exists
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      // ✅ Use environment variable for backend URL
+      const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+      const res = await fetch(`${API_BASE}/api/applicants`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(formData),
+      });
 
       const data = await res.json();
 
@@ -66,10 +68,9 @@ const TrainingForm = ({ course, onCloseForm }) => {
         setSubmitted(true);
       } else {
         if (res.status === 401) {
-          // token invalid or expired
           alert("Session expired. Please login again.");
-          localStorage.removeItem("token"); // remove old token
-          window.location.href = "/login"; // optional redirect
+          localStorage.removeItem("token");
+          window.location.href = "/login";
         } else {
           alert(data.msg || "Error submitting form");
         }
@@ -79,6 +80,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
     }
   };
 
+  // Reset or close form
   const handleBack = () => {
     setSubmitted(false);
     setFormData({
@@ -116,7 +118,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
             <p>Awesome! Your learning journey just kicked off.</p>
             <button
               className="btn mt-3"
-              style={{ background: "red" }}
+              style={{ background: "red", color: "white" }}
               onClick={handleBack}
             >
               Back
@@ -211,8 +213,8 @@ const TrainingForm = ({ course, onCloseForm }) => {
             <div className="text-center">
               <button
                 type="submit"
-                className="btn fw-bold px-4 submitbtn"
-                style={{ background: "#a37878" }}
+                className="btn fw-bold px-4"
+                style={{ background: "#a37878", color: "white" }}
               >
                 Submit
               </button>
