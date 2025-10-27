@@ -25,6 +25,7 @@ import ChargerTC38PD from "../../images/chargertc38pd.png";
 import ChargerTC698V8 from "../../images/chargertc698v8.png";
 import ChargerT698TypeC from "../../images/chargert698typec.png";
 import ChargerTC698Iphone from "../../images/chargertc698iphone.png";
+
 import ChargerTC699V8 from "../../images/chargertc699v8.png";
 import ChargerTC699TypeC from "../../images/chargertc699typec.png";
 import ChargerTC699Iphone from "../../images/chargertc699iphone.png";
