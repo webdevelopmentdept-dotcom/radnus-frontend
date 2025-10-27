@@ -13,33 +13,33 @@ const TrainingForm = ({ course, onCloseForm }) => {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Set course from prop if available
+  // ✅ Automatically set course if passed from props
   useEffect(() => {
     if (course) setFormData((prev) => ({ ...prev, course }));
   }, [course]);
 
-  // Handle input changes
+  // ✅ Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Validate inputs
+  // ✅ Validate inputs
   const validate = () => {
     const newErrors = {};
     if (!/^[a-zA-Z\s]+$/.test(formData.name))
       newErrors.name = "Name can contain only letters and spaces";
     if (!/^[6-9]\d{9}$/.test(formData.phone))
-      newErrors.phone =
-        "Enter a valid 10-digit Indian phone number starting with 6-9";
+      newErrors.phone = "Enter a valid 10-digit Indian phone number";
     if (!formData.address.trim()) newErrors.address = "Address is required";
     if (!formData.course) newErrors.course = "Select a course";
     return newErrors;
   };
 
-  // Handle form submit
+  // ✅ Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const validationErrors = validate();
     if (Object.keys(validationErrors).length) {
       setErrors(validationErrors);
@@ -48,39 +48,28 @@ const TrainingForm = ({ course, onCloseForm }) => {
     setErrors({});
 
     try {
-      const token = localStorage.getItem("token");
-
-      // ✅ Use environment variable for backend URL
       const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
       const res = await fetch(`${API_BASE}/api/applicants`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       const data = await res.json();
 
-      if (res.ok) {
+      if (res.ok && data.success) {
         setSubmitted(true);
       } else {
-        if (res.status === 401) {
-          alert("Session expired. Please login again.");
-          localStorage.removeItem("token");
-          window.location.href = "/login";
-        } else {
-          alert(data.msg || "Error submitting form");
-        }
+        alert(data.msg || "Error submitting form");
       }
     } catch (err) {
-      alert("Server error");
+      console.error(err);
+      alert("Server error. Please try again later.");
     }
   };
 
-  // Reset or close form
+  // ✅ Reset or close form
   const handleBack = () => {
     setSubmitted(false);
     setFormData({
@@ -113,7 +102,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
         {submitted ? (
           <div className="text-center py-5">
             <h3 className="text-warning fw-bold">
-              You're In! Admission Request Received
+              You're In! Admission Request Received 🎉
             </h3>
             <p>Awesome! Your learning journey just kicked off.</p>
             <button
@@ -130,6 +119,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
               Admission Form
             </h2>
 
+            {/* Name */}
             <div className="mb-3">
               <label className="form-label">Name</label>
               <input
@@ -146,6 +136,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
               )}
             </div>
 
+            {/* Email */}
             <div className="mb-3">
               <label className="form-label">Email</label>
               <input
@@ -154,11 +145,12 @@ const TrainingForm = ({ course, onCloseForm }) => {
                 className="form-control"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Enter your email"
+                placeholder="Enter your Email"
                 required
               />
             </div>
 
+            {/* Phone */}
             <div className="mb-3">
               <label className="form-label">Phone Number</label>
               <input
@@ -167,14 +159,15 @@ const TrainingForm = ({ course, onCloseForm }) => {
                 className={`form-control ${errors.phone ? "is-invalid" : ""}`}
                 value={formData.phone}
                 onChange={handleChange}
+                placeholder="Enter your Number"
                 required
-                placeholder="Enter your number"
               />
               {errors.phone && (
                 <div className="invalid-feedback">{errors.phone}</div>
               )}
             </div>
 
+            {/* Address */}
             <div className="mb-3">
               <label className="form-label">Address</label>
               <textarea
@@ -183,7 +176,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
                 value={formData.address}
                 onChange={handleChange}
                 rows="2"
-                placeholder="Enter your address"
+                placeholder="Enter your Address"
                 required
               />
               {errors.address && (
@@ -191,6 +184,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
               )}
             </div>
 
+            {/* Course */}
             <div className="mb-4">
               <label className="form-label">Select Course</label>
               <select
