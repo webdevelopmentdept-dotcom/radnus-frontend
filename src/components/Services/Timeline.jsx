@@ -3,11 +3,11 @@ import { Container, Row, Col, Card } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 // 🖼️ Import different images for each milestone
-import Img2003 from "../../images/Start.jpeg";
-import Img2011 from "../../images/Time1.png";
-import Img2017 from "../../images/Venam.jpeg";
+import Img2003 from "../../images/start.jpeg";
+import Img2011 from "../../images/time1.png";
+import Img2017 from "../../images/venam.jpeg";
 import { Helmet } from "react-helmet";
-import Img2025 from "../../images/Cimg2.jpg";
+import Img2025 from "../../images/cimg2.jpg";
 
 export default function Timeline() {
   const milestones = [

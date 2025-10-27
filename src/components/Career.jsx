@@ -7,13 +7,13 @@ import {
   FaMoneyBillAlt,
   FaUserTie,
 } from "react-icons/fa";
-import careerBg from "../images/careerBg.webp";
-import img1 from "../images/AboutBackground.jpg";
-import img2 from "../images/Cimg2.jpg";
-import img3 from "../images/Cimg3.jpg";
-import img4 from "../images/Cimg1.jpg";
-import img5 from "../images/Venam.jpeg";
-import img6 from "../images/Slider1.jpg";
+import careerBg from "../images/careerbg.webp";
+import img1 from "../images/aboutbackground.jpg";
+import img2 from "../images/cimg2.jpg";
+import img3 from "../images/cimg3.jpg";
+import img4 from "../images/cimg1.jpg";
+import img5 from "../images/venam.jpeg";
+import img6 from "../images/slider1.jpg";
 
 const Career = ({ jobsData }) => {
   const images = [img1, img2, img3, img4, img5, img6];

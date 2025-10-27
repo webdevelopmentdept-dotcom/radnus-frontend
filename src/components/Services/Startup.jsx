@@ -1,7 +1,7 @@
 import React from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
 // Import your background image (place image in src/assets or similar)
-import LoanBg from "../../images/StartupBg1.png";
+import LoanBg from "../../images/startupbg1.png";
 import { Helmet } from "react-helmet";
 
 import { motion } from "framer-motion"; // <-- change path/name as needed

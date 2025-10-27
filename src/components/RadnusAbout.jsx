@@ -6,16 +6,16 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { Container, Row, Col, Image, Card } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import RadnusVision from "../images/RadnusVision.png";
-import AboutIcon from "../images/AboutIcon.png";
-import RadnusMission from "../images/RadnusMission.png";
-import PoorvikabrandLogo from "../images/PoorvikabrandLogo.png";
-import PartnerCollab from "../images/PartnerCollab.png";
-import AboutBackground from "../images/AboutBackground.jpg";
-import Slider1 from "../images/Slider1.jpg";
-import Slider2 from "../images/AcadamyBackground.jpg";
-import Venam from "../images/Venam.jpeg";
-import slider3 from "../images/Openspeech.jpg";
+import RadnusVision from "../images/radnusvision.png";
+import AboutIcon from "../images/abouticon.png";
+import RadnusMission from "../images/radnusmission.png";
+import PoorvikabrandLogo from "../images/poorvikabrandlogo.png";
+import PartnerCollab from "../images/partnercollab.png";
+import AboutBackground from "../images/aboutbackground.jpg";
+import Slider1 from "../images/slider1.jpg";
+import Slider2 from "../images/acadamybackground.jpg";
+import Venam from "../images/venam.jpeg";
+import slider3 from "../images/openspeech.jpg";
 import {
   FiClock,
   FiAward,

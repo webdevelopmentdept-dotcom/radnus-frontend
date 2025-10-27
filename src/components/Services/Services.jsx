@@ -8,19 +8,19 @@ import "swiper/css/pagination";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 // 🖼️ Assets
-import CCPin from "../../images/CcpinImg.png";
-import Display from "../../images/DisplayImg.png";
-import Battery from "../../images/BatteryImg.png";
-import Backdoor from "../../images/BackdoorImg.png";
-import Camera from "../../images/CameraImg.png";
-import Frame from "../../images/FrameImg.png";
-import Audio from "../../images/AudioImg.png";
-import WaterLock from "../../images/WaterlockImg.png";
-import Deadmobile from "../../images/DeadMobile.png";
-import Restart from "../../images/RestartImg.png";
-import IcRepairs from "../../images/IcRepairsImg.png";
-import Reballing from "../../images/ReballingImg.png";
-import MobileServiceBg from "../../images/ServiceBg1.png";
+import CCPin from "../../images/ccpinimg.png";
+import Display from "../../images/displayimg.png";
+import Battery from "../../images/batteryimg.png";
+import Backdoor from "../../images/backdoorimg.png";
+import Camera from "../../images/cameraimg.png";
+import Frame from "../../images/frameimg.png";
+import Audio from "../../images/audioimg.png";
+import WaterLock from "../../images/waterlockimg.png";
+import Deadmobile from "../../images/deadmobile.png";
+import Restart from "../../images/restartimg.png";
+import IcRepairs from "../../images/icrepairsimg.png";
+import Reballing from "../../images/reballingimg.png";
+import MobileServiceBg from "../../images/servicebg1.png";
 import { Helmet } from "react-helmet";
 
 // 🧩 CATEGORY DATA

@@ -248,6 +248,19 @@ function RadnusNavbar() {
           }
 
           @media (max-width: 767px) {
+          .dropdown-menu {
+  background-color: black !important;
+}
+
+.dropdown-item {
+  color: white !important;
+}
+
+.dropdown-item:hover {
+  background-color: #222 !important;
+  color: red !important;
+}
+
             .navbar {
               padding-top: 0.4rem !important;
               padding-bottom: 0.4rem !important;

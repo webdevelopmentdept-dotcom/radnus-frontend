@@ -1,7 +1,7 @@
 // src/components/RadnusHome.jsx
 import React from "react";
-import bgImage from "../images/HomeBackground1.png";
-import illustration from "../images/MetricsImag4.png";
+import bgImage from "../images/homebackground1.png";
+import illustration from "../images/metricsimag4.png";
 import CountUp from "react-countup";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";

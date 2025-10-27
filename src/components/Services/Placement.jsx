@@ -1,21 +1,21 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { BsArrowRightCircleFill } from "react-icons/bs"; // Professional icon
-import placement from "../../images/Placement.jpg";
-import PartnerCollab from "../../images/PartnerCollab.png";
-import Africon from "../../images/Africon.png";
-import Australia from "../../images/Austarlia.jpg";
-import Canada from "../../images/Canada.webp";
-import Oman from "../../images/Oman.jpg";
-import Qatar from "../../images/Qatar.jpg";
-import Saudi from "../../images/Saudi.webp";
-import Singapore from "../../images/Singapore.webp";
-import Srilanka from "../../images/Srilanka.jpg";
-import Uae from "../../images/Uae.jpg";
-import Uk from "../../images/Uk.jpg";
-import Usa from "../../images/Usa.jpg";
-import Nepal from "../../images/Nepal.png";
-import Malasiya from "../../images/Malasiya.webp";
+import placement from "../../images/placement.jpg";
+import PartnerCollab from "../../images/partnercollab.png";
+import Africon from "../../images/africon.png";
+import Australia from "../../images/austarlia.jpg";
+import Canada from "../../images/canada.webp";
+import Oman from "../../images/oman.jpg";
+import Qatar from "../../images/qatar.jpg";
+import Saudi from "../../images/saudi.webp";
+import Singapore from "../../images/singapore.webp";
+import Srilanka from "../../images/srilanka.jpg";
+import Uae from "../../images/uae.jpg";
+import Uk from "../../images/uk.jpg";
+import Usa from "../../images/usa.jpg";
+import Nepal from "../../images/nepal.png";
+import Malasiya from "../../images/malasiya.webp";
 import { Helmet } from "react-helmet";
 const Placement = () => {
   const whyCompaniesChoose = [

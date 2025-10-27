@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import TrainingFormimg from "../../images/TrainingForm.png";
+import TrainingFormimg from "../../images/trainingform.png";
 
 const TrainingForm = ({ course, onCloseForm }) => {
   const [formData, setFormData] = useState({
@@ -48,14 +48,17 @@ const TrainingForm = ({ course, onCloseForm }) => {
       // Fetch token from localStorage
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:5000/api/applicants", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }), // attach token if exists
-        },
-        body: JSON.stringify(formData),
-      });
+      const res = await fetch(
+        "https://radnus-backend.onrender.com/api/applicants",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }), // attach token if exists
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       const data = await res.json();
 
