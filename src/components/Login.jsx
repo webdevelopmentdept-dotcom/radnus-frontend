@@ -7,7 +7,10 @@ function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
+
+  // ✅ Use environment variable (from Vercel)
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -22,15 +25,14 @@ function Login() {
 
       const data = await res.json();
 
-      if (!res.ok) {
+      if (!res.ok || !data.success) {
         setError(data.msg || "Invalid credentials");
         setLoading(false);
         return;
       }
 
-      localStorage.setItem("token", data.token);
       setLoggedIn(true);
-      await fetchApplicants(data.token);
+      await fetchApplicants();
     } catch (err) {
       console.error(err);
       setError("Server error, please try again.");
@@ -39,13 +41,11 @@ function Login() {
     }
   };
 
-  const fetchApplicants = async (token) => {
+  const fetchApplicants = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/applicants", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      const res = await fetch(`${API_BASE}/api/applicants`);
       const data = await res.json();
+
       if (!res.ok) {
         setError(data.msg || "Failed to fetch applicants");
         return;
@@ -59,12 +59,11 @@ function Login() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
     setLoggedIn(false);
     setApplicants([]);
-    setEmail(""); // reset email field
-    setPassword(""); // reset password field
-    setError(""); // optional: clear any error message
+    setEmail("");
+    setPassword("");
+    setError("");
   };
 
   return (
@@ -75,14 +74,13 @@ function Login() {
       <div
         className="card p-4 shadow-lg"
         style={{
-          width: loggedIn ? "90%" : "400px", // small for login, wide for table
+          width: loggedIn ? "90%" : "400px",
           maxWidth: "900px",
-          minHeight: loggedIn ? "auto" : "auto", // optional
         }}
       >
         {!loggedIn ? (
           <>
-            <h3 className="text-center  text-danger fw-bold">Admin Login</h3>
+            <h3 className="text-center text-danger fw-bold">Admin Login</h3>
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label className="form-label">Email</label>
@@ -113,7 +111,7 @@ function Login() {
               <div className="text-center">
                 <button
                   type="submit"
-                  className="btn btn-danger w-80 "
+                  className="btn btn-danger w-80"
                   disabled={loading}
                 >
                   {loading ? "Logging in..." : "Login"}
