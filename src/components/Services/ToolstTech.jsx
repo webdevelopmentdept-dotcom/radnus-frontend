@@ -19,6 +19,7 @@ import Griffen from "../../images/griffen.png";
 import Pragmafix from "../../images/pragmafix.png";
 import Chimera from "../../images/chimera.png";
 import ChimeraPro from "../../images/chimerapro.png";
+
 import Eft from "../../images/eft.png";
 import { Helmet } from "react-helmet";
 
