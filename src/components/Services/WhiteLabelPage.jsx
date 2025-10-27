@@ -41,7 +41,7 @@ import DataCable24ATypeC from "../../images/datacable24atypec.png";
 import DataCable24AiPhone from "../../images/datacable24aiphone.png";
 import DataCable35AV8 from "../../images/datacable35av8.png";
 import DataCable3ATypeC from "../../images/datacable3atypec.png";
-import DataCable35AiPhone from "../../images/datacable35aiPhone.png";
+import DataCable35AiPhone from "../../images/datacable35aiphone.png";
 import DataCable65W6ATypeC from "../../images/datacable65w6atypec.png";
 import DataCable25WCtoIphone from "../../images/datacable25wctoiphone.png";
 import DataCable120WTypeC from "../../images/datacable120wtypec.png";
