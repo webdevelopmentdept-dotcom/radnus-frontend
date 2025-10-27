@@ -24,7 +24,6 @@ import Charger25Wiphone from "../../images/charger25wiphone.png";
 import ChargerTC38PD from "../../images/chargertc38pd.png";
 import ChargerTC698V8 from "../../images/chargertc698v8.png";
 import ChargerT698TypeC from "../../images/chargert698typec.png";
-import ChargerTC698Iphone from "../../images/chargertc698iphone.png";
 
 import ChargerTC699V8 from "../../images/chargertc699v8.png";
 import ChargerTC699TypeC from "../../images/chargertc699typec.png";
@@ -174,11 +173,6 @@ function WhiteLabelPage() {
           src: ChargerT698TypeC,
           name: "Charger TC-698 (Type-C)",
           description: "Dual-port charger with reliable current output.",
-        },
-        {
-          src: ChargerTC698Iphone,
-          name: "Charger TC-698 (Iphone)",
-          description: "Dual-port charger suitable for home and office use.",
         },
       ],
     },
