@@ -1,0 +1,395 @@
+
+
+
+
+
+/* Outer circle */
+
+
+
+
+
+.logo-circle-outer {
+ 
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff6b00, #ffb347); /* Orange gradient */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Inner circle */
+.logo-circle-inner {
+  width: 57px;
+  height: 57px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.card img {
+  transition: transform 0.4s ease;
+}
+
+.card:hover img {
+  transform: scale(1.05);
+}
+
+
+.logo-circle-inner img {
+    width: 41px;
+    height: 41px;
+    object-fit: contain;
+    border-radius: 50%;
+
+}/* 🔥 Light red shadow effect */
+.custom-shadow {
+  box-shadow: 0 4px 15px rgba(200, 16, 46, 0.25) !important;
+  border-radius: 10px; /* optional smooth corner */
+}
+
+.footer-link {
+cursor: pointer;
+ color: #fff;
+  text-decoration: none;
+  position: relative;
+
+  margin-bottom: 10px;
+  transition: color 0.3s ease;
+  padding-bottom: 4px;
+}
+/* Prevent white gaps on sides due to flex or overflow */
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+section.d-flex.align-items-center.text-white {
+  background-color: #ffffff !important;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  width: 100vw;
+  overflow: hidden;
+  min-height: 100vh;
+}
+
+
+/* Fix Hero section full width */
+section.d-flex.align-items-center.text-white {
+  width: 100vw;
+  position: relative;
+  background-color: #fff !important;
+}
+
+
+.footer-link:hover {
+  color: rgb(241, 230, 20);
+}
+
+
+.footer-link::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 4px;   /* ⬅️ underline thickness big */
+  left: 0;
+  bottom: 0;     /* direct under text */
+  background-color: #FFD700;
+  transition: width 0.3s ease;
+  border-radius: 2px; /* smooth edge */
+}
+/* ✅ Fix black background under hero image */
+section.d-flex.align-items-center.text-white {
+  background-color: #fff !important; /* Ensure no black area appears */
+  overflow: hidden; /* Hide any extra space */
+}
+
+section.d-flex.align-items-center.text-white img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.submitbtn.btn-primary:hover {
+  background-color: white !important;
+  color:red !important;
+  border:1px solid rgb(228, 12, 131) ;
+}
+body {
+  background-color: #ffeaea;
+}
+.product-card {
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+}
+
+.btn-danger {
+  border-radius: 25px;
+}
+
+
+
+
+
+/* 
+//RadnusCademy// */
+.explore-btn {
+  border-radius: 6px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+  transition: all 0.3s ease-in-out;
+}
+
+.explore-btn:hover {
+  background-color: #f1efef !important; /* darker red */
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(255, 252, 247, 0.856);
+  color:black !important;
+}
+
+.explore-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(220, 53, 69, 0.3);
+}
+.RadnusAcdemycss {
+  cursor: pointer;
+  border: 1px solid red;
+  border-radius: 12px; /* nicer rounded corners */
+  transition: all 0.3s ease; /* smooth hover for all properties */
+}
+
+.RadnusAcdemycss:hover {
+  background-color: #b6595d;
+  color: white;
+}
+/* Floating animation */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Pulse background */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+/* Card hover */
+.warranty-card {
+  transition: transform 0.4s ease;
+}
+
+.warranty-card:hover {
+  transform: scale(1.03);
+}
+
+/* Animated background circle */
+.pulse-bg {
+  width: 90px;
+  height: 90px;
+  background: rgba(255, 0, 0, 0.2);
+  filter: blur(20px);
+  animation: pulse 2s infinite;
+}
+
+/* Floating icon */
+.float-icon {
+  animation: float 3s ease-in-out infinite;
+}
+/* --- Hero Section Responsive Fix --- */
+@media (max-width: 768px) {
+  .white-label-hero {
+    height: auto !important;
+    padding: 60px 20px !important;
+    text-align: center;
+  }
+
+  .white-label-hero h1 {
+    font-size: 1.8rem !important;
+  }
+
+  .white-label-hero h4 {
+    font-size: 1.2rem !important;
+  }
+
+  .white-label-hero p {
+    font-size: 0.95rem !important;
+    line-height: 1.5;
+    padding: 0 10px;
+    background: rgba(255, 255, 255, 0.8); /* makes text readable */
+    color: #000 !important;
+    border-radius: 8px;
+  }
+}.img-wrapper img {
+  transition: transform 0.3s ease;
+}
+
+.img-wrapper img:hover {
+  transform: scale(1.05);
+}
+
+/* ===== Masonry Layout ===== */
+.masonry-grid {
+  column-count: 3;
+  column-gap: 15px;
+}
+
+.masonry-item {
+  break-inside: avoid;
+  margin-bottom: 15px;
+}
+
+.masonry-item img {
+  border-radius: 12px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  object-fit: cover;
+}
+
+.masonry-item img:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+#open-roles h2 {
+  letter-spacing: 0.5px;
+}
+
+#open-roles .card {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+}
+
+#open-roles .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+.form-control:focus,
+.form-control:active,
+textarea:focus,
+textarea:active {
+  box-shadow: none !important; /* removes the blue glow */
+  border-color: #ced4da !important; /* optional: keeps border color neutral */
+  outline: none !important; /* removes outline completely */
+}
+
+/* ===== Responsive columns ===== */
+@media (max-width: 992px) {
+  .masonry-grid {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 576px) {
+  .masonry-grid {
+    column-count: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+@media (max-width: 768px) {
+  .navbar {
+    background-color: #fff !important;
+  }
+
+  .navbar-toggler {
+    border: none !important;
+  }
+
+  section.d-flex.align-items-center.text-white h1,
+  section.d-flex.align-items-center.text-white p {
+    color: #000; /* for readability */
+  }
+}
+
+/* Optional: Ensure image doesn’t exceed section height */
+@media (min-width: 992px) {
+  section.d-flex.align-items-center.text-white {
+    min-height: 100vh;
+  }
+}
+/* Mobile dropdown scrollable fix */
+@media (max-width: 991px) {
+  .dropdown-menu {
+    max-height: 60vh;
+    overflow-y: auto;
+    position: relative !important;
+  }
+
+  .navbar-collapse {
+    background-color: #fff !important;
+    padding: 1rem;
+    border-radius: 10px;
+  }
+}
+/* Hide descriptions & right border on small screens */
+@media (max-width: 991px) {
+  .dropdown-menu p {
+    display: none !important;
+  }
+
+  .dropdown-menu .border-start {
+    border: none !important;
+  }
+
+  .dropdown-menu {
+    width: 100% !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Desktop dropdown shadow & width */
+@media (min-width: 992px) {
+  .dropdown-menu {
+    width: 100%;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  }
+}
+@media (max-width: 768px) {
+  .navbar {
+    background-color: #fff !important;
+  }
+
+  .navbar-toggler {
+    border: none !important;
+  }
+
+  section.d-flex.align-items-center.text-white h1,
+  section.d-flex.align-items-center.text-white p {
+    color: #000; /* for readability */
+  }
+}
