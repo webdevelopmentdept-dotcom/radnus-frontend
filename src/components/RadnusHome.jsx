@@ -6,7 +6,7 @@ import CountUp from "react-countup";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
-
+import bg1Image from "../images/bg2.png";
 function RadnusHome() {
   const stats = [
     { end: 8500, label: "Students Trained" },
@@ -108,26 +108,52 @@ function RadnusHome() {
       {/* Mobile View - Remove Background Image */}
       <style>
         {`
-          @media (max-width: 768px) {
-            section.d-flex {
-              background: linear-gradient(180deg, #111111 0%, #000000 100%) !important;
-              background-attachment: scroll !important;
-              min-height: 40vh !important;
-            }
-            section.d-flex h1 {
-              font-size: 2rem !important;
-              line-height: 2.3rem !important;
-            }
-            section.d-flex p {
-              color: #d8d8d8 !important;
-              font-size: 1rem !important;
-            }
-            section.d-flex button {
-              font-size: 0.9rem !important;
-              padding: 8px 16px !important;
-            }
-          }
-        `}
+    @media (max-width: 768px) {
+      section.d-flex {
+         background: url(${bg1Image}) 93% center / cover no-repeat !important;
+          background-size: 195% auto !important;
+        background-attachment: scroll !important;
+        min-height: 60vh !important;
+      }
+
+      section.d-flex h1 {
+          font-size: 2rem !important;
+  line-height: 2.3rem !important;
+  color: #ff3333 !important;            /* little brighter red */
+  text-shadow: 2px 2px 6px rgba(0,0,0,0.3); /* 🔥 shadow for contrast */
+      }
+
+      section.d-flex p {
+        color: #ffffff !important;
+        font-size: 1.2rem !important;
+        font-weight: 600 !important; /
+      }
+
+     section.d-flex button {
+        font-size: 0.9rem !important;
+        padding: 8px 16px !important;
+        display: inline-block !important;  /* 🟢 Add this line */
+        margin: 0 auto !important; 
+      }
+        /* 🟢 Overlay layer */
+      section.d-flex::before {
+        content: "" !important;
+        position: absolute !important;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.1); /* dark transparent overlay */
+        z-index: 0; /* keep below text */
+      }
+
+      /* 🟢 Make sure text appears above overlay */
+      section.d-flex .container {
+        position: relative;
+        z-index: 1;
+      }
+    }
+  `}
       </style>
 
       {/* Highlights Section */}

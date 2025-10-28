@@ -221,6 +221,7 @@ body {
 .float-icon {
   animation: float 3s ease-in-out infinite;
 }
+
 /* --- Hero Section Responsive Fix --- */
 @media (max-width: 768px) {
   .white-label-hero {

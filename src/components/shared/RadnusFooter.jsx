@@ -184,7 +184,7 @@ function RadnusFooter() {
 
             <Col md={2} xs={12}>
               <h6 className="fw-bold mb-1">Follow Us</h6>
-              <div className="d-flex gap-3 justify-content-md-start justify-content-center mt-2 mb-2 fs-5">
+              <div className="d-flex gap-4 justify-content-md-start justify-content-center mt-2 mb-3 fs-5">
                 <a
                   href="https://facebook.com/radnus.cellphone.training"
                   target="_blank"
@@ -224,7 +224,7 @@ function RadnusFooter() {
             </Col>
           </Row>
 
-          <div className="text-center  small text-light">
+          <div className="text-center  fs-6 text-light">
             © 2025 All Rights Reserved by Radnus.
           </div>
         </Container>

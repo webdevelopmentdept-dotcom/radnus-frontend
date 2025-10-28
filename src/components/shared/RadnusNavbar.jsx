@@ -303,7 +303,7 @@ function RadnusNavbar() {
 
   .dropdown-item {
     padding-left: 0 !important;
-    font-size: 0.95rem !important;
+    font-size: 1rem !important;
     text-align: left !important;
   }
 
