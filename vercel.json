@@ -1,4 +1,14 @@
 {
+  "redirects": [
+    { "source": "/general-4", "destination": "/", "permanent": true },
+    { "source": "/about-5", "destination": "/about", "permanent": true },
+    { "source": "/about-5-1", "destination": "/about", "permanent": true },
+    {
+      "source": "/post/how-radnus-is-helping-students-build-their-careers-real-stories-real-results",
+      "destination": "/timeline",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
@@ -6,7 +16,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i)(bot|crawler|spider|bing|google|yahoo|duckduck|baidu|facebook|twitter|linkedin|embedly|slack|telegram|whatsapp|pinterest)"
+          "value": "(?i)(bot|crawler|spider|bing|google|yahoo|baidu|facebook|twitter|linkedin|embedly|slack|telegram|whatsapp|pinterest)"
         }
       ],
       "destination": "https://radnus-backend.onrender.com/$1"
