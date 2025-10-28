@@ -164,37 +164,31 @@ const Service = () => {
     <>
       {/* ✅ HELMET FOR META TAGS */}
       <Helmet>
-        <title>Professional Mobile Repair & Service | Fast & Reliable</title>
+        <title>Mobile Repair Services | Radnus Communication</title>
         <meta
           name="description"
-          content="Expert mobile repair services including screen replacement, battery service, IC repairs, and more. Fast, reliable, and professional care for all your devices."
+          content="Radnus offers fast, reliable mobile repair and maintenance services including software flashing, hardware tools, and OEM accessories."
         />
         <meta
           name="keywords"
-          content="best mobile service center in pondicherry,
-          iphone ic chip repair,
-          samsung screen replacement,
-          mobile camera repair shop near me,
-             mobile display changing shop"
+          content="mobile repair, service center, Radnus service, mobile tools, accessories, smartphone repair"
         />
         <meta name="robots" content="index, follow" />
-
-        {/* Open Graph / Social Media */}
+        <meta name="author" content="Radnus Communication" />
         <meta property="og:type" content="website" />
         <meta
           property="og:title"
-          content="Professional Mobile Repair & Service | Fast & Reliable"
+          content="Mobile Repair Services | Radnus Communication"
         />
         <meta
           property="og:description"
-          content="Get your phone repaired quickly and efficiently. Screen replacement, battery service, IC repairs, and more by expert technicians."
+          content="Get professional mobile service and repair solutions at Radnus Communication — trusted experts since 2003."
         />
         <meta property="og:url" content="https://www.radnus.in/service" />
-        <meta property="og:image" content="/logo2.png" />
-        <meta property="og:site_name" content="radnus.in" />
-
+        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
         <link rel="canonical" href="https://www.radnus.in/service" />
       </Helmet>
+
       {/* HERO SECTION */}
       <section
         className="position-relative d-flex align-items-center text-start overflow-hidden"

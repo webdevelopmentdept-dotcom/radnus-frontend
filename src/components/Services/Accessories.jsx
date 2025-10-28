@@ -162,16 +162,13 @@ const Accessories = () => {
         />
         <meta
           name="keywords"
-          content="best mobile accessories shop near me,
-          best mobile accessories shop in pondicherry,
-          mobile accessories shop in pondicherry, 
-           best bluetooth speaker under ₹1000, 
-           best budget friendly headphones, 
-             fast charging chargers"
+          content="best mobile accessories shop near me, best mobile accessories shop in pondicherry, mobile accessories shop in pondicherry, best bluetooth speaker under ₹1000, best budget friendly headphones, fast charging chargers"
         />
         <meta name="author" content="Radnus Communication" />
+        <meta name="robots" content="index, follow" />
 
-        {/* Open Graph for social media */}
+        {/* Open Graph */}
+        <meta property="og:type" content="website" />
         <meta
           property="og:title"
           content="Best Mobile Accessories | Premium Chargers, Speakers & Headphones"
@@ -180,13 +177,38 @@ const Accessories = () => {
           property="og:description"
           content="Discover our premium range of chargers, power banks, speakers, and headphones for all your devices. Quality products with fast delivery."
         />
-        <meta property="og:image" content="/logo2.png" />
-        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
         <meta property="og:url" content="https://www.radnus.in/accessories" />
 
-        {/* Canonical URL */}
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:title"
+          content="Best Mobile Accessories | Premium Chargers, Speakers & Headphones"
+        />
+        <meta
+          name="twitter:description"
+          content="Discover premium chargers, speakers, and headphones with fast delivery and trusted quality."
+        />
+        <meta name="twitter:image" content="https://www.radnus.in/logo2.png" />
+
         <link rel="canonical" href="https://www.radnus.in/accessories" />
+
+        {/* Structured Data */}
+        <script type="application/ld+json">
+          {`
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Radnus Communication",
+    "url": "https://www.radnus.in",
+    "logo": "https://www.radnus.in/logo2.png",
+    "description": "Radnus Communication offers premium mobile accessories and service support across India."
+  }
+  `}
+        </script>
       </Helmet>
+
       {/* 🌟 Hero Section */}
       <section
         className="hero-section d-flex align-items-center"

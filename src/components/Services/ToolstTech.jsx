@@ -52,41 +52,29 @@ const ToolsTech = () => {
   return (
     <>
       <Helmet>
-        <title>
-          Tools & Technology for Mobile Repair | Radnus Communication
-        </title>
+        <title>Mobile Repair Tools & Technology | Radnus Communication</title>
         <meta
           name="description"
-          content="Explore premium hardware and software tools for mobile and laptop repair technicians. Find the best mobile repair tools in Pondicherry to upgrade your repair business with Radnus Communication."
+          content="Shop premium hardware and software tools for mobile repair technicians in India — Chimera, Pragmafix, UMT, and more."
         />
-        <link rel="canonical" href="https://www.radnus.in/tools-tech" />
-
         <meta
           name="keywords"
-          content="mobile repair tools shop near me,
-hardware tools for mobile repair,
-software tools for technicians, 
-mobile repair equipment, 
-Chimera, 
-Pragmafix schematic tools,
-tools for technicians"
+          content="mobile repair tools, technician tools, Chimera tool, Pragmafix schematic, hardware tools for mobile repair, UMT tool"
         />
-
-        {/* Canonical link */}
-        <link rel="canonical" href="https://www.radnus.in/tools-tech" />
-
-        {/* Open Graph (Facebook, WhatsApp preview) */}
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="Radnus Communication" />
+        <meta property="og:type" content="website" />
         <meta
           property="og:title"
-          content="Tools & Technology for Mobile Repair | Radnus Communication"
+          content="Tools & Technology for Mobile Repair | Radnus"
         />
         <meta
           property="og:description"
-          content="Find premium tools and technology for mobile and laptop repair technicians in Pondicherry."
+          content="Find high-quality hardware and software tools for mobile and laptop repair technicians at Radnus Communication."
         />
-        <meta property="og:image" content="/logo2.png" />
         <meta property="og:url" content="https://www.radnus.in/tools-tech" />
-        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
+        <link rel="canonical" href="https://www.radnus.in/tools-tech" />
       </Helmet>
 
       {/* Header Section */}

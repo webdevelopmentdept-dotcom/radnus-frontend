@@ -61,15 +61,9 @@ const Placement = () => {
         />
         <meta
           name="keywords"
-          content="Radnus global placement,
-           mobile service placement,
-            cellphone repair job, 
-            Mobile repair job placement,
-            Mobile repair training and job support, 
-           Poorvika job placement"
+          content="Radnus global placement, mobile service placement, cellphone repair job, Mobile repair job placement, Mobile repair training and job support, Poorvika job placement"
         />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://www.radnus.in/placement" />
 
         {/* Open Graph */}
         <meta property="og:type" content="website" />
@@ -79,12 +73,41 @@ const Placement = () => {
         />
         <meta
           property="og:description"
-          content="Empowering skilled mobile service professionals for global careers. Resume prep, interview training, visa support, and country-wise placement assistance."
+          content="Empowering skilled mobile service professionals for global careers with resume prep, interview training, and country-wise job support."
         />
+        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
         <meta property="og:url" content="https://www.radnus.in/placement" />
-        <meta property="og:image" content="/logo2.png" />
-        <meta property="og:site_name" content="radnus.in" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:title"
+          content="Global Placement Assistance | Radnus Communication"
+        />
+        <meta
+          name="twitter:description"
+          content="Empowering skilled mobile service professionals for global careers with resume prep, interview training, and job support."
+        />
+        <meta name="twitter:image" content="https://www.radnus.in/logo2.png" />
+
+        <link rel="canonical" href="https://www.radnus.in/placement" />
+
+        {/* Structured Data */}
+        <script type="application/ld+json">
+          {`
+  {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    "name": "Radnus Communication",
+    "url": "https://www.radnus.in",
+    "logo": "https://www.radnus.in/logo2.png",
+    "sameAs": ["https://www.facebook.com/radnuscommunication", "https://www.instagram.com/radnuscommunication"],
+    "description": "Radnus Communication offers global placement assistance for mobile technicians through resume prep, interview training, and job connections."
+  }
+  `}
+        </script>
       </Helmet>
+
       <section className="text-center mb-2">
         <h1
           className="display-4 fw-bold lh-sm fs-1 pt-3"

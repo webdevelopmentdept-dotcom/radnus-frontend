@@ -60,43 +60,32 @@ const RadnusAcademy = () => {
     <>
       <Helmet>
         <title>
-          Mobile & Laptop Training | Laptop Chip Level Training Institute in
-          Pondicherry
+          Radnus Academy | Mobile Repair Training & Skill Development
         </title>
         <meta
           name="description"
-          content="Join Radnus Academy, the best mobile service training institute in Pondicherry, to learn mobile repair and laptop chip level training. Become a certified mobile technician and start your own mobile service shop."
+          content="Join Radnus Academy in Pondicherry to master mobile repair, chip-level training, and business skills. Learn from certified experts and become a professional technician."
         />
         <meta
           name="keywords"
-          content="
-      laptop chip level training institute,
-      laptop chip level training centre,
-      labtop basic level centre,
-      best mobile service training institute in Pondicherry,
-      how to learn mobile repair,
-      mobile technician course with certificate,
-      mobile service course fees,
-      mobile service centre in pondicherry,
-      start a mobile service shop after course,
-      how to become a mobile technician
-    "
+          content="mobile repair training, Radnus academy, mobile chip level course, technician training pondicherry, learn mobile service"
         />
         <meta name="robots" content="index, follow" />
+        <meta name="author" content="Radnus Communication" />
+        <meta property="og:type" content="website" />
         <meta
           property="og:title"
-          content="Radnus Academy | Mobile & Laptop Training Institute"
+          content="Radnus Academy | Mobile Repair & Skill Development"
         />
         <meta
           property="og:description"
-          content="Learn mobile repair and laptop chip level training at Radnus Academy. Get certified, gain practical experience, and start your own mobile service business."
+          content="Professional mobile repair and chip-level training at Radnus Academy. Learn, grow, and build your career with us."
         />
-        <meta property="og:image" content="/logo2.png" />
-        <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.radnus.in/academy" />
-
+        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
         <link rel="canonical" href="https://www.radnus.in/academy" />
       </Helmet>
+
       {/* Hero Section */}
       <section className="hero-section position-relative text-center text-dark d-flex flex-column justify-content-center align-items-center">
         <img

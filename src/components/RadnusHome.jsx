@@ -29,39 +29,62 @@ function RadnusHome() {
     <>
       <Helmet>
         <title>
-          {" "}
-          Radnus A 360° mobile-industry ecosystem delivering training, repair,
-          manufacturing and business-entrepreneurship solutions
+          Radnus Communication | 360° Mobile Industry Ecosystem for Training,
+          Repair & Startup Support
         </title>
-
         <meta
           name="description"
-          content="Radnus Communication has been providing mobile service training, tools, and solutions for over 2 years, helping entrepreneurs and mobile businesses grow successfully. We empower technicians, startups, and business owners with hands-on skills and real-world expertise since 2003."
+          content="Radnus Communication empowers mobile entrepreneurs through training, repair services, tools, and business startup support. Serving the industry since 2003 with practical expertise."
         />
-
         <meta
           name="keywords"
-          content="Radnus Communication, mobile service training in MG Road, mobile service training in Pondicherry, mobile repairing course, mobile technician course, online mobile repairing course, best mobile service training in Pondicherry, mobile training institute near me, mobile business ideas, startup training for entrepreneurs, entrepreneurship training, mobile shop setup training, mobile accessories business, mobile tools and technology, mobile repair service support, mobile business training"
+          content="Radnus Communication, mobile service training, mobile repair course, mobile technician institute, mobile business ideas, startup training, entrepreneurship training, Pondicherry"
         />
-
         <meta name="author" content="Radnus Communication" />
+        <meta name="robots" content="index, follow" />
 
-        {/* Open Graph for social sharing */}
+        {/* Open Graph */}
+        <meta property="og:type" content="website" />
         <meta
           property="og:title"
-          content="Radnus Communication – Mobile Serivice"
+          content="Radnus Communication | Mobile Service Training & Solutions"
         />
         <meta
           property="og:description"
-          content="Radnus Communication has been providing mobile service training, tools, and solutions for over 20 years, helping entrepreneurs, technicians, and mobile businesses grow successfully in Pondicherry."
+          content="Radnus Communication provides mobile service training, repair solutions, and entrepreneurship programs for startups and technicians."
         />
-
-        <meta property="og:image" content={"/image.png"} />
-        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://www.radnus.in/image.png" />
         <meta property="og:url" content="https://www.radnus.in/" />
 
-        {/* Canonical URL */}
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:title"
+          content="Radnus Communication | Mobile Service Training & Solutions"
+        />
+        <meta
+          name="twitter:description"
+          content="Empowering mobile technicians and entrepreneurs with hands-on training and business tools."
+        />
+        <meta name="twitter:image" content="https://www.radnus.in/image.png" />
+
         <link rel="canonical" href="https://www.radnus.in/" />
+
+        {/* Structured Data */}
+        <script type="application/ld+json">
+          {`
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Radnus Communication",
+    "url": "https://www.radnus.in",
+    "logo": "https://www.radnus.in/logo2.png",
+    "foundingDate": "2003",
+    "description": "A 360° mobile industry ecosystem offering training, repair, manufacturing, and entrepreneurship solutions.",
+    "sameAs": ["https://www.facebook.com/radnuscommunication", "https://www.instagram.com/radnuscommunication"]
+  }
+  `}
+        </script>
       </Helmet>
 
       {/* Hero Section */}

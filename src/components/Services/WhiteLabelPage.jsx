@@ -489,40 +489,30 @@ function WhiteLabelPage() {
     <>
       {/* SEO Meta Tags */}
       <Helmet>
-        <title>White Label Services & OEM Solutions – Radnus</title>
+        <title>
+          White Label & OEM Solutions | Build Your Brand – Radnus Communication
+        </title>
         <meta
           name="description"
-          content="Radnus offers comprehensive white label services, OEM solutions, and custom-labeled mobile accessories. Build your own brand with our private-label products, whitelabel digital marketing solutions, and custom mobile accessories. Start your custom brand business today."
+          content="Start your own brand with Radnus White Label & OEM mobile accessories — chargers, cables, neckbands, and more with 6-month warranty."
         />
         <meta
           name="keywords"
-          content="
-      white label services,
-      whitelabel digital marketing solutions,
-      white label services in Pondicherry,
-      OEM solutions for retailers,
-      custom mobile accessories,
-      private label electronics,
-      how to create custom brands,
-      custom-labeled mobile products,
-      start own brand business,
-      mobile accessories branding
-    "
+          content="white label mobile accessories, OEM mobile chargers, private label electronics, custom brand business, radnus oem, mobile accessories manufacturer"
         />
         <meta name="robots" content="index, follow" />
-
-        {/* Open Graph */}
+        <meta name="author" content="Radnus Communication" />
+        <meta property="og:type" content="website" />
         <meta
           property="og:title"
-          content="Radnus White Label Services & OEM Solutions – Build Your Own Brand"
+          content="Radnus White Label & OEM Solutions | Build Your Own Brand"
         />
         <meta
           property="og:description"
-          content="Radnus provides white label services, OEM solutions, and custom-labeled mobile accessories to help retailers build their own brand. Get complete whitelabel solutions including digital marketing support."
+          content="Create your own brand with Radnus White Label OEM mobile accessories. Premium quality and marketing-ready solutions for entrepreneurs."
         />
-        <meta property="og:image" content="/logo2.png" />
-        <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.radnus.in/whitelabel" />
+        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
         <link rel="canonical" href="https://www.radnus.in/whitelabel" />
       </Helmet>
 

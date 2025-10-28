@@ -38,29 +38,63 @@ function RadnusAbout() {
       <Helmet>
         <title>
           About Radnus Communication | Mobile Service Training & Jobs in
-          Pondicherry | Founded by Sundar
+          Pondicherry
         </title>
         <meta
           name="description"
-          content="Learn about Radnus Communication, founded by Sundar — a leading mobile service training institute in Pondicherry offering practical chip-level repair courses, mobile accessories business support, and Poorvika placement opportunities for mobile technicians."
+          content="Radnus Communication, founded by Sundar, is a leading mobile service training institute in Pondicherry offering chip-level repair, accessories business support, and placement opportunities."
         />
         <meta
           name="keywords"
-          content="Radnus Communication, Radnus founder Sundar, mobile service training Pondicherry, mobile repair course MG Road, chip level training, mobile service job vacancy, Poorvika placement partner, mobile accessories manufacturing, best mobile technician institute, entrepreneurship training Pondicherry, Radnus Poorvika placement, mobile franchise training"
+          content="Radnus Communication, Sundar Radnus, mobile service training Pondicherry, mobile repair course MG Road, Poorvika placement partner, mobile accessories manufacturing, entrepreneurship training"
         />
+        <meta name="robots" content="index, follow" />
         <meta name="author" content="Radnus Communication" />
-        <link rel="canonical" href="https://www.radnus.in/about" />
+
+        {/* Open Graph */}
+        <meta property="og:type" content="website" />
         <meta
           property="og:title"
-          content="Radnus Communication – Mobile Service Training & Jobs in Pondicherry"
+          content="About Radnus Communication | Mobile Service Training & Jobs"
         />
         <meta
           property="og:description"
-          content="Discover Radnus Communication, founded by Sundar — empowering mobile technicians and entrepreneurs through training, Poorvika placement, and Make-in-India mobile accessories innovation."
+          content="Discover Radnus Communication, founded by Sundar — empowering mobile technicians and entrepreneurs through training and global partnerships."
         />
-        <meta property="og:image" content="/image.png" />
-        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://www.radnus.in/image.png" />
         <meta property="og:url" content="https://www.radnus.in/about" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:title"
+          content="About Radnus Communication | Mobile Service Training & Jobs"
+        />
+        <meta
+          name="twitter:description"
+          content="Learn about Radnus Communication’s journey and global impact in the mobile service industry."
+        />
+        <meta name="twitter:image" content="https://www.radnus.in/image.png" />
+
+        <link rel="canonical" href="https://www.radnus.in/about" />
+
+        {/* Structured Data */}
+        <script type="application/ld+json">
+          {`
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Radnus Communication",
+    "url": "https://www.radnus.in/about",
+    "logo": "https://www.radnus.in/logo2.png",
+    "founder": {
+      "@type": "Person",
+      "name": "Sundar"
+    },
+    "description": "Radnus Communication, founded by Sundar, offers mobile service training, repair, and placement support in Pondicherry."
+  }
+  `}
+        </script>
       </Helmet>
 
       {/* ✅ Hero Section */}

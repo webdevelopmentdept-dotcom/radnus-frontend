@@ -14,44 +14,28 @@ export default function Startup({
   return (
     <>
       <Helmet>
-        <title>
-          Startup Support | PMEGP Loan Assistance for Entrepreneurs | Radnus
-          Communication
-        </title>
-
+        <title>Startup Loan & Franchise Support | Radnus Communication</title>
         <meta
           name="description"
-          content="Get PMEGP loan assistance and startup guidance from Radnus Communication. We help entrepreneurs and small businesses secure government-backed funding with expert support, training, and end-to-end documentation."
+          content="Empower your business with Radnus Startup Loan and Franchise Support. Get funding assistance, mentorship, and training to grow your mobile business."
         />
-
         <meta
           name="keywords"
-          content="how to apply for pmegp loan,
-     pmegp loan eligibility criteria,
-     startup loan schemes in pondicherry,
-     best business startup loan, 
-     startup funding schemes india , 
-     benefits of PMEGP loan,
-     pmegp loan documents,
-     how to apply for startup loan in India"
+          content="startup loan, franchise business, Radnus finance, mobile business support, entrepreneur funding"
         />
-
+        <meta name="robots" content="index, follow" />
         <meta name="author" content="Radnus Communication" />
-
-        {/* Open Graph for social media */}
+        <meta property="og:type" content="website" />
         <meta
           property="og:title"
-          content="PMEGP Startup Loan Assistance – Radnus Communication"
+          content="Startup Loan & Franchise Support | Radnus Communication"
         />
         <meta
           property="og:description"
-          content="Empowering entrepreneurs through PMEGP – get expert guidance and financial support for your startup with Radnus Communication."
+          content="Apply for Radnus Startup Loan and franchise support to start or expand your mobile service business with ease."
         />
-        <meta property="og:image" content="/logo2.png" />
-        <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.radnus.in/startup" />
-
-        {/* Canonical URL */}
+        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
         <link rel="canonical" href="https://www.radnus.in/startup" />
       </Helmet>
 

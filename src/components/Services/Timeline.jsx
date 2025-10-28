@@ -40,35 +40,31 @@ export default function Timeline() {
   return (
     <>
       <Helmet>
-        <title>Our Journey | Radnus Communication Timeline</title>
+        <title>Our Journey | Radnus Communication</title>
         <meta
           name="description"
-          content="Explore the milestones of Radnus Communication — from humble beginnings in 2003 to a nationwide leader in mobile services, tools, and accessories."
+          content="Discover the inspiring journey of Radnus Communication from 2003 to 2025 — innovation, trust, and growth across India."
         />
         <meta
           name="keywords"
-          content="radnus Communication histroy, 
-          radnus success story,
-           mobile service journey, 
-           Radnus franchise growth"
+          content="radnus communication history, radnus timeline, mobile service journey, franchise growth, mobile business evolution"
         />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://www.radnus.in/timeline" />
-
-        {/* Open Graph / Social Media */}
+        <meta name="author" content="Radnus Communication" />
         <meta property="og:type" content="website" />
         <meta
           property="og:title"
-          content="Our Journey | Radnus Communication Timeline"
+          content="Our Journey | Radnus Communication"
         />
         <meta
           property="og:description"
-          content="Discover how Radnus Communication evolved from a local mobile shop into a national brand — innovation, empowerment, and trust since 2003."
+          content="Explore how Radnus Communication grew from a single shop to a leading mobile brand in India."
         />
         <meta property="og:url" content="https://www.radnus.in/timeline" />
-        <meta property="og:image" content="/logo2.png" />
-        <meta property="og:site_name" content="radnus.in" />
+        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
+        <link rel="canonical" href="https://www.radnus.in/timeline" />
       </Helmet>
+
       {/* ---------- HERO SECTION ---------- */}
       <section
         className="d-flex align-items-center justify-content-center text-center text-light "
