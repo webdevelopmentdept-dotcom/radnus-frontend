@@ -27,8 +27,6 @@ import ChargerT698TypeC from "../../images/chargert698typec.webp";
 
 import ChargerTC699V8 from "../../images/chargertc699v8.webp";
 
-import ChargerTC699TypeC from "../../images/chargertc699typec.webp";
-
 import ChargerTC699Iphone from "../../images/chargertc699iphone.webp";
 import ChargerTC755V8 from "../../images/chargertc755v8.webp";
 import ChargerTC755iphone from "../../images/chargertc755iphone.webp";
