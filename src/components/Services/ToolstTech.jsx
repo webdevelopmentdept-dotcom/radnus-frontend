@@ -1,26 +1,26 @@
 import React from "react";
-import SoftwareTool from "../../images/softwaretool.png";
-import HardwareTool from "../../images/hardwaretool.png";
-import Bowler from "../../images/bowler.png";
-import Tempercut from "../../images/tempercut.png";
-import Thermal from "../../images/thermal.png";
-import Skincut from "../../images/skincut.png";
-import Microscope from "../../images/microscope.png";
-import Dcpower from "../../images/dcpower.png";
-import Uvfluxpaste from "../../images/uvfluxpaste.png";
-import Tthree from "../../images/tthree.png";
-import Androidbooster from "../../images/androidbooster.png";
-import Soldering from "../../images/soldering.png";
-import Borneo1 from "../../images/borneo1.png";
-import Unlock from "../../images/unlock.png";
-import Bornedual from "../../images/bornedual.png";
-import Umt from "../../images/umt.png";
-import Griffen from "../../images/griffen.png";
-import Pragmafix from "../../images/pragmafix.png";
-import Chimera from "../../images/chimera.png";
-import ChimeraPro from "../../images/chimerapro.png";
+import SoftwareTool from "../../images/softwaretool.webp";
+import HardwareTool from "../../images/hardwaretool.webp";
+import Bowler from "../../images/bowler.webp";
+import Tempercut from "../../images/tempercut.webp";
+import Thermal from "../../images/thermal.webp";
+import Skincut from "../../images/skincut.webp";
+import Microscope from "../../images/microscope.webp";
+import Dcpower from "../../images/dcpower.webp";
+import Uvfluxpaste from "../../images/uvfluxpaste.webp";
+import Tthree from "../../images/tthree.webp";
+import Androidbooster from "../../images/androidbooster.webp";
+import Soldering from "../../images/soldering.webp";
+import Borneo1 from "../../images/borneo1.webp";
+import Unlock from "../../images/unlock.webp";
+import Bornedual from "../../images/bornedual.webp";
+import Umt from "../../images/umt.webp";
+import Griffen from "../../images/griffen.webp";
+import Pragmafix from "../../images/pragmafix.webp";
+import Chimera from "../../images/chimera.webp";
+import ChimeraPro from "../../images/chimerapro.webp";
 
-import Eft from "../../images/eft.png";
+import Eft from "../../images/eft.webp";
 import { Helmet } from "react-helmet";
 
 const ToolsTech = () => {
@@ -111,10 +111,10 @@ const ToolsTech = () => {
 
         {/* Overlay text */}
         <div className="position-absolute top-50 start-50 translate-middle text-center p-4 rounded overlay-content">
-          <h2 className="mb-3 fs-3 fw-bold">
+          <h2 className="mb-3 fs-2 fw-bold">
             Discover the Best Tools & Technology for Mobile Repair
           </h2>
-          <p className="mb-3 " style={{ fontSize: "1.2rem" }}>
+          <p className="mb-3 " style={{ fontSize: "1.4rem" }}>
             Find advanced hardware and software tools for technicians, shop
             owners, and laptop repair experts — all in one place.
           </p>

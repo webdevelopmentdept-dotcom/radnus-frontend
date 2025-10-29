@@ -45,10 +45,10 @@ function RadnusFooter() {
                 alt="Radnus Logo"
                 height="40"
               />
-              <p className="mt-2 mb-1 small">
+              <p className="mt-2 mb-1 fs-6">
                 Shaping Futures in Mobile Technology and Service.
               </p>
-              <h6 className="mt-1 fw-bold text-dark">
+              <h6 className="mt-1 fs-6 fw-bold text-dark">
                 Placement Partner –{" "}
                 <span className="text-warning">Poorvika</span>
               </h6>
@@ -85,7 +85,7 @@ function RadnusFooter() {
 
               {message && (
                 <p
-                  className={`small mb-0 ${
+                  className={`fs-6  mb-0 ${
                     message.includes("") ? "text-warning fw-bold" : "text-white"
                   }`}
                 >
@@ -98,7 +98,9 @@ function RadnusFooter() {
           {/* Bottom Row */}
           <Row className="gy-2 gx-1">
             <Col md={2} xs={6}>
-              <h6 className="fw-bold mb-1">Quick Links</h6>
+              <h6 className="fw-bold mb-1 " style={{ fontSize: "1.1rem" }}>
+                Quick Links
+              </h6>
               <Link className="footer-link d-block" to="/">
                 Home
               </Link>
@@ -114,7 +116,9 @@ function RadnusFooter() {
             </Col>
 
             <Col md={2} xs={6}>
-              <h6 className="fw-bold mb-1">Services</h6>
+              <h6 className="fw-bold mb-1" style={{ fontSize: "1.1rem" }}>
+                Services
+              </h6>
               <Link className="footer-link d-block" to="/academy">
                 Academy
               </Link>
@@ -140,7 +144,9 @@ function RadnusFooter() {
             </Col>
 
             <Col md={2} xs={6}>
-              <h6 className="fw-bold mb-1">Career & Insights</h6>
+              <h6 className="fw-bold mb-1" style={{ fontSize: "1.1rem" }}>
+                Career & Insights
+              </h6>
               <Link className="footer-link d-block" to="/placement">
                 Placement
               </Link>
@@ -149,41 +155,78 @@ function RadnusFooter() {
               </Link>
             </Col>
             <Col md={2} xs={6}>
-              <h6 className="fw-bold mb-1">Contact</h6>
+              <h6 className="fw-bold mb-3" style={{ fontSize: "1.1rem" }}>
+                Contact
+              </h6>
 
-              <div className="d-flex align-items-center mb-1">
-                <FaMapMarkerAlt className="me-2 text-white" size={16} />
+              <div className="d-flex align-items-center contact-item mb-2">
+                <FaMapMarkerAlt className="text-light me-2 flex-shrink-0 contact-icon" />
                 <a
                   href="https://www.google.com/maps/place/Radnus/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="footer-link"
+                  className="footer-link text-light text-decoration-none w-100 contact-text"
                 >
                   Sinnaya Plaza, MG Road, Puducherry
                 </a>
               </div>
 
-              <div className="d-flex align-items-center mb-1">
-                <FaPhoneAlt className="me-2 text-white" size={16} />
-                <a href="tel:+91940973030" className="footer-link">
+              <div className="d-flex align-items-center contact-item mb-2">
+                <FaPhoneAlt className="text-light me-2 flex-shrink-0 contact-icon" />
+                <a
+                  href="tel:+91940973030"
+                  className="footer-link text-light text-decoration-none w-100 contact-text"
+                >
                   +91 91940973030
                 </a>
               </div>
 
-              <div className="d-flex align-items-center mb-1">
-                <FaEnvelope className="me-2 text-white" size={16} />
-                <a href="mailto:sundar12134@gmail.com" className="footer-link">
-                  sundar12134
-                  <span className="d-none d-md-inline">
-                    <br />
-                  </span>
-                  @gmail.com
+              <div className="d-flex align-items-center contact-item mb-2">
+                <FaEnvelope className="text-light me-2 flex-shrink-0 contact-icon" />
+                <a
+                  href="mailto:sundar12134@gmail.com"
+                  className="footer-link text-light text-decoration-none w-100 contact-text"
+                >
+                  sundar12134@gmail.com
                 </a>
               </div>
+
+              <style>
+                {`
+  /* 📱 Mobile (<576px) */
+  @media (max-width: 576px) {
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap !important;
+      overflow: visible !important;
+      text-overflow: unset !important;
+      font-size: 1rem !important;  /* ✅ bigger text */
+      line-height: 1.4;
+    }
+
+    .contact-icon {
+      width: 18px !important;   /* ✅ slightly bigger icon */
+      height: 18px !important;
+      flex-shrink: 0;
+    }
+
+    .contact-text {
+      display: inline-block;
+      width: auto !important;
+      white-space: nowrap !important;
+      overflow: visible !important;
+      text-overflow: unset !important;
+    }
+  `}
+              </style>
             </Col>
 
             <Col md={2} xs={12}>
-              <h6 className="fw-bold mb-1">Follow Us</h6>
+              <h6 className="fw-bold mb-1 " style={{ fontSize: "1.1rem" }}>
+                Follow Us
+              </h6>
               <div className="d-flex gap-4 justify-content-md-start justify-content-center mt-2 mb-3 fs-5">
                 <a
                   href="https://facebook.com/radnus.cellphone.training"
@@ -214,8 +257,9 @@ function RadnusFooter() {
                   <FaYoutube />
                 </a>
                 <a
-                  href="https://wa.me/91940973030"
+                  href="https://api.whatsapp.com/send?phone=919940973030&text=Hi%20Radnus%20Team!%20I%20would%20like%20to%20know%20more%20about%20your%20training."
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="text-white"
                 >
                   <FaWhatsapp />

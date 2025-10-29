@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import TrainingFormimg from "../../images/trainingform.png";
+import TrainingFormimg from "../../images/trainingform.webp";
 
 const TrainingForm = ({ course, onCloseForm }) => {
   const [formData, setFormData] = useState({

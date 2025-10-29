@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { HashLink } from "react-router-hash-link";
-import { useLocation } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FiBookOpen,
   FiPackage,
@@ -15,28 +14,54 @@ import {
 
 function RadnusNavbar() {
   const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
 
-  // Detect scroll for background change
+  // ✅ Scroll detection
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Set dynamic spacer to prevent hero content hiding
+  // ✅ Perfect close (no reload + guaranteed collapse)
+  const closeMenu = (e, path, isHash = false) => {
+    e?.preventDefault?.();
+
+    // Navigate first
+    if (path && !isHash) navigate(path);
+
+    // ✅ Smooth scroll to #contact if it’s a hash link
+    if (isHash) {
+      navigate("/");
+      setTimeout(() => {
+        const contact = document.getElementById("contact");
+        if (contact) contact.scrollIntoView({ behavior: "smooth" });
+      }, 400);
+    }
+
+    // ✅ Force collapse close after route change
+    setTimeout(() => {
+      const navbarCollapse = document.getElementById("navbarNav");
+      if (!navbarCollapse) return;
+      navbarCollapse.classList.remove("show");
+
+      const collapse =
+        window.bootstrap.Collapse.getInstance(navbarCollapse) ||
+        new window.bootstrap.Collapse(navbarCollapse, { toggle: false });
+      collapse.hide();
+    }, 300);
+  };
+
+  // ✅ Spacer fix
   useEffect(() => {
     const setNavbarSpacer = () => {
       const navbar = document.querySelector(".navbar");
       const spacer = document.getElementById("navbar-spacer");
-      if (navbar && spacer) {
-        // subtract 1px to remove the visual gap
+      if (navbar && spacer)
         spacer.style.height = `${navbar.offsetHeight - 1}px`;
-      }
     };
-
     setNavbarSpacer();
     window.addEventListener("resize", setNavbarSpacer);
-
     return () => window.removeEventListener("resize", setNavbarSpacer);
   }, []);
 
@@ -46,11 +71,19 @@ function RadnusNavbar() {
         className={`navbar navbar-expand-lg fixed-top ${
           scrolled ? "shadow-sm bg-white" : "bg-white"
         }`}
-        style={{ paddingTop: "0.3rem", paddingBottom: "0.3rem" }}
+        style={{
+          paddingTop: "0.3rem",
+          paddingBottom: "0.3rem",
+          transition: "background-color 0.4s ease, box-shadow 0.3s ease",
+        }}
       >
         <div className="container-fluid">
           {/* Brand */}
-          <Link className="navbar-brand ms-4" to="/">
+          <Link
+            className="navbar-brand ms-4"
+            to="/"
+            onClick={(e) => closeMenu(e, "/")}
+          >
             <img src="/image.png" alt="Radnus Logo" height="55px" />
           </Link>
 
@@ -72,34 +105,36 @@ function RadnusNavbar() {
             className="collapse navbar-collapse justify-content-center"
             id="navbarNav"
           >
-            <ul
-              className="navbar-nav"
-              style={{ fontSize: "20px", fontWeight: "400" }}
-            >
+            <ul className="navbar-nav fs-5">
               <li className="nav-item mx-3">
-                <Link className="nav-link text-danger " to="/">
+                <Link
+                  className="nav-link text-danger"
+                  to="/"
+                  onClick={(e) => closeMenu(e, "/")}
+                >
                   Home
                 </Link>
               </li>
 
               <li className="nav-item mx-3">
-                <Link className="nav-link text-danger " to="/about">
+                <Link
+                  className="nav-link text-danger"
+                  to="/about"
+                  onClick={(e) => closeMenu(e, "/about")}
+                >
                   Who we are
                 </Link>
               </li>
-
               {/* Mega Dropdown */}
               <li className="nav-item dropdown mx-3 position-static">
-                <a
-                  className="nav-link dropdown-toggle text-danger "
-                  href="#"
+                <button
+                  className="nav-link dropdown-toggle text-danger bg-transparent border-0"
                   id="whatWeDoDropdown"
-                  role="button"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
                   What we do
-                </a>
+                </button>
 
                 <div
                   className="dropdown-menu p-4 border-0 shadow-lg mega-menu-mobile"
@@ -112,30 +147,33 @@ function RadnusNavbar() {
                         <Link
                           className="dropdown-item mb-1 d-flex align-items-center"
                           to="/academy"
+                          onClick={(e) => closeMenu(e, "/academy")}
                         >
                           <FiBookOpen className="me-2" /> Radnus Academy
                         </Link>
-                        <p className="text-muted small ms-4 mb-4">
+                        <p className=" fs-6 ms-4 mb-4">
                           Skill development, certification & placement
                         </p>
 
                         <Link
                           className="dropdown-item mb-1 d-flex align-items-center"
                           to="/whitelabel"
+                          onClick={(e) => closeMenu(e, "/whitelabel")}
                         >
                           <FiPackage className="me-2" /> OEM Solutions
                         </Link>
-                        <p className="text-muted small ms-4 mb-4">
+                        <p className="fs-6  ms-4 mb-4">
                           Custom brand mobile accessories manufacturing
                         </p>
 
                         <Link
                           className="dropdown-item mb-1 d-flex align-items-center"
                           to="/tools-tech"
+                          onClick={(e) => closeMenu(e, "/tools-tech")}
                         >
                           <FiTool className="me-2" /> Tools & Technologies
                         </Link>
-                        <p className="text-muted small ms-4 mb-4">
+                        <p className="fs-6  ms-4 mb-4">
                           Repair tools & service equipment supply
                         </p>
                       </div>
@@ -145,30 +183,33 @@ function RadnusNavbar() {
                         <Link
                           className="dropdown-item mb-1 d-flex align-items-center"
                           to="/service"
+                          onClick={(e) => closeMenu(e, "/service")}
                         >
                           <FiHeadphones className="me-2" /> Service Pro
                         </Link>
-                        <p className="text-muted small ms-4 mb-4">
+                        <p className="fs-6  ms-4 mb-4">
                           Advanced repair solutions for B2B support
                         </p>
 
                         <Link
                           className="dropdown-item mb-1 d-flex align-items-center"
                           to="/accessories"
+                          onClick={(e) => closeMenu(e, "/accessories")}
                         >
                           <FiShoppingBag className="me-2" /> Accessories
                         </Link>
-                        <p className="text-muted small ms-4 mb-4">
+                        <p className="fs-6  ms-4 mb-4">
                           Retail distribution of branded accessories
                         </p>
 
                         <Link
                           className="dropdown-item mb-1 d-flex align-items-center"
                           to="/startup"
+                          onClick={(e) => closeMenu(e, "/startup")}
                         >
                           <FiTrendingUp className="me-2" /> Startup Support
                         </Link>
-                        <p className="text-muted small ms-4 mb-4">
+                        <p className="fs-6  ms-4 mb-4">
                           Business setup & loan assistance (PMEGP)
                         </p>
                       </div>
@@ -178,14 +219,16 @@ function RadnusNavbar() {
                         <Link
                           className="dropdown-item mb-3 d-flex align-items-center"
                           to="/placement"
+                          onClick={(e) => closeMenu(e, "/placement")}
                         >
-                          <FiBriefcase className="me-2" /> Placement
+                          <FiBriefcase className="me-2 fs-6 " /> Placement
                         </Link>
                         <Link
                           className="dropdown-item mb-3 d-flex align-items-center"
                           to="/timeline"
+                          onClick={(e) => closeMenu(e, "/timeline")}
                         >
-                          <FiClock className="me-2" /> Timeline
+                          <FiClock className="me-2 fs-6 " /> Timeline
                         </Link>
                       </div>
                     </div>
@@ -195,22 +238,32 @@ function RadnusNavbar() {
 
               {/* Join Us */}
               <li className="nav-item mx-3">
-                <Link className="nav-link text-danger" to="/careers">
+                <Link
+                  className="nav-link text-danger"
+                  to="/careers"
+                  onClick={(e) => closeMenu(e, "/careers")}
+                >
                   Join Us
                 </Link>
               </li>
 
+              {/* Smooth scroll to footer */}
               <li className="nav-item mx-3">
-                <HashLink
-                  smooth
-                  to="/#contact"
-                  className="nav-link text-danger "
+                <a
+                  href="/#contact"
+                  className="nav-link text-danger"
+                  onClick={(e) => closeMenu(e, "/#contact", true)}
                 >
                   Get In Touch
-                </HashLink>
+                </a>
               </li>
+
               <li className="nav-item mx-3">
-                <Link className="nav-link text-danger " to="/login">
+                <Link
+                  className="nav-link text-danger"
+                  to="/login"
+                  onClick={(e) => closeMenu(e, "/login")}
+                >
                   Login
                 </Link>
               </li>
@@ -220,23 +273,15 @@ function RadnusNavbar() {
 
         {/* Styles */}
         <style>{`
-          /* Remove unwanted margin between navbar and next section */
-          body,
-          main,
-          section:first-of-type {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
+          .navbar {
+            transition: background-color 0.4s ease, box-shadow 0.3s ease;
           }
 
           .navbar-toggler {
             border: none;
           }
 
-          .navbar-toggler-light .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255,255,255,0.9)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
-          }
-
-          .navbar-toggler-dark .navbar-toggler-icon {
+          .navbar-toggler-icon {
             background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(0,0,0,0.9)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
           }
 
@@ -245,78 +290,27 @@ function RadnusNavbar() {
             width: auto;
           }
 
-         @media (max-width: 767px) {
-  .dropdown-menu {
-    background-color: white !important;
-  }
-
-  .dropdown-item {
-    color: red !important;
-  }
-
-  .dropdown-item:hover {
-    background-color: #f8f9fa !important; /* light grey hover */
-    color: #c8102e !important; /* darker red hover */
-  }
-
-  .navbar {
-    padding-top: 0.4rem !important;
-    padding-bottom: 0.4rem !important;
-  }
-
-  .navbar-brand {
-    margin-left: 0 !important;
-  }
-
-  .navbar-brand img {
-    max-height: 36px;
-  }
-
-  .navbar-toggler {
-    margin-right: 1rem;
-    padding: 0.25rem 0.5rem;
-  }
-
-  .navbar-brand,
-  .navbar-toggler {
-    display: flex;
-    align-items: center;
-  }
-
-  .dropdown-menu {
-    position: static !important;
-    width: 100% !important;
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0.5rem 1rem;
-  }
-
-  .dropdown-menu .row {
-    flex-direction: column !important;
-  }
-
-  .dropdown-menu .col-md-4 {
-    border: none !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
-
-  .dropdown-item {
-    padding-left: 0 !important;
-    font-size: 1rem !important;
-    text-align: left !important;
-  }
-
-  .dropdown-item + p {
-    margin-left: 0 !important;
-    font-size: 0.85rem;
-  }
-}
-
+          @media (max-width: 767px) {
+            .navbar {
+              padding: 0.4rem !important;
+            }
+            .navbar-brand img {
+              max-height: 36px;
+            }
+            .dropdown-menu {
+              position: static !important;
+              width: 100% !important;
+              box-shadow: none !important;
+              border: none !important;
+            }
+            .dropdown-menu .row {
+              flex-direction: column !important;
+            }
+          }
         `}</style>
       </nav>
 
-      {/* Spacer div to prevent hero content hiding */}
+      {/* Spacer */}
       <div
         id="navbar-spacer"
         style={{ height: "0px", marginBottom: "-1px" }}

@@ -8,12 +8,12 @@ import {
   FaUserTie,
 } from "react-icons/fa";
 import careerBg from "../images/careerbg.webp";
-import img1 from "../images/aboutbackground.jpg";
-import img2 from "../images/cimg2.jpg";
-import img3 from "../images/cimg3.jpg";
-import img4 from "../images/cimg1.jpg";
-import img5 from "../images/venam.jpeg";
-import img6 from "../images/slider1.jpg";
+import img1 from "../images/aboutbackground.webp";
+import img2 from "../images/cimg2.webp";
+import img3 from "../images/cimg3.webp";
+import img4 from "../images/cimg1.webp";
+import img5 from "../images/venam.webp";
+import img6 from "../images/slider1.webp";
 
 const Career = ({ jobsData }) => {
   const images = [img1, img2, img3, img4, img5, img6];

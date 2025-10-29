@@ -1,17 +1,17 @@
 // src/components/RadnusHome.jsx
 import React from "react";
-import bgImage from "../images/homebackground1.png";
-import illustration from "../images/metricsimag4.png";
+import bgImage from "../images/homebackground1.webp";
+import illustration from "../images/metricsimag4.webp";
 import CountUp from "react-countup";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
-import bg1Image from "../images/bg2.png";
+import bg1Image from "../images/bg2.webp";
 function RadnusHome() {
   const stats = [
     { end: 8500, label: "Students Trained" },
     { end: 500, label: "PMEGP loan for startup" },
-    { end: 5000, label: "Mobile Delivered" },
+    { end: 50000, label: "Mobile Delivered" },
     { end: 8000, label: "Mobile Shops Empowered" },
     { end: 20, label: "Years in Industry" },
     { end: 3, label: "Major Telecom Partners" },
@@ -263,7 +263,7 @@ function RadnusHome() {
                 viewport={{ once: true }}
               >
                 <div className="card h-100 shadow-sm rounded-4 p-3 d-flex flex-column justify-content-between hover-elegant">
-                  <h6 className="text-daark mb-4">{service.title}</h6>
+                  <h6 className="text-dark mb-4 fs-6">{service.title}</h6>
 
                   <Link
                     to={service.path}

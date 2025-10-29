@@ -1,7 +1,7 @@
 import React from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
 // Import your background image (place image in src/assets or similar)
-import LoanBg from "../../images/startupbg1.png";
+import LoanBg from "../../images/startupbg1.webp";
 import { Helmet } from "react-helmet";
 
 import { motion } from "framer-motion"; // <-- change path/name as needed
@@ -38,20 +38,32 @@ export default function Startup({
         <meta property="og:image" content="https://www.radnus.in/logo2.png" />
         <link rel="canonical" href="https://www.radnus.in/startup" />
       </Helmet>
-
       <section
-        className="d-flex align-items-center justify-content-start text-white"
+        className="startup-hero d-flex align-items-center justify-content-start text-white"
         style={{
           backgroundImage: `url(${backgroundImage})`,
           backgroundSize: "cover",
-          backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
+          backgroundPosition: "center",
           minHeight: "60vh",
+          position: "relative",
+          overflow: "hidden",
         }}
-        aria-label="Loan plans hero"
       >
-        <Container>
-          <Row classNahow to startme="justify-content-start">
+        {/* ✅ Overlay for mobile only */}
+        <div
+          className="hero-overlay d-md-none"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 100%)",
+            zIndex: 1,
+          }}
+        ></div>
+
+        <Container style={{ position: "relative", zIndex: 2 }}>
+          <Row className="justify-content-start">
             <Col
               xs={12}
               md={6}
@@ -59,14 +71,14 @@ export default function Startup({
             >
               <div className="w-100 mx-auto" style={{ maxWidth: "540px" }}>
                 <h1
-                  className="fw-bold display-6 lh-sm mb-3 mt-2 "
-                  style={{ color: "#530000ff" }}
+                  className="fw-bold display-6 lh-sm mb-3 mt-2"
+                  style={{ color: "#ffffff" }}
                 >
                   {title}
                 </h1>
                 <p
-                  className="fs-5 fw-semibold mb-3 "
-                  style={{ color: "#000000ff" }}
+                  className="fs-5 fw-semibold mb-3"
+                  style={{ color: "#000000c2" }}
                 >
                   {description}
                 </p>
@@ -490,6 +502,32 @@ export default function Startup({
           </Row>
         </Container>
       </section>
+      <style>
+        {`
+      @media (max-width: 576px) {
+        /* keep bg shifted for mobile */
+        .startup-hero {
+          position: relative;
+          background-position: 100% center !important;
+        }
+
+     
+  .startup-hero h1 {
+    color: #fd1e1eff !important;   /* dark black title */
+  }
+
+  .startup-hero p {
+    color: #ffffffff !important;   /* slightly lighter dark */
+  }
+}
+
+
+        /* optional: little size tweak for small screens */
+        .startup-hero h1 { font-size: clamp(1.3rem, 6.5vw, 1.8rem); }
+        .startup-hero p  { font-size: clamp(0.9rem, 4.2vw, 1.05rem); }
+      }
+    `}
+      </style>
     </>
   );
 }

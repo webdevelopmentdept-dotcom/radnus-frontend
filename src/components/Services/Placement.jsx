@@ -1,20 +1,20 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { BsArrowRightCircleFill } from "react-icons/bs"; // Professional icon
-import placement from "../../images/placement.jpg";
-import PartnerCollab from "../../images/partnercollab.png";
+import placement from "../../images/placement.webp";
+import PartnerCollab from "../../images/partnercollab.webp";
 import Africon from "../../images/africon.png";
-import Australia from "../../images/austarlia.jpg";
+import Australia from "../../images/austarlia.webp";
 import Canada from "../../images/canada.webp";
-import Oman from "../../images/oman.jpg";
-import Qatar from "../../images/qatar.jpg";
+import Oman from "../../images/oman.webp";
+import Qatar from "../../images/qatar.webp";
 import Saudi from "../../images/saudi.webp";
 import Singapore from "../../images/singapore.webp";
-import Srilanka from "../../images/srilanka.jpg";
-import Uae from "../../images/uae.jpg";
-import Uk from "../../images/uk.jpg";
-import Usa from "../../images/usa.jpg";
-import Nepal from "../../images/nepal.png";
+import Srilanka from "../../images/srilanka.webp";
+import Uae from "../../images/uae.webp";
+import Uk from "../../images/uk.webp";
+import Usa from "../../images/usa.webp";
+import Nepal from "../../images/nepal.webp";
 import Malasiya from "../../images/malasiya.webp";
 import { Helmet } from "react-helmet";
 const Placement = () => {

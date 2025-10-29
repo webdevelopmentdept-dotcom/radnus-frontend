@@ -6,16 +6,16 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { Container, Row, Col, Image, Card } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import RadnusVision from "../images/radnusvision.png";
+import RadnusVision from "../images/radnusvision.webp";
 import AboutIcon from "../images/abouticon.png";
-import RadnusMission from "../images/radnusmission.png";
-import PoorvikabrandLogo from "../images/poorvikabrandlogo.png";
-import PartnerCollab from "../images/partnercollab.png";
-import AboutBackground from "../images/aboutbackground.jpg";
-import Slider1 from "../images/slider1.jpg";
-import Slider2 from "../images/acadamybackground.jpg";
-import Venam from "../images/venam.jpeg";
-import slider3 from "../images/openspeech.jpg";
+import RadnusMission from "../images/radnusmission.webp";
+import PoorvikabrandLogo from "../images/poorvikabrandlogo.webp";
+import PartnerCollab from "../images/partnercollab.webp";
+import AboutBackground from "../images/aboutbackground.webp";
+import Slider1 from "../images/slider1.webp";
+import Slider2 from "../images/acadamybackground.webp";
+import Venam from "../images/venam.webp";
+import slider3 from "../images/openspeech.webp";
 import {
   FiClock,
   FiAward,
@@ -163,10 +163,7 @@ function RadnusAbout() {
             Why Choose Radnus Communication
           </h2>
 
-          <p
-            className="text-muted mb-4 fw-semibold"
-            style={{ fontSize: "1.25rem" }}
-          >
+          <p className="mb-4 " style={{ fontSize: "1.2rem" }}>
             We deliver <strong>real-world mobile repair training</strong>,{" "}
             <strong>entrepreneurship guidance</strong>, and{" "}
             <strong>Poorvika placement support</strong> for our students. With{" "}
