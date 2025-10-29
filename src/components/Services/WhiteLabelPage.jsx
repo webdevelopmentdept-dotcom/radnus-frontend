@@ -186,12 +186,7 @@ function WhiteLabelPage() {
           description:
             "Compact dual-port charger with intelligent safety features.",
         },
-        {
-          src: ChargerTC699TypeC,
-          name: "Charger TC-699 (Type-C)",
-          description:
-            "Dual-port charger designed for fast and stable charging.",
-        },
+
         {
           src: ChargerTC699Iphone,
           name: "Charger TC-699 (Iphone)",
