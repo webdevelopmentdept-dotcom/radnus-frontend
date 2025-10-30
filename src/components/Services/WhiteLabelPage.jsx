@@ -38,7 +38,9 @@ import DataCable2AV8 from "../../images/datacable2av8.webp";
 import DataCable21ATypeC from "../../images/datacable21atypec.webp";
 import DataCable24AV8 from "../../images/datacable24av8.webp";
 import DataCable24ATypeC from "../../images/datacable24atypec.webp";
+
 import DataCable24AiPhone from "../../images/datacable24aiphone.webp";
+
 import DataCable35AV8 from "../../images/datacable35av8.webp";
 import DataCable3ATypeC from "../../images/datacable3atypec.webp";
 import DataCable35AiPhone from "../../images/datacable35aiphone.webp";
