@@ -181,13 +181,13 @@ function RadnusFooter() {
             <Col md={6}>
               <h6
                 className="fw-bold mb-3"
-                style={{ fontSize: "1.1rem", marginLeft: "15px" }}
+                style={{ fontSize: "1.1rem", marginLeft: "59px" }}
               >
                 Follow Us
               </h6>
               <div
                 className="d-flex gap-4 justify-content-md-start justify-content-center fs-4"
-                style={{ marginLeft: "10px" }}
+                style={{ marginLeft: "60px" }}
               >
                 <a
                   href="https://facebook.com/radnus.cellphone.training"
