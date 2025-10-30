@@ -64,7 +64,7 @@ const Career = ({ jobsData }) => {
         />
         <meta
           name="keywords"
-          content="Radnus Careers, Radnus Jobs, Radnus Communication Puducherry, Mobile Repair Jobs, Software Developer Jobs, Digital Marketing Jobs, Customer Support, Internship Radnus"
+          content="Radnus Careers, Radnus Jobs, Radnus Communication Jobs,Radnus fresher job,Radnus communcation vacancy,Fresher Job in pondicherry, Mobile Repair Jobs, Software Developer Jobs, Digital Marketing Jobs, Customer Support, Internship Radnus"
         />
         <link rel="canonical" href="https://www.radnus.in/careers" />
         <meta

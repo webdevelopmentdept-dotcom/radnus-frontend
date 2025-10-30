@@ -56,7 +56,7 @@ function RadnusFooter() {
     <footer id="contact">
       {/* ======= MAIN RED FOOTER ======= */}
       <div
-        className="text-white py-1"
+        className="text-white py-2"
         style={{
           background: "linear-gradient(135deg, #c8102e, #8b0e1c)",
           borderTopLeftRadius: "40px",
@@ -69,14 +69,15 @@ function RadnusFooter() {
             {/* LEFT LOGO SECTION */}
             <Col md={6} className="text-center text-md-start mb-3 mb-md-0">
               <img
+                className="mb-2"
                 src="https://static.wixstatic.com/media/86316b_38b937020dcc47beb619e58eef059c56~mv2.png/v1/fill/w_128,h_46,al_c,q_85,usm_0.66_1.00_0.01/86316b_38b937020dcc47beb619e58eef059c56~mv2.png"
                 alt="Radnus Logo"
                 height="50"
               />
-              <p className="mt-2 mb-1 fs-6">
+              <p className="mt-2 mb-1" style={{ fontSize: "1.1rem" }}>
                 Shaping Futures in Mobile Technology and Service.
               </p>
-              <h6 className="mt-1 fs-6 text-dark">
+              <h6 className="mt-1 " style={{ fontSize: "1.1rem" }}>
                 Placement Partner –{" "}
                 <span className="text-warning">Poorvika</span>
               </h6>
@@ -178,10 +179,16 @@ function RadnusFooter() {
 
             {/* RIGHT COLUMN - FOLLOW US */}
             <Col md={6}>
-              <h6 className="fw-bold mb-3" style={{ fontSize: "1.1rem" }}>
+              <h6
+                className="fw-bold mb-3"
+                style={{ fontSize: "1.1rem", marginLeft: "15px" }}
+              >
                 Follow Us
               </h6>
-              <div className="d-flex gap-4 justify-content-md-start justify-content-center fs-4">
+              <div
+                className="d-flex gap-4 justify-content-md-start justify-content-center fs-4"
+                style={{ marginLeft: "10px" }}
+              >
                 <a
                   href="https://facebook.com/radnus.cellphone.training"
                   target="_blank"
@@ -295,7 +302,7 @@ function RadnusFooter() {
         </style>
 
         {/* ======= COPYRIGHT SECTION ======= */}
-        <div className="text-center fs-6 text-light">
+        <div className="text-center mb-3 fs-6 text-light">
           © 2025 All Rights Reserved by Radnus.
         </div>
       </div>
