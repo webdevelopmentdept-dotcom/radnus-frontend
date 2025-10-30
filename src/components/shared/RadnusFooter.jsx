@@ -156,10 +156,10 @@ function RadnusFooter() {
               <div className="d-flex align-items-center contact-item mb-2">
                 <FaPhoneAlt className="text-light me-2 flex-shrink-0 contact-icon" />
                 <a
-                  href="tel:+91940973030"
+                  href="tel:+919940973030"
                   className="footer-link text-light text-decoration-none w-100 contact-text"
                 >
-                  +91 91940973030
+                  +91 9940973030
                 </a>
               </div>
 

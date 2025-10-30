@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Form, Row, Col } from "react-bootstrap";
+import { Helmet } from "react-helmet"; // ✅ Import Helmet for SEO
 import {
   FaMapMarkerAlt,
   FaClock,
   FaMoneyBillAlt,
   FaUserTie,
 } from "react-icons/fa";
+
 import careerBg from "../images/careerbg.webp";
 import img1 from "../images/aboutbackground.webp";
 import img2 from "../images/cimg2.webp";
@@ -24,7 +26,7 @@ const Career = ({ jobsData }) => {
 
   // ✅ Calculate "time ago"
   const getTimeAgo = (date) => {
-    if (!date) return "N/A"; // fallback for missing date
+    if (!date) return "N/A";
     const postedDate = new Date(date);
     const now = new Date();
     const diffDays = Math.floor((now - postedDate) / (1000 * 60 * 60 * 24));
@@ -51,6 +53,36 @@ const Career = ({ jobsData }) => {
 
   return (
     <>
+      {/* ✅ SEO META TAGS */}
+      <Helmet>
+        <title>
+          Careers at Radnus Communication | Join Our Team in Puducherry
+        </title>
+        <meta
+          name="description"
+          content="Explore exciting career opportunities at Radnus Communication in Puducherry. Join our team in mobile service, repair, software development, marketing, and training."
+        />
+        <meta
+          name="keywords"
+          content="Radnus Careers, Radnus Jobs, Radnus Communication Puducherry, Mobile Repair Jobs, Software Developer Jobs, Digital Marketing Jobs, Customer Support, Internship Radnus"
+        />
+        <link rel="canonical" href="https://www.radnus.in/careers" />
+        <meta
+          property="og:title"
+          content="Careers at Radnus Communication | Join Our Team"
+        />
+        <meta
+          property="og:description"
+          content="Be part of Radnus Communication’s growing team in Puducherry. Apply for roles in technical, design, marketing, and training fields today."
+        />
+        <meta property="og:url" content="https://www.radnus.in/careers" />
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:image"
+          content="https://www.radnus.in/images/careerbg.webp"
+        />
+      </Helmet>
+
       {/* Hero section */}
       <section
         className="career-hero d-flex align-items-center"
@@ -68,7 +100,7 @@ const Career = ({ jobsData }) => {
           style={{ background: "rgba(0,0,0,0.4)" }}
         ></div>
         <div className="container position-relative text-white">
-          <h1 className="display-5  fs-bold mb-3">Join Our Team</h1>
+          <h1 className="display-5 fs-bold mb-3">Join Our Team</h1>
           <p className="lead mb-4" style={{ maxWidth: "450px" }}>
             Be part of <strong>Radnus</strong> leading mobile service, repair,
             and technical training.
