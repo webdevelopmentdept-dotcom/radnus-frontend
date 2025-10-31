@@ -799,8 +799,8 @@ const Accessories = () => {
               },
               {
                 img: Headsets3,
-                title: "Earpods",
-                desc: "Compact earpods with lightweight design and clear sound. more varieties available in our store.",
+                title: "Airpods",
+                desc: "Compact Airpods with lightweight design and clear sound. more varieties available in our store.",
               },
             ].map((item, index) => (
               <div
