@@ -222,6 +222,105 @@ body {
 .float-icon {
   animation: float 3s ease-in-out infinite;
 }
+/* General Layout */
+.login-wrapper {
+  min-height: 50vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f8f9fa;
+  padding: 10px;
+}
+
+/* Card Style */
+.login-card {
+  width: 95%;
+  max-width: 420px;
+  padding: 20px;
+  border-radius: 15px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Table Scroll Container */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Table Style */
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 600px;
+}
+
+.table-container th,
+.table-container td {
+  padding: 10px 8px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.table-container th {
+  background-color: #212529;
+  color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .login-card {
+    max-width: 100%;
+    padding: 15px;
+  }
+
+  .table-container table {
+    font-size: 12px;
+    min-width: 500px;
+  }
+
+  input.form-control {
+    font-size: 14px;
+  }
+
+  button.btn {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  h3,
+  h4 {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 10px;
+  }
+
+  .table-container table {
+    min-width: 400px;
+  }
+
+  input.form-control {
+    font-size: 13px;
+  }
+
+  button.btn {
+    font-size: 13px;
+  }
+
+  h3,
+  h4 {
+    font-size: 16px;
+  }
+}
 
 /* --- Hero Section Responsive Fix --- */
 @media (max-width: 768px) {

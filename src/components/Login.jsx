@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 function Login() {
-  const [role, setRole] = useState(""); // "admin" or "hr"
+  const [role, setRole] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -12,13 +12,11 @@ function Login() {
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-  // Step 1: Select Role
   const handleRoleSelect = (selectedRole) => {
     setRole(selectedRole);
     setError("");
   };
 
-  // Step 2: Submit Login Form
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -46,7 +44,6 @@ function Login() {
 
       setLoggedIn(true);
 
-      // Load applicants depending on role
       if (role === "admin") await fetchAdminApplicants();
       if (role === "hr") await fetchHRApplicants();
     } catch (err) {
@@ -57,7 +54,6 @@ function Login() {
     }
   };
 
-  // Step 3: Fetch Data for Admin
   const fetchAdminApplicants = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/applicants`);
@@ -73,7 +69,6 @@ function Login() {
     }
   };
 
-  // Step 4: Fetch Data for HR
   const fetchHRApplicants = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/hr/applications`);
@@ -89,7 +84,6 @@ function Login() {
     }
   };
 
-  // Step 5: Logout
   const handleLogout = () => {
     setLoggedIn(false);
     setRole("");
@@ -100,7 +94,6 @@ function Login() {
     setSearch("");
   };
 
-  // Step 6: Filter applicants for search
   const filteredApplicants = applicants.filter((a) => {
     const s = search.toLowerCase();
     return (
@@ -111,7 +104,6 @@ function Login() {
     );
   });
 
-  // Step 7: Fix resume URL for local + live
   const getResumeLink = (url) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
@@ -119,18 +111,14 @@ function Login() {
   };
 
   return (
-    <div
-      className="d-flex justify-content-center align-items-center"
-      style={{ minHeight: "100vh", background: "#f8f9fa" }}
-    >
+    <div className="login-wrapper">
       <div
-        className="card p-4 shadow-lg"
+        className="login-card shadow-lg"
         style={{
-          width: loggedIn ? "95%" : "400px",
-          maxWidth: "1000px",
+          width: loggedIn ? "100%" : "400px",
+          maxWidth: loggedIn ? "1000px" : "420px",
         }}
       >
-        {/* Step 1: Choose Role */}
         {!role ? (
           <>
             <h3 className="text-center text-danger fw-bold mb-4">
@@ -153,7 +141,6 @@ function Login() {
           </>
         ) : !loggedIn ? (
           <>
-            {/* Step 2: Login Form */}
             <h3
               className={`text-center fw-bold ${
                 role === "admin" ? "text-danger" : "text-primary"
@@ -211,7 +198,6 @@ function Login() {
           </>
         ) : (
           <>
-            {/* Step 6: Dashboard */}
             <h4
               className={`text-center mb-3 fw-bold ${
                 role === "admin" ? "text-danger" : "text-primary"
@@ -228,7 +214,6 @@ function Login() {
               <p className="text-center text-muted">No records found.</p>
             ) : (
               <>
-                {/* 🔍 Search bar */}
                 <input
                   type="text"
                   className="form-control mb-3"
@@ -237,19 +222,8 @@ function Login() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
 
-                {/* ✅ Table without horizontal scroll */}
-                <div
-                  className="table-responsive"
-                  style={{ overflowX: "visible" }}
-                >
-                  <table
-                    className="table table-striped table-bordered text-center align-middle"
-                    style={{
-                      width: "100%",
-                      tableLayout: "auto",
-                      wordWrap: "break-word",
-                    }}
-                  >
+                <div className="table-container">
+                  <table className="table table-striped table-bordered text-center align-middle">
                     <thead className="table-dark">
                       <tr>
                         <th>No</th>
