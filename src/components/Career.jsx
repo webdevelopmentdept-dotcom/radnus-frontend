@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Form, Row, Col } from "react-bootstrap";
-import { Helmet } from "react-helmet"; // ✅ Import Helmet for SEO
+import { Helmet } from "react-helmet";
 import {
   FaMapMarkerAlt,
   FaClock,
@@ -24,13 +24,12 @@ const Career = ({ jobsData }) => {
   const [experience, setExperience] = useState("");
   const [jobType, setJobType] = useState("");
 
-  // ✅ Calculate "time ago"
+  // ✅ Time Ago
   const getTimeAgo = (date) => {
     if (!date) return "N/A";
     const postedDate = new Date(date);
     const now = new Date();
     const diffDays = Math.floor((now - postedDate) / (1000 * 60 * 60 * 24));
-
     if (isNaN(diffDays)) return "Invalid date";
     if (diffDays < 1) return "Today";
     if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
@@ -43,17 +42,18 @@ const Career = ({ jobsData }) => {
     } ago`;
   };
 
+  // ✅ Filter
   const filteredJobs = jobsData.filter((job) => {
     return (
       (department === "" || job.type === department) &&
       (experience === "" || job.experience === experience) &&
-      (jobType === "" || job.duration === jobType)
+      (jobType === "" ||
+        job.duration.toLowerCase().includes(jobType.toLowerCase()))
     );
   });
 
   return (
     <>
-      {/* ✅ SEO META TAGS */}
       <Helmet>
         <title>
           Careers at Radnus Communication | Join Our Team in Puducherry
@@ -62,28 +62,9 @@ const Career = ({ jobsData }) => {
           name="description"
           content="Explore exciting career opportunities at Radnus Communication in Puducherry. Join our team in mobile service, repair, software development, marketing, and training."
         />
-        <meta
-          name="keywords"
-          content="Radnus Careers, Radnus Jobs, Radnus Communication Jobs,Radnus fresher job,Radnus communcation vacancy,Fresher Job in pondicherry, Mobile Repair Jobs, Software Developer Jobs, Digital Marketing Jobs, Customer Support, Internship Radnus"
-        />
-        <link rel="canonical" href="https://www.radnus.in/careers" />
-        <meta
-          property="og:title"
-          content="Careers at Radnus Communication | Join Our Team"
-        />
-        <meta
-          property="og:description"
-          content="Be part of Radnus Communication’s growing team in Puducherry. Apply for roles in technical, design, marketing, and training fields today."
-        />
-        <meta property="og:url" content="https://www.radnus.in/careers" />
-        <meta property="og:type" content="website" />
-        <meta
-          property="og:image"
-          content="https://www.radnus.in/images/careerbg.webp"
-        />
       </Helmet>
 
-      {/* Hero section */}
+      {/* Hero */}
       <section
         className="career-hero d-flex align-items-center"
         style={{
@@ -108,14 +89,12 @@ const Career = ({ jobsData }) => {
         </div>
       </section>
 
-      {/* Work at Radnus */}
+      {/* Work Section */}
       <section className="work-section py-2">
         <div className="container">
           <div className="row mb-2">
             <div className="col-12 col-md-10">
-              <div className="pe-2">
-                <h2 className="fs-3 fw-bold mb-2">Work at Radnus</h2>
-              </div>
+              <h2 className="fs-3 fw-bold mb-2">Work at Radnus</h2>
               <p className="fs-5" style={{ lineHeight: "1.6" }}>
                 At Radnus, we don’t just repair and train — we innovate,
                 collaborate, and create opportunities that transform technology
@@ -123,7 +102,6 @@ const Career = ({ jobsData }) => {
               </p>
             </div>
           </div>
-
           <div className="masonry-grid">
             {images.map((imgSrc, index) => (
               <div className="masonry-item" key={index}>
@@ -155,12 +133,9 @@ const Career = ({ jobsData }) => {
               onChange={(e) => setDepartment(e.target.value)}
             >
               <option value="">Select Department</option>
-              <option>Design & Creative</option>
+              <option>Business Development & Sales</option>
               <option>Sales & Marketing</option>
-              <option>Customer Support / Telecalling</option>
-              <option>Business Development</option>
-              <option>Software & Web Development</option>
-              <option>Human Resources</option>
+              <option>IT & Infrastructure</option>
             </Form.Select>
           </Col>
           <Col md={3} sm={6} className="mb-3">
@@ -170,7 +145,7 @@ const Career = ({ jobsData }) => {
             >
               <option value="">Experience Level</option>
               <option>Fresher</option>
-              <option>1–3 Years</option>
+              <option>0-1 Years</option>
               <option>3–5 Years</option>
             </Form.Select>
           </Col>
@@ -203,7 +178,7 @@ const Career = ({ jobsData }) => {
                       </span>
                       <span>
                         <FaMoneyBillAlt className="me-1 text-dark" />{" "}
-                        {job.salary}
+                        {job.salary || "N/A"}
                       </span>
                       <span>
                         <FaUserTie className="me-1 text-dark" />{" "}
@@ -216,7 +191,7 @@ const Career = ({ jobsData }) => {
                       to={`/careers/${encodeURIComponent(job.title)}`}
                       className="btn btn-outline-danger px-4 fw-semibold"
                     >
-                      Apply Now
+                      View
                     </Link>
                     <p className="mt-2 text-muted small mb-0">
                       Posted {getTimeAgo(job.posted)}

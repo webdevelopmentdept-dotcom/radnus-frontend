@@ -102,7 +102,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
         {submitted ? (
           <div className="text-center py-5">
             <h3 className="text-warning fw-bold">
-              You're In! Admission Request Received 🎉
+              You're In! Admission Request Received
             </h3>
             <p>Awesome! Your learning journey just kicked off.</p>
             <button

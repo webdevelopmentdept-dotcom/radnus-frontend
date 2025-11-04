@@ -1,23 +1,36 @@
 import React, { useState } from "react";
 
 function Login() {
+  const [role, setRole] = useState(""); // "admin" or "hr"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [applicants, setApplicants] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [applicants, setApplicants] = useState([]);
+  const [search, setSearch] = useState("");
 
-  // ✅ Use environment variable (from Vercel)
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+  // Step 1: Select Role
+  const handleRoleSelect = (selectedRole) => {
+    setRole(selectedRole);
+    setError("");
+  };
+
+  // Step 2: Submit Login Form
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/login`, {
+      const endpoint =
+        role === "admin"
+          ? `${API_BASE}/api/admin/login`
+          : `${API_BASE}/api/hr/login`;
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -32,7 +45,10 @@ function Login() {
       }
 
       setLoggedIn(true);
-      await fetchApplicants();
+
+      // Load applicants depending on role
+      if (role === "admin") await fetchAdminApplicants();
+      if (role === "hr") await fetchHRApplicants();
     } catch (err) {
       console.error(err);
       setError("Server error, please try again.");
@@ -41,46 +57,103 @@ function Login() {
     }
   };
 
-  const fetchApplicants = async () => {
+  // Step 3: Fetch Data for Admin
+  const fetchAdminApplicants = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/applicants`);
       const data = await res.json();
-
       if (!res.ok) {
         setError(data.msg || "Failed to fetch applicants");
         return;
       }
-
       setApplicants(data.applicants || []);
     } catch (err) {
       console.error(err);
-      setError("Error loading applicants");
+      setError("Error loading admin applicants");
     }
   };
 
+  // Step 4: Fetch Data for HR
+  const fetchHRApplicants = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/hr/applications`);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.msg || "Failed to fetch job applicants");
+        return;
+      }
+      setApplicants(data.applications || []);
+    } catch (err) {
+      console.error(err);
+      setError("Error loading HR applicants");
+    }
+  };
+
+  // Step 5: Logout
   const handleLogout = () => {
     setLoggedIn(false);
+    setRole("");
     setApplicants([]);
     setEmail("");
     setPassword("");
     setError("");
+    setSearch("");
   };
+
+  // Step 6: Filter applicants for search
+  const filteredApplicants = applicants.filter((a) => {
+    const s = search.toLowerCase();
+    return (
+      a.name?.toLowerCase().includes(s) ||
+      a.email?.toLowerCase().includes(s) ||
+      a.phone?.toLowerCase().includes(s) ||
+      a.jobTitle?.toLowerCase().includes(s)
+    );
+  });
 
   return (
     <div
       className="d-flex justify-content-center align-items-center"
-      style={{ minHeight: "100vh", background: "#f8f9fa" }}
+      style={{ minHeight: "70vh", background: "#f8f9fa" }}
     >
       <div
         className="card p-4 shadow-lg"
         style={{
           width: loggedIn ? "90%" : "400px",
-          maxWidth: "900px",
+          maxWidth: "500px",
         }}
       >
-        {!loggedIn ? (
+        {/* Step 1: Choose Role */}
+        {!role ? (
           <>
-            <h3 className="text-center text-danger fw-bold">Admin Login</h3>
+            <h3 className="text-center text-danger fw-bold mb-4">
+              Choose Role
+            </h3>
+            <div className="d-flex justify-content-around">
+              <button
+                className="btn btn-outline-danger"
+                onClick={() => handleRoleSelect("admin")}
+              >
+                Admin
+              </button>
+              <button
+                className="btn btn-outline-primary"
+                onClick={() => handleRoleSelect("hr")}
+              >
+                HR
+              </button>
+            </div>
+          </>
+        ) : !loggedIn ? (
+          <>
+            {/* Step 2: Login Form */}
+            <h3
+              className={`text-center fw-bold ${
+                role === "admin" ? "text-danger" : "text-primary"
+              }`}
+            >
+              {role === "admin" ? "Admin Login" : "HR Login"}
+            </h3>
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label className="form-label">Email</label>
@@ -111,51 +184,118 @@ function Login() {
               <div className="text-center">
                 <button
                   type="submit"
-                  className="btn btn-danger w-80"
+                  className={`btn ${
+                    role === "admin" ? "btn-danger" : "btn-primary"
+                  } w-100`}
                   disabled={loading}
                 >
                   {loading ? "Logging in..." : "Login"}
                 </button>
               </div>
+
+              <p
+                className="text-center mt-3 text-secondary"
+                onClick={() => setRole("")}
+                style={{ cursor: "pointer", fontSize: "0.9rem" }}
+              >
+                ← Back to role selection
+              </p>
             </form>
           </>
         ) : (
-          <div>
-            <h4 className="text-center text-danger mb-3">Applicant Details</h4>
+          <>
+            {/* Step 6: Dashboard */}
+            <h4
+              className={`text-center mb-3 fw-bold ${
+                role === "admin" ? "text-danger" : "text-primary"
+              }`}
+            >
+              {role === "admin" ? "Training Applicants" : "HR Job Applications"}
+            </h4>
 
             {error && (
               <p className="text-danger text-center small fw-bold">{error}</p>
             )}
 
             {applicants.length === 0 ? (
-              <p className="text-center text-muted">No applicants yet.</p>
+              <p className="text-center text-muted">No records found.</p>
             ) : (
-              <div style={{ overflowX: "auto" }}>
-                <table className="table table-striped table-bordered">
-                  <thead className="table-dark">
-                    <tr>
-                      <th>#</th>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Phone</th>
-                      <th>Course</th>
-                      <th>Address</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {applicants.map((a, index) => (
-                      <tr key={a._id || index}>
-                        <td>{index + 1}</td>
-                        <td>{a.name}</td>
-                        <td>{a.email}</td>
-                        <td>{a.phone}</td>
-                        <td>{a.course}</td>
-                        <td>{a.address}</td>
+              <>
+                {/* 🔍 Search bar */}
+                <input
+                  type="text"
+                  className="form-control mb-3"
+                  placeholder="Search by name, email, or job title..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+
+                <div style={{ overflowX: "auto" }}>
+                  <table className="table table-striped table-bordered">
+                    <thead className="table-dark">
+                      <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        {role === "admin" ? (
+                          <>
+                            <th>Course</th>
+                          </>
+                        ) : (
+                          <>
+                            <th>Job Title</th>
+                            <th>Resume</th>
+                          </>
+                        )}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {filteredApplicants.map((a, index) => (
+                        <tr key={a._id || index}>
+                          <td>{index + 1}</td>
+                          <td>{a.name}</td>
+                          <td>{a.email}</td>
+                          <td>{a.phone}</td>
+                          <td>{a.address || a.location}</td>
+
+                          {role === "admin" ? (
+                            <td>{a.course}</td>
+                          ) : (
+                            <>
+                              <td>{a.jobTitle}</td>
+                              <td>
+                                {a.resumeUrl ? (
+                                  <div className="d-flex gap-2">
+                                    <a
+                                      href={`${API_BASE}${a.resumeUrl}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-primary"
+                                    >
+                                      View
+                                    </a>
+                                    <a
+                                      href={`${API_BASE}${a.resumeUrl}`}
+                                      download
+                                      className="text-success"
+                                    >
+                                      Download
+                                    </a>
+                                  </div>
+                                ) : (
+                                  "No file"
+                                )}
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
 
             <div className="text-center mt-3">
@@ -163,7 +303,7 @@ function Login() {
                 Logout
               </button>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
