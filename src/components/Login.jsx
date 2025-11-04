@@ -111,16 +111,23 @@ function Login() {
     );
   });
 
+  // Step 7: Fix resume URL for local + live
+  const getResumeLink = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+    return `${API_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
+  };
+
   return (
     <div
       className="d-flex justify-content-center align-items-center"
-      style={{ minHeight: "70vh", background: "#f8f9fa" }}
+      style={{ minHeight: "100vh", background: "#f8f9fa" }}
     >
       <div
         className="card p-4 shadow-lg"
         style={{
-          width: loggedIn ? "90%" : "400px",
-          maxWidth: "500px",
+          width: loggedIn ? "95%" : "400px",
+          maxWidth: "1000px",
         }}
       >
         {/* Step 1: Choose Role */}
@@ -230,19 +237,28 @@ function Login() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
 
-                <div style={{ overflowX: "auto" }}>
-                  <table className="table table-striped table-bordered">
+                {/* ✅ Table without horizontal scroll */}
+                <div
+                  className="table-responsive"
+                  style={{ overflowX: "visible" }}
+                >
+                  <table
+                    className="table table-striped table-bordered text-center align-middle"
+                    style={{
+                      width: "100%",
+                      tableLayout: "auto",
+                      wordWrap: "break-word",
+                    }}
+                  >
                     <thead className="table-dark">
                       <tr>
-                        <th>#</th>
+                        <th>No</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Address</th>
                         {role === "admin" ? (
-                          <>
-                            <th>Course</th>
-                          </>
+                          <th>Course</th>
                         ) : (
                           <>
                             <th>Job Title</th>
@@ -259,7 +275,6 @@ function Login() {
                           <td>{a.email}</td>
                           <td>{a.phone}</td>
                           <td>{a.address || a.location}</td>
-
                           {role === "admin" ? (
                             <td>{a.course}</td>
                           ) : (
@@ -267,9 +282,9 @@ function Login() {
                               <td>{a.jobTitle}</td>
                               <td>
                                 {a.resumeUrl ? (
-                                  <div className="d-flex gap-2">
+                                  <div className="d-flex gap-2 justify-content-center">
                                     <a
-                                      href={`${API_BASE}${a.resumeUrl}`}
+                                      href={getResumeLink(a.resumeUrl)}
                                       target="_blank"
                                       rel="noreferrer"
                                       className="text-primary"
@@ -277,7 +292,7 @@ function Login() {
                                       View
                                     </a>
                                     <a
-                                      href={`${API_BASE}${a.resumeUrl}`}
+                                      href={getResumeLink(a.resumeUrl)}
                                       download
                                       className="text-success"
                                     >
