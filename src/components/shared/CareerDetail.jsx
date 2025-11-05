@@ -20,6 +20,7 @@ const CareerDetail = () => {
     name: "",
     email: "",
     phone: "",
+    address: "",
     location: "",
     resume: null,
     about: "",
@@ -77,6 +78,7 @@ const CareerDetail = () => {
     data.append("name", formData.name);
     data.append("email", formData.email);
     data.append("phone", formData.phone);
+    data.append("address", formData.address); // ✅ Added address field
     data.append("location", formData.location);
     data.append("about", formData.about);
     data.append("resume", formData.resume);
@@ -112,7 +114,7 @@ const CareerDetail = () => {
       // ✅ Google Ads Conversion Tracking
       if (typeof window.gtag === "function") {
         window.gtag("event", "conversion", {
-          send_to: "AW-16969684439/your_conversion_label_here", // 🔁 Replace with your real conversion label
+          send_to: "AW-16969684439/your_conversion_label_here", // Replace with your real label
           event_label: `Job Application Submitted - ${job.title}`,
         });
         console.log(`✅ Conversion tracked: Job Application - ${job.title}`);
@@ -163,10 +165,7 @@ const CareerDetail = () => {
                   Radnus is a leading mobile service and training organization
                   with over 20 years of industry experience. Founded in 2003 by
                   Sundar, Radnus has been at the forefront of innovation, trust,
-                  and technical expertise in the mobile sector. We have trained
-                  and empowered thousands of professionals, bridging the gap
-                  between industry needs and skilled talent while consistently
-                  advancing technological excellence.
+                  and technical expertise in the mobile sector.
                 </p>
                 <ul className="list-unstyled text-muted">
                   <li>
@@ -209,28 +208,6 @@ const CareerDetail = () => {
                   Job Description
                 </h4>
                 <p className="text-muted">{job.description}</p>
-
-                {job.responsibilities?.length > 0 && (
-                  <>
-                    <h5 className="fw-semibold mt-4 mb-2">Responsibilities:</h5>
-                    <ul className="text-muted">
-                      {job.responsibilities.map((res, idx) => (
-                        <li key={idx}>{res}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-
-                {job.requirements?.length > 0 && (
-                  <>
-                    <h5 className="fw-semibold mt-4 mb-2">Requirements:</h5>
-                    <ul className="text-muted">
-                      {job.requirements.map((req, idx) => (
-                        <li key={idx}>{req}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
               </div>
 
               {/* Application Section */}
@@ -283,6 +260,19 @@ const CareerDetail = () => {
                         value={formData.phone}
                         onChange={handleChange}
                         placeholder="Phone Number"
+                        required
+                      />
+                    </Form.Group>
+
+                    {/* ✅ Added Address Field */}
+                    <Form.Group className="mb-3">
+                      <Form.Label>Address</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        placeholder="Enter your full address"
                         required
                       />
                     </Form.Group>

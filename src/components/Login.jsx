@@ -255,10 +255,10 @@ function Login() {
                             <>
                               <td>{a.jobTitle}</td>
                               <td>
-                                {a.resumeUrl ? (
+                                {a.resumeURL ? (
                                   <div className="d-flex gap-2 justify-content-center">
                                     <a
-                                      href={getResumeLink(a.resumeUrl)}
+                                      href={getResumeLink(a.resumeURL)}
                                       target="_blank"
                                       rel="noreferrer"
                                       className="text-primary"
@@ -266,7 +266,7 @@ function Login() {
                                       View
                                     </a>
                                     <a
-                                      href={getResumeLink(a.resumeUrl)}
+                                      href={getResumeLink(a.resumeURL)}
                                       download
                                       className="text-success"
                                     >
