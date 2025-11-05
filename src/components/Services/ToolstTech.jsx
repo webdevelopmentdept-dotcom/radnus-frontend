@@ -48,6 +48,18 @@ const ToolsTech = () => {
     { img: ChimeraPro, name: "Chimera Pro Tool" },
     { img: Eft, name: "EFT Pro", note: "With Dongle" },
   ];
+  // ✅ Google Ads Conversion Tracking Function
+  const trackConversion = (eventLabel) => {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "conversion", {
+        send_to: "AW-16969684439/your_conversion_label_here", // 🔁 replace once you get the label
+        event_label: eventLabel,
+      });
+      console.log("✅ Conversion tracked:", eventLabel);
+    } else {
+      console.log("⚠️ gtag not found:", eventLabel);
+    }
+  };
 
   return (
     <>
@@ -118,13 +130,15 @@ const ToolsTech = () => {
             Find advanced hardware and software tools for technicians, shop
             owners, and laptop repair experts — all in one place.
           </p>
+
           <button
             className="btn btn-light text-dark px-3 py-1 fw-semibold"
-            onClick={() =>
+            onClick={() => {
               document
-                .getElementById("software-tools")
-                .scrollIntoView({ behavior: "smooth" })
-            }
+                .getElementById("hardware-tools")
+                .scrollIntoView({ behavior: "smooth" });
+              trackConversion("Clicked Explore Tools (CTA)");
+            }}
           >
             Explore Tools
           </button>

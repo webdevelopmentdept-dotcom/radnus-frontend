@@ -190,6 +190,23 @@ const Career = ({ jobsData }) => {
                     <Link
                       to={`/careers/${encodeURIComponent(job.title)}`}
                       className="btn btn-outline-danger px-4 fw-semibold"
+                      onClick={() => {
+                        // ✅ Google Ads Conversion Tracking
+                        if (typeof window.gtag === "function") {
+                          window.gtag("event", "conversion", {
+                            send_to:
+                              "AW-16969684439/your_conversion_label_here", // 🔁 replace with actual label
+                            event_label: `View Job - ${job.title}`,
+                          });
+                          console.log(
+                            `✅ Conversion tracked: View Job - ${job.title}`
+                          );
+                        } else {
+                          console.warn(
+                            "⚠️ gtag not found — check if Google Ads script is loaded"
+                          );
+                        }
+                      }}
                     >
                       View
                     </Link>

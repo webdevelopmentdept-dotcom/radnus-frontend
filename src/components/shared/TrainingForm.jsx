@@ -24,7 +24,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Validate inputs
+  // ✅ Validation
   const validate = () => {
     const newErrors = {};
     if (!/^[a-zA-Z\s]+$/.test(formData.name))
@@ -34,6 +34,19 @@ const TrainingForm = ({ course, onCloseForm }) => {
     if (!formData.address.trim()) newErrors.address = "Address is required";
     if (!formData.course) newErrors.course = "Select a course";
     return newErrors;
+  };
+
+  // ✅ Google Ads conversion tracking
+  const trackConversion = (eventLabel) => {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "conversion", {
+        send_to: "AW-16969684439/your_conversion_label_here", // 🔁 Replace with your real conversion label
+        event_label: eventLabel,
+      });
+      console.log("✅ Conversion tracked:", eventLabel);
+    } else {
+      console.log("⚠️ gtag not found for:", eventLabel);
+    }
   };
 
   // ✅ Handle form submit
@@ -59,6 +72,8 @@ const TrainingForm = ({ course, onCloseForm }) => {
       const data = await res.json();
 
       if (res.ok && data.success) {
+        // ✅ Fire Google Ads conversion on successful submission
+        trackConversion(`Form Submitted - ${formData.course}`);
         setSubmitted(true);
       } else {
         alert(data.msg || "Error submitting form");
@@ -69,7 +84,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
     }
   };
 
-  // ✅ Reset or close form
+  // ✅ Reset / close
   const handleBack = () => {
     setSubmitted(false);
     setFormData({

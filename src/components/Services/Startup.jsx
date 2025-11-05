@@ -87,6 +87,68 @@ export default function Startup({
           </Row>
         </Container>
       </section>
+      {/* ✅ Trust Section */}
+      <section
+        className="pt-3"
+        style={{
+          background: "white ",
+          color: "dark",
+          textAlign: "center",
+        }}
+      >
+        <Container>
+          <h2
+            className="fw-bold "
+            style={{
+              fontSize: "clamp(1.5rem, 4vw, 2.5rem)",
+              lineHeight: "1.3",
+            }}
+          >
+            Looking for a Trustworthy Loan? <br />
+            <span style={{ color: "#22222271" }}>
+              Choose Radnus with Confidence
+            </span>
+          </h2>
+          <p
+            className="fs-5 mb-4"
+            style={{
+              color: "0 0 14px rgba(209, 13, 13, 0.84)",
+              maxWidth: "700px",
+              margin: "0 auto",
+              lineHeight: "1.8",
+            }}
+          >
+            Fast approvals, expert guidance, and complete transparency make your
+            startup dream a reality with Radnus trusted financial support.
+          </p>
+
+          <a
+            href="#contact"
+            onClick={() => {
+              if (typeof window.gtag === "function") {
+                window.gtag("event", "conversion", {
+                  send_to: "AW-16969684439/your_conversion_label_here",
+                  event_label: "Startup - Trustable Loan Section Click",
+                });
+              }
+              const section = document.querySelector("#contact");
+              section?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="btn  px-3 py-2"
+            style={{
+              background: "rgba(80, 10, 10, 1)",
+              color: "#fffdfdff",
+              borderRadius: "4px",
+              border: "none",
+              fontSize: "1rem",
+
+              textDecoration: "none",
+            }}
+          >
+            Contact Us Now
+          </a>
+        </Container>
+      </section>
 
       <section className="py-3">
         <Container className="px-4 px-md-5">

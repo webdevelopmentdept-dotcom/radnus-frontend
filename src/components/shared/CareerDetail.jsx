@@ -108,6 +108,19 @@ const CareerDetail = () => {
         text: "Thank you! Your application has been submitted successfully.",
         confirmButtonColor: "#198754",
       });
+
+      // ✅ Google Ads Conversion Tracking
+      if (typeof window.gtag === "function") {
+        window.gtag("event", "conversion", {
+          send_to: "AW-16969684439/your_conversion_label_here", // 🔁 Replace with your real conversion label
+          event_label: `Job Application Submitted - ${job.title}`,
+        });
+        console.log(`✅ Conversion tracked: Job Application - ${job.title}`);
+      } else {
+        console.warn(
+          "⚠️ gtag not found — check if Google Ads script is loaded"
+        );
+      }
     } catch (error) {
       console.error(error);
       Swal.fire({

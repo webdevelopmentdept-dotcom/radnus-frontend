@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import bg1Image from "../images/bg2.webp";
+
 function RadnusHome() {
   const stats = [
     { end: 8500, label: "Students Trained" },
@@ -16,6 +17,7 @@ function RadnusHome() {
     { end: 20, label: "Years in Industry" },
     { end: 3, label: "Major Telecom Partners" },
   ];
+
   const services = [
     { title: "Academy", path: "/academy" },
     { title: "Service", path: "/service" },
@@ -24,6 +26,21 @@ function RadnusHome() {
     { title: "Tools", path: "/tools-tech" },
     { title: "Startup Support", path: "/startup" },
   ];
+
+  // Helper to send tracking events safely
+  const trackEvent = (eventName, category, label, sendTo) => {
+    if (typeof gtag === "function") {
+      const params = {
+        event_category: category,
+        event_label: label,
+      };
+      if (sendTo) params.send_to = sendTo;
+      gtag("event", eventName, params);
+      console.log(`✅ Event Sent: ${eventName} | ${label}`);
+    } else {
+      console.log("⚠️ gtag not found");
+    }
+  };
 
   return (
     <>
@@ -116,6 +133,12 @@ function RadnusHome() {
                     border: "2px solid #a12323",
                   }}
                   onClick={() => {
+                    trackEvent(
+                      "conversion",
+                      "Hero CTA",
+                      "Contact Us - Home",
+                      "AW-16969684439/your_conversion_label_here"
+                    );
                     const section = document.querySelector("#contact");
                     section?.scrollIntoView({ behavior: "smooth" });
                   }}
@@ -141,24 +164,24 @@ function RadnusHome() {
 
       section.d-flex h1 {
           font-size: 2rem !important;
-  line-height: 2.3rem !important;
-  color: #ff3333 !important;            /* little brighter red */
-  text-shadow: 2px 2px 6px rgba(0,0,0,0.3); /* 🔥 shadow for contrast */
+          line-height: 2.3rem !important;
+          color: #ff3333 !important;
+          text-shadow: 2px 2px 6px rgba(0,0,0,0.3);
       }
 
       section.d-flex p {
         color: #ffffff !important;
         font-size: 1.2rem !important;
-        font-weight: 600 !important; /
+        font-weight: 600 !important;
       }
 
      section.d-flex button {
         font-size: 0.9rem !important;
         padding: 8px 16px !important;
-        display: inline-block !important;  /* 🟢 Add this line */
+        display: inline-block !important;
         margin: 0 auto !important; 
       }
-        /* 🟢 Overlay layer */
+
       section.d-flex::before {
         content: "" !important;
         position: absolute !important;
@@ -166,11 +189,10 @@ function RadnusHome() {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.1); /* dark transparent overlay */
-        z-index: 0; /* keep below text */
+        background: rgba(0, 0, 0, 0.1);
+        z-index: 0;
       }
 
-      /* 🟢 Make sure text appears above overlay */
       section.d-flex .container {
         position: relative;
         z-index: 1;
@@ -183,7 +205,6 @@ function RadnusHome() {
       <section className="text-dark py-1 bg-white" id="track">
         <div className="container">
           <div className="row align-items-center">
-            {/* Left Stats */}
             <div
               className="col-md-7 text-center text-md-start "
               style={{ color: "#a80303" }}
@@ -224,7 +245,6 @@ function RadnusHome() {
               </div>
             </div>
 
-            {/* Right Image */}
             <div className="col-md-5 d-flex justify-content-center align-items-center mt-2 mt-md-0">
               <motion.img
                 src={illustration}
@@ -241,7 +261,8 @@ function RadnusHome() {
         </div>
       </section>
 
-      <section className=" pb-4 bg-white">
+      {/* Services Section */}
+      <section className="pb-4 bg-white">
         <div className="container text-center">
           <motion.h1
             style={{ color: "#a80303" }}
@@ -264,10 +285,17 @@ function RadnusHome() {
               >
                 <div className="card h-100 shadow-sm rounded-4 p-3 d-flex flex-column justify-content-between hover-elegant">
                   <h6 className="text-dark mb-4 fs-6">{service.title}</h6>
-
                   <Link
                     to={service.path}
                     className="btn btn-sm mt-auto service-btn"
+                    onClick={() =>
+                      trackEvent(
+                        "cta_click",
+                        "Service CTA",
+                        service.title,
+                        "AW-16969684439/your_conversion_label_here"
+                      )
+                    }
                   >
                     Learn More →
                   </Link>
@@ -277,7 +305,6 @@ function RadnusHome() {
           </div>
         </div>
 
-        {/* Inline style for hover effect */}
         <style jsx="true">{`
           .service-btn {
             border: 1px solid #000;
@@ -294,17 +321,17 @@ function RadnusHome() {
           }
           .service-card {
             padding: 1rem;
-            min-height: 110px; /* adjust as needed */
+            min-height: 110px;
           }
 
           @media (max-width: 768px) {
             .service-card {
               padding: 0.5rem;
-              min-height: 140px; /* smaller height */
+              min-height: 140px;
             }
 
             h6.text-daark {
-              font-size: 0.85rem; /* smaller title */
+              font-size: 0.85rem;
             }
 
             .service-btn {

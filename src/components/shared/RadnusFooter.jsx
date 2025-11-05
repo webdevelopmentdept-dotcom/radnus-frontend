@@ -14,6 +14,7 @@ import {
 function RadnusFooter() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const trimmed = email.trim();
@@ -33,7 +34,7 @@ function RadnusFooter() {
 
     try {
       // ✅ Google Apps Script Web App URL
-      const response = await fetch(
+      await fetch(
         "https://script.google.com/macros/s/AKfycbzW8jH7iNgOV0Iu1AIDEStTy_dlxd4pwhciOaJ_D2gDczZ8q3NhNzTlwC4iC1ZKNhUp/exec",
         {
           method: "POST",
@@ -43,9 +44,22 @@ function RadnusFooter() {
         }
       );
 
-      // ✅ No need to parse since CORS is “no-cors”
+      // ✅ Show success message
       setMessage("✅ Thank you for joining! Your info is saved successfully.");
       setEmail("");
+
+      // ✅ Google Ads Conversion Tracking (Join Button)
+      if (typeof window.gtag === "function") {
+        window.gtag("event", "conversion", {
+          send_to: "AW-16969684439/your_conversion_label_here", // 🔁 Replace with your real conversion label
+          event_label: "Join Newsletter - Footer",
+        });
+        console.log("✅ Conversion tracked: Join Newsletter");
+      } else {
+        console.warn(
+          "⚠️ gtag not found — check if Google Ads script is loaded"
+        );
+      }
     } catch (error) {
       console.error("Error:", error);
       setMessage("❌ Something went wrong. Please try again later.");
@@ -77,7 +91,7 @@ function RadnusFooter() {
               <p className="mt-2 mb-1" style={{ fontSize: "1.1rem" }}>
                 Shaping Futures in Mobile Technology and Service.
               </p>
-              <h6 className="mt-1 " style={{ fontSize: "1.1rem" }}>
+              <h6 className="mt-1" style={{ fontSize: "1.1rem" }}>
                 Placement Partner –{" "}
                 <span className="text-warning">Poorvika</span>
               </h6>

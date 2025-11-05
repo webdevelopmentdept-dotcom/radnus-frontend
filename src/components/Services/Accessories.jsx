@@ -231,6 +231,31 @@ const Accessories = () => {
                 Discover our premium range of headphones, chargers, and smart
                 gadgets designed to complement your lifestyle.
               </p>
+              <a
+                href="#contact"
+                onClick={() => {
+                  if (typeof window.gtag === "function") {
+                    window.gtag("event", "conversion", {
+                      send_to: "AW-16969684439/your_conversion_label_here",
+                      event_label: "Shop Accessories - Hero Click",
+                    });
+                  }
+                  const section = document.querySelector("#contact");
+                  section?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="btn  mt-3 px-4 py-2"
+                style={{
+                  background: "linear-gradient(90deg, #ff2a2a, #ccb9acff)",
+                  color: "#0a0a0aff",
+                  border: "none",
+                  borderRadius: "8px",
+                  boxShadow: "0 0 14px rgba(255, 60, 60, 0.4)",
+                  transition: "all 0.3s ease",
+                  textDecoration: "none",
+                }}
+              >
+                Shop Now
+              </a>
             </div>
           </div>
         </div>

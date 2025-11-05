@@ -1,6 +1,6 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { BsArrowRightCircleFill } from "react-icons/bs"; // Professional icon
+import { BsArrowRightCircleFill } from "react-icons/bs";
 import placement from "../../images/placement.webp";
 import PartnerCollab from "../../images/partnercollab.webp";
 import Africon from "../../images/africon.png";
@@ -17,6 +17,7 @@ import Usa from "../../images/usa.webp";
 import Nepal from "../../images/nepal.webp";
 import Malasiya from "../../images/malasiya.webp";
 import { Helmet } from "react-helmet";
+
 const Placement = () => {
   const whyCompaniesChoose = [
     "Hands-on knowledge of chip-level mobile service and software repair",
@@ -52,7 +53,7 @@ const Placement = () => {
 
   return (
     <>
-      {/* Hero Section */}
+      {/* SEO Meta Data */}
       <Helmet>
         <title>Global Placement Assistance | Radnus Communication</title>
         <meta
@@ -64,8 +65,6 @@ const Placement = () => {
           content="Radnus global placement, mobile service placement, cellphone repair job, Mobile repair job placement, Mobile repair training and job support, Poorvika job placement"
         />
         <meta name="robots" content="index, follow" />
-
-        {/* Open Graph */}
         <meta property="og:type" content="website" />
         <meta
           property="og:title"
@@ -77,8 +76,6 @@ const Placement = () => {
         />
         <meta property="og:image" content="https://www.radnus.in/logo2.png" />
         <meta property="og:url" content="https://www.radnus.in/placement" />
-
-        {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
@@ -89,25 +86,10 @@ const Placement = () => {
           content="Empowering skilled mobile service professionals for global careers with resume prep, interview training, and job support."
         />
         <meta name="twitter:image" content="https://www.radnus.in/logo2.png" />
-
         <link rel="canonical" href="https://www.radnus.in/placement" />
-
-        {/* Structured Data */}
-        <script type="application/ld+json">
-          {`
-  {
-    "@context": "https://schema.org",
-    "@type": "EducationalOrganization",
-    "name": "Radnus Communication",
-    "url": "https://www.radnus.in",
-    "logo": "https://www.radnus.in/logo2.png",
-    "sameAs": ["https://www.facebook.com/radnuscommunication", "https://www.instagram.com/radnuscommunication"],
-    "description": "Radnus Communication offers global placement assistance for mobile technicians through resume prep, interview training, and job connections."
-  }
-  `}
-        </script>
       </Helmet>
 
+      {/* Hero Section */}
       <section className="text-center mb-2">
         <h1
           className="display-4 fw-bold lh-sm fs-1 pt-3"
@@ -124,9 +106,50 @@ const Placement = () => {
           <span className="text-danger">B</span>y{" "}
           <span className="text-danger">R</span>adnus
         </h1>
+
         <p className="lead text-secondary mt-2">
           Empowering Skilled Talent — Connecting to Global Careers
         </p>
+
+        {/* ✅ Start Journey Button (Centered + Google Conversion) */}
+        <div className="text-center">
+          <a
+            href="#career-section"
+            onClick={(e) => {
+              e.preventDefault();
+
+              if (typeof window.gtag === "function") {
+                window.gtag("event", "conversion", {
+                  send_to: "AW-16969684439/your_conversion_label_here", // 🔁 replace with actual conversion label
+                  event_label: "Start Journey - Placement Page",
+                });
+                console.log(
+                  "✅ Conversion tracked: Start Journey - Placement Page"
+                );
+              } else {
+                console.warn(
+                  "⚠️ gtag not found — check if Google Ads script is loaded"
+                );
+              }
+
+              // ✅ Smooth scroll to section
+              const section = document.querySelector("#career-section");
+              section?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="btn mt-3 px-4 py-2 "
+            style={{
+              background: "linear-gradient(90deg, #dc3545, #947979ff)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              transition: "all 0.3s ease",
+              textDecoration: "none",
+            }}
+          >
+            Start Journey
+          </a>
+        </div>
+
         <img
           src={placement}
           alt="Mobile Repair Training"
@@ -188,7 +211,7 @@ const Placement = () => {
       </section>
 
       {/* Countries Section */}
-      <section className="container  py-1">
+      <section className="container py-1" id="career-section">
         <h2 className="text-center fw-bold mb-4">
           Global Career Opportunities
         </h2>
@@ -242,7 +265,7 @@ const Placement = () => {
       {/* Dual Placement Info Section */}
       <section className="container my-3 py-1">
         <div className="row g-4">
-          {/* Why Companies Choose Radnus-Trained Students */}
+          {/* Why Companies Choose */}
           <div className="col-md-6">
             <div className="card shadow-sm p-4 h-100">
               <h3 className="text-danger mb-3 fs-4">

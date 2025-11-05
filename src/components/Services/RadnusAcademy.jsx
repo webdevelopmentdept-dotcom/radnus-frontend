@@ -12,6 +12,7 @@ import SempHybridBackground from "../../images/semphybridbackground.webp";
 import TrainingForm from "../shared/TrainingForm";
 import { Package, Shirt, BookOpen, IdCard, Award } from "lucide-react";
 import { Helmet } from "react-helmet";
+
 const RadnusAcademy = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState("");
@@ -48,7 +49,21 @@ const RadnusAcademy = () => {
     lead: "1.2rem",
   };
 
+  // ✅ Conversion tracking helper
+  const trackConversion = (eventLabel) => {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "conversion", {
+        send_to: "AW-16969684439/your_conversion_label_here", // 👉 replace with real label
+        event_label: eventLabel,
+      });
+      console.log("✅ Conversion tracked:", eventLabel);
+    } else {
+      console.log("⚠️ gtag not found for:", eventLabel);
+    }
+  };
+
   const handleApplyNow = (course) => {
+    trackConversion(`Apply Now - ${course}`);
     setSelectedCourse(course);
     setShowForm(true);
     setTimeout(() => {
@@ -107,6 +122,7 @@ const RadnusAcademy = () => {
             href="#cards"
             className="btn btn-danger px-3 explore-btn"
             style={{ fontSize: "1rem" }}
+            onClick={() => trackConversion("Explore Programs - Hero")}
           >
             Explore Programs
           </a>
@@ -196,6 +212,7 @@ const RadnusAcademy = () => {
                     }}
                     onClick={(e) => {
                       e.preventDefault();
+                      trackConversion(`Read More - ${card.title}`);
                       document
                         .getElementById(card.key)
                         ?.scrollIntoView({ behavior: "smooth" });
@@ -463,7 +480,7 @@ const RadnusAcademy = () => {
           </div>
         </div>
       </section>
-      {/* Other sections (Hybrid, LASP, Welcome Kit, Who Can Join?) remain the same, just make sure all Apply Now buttons call handleApplyNow with correct course */}
+
       <section className="py-4 bg-[#1f1f1f]">
         <div className="container ">
           {/* --- Section Heading --- */}
@@ -622,7 +639,6 @@ const RadnusAcademy = () => {
           </div>
         </div>
       </section>
-
       {showForm && (
         <div className="container-fluid mt-5 p-0" ref={formRef}>
           <TrainingForm

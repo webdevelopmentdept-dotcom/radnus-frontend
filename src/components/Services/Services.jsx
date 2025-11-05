@@ -6,7 +6,7 @@ import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 import "bootstrap-icons/font/bootstrap-icons.css";
-
+import { useNavigate } from "react-router-dom"; // ✅ Added for navigation
 // 🖼️ Assets
 import CCPin from "../../images/ccpinimg.webp";
 import Display from "../../images/displayimg.webp";
@@ -211,6 +211,34 @@ const Service = () => {
             Fast, reliable, and expert care for your devices. Screen
             replacement, battery service, and more.
           </p>
+          {/* ✅ Updated Contact Us Button (Anchor + Conversion) */}
+          <a
+            href="#contact"
+            onClick={() => {
+              if (typeof window.gtag === "function") {
+                window.gtag("event", "conversion", {
+                  send_to: "AW-16969684439/your_conversion_label_here", // 🔁 Replace with actual label
+                  event_label: "Book a Service - Hero Click", // ✅ Updated label
+                });
+              }
+
+              const section = document.querySelector("#contact");
+              section?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="btn mt-3 px-4 py-2"
+            style={{
+              background: "linear-gradient(90deg, #9c7777ff, #b10f0fff)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+
+              transition: "all 0.3s ease",
+              textDecoration: "none",
+              display: "inline-block",
+            }}
+          >
+            Book a Service
+          </a>
         </div>
       </section>
 

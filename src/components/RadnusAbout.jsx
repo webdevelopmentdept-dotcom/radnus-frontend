@@ -16,6 +16,7 @@ import Slider1 from "../images/slider1.webp";
 import Slider2 from "../images/acadamybackground.webp";
 import Venam from "../images/venam.webp";
 import slider3 from "../images/openspeech.webp";
+import { Link } from "react-router-dom";
 import {
   FiClock,
   FiAward,
@@ -31,6 +32,19 @@ function RadnusAbout() {
     subtitle: "1.25rem",
     text: "1rem",
     lead: "1.2rem",
+  };
+  const trackEvent = (eventName, category, label, sendTo) => {
+    if (typeof gtag === "function") {
+      const params = {
+        event_category: category,
+        event_label: label,
+      };
+      if (sendTo) params.send_to = sendTo;
+      gtag("event", eventName, params);
+      console.log(`✅ Event Sent: ${eventName} | ${label}`);
+    } else {
+      console.log("⚠️ gtag not found");
+    }
   };
 
   return (
@@ -531,6 +545,41 @@ function RadnusAbout() {
           </Col>
         </Row>
       </Container>
+      <section className="text-center py-5 bg-light">
+        <h2 className="fw-bold mb-3 text-danger">Ready to Grow with Radnus?</h2>
+        <p className="mb-4 fs-5 text-dark">
+          Join our training programs or partner with us to build your future in
+          the mobile industry.
+        </p>
+
+        <div className="d-flex flex-wrap justify-content-center gap-3">
+          {/* Contact Us CTA */}
+
+          {/* Explore Courses CTA */}
+          <Link
+            to="/academy"
+            className="btn btn-outline-danger px-4 py-2"
+            onClick={() =>
+              trackEvent(
+                "cta_click",
+                "About CTA",
+                "Explore Courses - About Page",
+                "AW-16969684439/your_conversion_label_here"
+              )
+            }
+          >
+            Explore Our Courses →
+          </Link>
+        </div>
+
+        <style jsx="true">{`
+          .btn-dark:hover {
+            background-color: #a12323 !important;
+            border-color: #a12323 !important;
+            color: #fff !important;
+          }
+        `}</style>
+      </section>
     </>
   );
 }

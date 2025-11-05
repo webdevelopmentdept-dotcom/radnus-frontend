@@ -62,6 +62,19 @@ function WhiteLabelPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [category, setCategory] = useState("All");
   const [wishlist, setWishlist] = useState([]);
+  // ✅ Google Conversion Tracking Function
+  const trackConversion = (eventLabel) => {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "conversion", {
+        send_to: "AW-16969684439/your_conversion_label_here", // 🔁 Replace with actual label later
+        event_label: eventLabel,
+      });
+      console.log("✅ Conversion tracked:", eventLabel);
+    } else {
+      console.log("⚠️ gtag not found:", eventLabel);
+    }
+  };
+
   const toggleWishlist = (productId, productName) => {
     if (wishlist.includes(productId)) {
       // Remove
@@ -70,17 +83,13 @@ function WhiteLabelPage() {
         autoClose: 2000,
       });
     } else {
-      // Add
       setWishlist([...wishlist, productId]);
       toast.success(`${productName} added to wishlist `, { autoClose: 2000 });
+
+      // ✅ Track Google Ads Conversion
+      trackConversion(`${productName} added to wishlist`);
     }
   };
-  // const  = {
-  //   heading: "2rem", // for h1/h2 headings
-  //   subtitle: "1.25rem", // for subtitles or small headings
-  //   text: "1rem", // for body text
-  //   lead: "1.2rem", // for lead paragraphs
-  // };
 
   const products = [
     {
@@ -590,7 +599,10 @@ function WhiteLabelPage() {
             ].map((cat) => (
               <button
                 key={cat}
-                onClick={() => setCategory(cat)}
+                onClick={() => {
+                  setCategory(cat);
+                  trackConversion(`Category Clicked: ${cat}`);
+                }}
                 className={`btn ${
                   category === cat ? "btn-danger" : "btn-outline-danger"
                 }`}

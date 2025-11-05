@@ -70,7 +70,7 @@ export default function Timeline() {
         className="d-flex align-items-center justify-content-center text-center text-light "
         style={{
           background: "linear-gradient(135deg, #b30000, #ff4d4d)",
-          minHeight: "50vh",
+          minHeight: "40vh",
         }}
       >
         <Container>
@@ -90,9 +90,11 @@ export default function Timeline() {
               color: "#fff",
             }}
           >
-            Tracing the milestones that shaped{" "}
-            <strong>Radnus Communication</strong> a legacy of innovation, trust,
-            and empowerment across India’s mobile ecosystem.
+            Celebrating the milestones that shaped{" "}
+            <strong>Radnus Communication</strong> into a trusted name in mobile
+            technology training and innovation. Each success marks our journey
+            of empowering learners and connecting talent to global
+            opportunities.
           </p>
         </Container>
       </section>
@@ -213,6 +215,48 @@ export default function Timeline() {
           </div>
         </Container>
       </section>
+      {/* ---------- CTA SECTION ---------- */}
+      <div className="text-center  pb-4">
+        <a
+          href="#contact"
+          onClick={(e) => {
+            e.preventDefault();
+
+            // ✅ Google Ads Conversion Tracking
+            if (typeof window.gtag === "function") {
+              window.gtag("event", "conversion", {
+                send_to: "AW-16969684439/your_conversion_label_here", // 🔁 Replace with your actual label
+                event_label: "Join Radnus - Timeline Page CTA",
+              });
+              console.log(
+                "✅ Conversion tracked: Join Radnus - Timeline Page CTA"
+              );
+            } else {
+              console.warn(
+                "⚠️ gtag not found — check if Google Ads script is loaded"
+              );
+            }
+
+            // ✅ Smooth Scroll to Contact Section
+            const section = document.querySelector("#contact");
+            section?.scrollIntoView({ behavior: "smooth" });
+          }}
+          className="btn fs-6 px-3 py-3 mt-3 fw-bold"
+          style={{
+            background: "linear-gradient(90deg, #b30000, #e4d3d3ff)",
+            color: "#202020ff",
+            borderRadius: "4px",
+            border: "none",
+
+            transition: "all 0.3s ease",
+          }}
+        >
+          Join the Journey
+        </a>
+        <p className="text-muted mt-3 mb-0">
+          Take the next step — grow with <strong>Radnus Communication</strong>.
+        </p>
+      </div>
 
       {/* ---------- CORE VALUES SECTION ---------- */}
       <section
