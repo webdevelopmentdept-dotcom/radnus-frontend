@@ -51,7 +51,7 @@ function RadnusFooter() {
       // ✅ Google Ads Conversion Tracking (Join Button)
       if (typeof window.gtag === "function") {
         window.gtag("event", "conversion", {
-          send_to: "AW-16969684439/your_conversion_label_here", // 🔁 Replace with your real conversion label
+          send_to: "AW-16969684439/jDhoCNWL_7obENer45s_",
           event_label: "Join Newsletter - Footer",
         });
         console.log("✅ Conversion tracked: Join Newsletter");
