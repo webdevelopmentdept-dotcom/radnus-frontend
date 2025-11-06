@@ -52,6 +52,18 @@ function RadnusNavbar() {
     }, 300);
   };
 
+  // ✅ Google Ads Conversion Trigger for "Get In Touch"
+  const handleGetInTouchConversion = () => {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "conversion", {
+        send_to: "AW-16969684439/P2pCCLCCh7sbENer45s_", // 👈 replace with your real label
+        event_label: "Navbar Get In Touch Click",
+      });
+      console.log("✅ Conversion tracked: Get In Touch Click");
+    } else {
+      console.warn("⚠️ gtag not found — check if Google Ads script is loaded");
+    }
+  };
   // ✅ Spacer fix
   useEffect(() => {
     const setNavbarSpacer = () => {
@@ -252,7 +264,10 @@ function RadnusNavbar() {
                 <a
                   href="/#contact"
                   className="nav-link text-danger"
-                  onClick={(e) => closeMenu(e, "/#contact", true)}
+                  onClick={(e) => {
+                    handleGetInTouchConversion(); // ✅ Trigger Google Ads conversion
+                    closeMenu(e, "/#contact", true); // ✅ Existing scroll & collapse logic
+                  }}
                 >
                   Get In Touch
                 </a>
