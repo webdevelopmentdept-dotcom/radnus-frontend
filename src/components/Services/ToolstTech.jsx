@@ -52,7 +52,7 @@ const ToolsTech = () => {
   const trackConversion = (eventLabel) => {
     if (typeof window.gtag === "function") {
       window.gtag("event", "conversion", {
-        send_to: "AW-16969684439/your_conversion_label_here", // 🔁 replace once you get the label
+        send_to: "AW-16969684439/-zfDCIuKjbsbENer45s_", // 🔁 replace once you get the label
         event_label: eventLabel,
       });
       console.log("✅ Conversion tracked:", eventLabel);

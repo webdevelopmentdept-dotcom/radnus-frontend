@@ -236,7 +236,7 @@ const Accessories = () => {
                 onClick={() => {
                   if (typeof window.gtag === "function") {
                     window.gtag("event", "conversion", {
-                      send_to: "AW-16969684439/your_conversion_label_here",
+                      send_to: "AW-16969684439/Tdx7CO2cjrsbENer45s_",
                       event_label: "Shop Accessories - Hero Click",
                     });
                   }
