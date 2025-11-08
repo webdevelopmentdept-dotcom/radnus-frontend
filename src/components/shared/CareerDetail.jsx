@@ -114,7 +114,7 @@ const CareerDetail = () => {
       // ✅ Google Ads Conversion Tracking
       if (typeof window.gtag === "function") {
         window.gtag("event", "conversion", {
-          send_to: "AW-16969684439/_conversion_label_hyourere", // Replace with your real label
+          send_to: "AW-16969684439/jDFLCMrClbwbENer45s_", // Replace with your real label
           event_label: `Job Application Submitted - ${job.title}`,
         });
         console.log(`✅ Conversion tracked: Job Application - ${job.title}`);

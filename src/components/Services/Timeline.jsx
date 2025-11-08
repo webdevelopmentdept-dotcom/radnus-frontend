@@ -225,7 +225,7 @@ export default function Timeline() {
             // ✅ Google Ads Conversion Tracking
             if (typeof window.gtag === "function") {
               window.gtag("event", "conversion", {
-                send_to: "AW-16969684439/your_conversion_label_here", // 🔁 Replace with your actual label
+                send_to: "AW-16969684439/tl7tCKWzlbwbENer45s_", // 🔁 Replace with your actual label
                 event_label: "Join Radnus - Timeline Page CTA",
               });
               console.log(

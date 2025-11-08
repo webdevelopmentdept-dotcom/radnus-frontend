@@ -194,8 +194,7 @@ const Career = ({ jobsData }) => {
                         // ✅ Google Ads Conversion Tracking
                         if (typeof window.gtag === "function") {
                           window.gtag("event", "conversion", {
-                            send_to:
-                              "AW-16969684439/your_conversion_label_here", // 🔁 replace with actual label
+                            send_to: "AW-16969684439/7XWjCOqAlbwbENer45s_", // 🔁 replace with actual label
                             event_label: `View Job - ${job.title}`,
                           });
                           console.log(

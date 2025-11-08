@@ -120,7 +120,7 @@ const Placement = () => {
 
               if (typeof window.gtag === "function") {
                 window.gtag("event", "conversion", {
-                  send_to: "AW-16969684439/your_conversion_label_here", // 🔁 replace with actual conversion label
+                  send_to: "AW-16969684439/wYYECJT1lbwbENer45s_", // 🔁 replace with actual conversion label
                   event_label: "Start Journey - Placement Page",
                 });
                 console.log(

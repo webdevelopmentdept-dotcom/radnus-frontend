@@ -40,7 +40,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
   const trackConversion = (eventLabel) => {
     if (typeof window.gtag === "function") {
       window.gtag("event", "conversion", {
-        send_to: "AW-16969684439/your_conversion_label_here", // 🔁 Replace with your real conversion label
+        send_to: "AW-16969684439/pIfGCL35lLwbENer45s_", // 🔁 Replace with your real conversion label
         event_label: eventLabel,
       });
       console.log("✅ Conversion tracked:", eventLabel);
