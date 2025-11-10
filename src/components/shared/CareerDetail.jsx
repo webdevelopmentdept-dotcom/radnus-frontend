@@ -264,19 +264,6 @@ const CareerDetail = () => {
                       />
                     </Form.Group>
 
-                    {/* ✅ Added Address Field */}
-                    <Form.Group className="mb-3">
-                      <Form.Label>Address</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleChange}
-                        placeholder="Enter your full address"
-                        required
-                      />
-                    </Form.Group>
-
                     <Form.Group className="mb-3">
                       <Form.Label>Current Location</Form.Label>
                       <Form.Control

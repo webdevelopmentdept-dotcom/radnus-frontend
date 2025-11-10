@@ -43,7 +43,6 @@ function Login() {
       }
 
       setLoggedIn(true);
-
       if (role === "admin") await fetchAdminApplicants();
       if (role === "hr") await fetchHRApplicants();
     } catch (err) {
@@ -81,6 +80,28 @@ function Login() {
     } catch (err) {
       console.error(err);
       setError("Error loading HR applicants");
+    }
+  };
+
+  // ✅ Delete Applicant
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this applicant?"))
+      return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/applicants/${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Applicant deleted successfully!");
+        setApplicants(applicants.filter((a) => a._id !== id));
+      } else {
+        alert(data.msg || "Failed to delete applicant");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Server error while deleting.");
     }
   };
 
@@ -232,7 +253,10 @@ function Login() {
                         <th>Phone</th>
                         <th>Address</th>
                         {role === "admin" ? (
-                          <th>Course</th>
+                          <>
+                            <th>Course</th>
+                            <th>Action</th>
+                          </>
                         ) : (
                           <>
                             <th>Job Title</th>
@@ -250,7 +274,17 @@ function Login() {
                           <td>{a.phone}</td>
                           <td>{a.address || a.location}</td>
                           {role === "admin" ? (
-                            <td>{a.course}</td>
+                            <>
+                              <td>{a.course}</td>
+                              <td>
+                                <button
+                                  className="btn btn-sm btn-danger"
+                                  onClick={() => handleDelete(a._id)}
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </>
                           ) : (
                             <>
                               <td>{a.jobTitle}</td>
