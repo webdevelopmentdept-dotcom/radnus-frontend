@@ -12,11 +12,13 @@ function Login() {
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+  // ✅ Role selection
   const handleRoleSelect = (selectedRole) => {
     setRole(selectedRole);
     setError("");
   };
 
+  // ✅ Login submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -43,6 +45,7 @@ function Login() {
       }
 
       setLoggedIn(true);
+
       if (role === "admin") await fetchAdminApplicants();
       if (role === "hr") await fetchHRApplicants();
     } catch (err) {
@@ -53,6 +56,7 @@ function Login() {
     }
   };
 
+  // ✅ Fetch admin applicants
   const fetchAdminApplicants = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/applicants`);
@@ -68,6 +72,7 @@ function Login() {
     }
   };
 
+  // ✅ Fetch HR applicants
   const fetchHRApplicants = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/hr/applications`);
@@ -83,7 +88,7 @@ function Login() {
     }
   };
 
-  // ✅ Delete Applicant
+  // ✅ Delete Admin Applicant
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this applicant?"))
       return;
@@ -92,6 +97,7 @@ function Login() {
       const res = await fetch(`${API_BASE}/api/applicants/${id}`, {
         method: "DELETE",
       });
+
       const data = await res.json();
       if (data.success) {
         alert("Applicant deleted successfully!");
@@ -101,10 +107,35 @@ function Login() {
       }
     } catch (err) {
       console.error(err);
-      alert("Server error while deleting.");
+      alert("Server error while deleting applicant.");
     }
   };
 
+  // ✅ Delete HR Applicant
+  const handleHrDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this HR applicant?"))
+      return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/hr/applications/${id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        alert("HR applicant deleted successfully!");
+        setApplicants(applicants.filter((a) => a._id !== id));
+      } else {
+        alert(data.msg || "Failed to delete HR applicant");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Server error while deleting HR applicant.");
+    }
+  };
+
+  // ✅ Logout
   const handleLogout = () => {
     setLoggedIn(false);
     setRole("");
@@ -115,6 +146,7 @@ function Login() {
     setSearch("");
   };
 
+  // ✅ Search filter
   const filteredApplicants = applicants.filter((a) => {
     const s = search.toLowerCase();
     return (
@@ -125,12 +157,14 @@ function Login() {
     );
   });
 
+  // ✅ Resume link
   const getResumeLink = (url) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
     return `${API_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
   };
 
+  // ✅ Render UI
   return (
     <div className="login-wrapper">
       <div
@@ -140,6 +174,7 @@ function Login() {
           maxWidth: loggedIn ? "1000px" : "420px",
         }}
       >
+        {/* ---------- ROLE SELECTION ---------- */}
         {!role ? (
           <>
             <h3 className="text-center text-danger fw-bold mb-4">
@@ -161,6 +196,7 @@ function Login() {
             </div>
           </>
         ) : !loggedIn ? (
+          /* ---------- LOGIN FORM ---------- */
           <>
             <h3
               className={`text-center fw-bold ${
@@ -218,6 +254,7 @@ function Login() {
             </form>
           </>
         ) : (
+          /* ---------- DASHBOARD ---------- */
           <>
             <h4
               className={`text-center mb-3 fw-bold ${
@@ -261,10 +298,12 @@ function Login() {
                           <>
                             <th>Job Title</th>
                             <th>Resume</th>
+                            <th>Action</th>
                           </>
                         )}
                       </tr>
                     </thead>
+
                     <tbody>
                       {filteredApplicants.map((a, index) => (
                         <tr key={a._id || index}>
@@ -273,6 +312,7 @@ function Login() {
                           <td>{a.email}</td>
                           <td>{a.phone}</td>
                           <td>{a.address || a.location}</td>
+
                           {role === "admin" ? (
                             <>
                               <td>{a.course}</td>
@@ -310,6 +350,14 @@ function Login() {
                                 ) : (
                                   "No file"
                                 )}
+                              </td>
+                              <td>
+                                <button
+                                  className="btn btn-sm btn-danger"
+                                  onClick={() => handleHrDelete(a._id)}
+                                >
+                                  Delete
+                                </button>
                               </td>
                             </>
                           )}
