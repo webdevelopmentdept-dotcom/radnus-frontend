@@ -12,6 +12,7 @@
   "dependencies": {
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
+    "file-saver": "^2.0.5",
     "framer-motion": "^12.23.22",
     "jquery": "^3.7.1",
     "lottie-react": "^2.4.1",
@@ -30,7 +31,8 @@
     "react-toastify": "^11.0.5",
     "slick-carousel": "^1.8.1",
     "sweetalert2": "^11.26.3",
-    "swiper": "^12.0.2"
+    "swiper": "^12.0.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

@@ -12,23 +12,22 @@ import {
 } from "react-icons/fa";
 
 function RadnusFooter() {
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const trimmed = email.trim();
+    const trimmed = phone.trim();
 
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
     const isPhone = /^[0-9]{10}$/.test(trimmed);
 
     if (!trimmed) {
-      setMessage("⚠️ Please enter your email or phone number.");
+      setMessage("⚠️ Please enter your phone number.");
       return;
     }
 
-    if (!isEmail && !isPhone) {
-      setMessage("⚠️ Enter a valid email or 10-digit phone number.");
+    if (!isPhone) {
+      setMessage("⚠️ Enter a valid 10-digit phone number.");
       return;
     }
 
@@ -40,13 +39,13 @@ function RadnusFooter() {
           method: "POST",
           mode: "no-cors",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: trimmed }),
+          body: JSON.stringify({ phone: trimmed }),
         }
       );
 
       // SUCCESS MESSAGE
       setMessage("✅ Thank you for joining! Your info is saved successfully.");
-      setEmail("");
+      setPhone("");
 
       // FIRE Google Ads Conversion ONLY AFTER SUCCESS
       setTimeout(() => {
@@ -104,9 +103,9 @@ function RadnusFooter() {
               >
                 <Form.Control
                   type="text"
-                  placeholder="Enter your email or 10-digit phone number"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your 10-digit phone number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   className="me-2"
                   style={{
                     width: "420px",
@@ -135,7 +134,11 @@ function RadnusFooter() {
               {message && (
                 <p
                   className={`fs-6 mb-0 ${
-                    message.includes("⚠️") ? "text-warning" : "text-white"
+                    message.includes("⚠️")
+                      ? "text-warning"
+                      : message.includes("❌")
+                      ? "text-danger"
+                      : "text-white"
                   }`}
                 >
                   {message}
@@ -178,7 +181,7 @@ function RadnusFooter() {
               <div className="d-flex align-items-center contact-item mb-2">
                 <FaEnvelope className="text-light me-2 flex-shrink-0 contact-icon" />
                 <a
-                  href="https://mail.google.com/mail/?view=cm&fs=1&to=sundar12134@gmail.com"
+                  href="mailto:sundar12134@gmail.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="footer-link text-light w-100 contact-text"

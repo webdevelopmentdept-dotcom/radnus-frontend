@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 function Login() {
   const [role, setRole] = useState("");
@@ -12,13 +14,17 @@ function Login() {
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-  // ✅ Role selection
+  // --------------------------------------------
+  // ROLE SELECT
+  // --------------------------------------------
   const handleRoleSelect = (selectedRole) => {
     setRole(selectedRole);
     setError("");
   };
 
-  // ✅ Login submit
+  // --------------------------------------------
+  // LOGIN SUBMIT
+  // --------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -56,7 +62,9 @@ function Login() {
     }
   };
 
-  // ✅ Fetch admin applicants
+  // --------------------------------------------
+  // FETCH ADMIN APPLICANTS
+  // --------------------------------------------
   const fetchAdminApplicants = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/applicants`);
@@ -72,7 +80,9 @@ function Login() {
     }
   };
 
-  // ✅ Fetch HR applicants
+  // --------------------------------------------
+  // FETCH HR APPLICANTS
+  // --------------------------------------------
   const fetchHRApplicants = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/hr/applications`);
@@ -88,7 +98,9 @@ function Login() {
     }
   };
 
-  // ✅ Delete Admin Applicant
+  // --------------------------------------------
+  // DELETE ADMIN
+  // --------------------------------------------
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this applicant?"))
       return;
@@ -111,7 +123,9 @@ function Login() {
     }
   };
 
-  // ✅ Delete HR Applicant
+  // --------------------------------------------
+  // DELETE HR
+  // --------------------------------------------
   const handleHrDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this HR applicant?"))
       return;
@@ -135,7 +149,9 @@ function Login() {
     }
   };
 
-  // ✅ Logout
+  // --------------------------------------------
+  // LOGOUT
+  // --------------------------------------------
   const handleLogout = () => {
     setLoggedIn(false);
     setRole("");
@@ -146,7 +162,9 @@ function Login() {
     setSearch("");
   };
 
-  // ✅ Search filter
+  // --------------------------------------------
+  // SEARCH FILTER
+  // --------------------------------------------
   const filteredApplicants = applicants.filter((a) => {
     const s = search.toLowerCase();
     return (
@@ -157,14 +175,53 @@ function Login() {
     );
   });
 
-  // ✅ Resume link
+  // --------------------------------------------
+  // RESUME LINK
+  // --------------------------------------------
   const getResumeLink = (url) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
     return `${API_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
   };
 
-  // ✅ Render UI
+  // --------------------------------------------
+  // DOWNLOAD EXCEL
+  // --------------------------------------------
+  const downloadExcel = () => {
+    if (filteredApplicants.length === 0) {
+      alert("No data available to download!");
+      return;
+    }
+
+    const sheetData = filteredApplicants.map((a, i) => ({
+      No: i + 1,
+      Name: a.name,
+      Email: a.email,
+      Phone: a.phone,
+      Address: a.address || a.location,
+      Course: role === "admin" ? a.course : undefined,
+      JobTitle: role === "hr" ? a.jobTitle : undefined,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(sheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Applicants");
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+
+    const blob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    saveAs(blob, `${role}_applicants.xlsx`);
+  };
+
+  // --------------------------------------------
+  // RENDER UI
+  // --------------------------------------------
   return (
     <div className="login-wrapper">
       <div
@@ -174,7 +231,6 @@ function Login() {
           maxWidth: loggedIn ? "1000px" : "420px",
         }}
       >
-        {/* ---------- ROLE SELECTION ---------- */}
         {!role ? (
           <>
             <h3 className="text-center text-danger fw-bold mb-4">
@@ -196,7 +252,6 @@ function Login() {
             </div>
           </>
         ) : !loggedIn ? (
-          /* ---------- LOGIN FORM ---------- */
           <>
             <h3
               className={`text-center fw-bold ${
@@ -205,6 +260,7 @@ function Login() {
             >
               {role === "admin" ? "Admin Login" : "HR Login"}
             </h3>
+
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label className="form-label">Email</label>
@@ -232,17 +288,15 @@ function Login() {
                 <p className="text-danger small text-center fw-bold">{error}</p>
               )}
 
-              <div className="text-center">
-                <button
-                  type="submit"
-                  className={`btn ${
-                    role === "admin" ? "btn-danger" : "btn-primary"
-                  } w-100`}
-                  disabled={loading}
-                >
-                  {loading ? "Logging in..." : "Login"}
-                </button>
-              </div>
+              <button
+                type="submit"
+                className={`btn ${
+                  role === "admin" ? "btn-danger" : "btn-primary"
+                } w-100`}
+                disabled={loading}
+              >
+                {loading ? "Logging in..." : "Login"}
+              </button>
 
               <p
                 className="text-center mt-3 text-secondary"
@@ -254,7 +308,6 @@ function Login() {
             </form>
           </>
         ) : (
-          /* ---------- DASHBOARD ---------- */
           <>
             <h4
               className={`text-center mb-3 fw-bold ${
@@ -264,110 +317,110 @@ function Login() {
               {role === "admin" ? "Training Applicants" : "HR Job Applications"}
             </h4>
 
-            {error && (
-              <p className="text-danger text-center small fw-bold">{error}</p>
-            )}
+            {/* ---- Excel Download Button ---- */}
+            <div className="text-end mb-3">
+              <button
+                className="btn btn-success btn-sm"
+                onClick={downloadExcel}
+              >
+                Download Excel
+              </button>
+            </div>
 
-            {applicants.length === 0 ? (
-              <p className="text-center text-muted">No records found.</p>
-            ) : (
-              <>
-                <input
-                  type="text"
-                  className="form-control mb-3"
-                  placeholder="Search by name, email, or job title..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+            <input
+              type="text"
+              className="form-control mb-3"
+              placeholder="Search name, email, job title..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
 
-                <div className="table-container">
-                  <table className="table table-striped table-bordered text-center align-middle">
-                    <thead className="table-dark">
-                      <tr>
-                        <th>No</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Address</th>
-                        {role === "admin" ? (
-                          <>
-                            <th>Course</th>
-                            <th>Action</th>
-                          </>
-                        ) : (
-                          <>
-                            <th>Job Title</th>
-                            <th>Resume</th>
-                            <th>Action</th>
-                          </>
-                        )}
-                      </tr>
-                    </thead>
+            <div className="table-container">
+              <table className="table table-striped table-bordered text-center align-middle">
+                <thead className="table-dark">
+                  <tr>
+                    <th>No</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    {role === "admin" ? (
+                      <>
+                        <th>Course</th>
+                        <th>Action</th>
+                      </>
+                    ) : (
+                      <>
+                        <th>Job Title</th>
+                        <th>Resume</th>
+                        <th>Action</th>
+                      </>
+                    )}
+                  </tr>
+                </thead>
 
-                    <tbody>
-                      {filteredApplicants.map((a, index) => (
-                        <tr key={a._id || index}>
-                          <td>{index + 1}</td>
-                          <td>{a.name}</td>
-                          <td>{a.email}</td>
-                          <td>{a.phone}</td>
-                          <td>{a.address || a.location}</td>
+                <tbody>
+                  {filteredApplicants.map((a, index) => (
+                    <tr key={a._id || index}>
+                      <td>{index + 1}</td>
+                      <td>{a.name}</td>
+                      <td>{a.email}</td>
+                      <td>{a.phone}</td>
+                      <td>{a.address || a.location}</td>
 
-                          {role === "admin" ? (
-                            <>
-                              <td>{a.course}</td>
-                              <td>
-                                <button
-                                  className="btn btn-sm btn-danger"
-                                  onClick={() => handleDelete(a._id)}
+                      {role === "admin" ? (
+                        <>
+                          <td>{a.course}</td>
+                          <td>
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleDelete(a._id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td>{a.jobTitle}</td>
+                          <td>
+                            {a.resumeUrl ? (
+                              <div className="d-flex gap-2 justify-content-center">
+                                <a
+                                  href={getResumeLink(a.resumeUrl)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-primary"
                                 >
-                                  Delete
-                                </button>
-                              </td>
-                            </>
-                          ) : (
-                            <>
-                              <td>{a.jobTitle}</td>
-                              <td>
-                                {a.resumeUrl ? (
-                                  <div className="d-flex gap-2 justify-content-center">
-                                    <a
-                                      href={getResumeLink(a.resumeUrl)}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="text-primary"
-                                    >
-                                      View
-                                    </a>
-                                    <a
-                                      href={getResumeLink(a.resumeUrl)}
-                                      download
-                                      className="text-success"
-                                    >
-                                      Download
-                                    </a>
-                                  </div>
-                                ) : (
-                                  "No file"
-                                )}
-                              </td>
-                              <td>
-                                <button
-                                  className="btn btn-sm btn-danger"
-                                  onClick={() => handleHrDelete(a._id)}
+                                  View
+                                </a>
+                                <a
+                                  href={getResumeLink(a.resumeUrl)}
+                                  download
+                                  className="text-success"
                                 >
-                                  Delete
-                                </button>
-                              </td>
-                            </>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
+                                  Download
+                                </a>
+                              </div>
+                            ) : (
+                              "No file"
+                            )}
+                          </td>
+                          <td>
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleHrDelete(a._id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             <div className="text-center mt-3">
               <button className="btn btn-secondary" onClick={handleLogout}>
