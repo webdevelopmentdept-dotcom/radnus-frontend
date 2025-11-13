@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import TrainingFormimg from "../../images/trainingform.webp";
+import { useNavigate } from "react-router-dom";
 
 const TrainingForm = ({ course, onCloseForm }) => {
   const [formData, setFormData] = useState({
@@ -48,6 +49,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
       console.log("⚠️ gtag not found for:", eventLabel);
     }
   };
+  const navigate = useNavigate();
 
   // ✅ Handle form submit
   const handleSubmit = async (e) => {
@@ -73,8 +75,8 @@ const TrainingForm = ({ course, onCloseForm }) => {
 
       if (res.ok && data.success) {
         // ✅ Fire Google Ads conversion on successful submission
-        trackConversion(`Form Submitted - ${formData.course}`);
-        setSubmitted(true);
+
+        navigate("/thank-you");
       } else {
         alert(data.msg || "Error submitting form");
       }

@@ -33,7 +33,7 @@ function RadnusFooter() {
     }
 
     try {
-      // ✅ Google Apps Script Web App URL
+      // Google Apps Script Web App
       await fetch(
         "https://script.google.com/macros/s/AKfycbzW8jH7iNgOV0Iu1AIDEStTy_dlxd4pwhciOaJ_D2gDczZ8q3NhNzTlwC4iC1ZKNhUp/exec",
         {
@@ -44,22 +44,22 @@ function RadnusFooter() {
         }
       );
 
-      // ✅ Show success message
+      // SUCCESS MESSAGE
       setMessage("✅ Thank you for joining! Your info is saved successfully.");
       setEmail("");
 
-      // ✅ Google Ads Conversion Tracking (Join Button)
-      if (typeof window.gtag === "function") {
-        window.gtag("event", "conversion", {
-          send_to: "AW-16969684439/jDhoCNWL_7obENer45s_",
-          event_label: "Join Newsletter - Footer",
-        });
-        console.log("✅ Conversion tracked: Join Newsletter");
-      } else {
-        console.warn(
-          "⚠️ gtag not found — check if Google Ads script is loaded"
-        );
-      }
+      // FIRE Google Ads Conversion ONLY AFTER SUCCESS
+      setTimeout(() => {
+        if (typeof window.gtag === "function") {
+          window.gtag("event", "conversion", {
+            send_to: "AW-16969684439/jDhoCNWL_7obENer45s_",
+            event_label: "Join Newsletter - Footer Success",
+          });
+          console.log("🔥 Conversion tracked on success!");
+        } else {
+          console.warn("⚠️ Google Ads gtag not found");
+        }
+      }, 300);
     } catch (error) {
       console.error("Error:", error);
       setMessage("❌ Something went wrong. Please try again later.");
@@ -68,7 +68,6 @@ function RadnusFooter() {
 
   return (
     <footer id="contact">
-      {/* ======= MAIN RED FOOTER ======= */}
       <div
         className="text-white py-2"
         style={{
@@ -78,9 +77,7 @@ function RadnusFooter() {
         }}
       >
         <Container>
-          {/* Top Row */}
           <Row className="align-items-center mb-3 mt-3">
-            {/* LEFT LOGO SECTION */}
             <Col md={6} className="text-center text-md-start mb-3 mb-md-0">
               <img
                 className="mb-2"
@@ -100,6 +97,7 @@ function RadnusFooter() {
             {/* RIGHT FORM SECTION */}
             <Col md={6} className="text-center mt-2">
               <h6 className="mb-3 fs-5">Get Career & Training Updates</h6>
+
               <Form
                 className="d-flex justify-content-center align-items-center mb-1"
                 onSubmit={handleSubmit}
@@ -147,10 +145,9 @@ function RadnusFooter() {
           </Row>
         </Container>
 
-        {/* ======= CONTACT + FOLLOW US ======= */}
+        {/* CONTACT INFO + FOLLOW US */}
         <Container>
           <Row className="align-items-start text-center text-md-start">
-            {/* LEFT COLUMN - CONTACT INFO */}
             <Col md={6} className="mb-4 mb-md-0">
               <h6 className="fw-bold mb-3" style={{ fontSize: "1.1rem" }}>
                 Contact
@@ -162,7 +159,7 @@ function RadnusFooter() {
                   href="https://www.google.com/maps/search/Radnus/@11.9342037,79.8111248,14z?entry=s&sa=X&ved=1t%3A199789"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="footer-link text-light text-decoration-none w-100 contact-text"
+                  className="footer-link text-light w-100 contact-text"
                 >
                   Sinnaya Plaza, MG Road, Puducherry
                 </a>
@@ -172,7 +169,7 @@ function RadnusFooter() {
                 <FaPhoneAlt className="text-light me-2 flex-shrink-0 contact-icon" />
                 <a
                   href="tel:+919940973030"
-                  className="footer-link text-light text-decoration-none w-100 contact-text"
+                  className="footer-link text-light w-100 contact-text"
                 >
                   +91 9940973030
                 </a>
@@ -184,14 +181,14 @@ function RadnusFooter() {
                   href="https://mail.google.com/mail/?view=cm&fs=1&to=sundar12134@gmail.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="footer-link text-light text-decoration-none w-100 contact-text"
+                  className="footer-link text-light w-100 contact-text"
                 >
                   sundar12134@gmail.com
                 </a>
               </div>
             </Col>
 
-            {/* RIGHT COLUMN - FOLLOW US */}
+            {/* FOLLOW US */}
             <Col md={6}>
               <h6 className="fw-bold mb-3" style={{ fontSize: "1.1rem" }}>
                 Follow Us
@@ -199,40 +196,30 @@ function RadnusFooter() {
               <div className="d-flex gap-4 justify-content-md-start justify-content-center fs-4">
                 <a
                   href="https://facebook.com/radnus.cellphone.training"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="text-light hover-icon"
                 >
                   <FaFacebookF />
                 </a>
                 <a
                   href="https://instagram.com/radnus_cellphone_training/"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="text-light hover-icon"
                 >
                   <FaInstagram />
                 </a>
                 <a
                   href="https://linkedin.com/in/radnus-communication-470b7a327"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="text-light hover-icon"
                 >
                   <FaLinkedinIn />
                 </a>
                 <a
                   href="https://www.youtube.com/results?search_query=radnus+pondicherry"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="text-light hover-icon"
                 >
                   <FaYoutube />
                 </a>
                 <a
-                  href="https://api.whatsapp.com/send?phone=919940973030&text=Hi%20Radnus%20Team!%20I%20would%20like%20to%20know%20more%20about%20your%20training."
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="https://api.whatsapp.com/send?phone=919940973030"
                   className="text-light hover-icon"
                 >
                   <FaWhatsapp />
@@ -242,74 +229,7 @@ function RadnusFooter() {
           </Row>
         </Container>
 
-        {/* ======= STYLES ======= */}
-        <style>
-          {`
-          .footer-link {
-            color: #ffffff !important;
-            text-decoration: none;
-            cursor: pointer;
-          }
-          .footer-link:hover {
-            color: #ffc107 !important;
-            text-decoration: underline;
-          }
-          .contact-item a {
-            pointer-events: auto;
-          }
-          .hover-icon:hover {
-            color: #ffc107 !important;
-            transform: scale(1.2);
-            transition: all 0.3s ease-in-out;
-          }
-          .contact-item {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-          }
-          .contact-item .contact-icon {
-            width: 20px;
-            min-width: 20px;
-            text-align: center;
-          }
-          .contact-item .contact-text {
-            margin-left: 10px;
-            display: inline-block;
-            text-align: left;
-            word-break: break-word;
-          }
-
-          /* ===== MOBILE VIEW FIXES ===== */
-          @media (max-width: 768px) {
-            .contact-item {
-              justify-content: center !important;
-            }
-            .contact-item .contact-text {
-              margin-left: 8px;
-              text-align: left;
-            }
-            form input[type="text"] {
-              width: 100% !important;
-              height: 50px !important;
-              font-size: 1rem !important;
-              padding: 10px !important;
-            }
-            form button {
-              height: 50px !important;
-              font-size: 1rem !important;
-              padding: 0 25px !important;
-            }
-            .fs-4 {
-              margin-bottom: 25px !important;
-            }
-            footer .text-center.fs-6 {
-              padding-bottom: 10px;
-            }
-          }
-        `}
-        </style>
-
-        {/* ======= COPYRIGHT SECTION ======= */}
+        {/* COPYRIGHT */}
         <div className="text-center mb-3 fs-6 text-light">
           © 2025 All Rights Reserved by Radnus.
         </div>

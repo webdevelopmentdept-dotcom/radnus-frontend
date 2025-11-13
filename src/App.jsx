@@ -16,6 +16,7 @@ import Timeline from "./components/Services/Timeline";
 import Startup from "./components/Services/Startup";
 import Login from "./components/Login";
 import ScrollToTop from "./components/ScrollToTop";
+import ThankYou from "./ThankYou";
 function App() {
   // ✅ Job data with posted dates
   const jobsData = [
@@ -50,6 +51,7 @@ function App() {
         <Route path="/" element={<RadnusHome />} />
         <Route path="/about" element={<RadnusAbout />} />
         <Route path="/academy" element={<RadnusAcademy />} />
+        <Route path="/thank-you" element={<ThankYou />} />
         <Route path="/whitelabel" element={<WhiteLabelPage />} />{" "}
         <Route path="/careers" element={<Career jobsData={jobsData} />} />
         <Route

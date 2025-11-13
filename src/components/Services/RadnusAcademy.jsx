@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { AiOutlineCheck } from "react-icons/ai";
 import Card from "react-bootstrap/Card";
+import { Navigate } from "react-router-dom";
 import AcadamyImage from "../../images/acadamybackground.webp";
 import SempHybridAcademy from "../../images/semphybridacademy.webp";
 import SempAcademy from "../../images/sempacademy.webp";
