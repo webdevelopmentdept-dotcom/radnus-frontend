@@ -55,7 +55,7 @@ function RadnusHome() {
         />
         <meta
           name="keywords"
-          content="Radnus Communication, mobile service training, mobile repair course, mobile technician institute, mobile business ideas, startup training, entrepreneurship training, Pondicherry"
+          content="Radnus Communication, mobile service training, mobile repair course, mobile technician institute, mobile business ideas, startup training, entrepreneurship training, Pondicherry,mobile training institute,mobile technology course,mobile technician training,learn mobile technology,mobile software training course"
         />
         <meta name="author" content="Radnus Communication" />
         <meta name="robots" content="index, follow" />

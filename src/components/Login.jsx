@@ -14,17 +14,11 @@ function Login() {
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-  // --------------------------------------------
-  // ROLE SELECT
-  // --------------------------------------------
   const handleRoleSelect = (selectedRole) => {
     setRole(selectedRole);
     setError("");
   };
 
-  // --------------------------------------------
-  // LOGIN SUBMIT
-  // --------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -62,9 +56,6 @@ function Login() {
     }
   };
 
-  // --------------------------------------------
-  // FETCH ADMIN APPLICANTS
-  // --------------------------------------------
   const fetchAdminApplicants = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/applicants`);
@@ -80,9 +71,6 @@ function Login() {
     }
   };
 
-  // --------------------------------------------
-  // FETCH HR APPLICANTS
-  // --------------------------------------------
   const fetchHRApplicants = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/hr/applications`);
@@ -98,9 +86,6 @@ function Login() {
     }
   };
 
-  // --------------------------------------------
-  // DELETE ADMIN
-  // --------------------------------------------
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this applicant?"))
       return;
@@ -123,9 +108,6 @@ function Login() {
     }
   };
 
-  // --------------------------------------------
-  // DELETE HR
-  // --------------------------------------------
   const handleHrDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this HR applicant?"))
       return;
@@ -149,9 +131,6 @@ function Login() {
     }
   };
 
-  // --------------------------------------------
-  // LOGOUT
-  // --------------------------------------------
   const handleLogout = () => {
     setLoggedIn(false);
     setRole("");
@@ -162,9 +141,6 @@ function Login() {
     setSearch("");
   };
 
-  // --------------------------------------------
-  // SEARCH FILTER
-  // --------------------------------------------
   const filteredApplicants = applicants.filter((a) => {
     const s = search.toLowerCase();
     return (
@@ -175,18 +151,13 @@ function Login() {
     );
   });
 
-  // --------------------------------------------
-  // RESUME LINK
-  // --------------------------------------------
   const getResumeLink = (url) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
     return `${API_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
   };
 
-  // --------------------------------------------
-  // DOWNLOAD EXCEL
-  // --------------------------------------------
+  // ⭐ ADD DATE TO EXCEL
   const downloadExcel = () => {
     if (filteredApplicants.length === 0) {
       alert("No data available to download!");
@@ -199,6 +170,7 @@ function Login() {
       Email: a.email,
       Phone: a.phone,
       Address: a.address || a.location,
+      Date: new Date(a.createdAt).toLocaleString(),
       Course: role === "admin" ? a.course : undefined,
       JobTitle: role === "hr" ? a.jobTitle : undefined,
     }));
@@ -219,9 +191,6 @@ function Login() {
     saveAs(blob, `${role}_applicants.xlsx`);
   };
 
-  // --------------------------------------------
-  // RENDER UI
-  // --------------------------------------------
   return (
     <div className="login-wrapper">
       <div
@@ -317,7 +286,6 @@ function Login() {
               {role === "admin" ? "Training Applicants" : "HR Job Applications"}
             </h4>
 
-            {/* ---- Excel Download Button ---- */}
             <div className="text-end mb-3">
               <button
                 className="btn btn-success btn-sm"
@@ -344,6 +312,8 @@ function Login() {
                     <th>Email</th>
                     <th>Phone</th>
                     <th>Address</th>
+                    <th>Date</th>
+
                     {role === "admin" ? (
                       <>
                         <th>Course</th>
@@ -367,6 +337,7 @@ function Login() {
                       <td>{a.email}</td>
                       <td>{a.phone}</td>
                       <td>{a.address || a.location}</td>
+                      <td>{new Date(a.createdAt).toLocaleString()}</td>
 
                       {role === "admin" ? (
                         <>

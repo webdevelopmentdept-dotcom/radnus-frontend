@@ -15,53 +15,117 @@ function RadnusFooter() {
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   const trimmed = phone.trim();
+  //   if (!/^[0-9]{10}$/.test(trimmed)) {
+  //     setMessage("⚠️ Enter a valid 10-digit phone number.");
+  //     return;
+  //   }
+
+  //   const SCRIPT_URL =
+  //     "https://script.google.com/macros/s/AKfycbzwO3RVgZsXUPP42wPPQryGxibnddRDcV1vHXWhroY6ZCxZKx0m2pnyeR72kO4QF1hn/exec";
+
+  //   try {
+  //     const fd = new FormData();
+  //     fd.append("phone", trimmed);
+
+  //     await fetch(SCRIPT_URL, {
+  //       method: "POST",
+  //     });
+
+  //     setMessage("✅ Thank you for joining! Your info is saved successfully.");
+  //     setPhone("");
+  //     setTimeout(() => {
+  //       if (typeof window.gtag === "function") {
+  //         window.gtag("event", "conversion", {
+  //           send_to: "AW-16969684439/jDhoCNWL_7obENer45s_",
+  //           event_label: "Join Newsletter - Footer Success",
+  //         });
+  //         console.log("🔥 Conversion tracked!");
+  //       }
+  //     }, 300);
+  //   } catch (err) {
+  //     console.error(err);
+  //     setMessage("❌ Something went wrong. Please try again later.");
+  //   }
+  // };
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   const trimmed = phone.trim();
+  //   if (!/^[0-9]{10}$/.test(trimmed)) {
+  //     setMessage("⚠️ Enter valid phone");
+  //     return;
+  //   }
+
+  //   try {
+  //     const formData = new FormData();
+  //     formData.append("phone", trimmed);
+
+  //     await fetch(
+  //       "https://script.google.com/macros/s/AKfycbyB3IIhZz1PusN5MPwdIQ8rB8vyArpStbF-KTdOv-FwGN1WSr7VFDtvuQNElNVbRj-B/exec",
+  //       {
+  //         method: "POST",
+  //         body: formData,
+  //       }
+  //     );
+
+  //     setMessage("✅ Saved successfully!");
+  //     setPhone("");
+  //   } catch (err) {
+  //     console.error(err);
+  //     setMessage("❌ Something went wrong");
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const trimmed = phone.trim();
-
-    const isPhone = /^[0-9]{10}$/.test(trimmed);
-
-    if (!trimmed) {
-      setMessage("⚠️ Please enter your phone number.");
-      return;
-    }
-
-    if (!isPhone) {
-      setMessage("⚠️ Enter a valid 10-digit phone number.");
+    if (!/^[0-9]{10}$/.test(trimmed)) {
+      setMessage("⚠️ Enter valid phone");
       return;
     }
 
     try {
-      // Google Apps Script Web App
-      await fetch(
-        "https://script.google.com/macros/s/AKfycbzW8jH7iNgOV0Iu1AIDEStTy_dlxd4pwhciOaJ_D2gDczZ8q3NhNzTlwC4iC1ZKNhUp/exec",
+      const body = new URLSearchParams();
+      body.append("phone", trimmed);
+
+      // Save fetch response in a variable
+      const response = await fetch(
+        "https://script.google.com/macros/s/AKfycbyyN8eqXdN8DwxK4FIZpxLJpA87-XkJKSDTomZSVARflb8AYMM0peGve2cIR_L8XRCT/exec",
         {
           method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: trimmed }),
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: body.toString(),
         }
       );
 
-      // SUCCESS MESSAGE
-      setMessage("✅ Thank you for joining! Your info is saved successfully.");
-      setPhone("");
+      // Parse the JSON response
+      const data = await response.json();
+      console.log(data);
 
-      // FIRE Google Ads Conversion ONLY AFTER SUCCESS
-      setTimeout(() => {
-        if (typeof window.gtag === "function") {
-          window.gtag("event", "conversion", {
-            send_to: "AW-16969684439/jDhoCNWL_7obENer45s_",
-            event_label: "Join Newsletter - Footer Success",
-          });
-          console.log("🔥 Conversion tracked on success!");
-        } else {
-          console.warn("⚠️ Google Ads gtag not found");
-        }
-      }, 300);
-    } catch (error) {
-      console.error("Error:", error);
-      setMessage("❌ Something went wrong. Please try again later.");
+      if (data.status === "success") {
+        setMessage("✅ Saved successfully!");
+        setPhone("");
+
+        setTimeout(() => {
+          if (typeof window.gtag === "function") {
+            window.gtag("event", "conversion", {
+              send_to: "AW-16969684439/jDhoCNWL_7obENer45s_",
+              event_label: "Join Newsletter - Footer Success",
+            });
+            console.log("🔥 Conversion tracked!");
+          }
+        }, 300);
+      } else {
+        setMessage("❌ " + data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage("❌ Something went wrong");
     }
   };
 
@@ -80,7 +144,7 @@ function RadnusFooter() {
             <Col md={6} className="text-center text-md-start mb-3 mb-md-0">
               <img
                 className="mb-2"
-                src="https://static.wixstatic.com/media/86316b_38b937020dcc47beb619e58eef059c56~mv2.png/v1/fill/w_128,h_46,al_c,q_85,usm_0.66_1.00_0.01/86316b_38b937020dcc47beb619e58eef059c56~mv2.png"
+                src="https://static.wixstatic.com/media/86316b_38b937020dcc47beb619e58eef059c56~mv2.png"
                 alt="Radnus Logo"
                 height="50"
               />
@@ -93,7 +157,7 @@ function RadnusFooter() {
               </h6>
             </Col>
 
-            {/* RIGHT FORM SECTION */}
+            {/* FORM */}
             <Col md={6} className="text-center mt-2">
               <h6 className="mb-3 fs-5">Get Career & Training Updates</h6>
 
@@ -113,8 +177,8 @@ function RadnusFooter() {
                     fontSize: "1rem",
                     borderRadius: "8px",
                   }}
-                  required
                 />
+
                 <Button
                   type="submit"
                   variant="light"
@@ -148,7 +212,7 @@ function RadnusFooter() {
           </Row>
         </Container>
 
-        {/* CONTACT INFO + FOLLOW US */}
+        {/* CONTACT + FOLLOW */}
         <Container>
           <Row className="align-items-start text-center text-md-start">
             <Col md={6} className="mb-4 mb-md-0">
@@ -156,74 +220,67 @@ function RadnusFooter() {
                 Contact
               </h6>
 
-              <div className="d-flex align-items-center contact-item mb-2">
-                <FaMapMarkerAlt className="text-light me-2 flex-shrink-0 contact-icon" />
+              <div className="d-flex align-items-center mb-2">
+                <FaMapMarkerAlt className="text-light me-2" />
                 <a
-                  href="https://www.google.com/maps/search/Radnus/@11.9342037,79.8111248,14z?entry=s&sa=X&ved=1t%3A199789"
+                  href="https://www.google.com/maps/search/Radnus"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="footer-link text-light w-100 contact-text"
+                  className="text-light"
                 >
                   Sinnaya Plaza, MG Road, Puducherry
                 </a>
               </div>
 
-              <div className="d-flex align-items-center contact-item mb-2">
-                <FaPhoneAlt className="text-light me-2 flex-shrink-0 contact-icon" />
-                <a
-                  href="tel:+919940973030"
-                  className="footer-link text-light w-100 contact-text"
-                >
+              <div className="d-flex align-items-center mb-2">
+                <FaPhoneAlt className="text-light me-2" />
+                <a href="tel:+919940973030" className="text-light">
                   +91 9940973030
                 </a>
               </div>
 
-              <div className="d-flex align-items-center contact-item mb-2">
-                <FaEnvelope className="text-light me-2 flex-shrink-0 contact-icon" />
-                <a
-                  href="mailto:sundar12134@gmail.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="footer-link text-light w-100 contact-text"
-                >
+              <div className="d-flex align-items-center mb-2">
+                <FaEnvelope className="text-light me-2" />
+                <a href="mailto:sundar12134@gmail.com" className="text-light">
                   sundar12134@gmail.com
                 </a>
               </div>
             </Col>
 
-            {/* FOLLOW US */}
+            {/* FOLLOW */}
             <Col md={6}>
               <h6 className="fw-bold mb-3" style={{ fontSize: "1.1rem" }}>
                 Follow Us
               </h6>
-              <div className="d-flex gap-4 justify-content-md-start justify-content-center fs-4">
+
+              <div className="d-flex gap-4 fs-4 justify-content-center justify-content-md-start">
                 <a
+                  className="text-light"
                   href="https://facebook.com/radnus.cellphone.training"
-                  className="text-light hover-icon"
                 >
                   <FaFacebookF />
                 </a>
                 <a
+                  className="text-light"
                   href="https://instagram.com/radnus_cellphone_training/"
-                  className="text-light hover-icon"
                 >
                   <FaInstagram />
                 </a>
                 <a
+                  className="text-light"
                   href="https://linkedin.com/in/radnus-communication-470b7a327"
-                  className="text-light hover-icon"
                 >
                   <FaLinkedinIn />
                 </a>
                 <a
+                  className="text-light"
                   href="https://www.youtube.com/results?search_query=radnus+pondicherry"
-                  className="text-light hover-icon"
                 >
                   <FaYoutube />
                 </a>
                 <a
+                  className="text-light"
                   href="https://api.whatsapp.com/send?phone=919940973030"
-                  className="text-light hover-icon"
                 >
                   <FaWhatsapp />
                 </a>
@@ -232,8 +289,7 @@ function RadnusFooter() {
           </Row>
         </Container>
 
-        {/* COPYRIGHT */}
-        <div className="text-center mb-3 fs-6 text-light">
+        <div className="text-center text-light mb-3">
           © 2025 All Rights Reserved by Radnus.
         </div>
       </div>
