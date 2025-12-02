@@ -95,7 +95,8 @@ function RadnusFooter() {
 
       // Save fetch response in a variable
       const response = await fetch(
-        "https://script.google.com/macros/s/AKfycbyyN8eqXdNB0wx4FIZpxLJpA87-XkJKSDTomZSVARflb8AYMM0peGve2cIR_L8XRCT/exec",
+        "https://script.google.com/macros/s/AKfycbyyN8eqXdN8DwxK4FIZpxLJpA87-XkJKSDTomZSVARflb8AYMM0peGve2cIR_L8XRCT/exec",
+
         {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
