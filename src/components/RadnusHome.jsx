@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import bg1Image from "../images/bg2.webp";
-
+import UpcomingEventsPopup from "./UpcomingEventsPopup";
 function RadnusHome() {
   const stats = [
     { end: 8500, label: "Students Trained" },
@@ -34,6 +34,7 @@ function RadnusHome() {
       gtag("event", eventName, params);
     }
   };
+  console.log("UpcomingEventsPopup loaded");
 
   return (
     <>
@@ -87,6 +88,7 @@ function RadnusHome() {
           </div>
         </div>
       </section>
+      <UpcomingEventsPopup />
 
       {/* Mobile BG Fix */}
       <style>
