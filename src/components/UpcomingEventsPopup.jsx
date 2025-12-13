@@ -81,7 +81,7 @@ export default function UpcomingEventsPopup() {
         <h4 className="section-title">📅 This Week Programs</h4>
 
         <p className="program-question">
-          Radnus offers daily professional training programs
+          Radnus conducts daily professional programs and sessions
         </p>
 
         <ul className="program-list">
