@@ -1,4 +1,4 @@
-// src/components/RadnusHome.jsx
+
 import React from "react";
 import bgImage from "../images/homebackground1.webp";
 import illustration from "../images/metricsimag4.webp";

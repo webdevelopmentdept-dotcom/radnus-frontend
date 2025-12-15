@@ -10,12 +10,12 @@ export default function UpcomingEventsPopup() {
     program: "",
   });
 
-  const programs = [
-    "White Labelling – 15 Dec",
-    "Service Training – 16 Dec",
-    "Machines & Tools Sale – 17 Dec",
-    "Poorvika – 18 Dec",
+ const programs = [
     "Radnus Unlocker – 19 Dec",
+    "White Labelling – 22 Dec",
+    "Service Training – 23 Dec",
+    "Machines & Tools Sale – 24 Dec",
+    "Poorvika – 25 Dec",
   ];
 
   // Show popup on page load

@@ -1,0 +1,21 @@
+/* GLOBAL FONT SETTINGS */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", "Poppins", sans-serif;   /* COMMON FONT */
+}
+
+body {
+  font-size: 16px;           /* COMMON FONT SIZE */
+  line-height: 1.6;
+  color: #111;
+}
+
+/* OPTIONAL – all headings controlled */
+h1 { font-size: 32px; font-weight: 700; }
+h2 { font-size: 26px; font-weight: 600; }
+h3 { font-size: 22px; font-weight: 600; }
+p, td, th, input, button, select { 
+  font-size: 16px;
+}

@@ -149,9 +149,10 @@ function RadnusNavbar() {
                 </button>
 
                 <div
-                  className="dropdown-menu p-4 border-0 shadow-lg mega-menu-mobile"
-                  aria-labelledby="whatWeDoDropdown"
-                >
+  className="dropdown-menu p-4 border-0 shadow-lg mega-menu-mobile w-100"
+  aria-labelledby="whatWeDoDropdown"
+>
+
                   <div className="container">
                     <div className="row">
                       {/* Column 1 */}
@@ -282,6 +283,7 @@ function RadnusNavbar() {
                   Login
                 </Link>
               </li>
+ 
             </ul>
           </div>
         </div>
@@ -308,6 +310,10 @@ function RadnusNavbar() {
           @media (max-width: 767px) {
             .navbar {
               padding: 0.4rem !important;
+              max-height: 80vh !important;
+               overflow-y: auto !important;
+                padding-bottom: 20px;
+                scroll-behavior: smooth;
             }
             .navbar-brand img {
               max-height: 36px;

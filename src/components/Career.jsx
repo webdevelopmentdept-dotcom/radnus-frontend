@@ -9,6 +9,7 @@ import {
   FaUserTie,
 } from "react-icons/fa";
 
+// Images
 import careerBg from "../images/careerbg.webp";
 import img1 from "../images/aboutbackground.webp";
 import img2 from "../images/cimg2.webp";
@@ -24,13 +25,13 @@ const Career = ({ jobsData }) => {
   const [experience, setExperience] = useState("");
   const [jobType, setJobType] = useState("");
 
-  // ✅ Time Ago
+  // Time Ago function
   const getTimeAgo = (date) => {
     if (!date) return "N/A";
     const postedDate = new Date(date);
     const now = new Date();
     const diffDays = Math.floor((now - postedDate) / (1000 * 60 * 60 * 24));
-    if (isNaN(diffDays)) return "Invalid date";
+
     if (diffDays < 1) return "Today";
     if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
     if (diffDays < 365)
@@ -42,7 +43,7 @@ const Career = ({ jobsData }) => {
     } ago`;
   };
 
-  // ✅ Filter
+  // Filter Jobs
   const filteredJobs = jobsData.filter((job) => {
     return (
       (department === "" || job.type === department) &&
@@ -55,12 +56,10 @@ const Career = ({ jobsData }) => {
   return (
     <>
       <Helmet>
-        <title>
-          Careers at Radnus Communication | Join Our Team in Puducherry
-        </title>
+        <title>Careers at Radnus Communication | Join Our Team</title>
         <meta
           name="description"
-          content="Explore exciting career opportunities at Radnus Communication in Puducherry. Join our team in mobile service, repair, software development, marketing, and training."
+          content="Explore exciting career opportunities at Radnus Communication in Puducherry."
         />
       </Helmet>
 
@@ -81,34 +80,30 @@ const Career = ({ jobsData }) => {
           style={{ background: "rgba(0,0,0,0.4)" }}
         ></div>
         <div className="container position-relative text-white">
-          <h1 className="display-5 fs-bold mb-3">Join Our Team</h1>
-          <p className="lead mb-4" style={{ maxWidth: "450px" }}>
-            Be part of <strong>Radnus</strong> leading mobile service, repair,
-            and technical training.
+          <h1 className="display-5 fw-bold mb-3">Join Our Team</h1>
+          <p className="lead" style={{ maxWidth: "450px" }}>
+            Be part of <strong>Radnus</strong> and grow your career with us.
           </p>
         </div>
       </section>
 
       {/* Work Section */}
-      <section className="work-section py-2">
+      <section className="work-section py-4">
         <div className="container">
-          <div className="row mb-2">
-            <div className="col-12 col-md-10">
-              <h2 className="fs-3 fw-bold mb-2">Work at Radnus</h2>
-              <p className="fs-5" style={{ lineHeight: "1.6" }}>
-                At Radnus, we don’t just repair and train — we innovate,
-                collaborate, and create opportunities that transform technology
-                and people alike.
-              </p>
-            </div>
-          </div>
+          <h2 className="fw-bold mb-3">Work at Radnus</h2>
+          <p className="fs-5 mb-4" style={{ lineHeight: "1.6" }}>
+            At Radnus, we innovate, collaborate and create opportunities that
+            transform careers and technology.
+          </p>
+
+          {/* Masonry Grid */}
           <div className="masonry-grid">
             {images.map((imgSrc, index) => (
               <div className="masonry-item" key={index}>
                 <img
                   src={imgSrc}
                   alt={`Culture ${index + 1}`}
-                  className="img-fluid w-100"
+                  className="img-fluid"
                 />
               </div>
             ))}
@@ -117,12 +112,10 @@ const Career = ({ jobsData }) => {
       </section>
 
       {/* Open Positions */}
-      <section id="open-roles" className="py-3 bg-light">
+      <section className="bg-light py-5">
         <div className="container text-center mb-5">
-          <h2 className="fw-bold mb-3 fs-3">Open Positions</h2>
-          <p className="fs-6">
-            Explore exciting opportunities to grow your career with us.
-          </p>
+          <h2 className="fw-bold fs-3">Open Positions</h2>
+          <p className="fs-6">Explore exciting opportunities to grow with us.</p>
         </div>
 
         {/* Filter */}
@@ -138,6 +131,7 @@ const Career = ({ jobsData }) => {
               <option>IT & Infrastructure</option>
             </Form.Select>
           </Col>
+
           <Col md={3} sm={6} className="mb-3">
             <Form.Select
               value={experience}
@@ -149,6 +143,7 @@ const Career = ({ jobsData }) => {
               <option>3–5 Years</option>
             </Form.Select>
           </Col>
+
           <Col md={3} sm={6} className="mb-3">
             <Form.Select
               value={jobType}
@@ -171,44 +166,29 @@ const Career = ({ jobsData }) => {
                     <h5 className="fw-bold mb-2 text-dark">{job.title}</h5>
                     <div className="d-flex flex-wrap gap-3 text-muted small">
                       <span>
-                        <FaMapMarkerAlt className="me-1 text-dark" /> {job.type}
+                        <FaMapMarkerAlt className="me-1" /> {job.type}
                       </span>
                       <span>
-                        <FaClock className="me-1 text-dark" /> {job.duration}
+                        <FaClock className="me-1" /> {job.duration}
                       </span>
                       <span>
-                        <FaMoneyBillAlt className="me-1 text-dark" />{" "}
+                        <FaMoneyBillAlt className="me-1" />{" "}
                         {job.salary || "N/A"}
                       </span>
                       <span>
-                        <FaUserTie className="me-1 text-dark" />{" "}
-                        {job.experience}
+                        <FaUserTie className="me-1" /> {job.experience}
                       </span>
                     </div>
                   </div>
+
                   <div className="text-end mt-3 mt-md-0">
                     <Link
                       to={`/careers/${encodeURIComponent(job.title)}`}
                       className="btn btn-outline-danger px-4 fw-semibold"
-                      onClick={() => {
-                        // ✅ Google Ads Conversion Tracking
-                        if (typeof window.gtag === "function") {
-                          window.gtag("event", "conversion", {
-                            send_to: "AW-16969684439/7XWjCOqAlbwbENer45s_", // 🔁 replace with actual label
-                            event_label: `View Job - ${job.title}`,
-                          });
-                          console.log(
-                            `✅ Conversion tracked: View Job - ${job.title}`
-                          );
-                        } else {
-                          console.warn(
-                            "⚠️ gtag not found — check if Google Ads script is loaded"
-                          );
-                        }
-                      }}
                     >
                       View
                     </Link>
+
                     <p className="mt-2 text-muted small mb-0">
                       Posted {getTimeAgo(job.posted)}
                     </p>
@@ -217,12 +197,35 @@ const Career = ({ jobsData }) => {
               </div>
             ))
           ) : (
-            <div className="text-center text-secondary py-5">
-              <h5 className="fw-semibold mb-2">No matching positions found</h5>
-            </div>
+            <h5 className="text-center text-secondary py-5">
+              No matching positions found
+            </h5>
           )}
         </div>
       </section>
+
+      {/* Masonry CSS */}
+      <style>{`
+       
+        .masonry-grid {
+  column-count: 3;
+  column-gap: 20px;
+}
+
+.masonry-item {
+  break-inside: avoid;
+  margin-bottom: 20px;
+}
+
+.masonry-item img {
+  width: 100%;
+  height: auto;      /* IMPORTANT — keep natural height */
+  object-fit: contain;
+  border-radius: 12px;
+  display: block;
+}
+
+      `}</style>
     </>
   );
 };
