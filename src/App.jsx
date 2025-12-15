@@ -40,7 +40,7 @@ import HrApplicants from "./pages/hr/HrApplicants";
 import HrLogin from "./pages/hr/HrLogin";
 
 // Channel Partner Pages
-import ChannelLogin from "./pages/channel/ChannelLogin";
+import PartnerLogin from "./pages/channel/ChannelLogin";
 import ChannelDashboard from "./pages/Channel/ChannelDashboard";
 import AddLead from "./pages/Channel/AddLead";
 import MyLeads from "./pages/Channel/MyLeads";  // ← Correct import
@@ -107,7 +107,7 @@ function App() {
         <Route path="/hr/applicants" element={<HrApplicants />} />
 
         {/* CHANNEL PARTNER */}
-        <Route path="/channel/login" element={<ChannelLogin />} />
+        <Route path="/channel/login" element={<PartnerLogin />} />
 
         <Route path="/channel" element={<ChannelDashboard />}>
           <Route index element={<Navigate to="dashboard" replace />} />
