@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from "react";
 
 export default function PartnerProfile() {
-  const partnerId = localStorage.getItem("partnerId");
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+  // ✅ SAFER WAY
+  const partnerId =
+    localStorage.getItem("partnerId") ||
+    localStorage.getItem("partner_id") ||
+    localStorage.getItem("id");
 
   const [loading, setLoading] = useState(true);
   const [partner, setPartner] = useState(null);
@@ -10,97 +15,93 @@ export default function PartnerProfile() {
 
   useEffect(() => {
     if (!partnerId) {
+      console.log("❌ partnerId missing in localStorage");
       setLoading(false);
       return;
     }
 
     loadProfile();
-  }, []);
+  }, [partnerId]);
 
   const loadProfile = async () => {
     try {
+      /* ================= PARTNER DETAILS ================= */
       const res = await fetch(`${API_BASE}/api/partners/${partnerId}`);
       const data = await res.json();
 
-      if (data.success) {
+      if (data.success && data.partner) {
         setPartner(data.partner);
+      } else {
+        setPartner(null);
       }
 
-      // Load Lead Count
-      const leadRes = await fetch(`${API_BASE}/api/lead/by-partner/${partnerId}`);
+      /* ================= PARTNER LEADS (FIXED ROUTE) ================= */
+      const leadRes = await fetch(
+        `${API_BASE}/api/lead/partner/${partnerId}`
+      );
       const leadData = await leadRes.json();
 
-      setLeadCount(leadData.length || 0);
+      setLeadCount(leadData?.leads?.length || 0);
     } catch (err) {
       console.log("Profile fetch error:", err);
+      setPartner(null);
     }
+
     setLoading(false);
   };
 
-  if (loading)
+  /* ================= UI STATES ================= */
+
+  if (loading) {
     return (
-      <h4 className="text-center mt-5 fw-bold" style={{ color: "#555" }}>
+      <h4 className="text-center mt-5 fw-bold text-secondary">
         Loading...
       </h4>
     );
+  }
 
-  if (!partner)
+  if (!partner) {
     return (
-      <h3 className="text-center mt-5 fw-bold text-danger">No Data Found</h3>
+      <h3 className="text-center mt-5 fw-bold text-danger">
+        No Data Found
+      </h3>
     );
+  }
 
+  /* ================= UI ================= */
   return (
     <div className="container py-4" style={{ maxWidth: "900px" }}>
-      {/* PAGE TITLE */}
-      <h2 className="fw-bold mb-4" style={{ color: "#1b8f3c" }}>
+      <h2 className="fw-bold mb-4" style={{ color: "#6B11CB" }}>
         Partner Profile
       </h2>
 
-      {/* PROFILE CARD */}
       <div
         className="shadow p-4 rounded-4"
         style={{
-          background: "white",
-          borderLeft: "6px solid #1b8f3c",
+          background: "#ffffff",
+          borderLeft: "6px solid #6B11CB",
         }}
       >
-        <h4 className="fw-bold mb-4" style={{ color: "#1b8f3c" }}>
+        <h4 className="fw-bold mb-4 text-secondary">
           Personal Details
         </h4>
 
-        <div className="row mb-3">
-          <div className="col-4 fw-bold">Name:</div>
-          <div className="col-8">{partner.name}</div>
-        </div>
+        <ProfileRow label="Name" value={partner.name} />
+        <ProfileRow label="Email" value={partner.email} />
+        <ProfileRow label="Phone" value={partner.phone} />
+        <ProfileRow label="Address" value={partner.address || "-"} />
+        <ProfileRow
+          label="Joined"
+          value={new Date(partner.createdAt).toLocaleDateString()}
+        />
+        <ProfileRow
+          label="Total Leads"
+          value={
+            <span className="fw-bold text-primary">{leadCount}</span>
+          }
+        />
 
-        <div className="row mb-3">
-          <div className="col-4 fw-bold">Email:</div>
-          <div className="col-8">{partner.email}</div>
-        </div>
-
-        <div className="row mb-3">
-          <div className="col-4 fw-bold">Phone:</div>
-          <div className="col-8">{partner.phone}</div>
-        </div>
-
-        <div className="row mb-3">
-          <div className="col-4 fw-bold">Address:</div>
-          <div className="col-8">{partner.address}</div>
-        </div>
-
-        <div className="row mb-3">
-          <div className="col-4 fw-bold">Joined:</div>
-          <div className="col-8">
-            {new Date(partner.createdAt).toLocaleDateString()}
-          </div>
-        </div>
-
-        <div className="row mb-3">
-          <div className="col-4 fw-bold">Total Leads:</div>
-          <div className="col-8 fw-bold text-primary">{leadCount}</div>
-        </div>
-
-        <div className="row mb-1">
+        <div className="row mt-3">
           <div className="col-4 fw-bold">Status:</div>
           <div className="col-8">
             {partner.disabled ? (
@@ -114,3 +115,11 @@ export default function PartnerProfile() {
     </div>
   );
 }
+
+/* ================= SMALL COMPONENT ================= */
+const ProfileRow = ({ label, value }) => (
+  <div className="row mb-3">
+    <div className="col-4 fw-bold">{label}:</div>
+    <div className="col-8">{value}</div>
+  </div>
+);
