@@ -9,9 +9,11 @@ export default function Courses() {
     loadCourses();
   }, []);
 
+  const API = import.meta.env.VITE_API_BASE_URL;
+
   const loadCourses = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/courses");
+      const res = await fetch(`${API}/api/courses`) ;
       const data = await res.json();
       if (data.success) setCourses(data.courses);
     } catch (err) {
