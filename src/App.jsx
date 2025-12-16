@@ -40,10 +40,10 @@ import HrApplicants from "./pages/hr/HrApplicants";
 import HrLogin from "./pages/hr/HrLogin";
 
 // Channel Partner Pages
-import PartnerLogin from "./pages/channel/ChannelLogin";
+import PartnerLogin from "./pages/Channel/PartnerLogin";
 import ChannelDashboard from "./pages/Channel/ChannelDashboard";
 import AddLead from "./pages/Channel/AddLead";
-import MyLeads from "./pages/Channel/MyLeads";  // ← Correct import
+import MyLeads from "./pages/Channel/MyLeads"; 
 import DashboardOverview from "./pages/Channel/DashboardOverview";
 import Courses from "./pages/Channel/Courses";
 import CourseDetail from "./pages/Channel/CourseDetail";
