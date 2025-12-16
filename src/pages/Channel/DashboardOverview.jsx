@@ -94,12 +94,11 @@ const loadDashboardData = async () => {
   }
 };
 
-
-  const handleOpenNotif = () => {
-    setShowNotif(!showNotif);
-    localStorage.getItem(`readUpdates_${partnerId}`, updates.length);
-    setUnreadCount(0);
-  };
+const handleOpenNotif = () => {
+  setShowNotif(!showNotif);
+  localStorage.setItem(`readUpdates_${partnerId}`, updates.length);
+  setUnreadCount(0);
+};
 
   const stats = [
     { label: "Total Leads", value: totalLeads, icon: <FiUsers size={26} /> },
