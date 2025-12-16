@@ -41,59 +41,63 @@ export default function DashboardOverview() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const loadDashboardData = async () => {
-    try {
-      const leadRes = await fetch
-      (`http://localhost:5000/api/lead/partner/${partnerId}`);
-      const leadData = await leadRes.json();
+ const API = import.meta.env.VITE_API_URL;
 
-      if (leadData.success) {
-        const leads = leadData.leads;
-        setTotalLeads(leads.length);
-       setApprovedLeads(
-  leads.filter(l =>
-    ["APPROVED", "Approve", "CONVERTED"].includes(l.status)
-  ).length
-);
+const loadDashboardData = async () => {
+  try {
+    const leadRes = await fetch(
+      `${API}/api/lead/partner/${partnerId}`
+    );
+    const leadData = await leadRes.json();
 
-setPendingLeads(
-  leads.filter(l =>
-    ["PENDING", "Pending"].includes(l.status)
-  ).length
-);
+    if (leadData.success) {
+      const leads = leadData.leads;
+      setTotalLeads(leads.length);
 
-setRejectedLeads(
-  leads.filter(l =>
-    ["REJECTED", "Reject"].includes(l.status)
-  ).length
-);
+      setApprovedLeads(
+        leads.filter(l =>
+          ["APPROVED", "Approve", "CONVERTED"].includes(l.status)
+        ).length
+      );
 
-      }
+      setPendingLeads(
+        leads.filter(l =>
+          ["PENDING", "Pending"].includes(l.status)
+        ).length
+      );
 
-      const courseRes = await fetch("http://localhost:5000/api/courses");
-      const courseData = await courseRes.json();
-      setTotalCourses(courseData?.courses?.length || 0);
-
-      const updateRes = await fetch("http://localhost:5000/api/updates");
-      const updateData = await updateRes.json();
-
-      if (updateData.success) {
-        setUpdates(updateData.updates.reverse());
-
-        const savedRead =
-          Number(localStorage.getItem(`readUpdates_${partner}`)) || 0;
-
-        const newUnread = updateData.updates.length - savedRead;
-        setUnreadCount(newUnread > 0 ? newUnread : 0);
-      }
-    } catch (err) {
-      console.log("Dashboard Load Error:", err);
+      setRejectedLeads(
+        leads.filter(l =>
+          ["REJECTED", "Reject"].includes(l.status)
+        ).length
+      );
     }
-  };
+
+    const courseRes = await fetch(`${API}/api/courses`);
+    const courseData = await courseRes.json();
+    setTotalCourses(courseData?.courses?.length || 0);
+
+    const updateRes = await fetch(`${API}/api/updates`);
+    const updateData = await updateRes.json();
+
+    if (updateData.success) {
+      setUpdates(updateData.updates.reverse());
+
+      const savedRead =
+        Number(localStorage.getItem(`readUpdates_${partnerId}`)) || 0;
+
+      const newUnread = updateData.updates.length - savedRead;
+      setUnreadCount(newUnread > 0 ? newUnread : 0);
+    }
+  } catch (err) {
+    console.log("Dashboard Load Error:", err);
+  }
+};
+
 
   const handleOpenNotif = () => {
     setShowNotif(!showNotif);
-    localStorage.setItem(`readUpdates_${partner}`, updates.length);
+    localStorage.getItem(`readUpdates_${partnerId}`, updates.length);
     setUnreadCount(0);
   };
 
