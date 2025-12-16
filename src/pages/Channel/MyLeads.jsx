@@ -8,14 +8,14 @@ export default function LeadsList() {
   useEffect(() => {
     loadMyLeads();
   }, []);
-
+ const API = import.meta.env.VITE_API_BASE_URL;
   const loadMyLeads = async () => {
     try {
       const partnerId = localStorage.getItem("partnerId");
       if (!partnerId) return;
 
       const res = await fetch(
-        `http://localhost:5000/api/lead/partner/${partnerId}`
+        `${API}/api/lead/partner/${partnerId}`
       );
       const data = await res.json();
 

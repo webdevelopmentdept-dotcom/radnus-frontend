@@ -45,10 +45,10 @@ export default function CourseManagement() {
   useEffect(() => {
     loadCourses();
   }, []);
-
+ const API = import.meta.env.VITE_API_BASE_URL;
   const loadCourses = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/courses");
+      const res = await fetch(`${API}/api/courses`);
       const data = await res.json();
       if (data.success) setCourses(data.courses);
     } catch (err) {
@@ -73,8 +73,8 @@ export default function CourseManagement() {
     };
 
     const url = editingId
-      ? `http://localhost:5000/api/courses/${editingId}`
-      : "http://localhost:5000/api/courses";
+      ? `${API}/api/courses/${editingId}`
+      : `${API}/api/courses`;
 
     const method = editingId ? "PUT" : "POST";
 
@@ -102,7 +102,7 @@ export default function CourseManagement() {
     if (!window.confirm("Delete this course?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/courses/${id}`, {
+      const res = await fetch(`${API}/api/courses/${id}`, {
         method: "DELETE"
       });
 

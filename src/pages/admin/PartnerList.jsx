@@ -40,7 +40,7 @@ export default function PartnerList() {
   });
 
   const [search, setSearch] = useState("");
-
+ const API = import.meta.env.VITE_API_BASE_URL;
   const [successPopup, setSuccessPopup] = useState({
     show: false,
     email: "",
@@ -61,7 +61,7 @@ export default function PartnerList() {
 
   const loadPartners = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/partners/all");
+      const res = await fetch(`${API}/api/partners/all`);
       const data = await res.json();
       setPartners(data);
     } catch (err) {
@@ -89,8 +89,8 @@ export default function PartnerList() {
     if (form.document) fd.append("document", form.document);
 
     const url = editingId
-      ? `http://localhost:5000/api/partners/update/${editingId}`
-      : "http://localhost:5000/api/partners/add";
+      ? `${API}/api/partners/update/${editingId}`
+      : `${API}/api/partners/add`;
 
     const method = editingId ? "PUT" : "POST";
 
@@ -119,7 +119,7 @@ export default function PartnerList() {
   const deletePartner = async (id) => {
     if (!window.confirm("Delete this partner?")) return;
 
-    const res = await fetch(`http://localhost:5000/api/partners/delete/${id}`, {
+    const res = await fetch(`${API}/api/partners/delete/${id}`, {
       method: "DELETE",
     });
 
@@ -130,7 +130,7 @@ export default function PartnerList() {
   // ===================== ENABLE / DISABLE =====================
   const togglePartnerStatus = async (id) => {
     const res = await fetch(
-      `http://localhost:5000/api/partners/toggle/${id}`,
+      `${API}/api/partners/toggle/${id}`,
       { method: "PUT" }
     );
 
@@ -256,7 +256,7 @@ export default function PartnerList() {
                     {p.document ? (
                       <div className="d-flex gap-2">
                         <a
-                          href={`http://localhost:5000/uploads/${encodeURIComponent(
+                          href={`${API}/uploads/${encodeURIComponent(
                             p.document
                           )}`}
                           target="_blank"
@@ -267,7 +267,7 @@ export default function PartnerList() {
                         </a>
 
                         <a
-                          href={`http://localhost:5000/api/partners/download/${encodeURIComponent(
+                          href={`${API}/api/partners/download/${encodeURIComponent(
                             p.document
                           )}`}
                           download

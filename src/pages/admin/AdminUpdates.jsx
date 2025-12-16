@@ -4,11 +4,11 @@ export default function AdminUpdates() {
   const [updates, setUpdates] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-
+ const API = import.meta.env.VITE_API_BASE_URL;
   // Load all updates
   const loadUpdates = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/updates");
+      const res = await fetch(`${API}/api/updates`);
       const data = await res.json();
 
       // FIX: Must use data.updates
@@ -31,7 +31,7 @@ export default function AdminUpdates() {
 
     setLoading(true);
 
-    const res = await fetch("http://localhost:5000/api/updates/add", {
+    const res = await fetch(`${API}/api/updates/add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message }),
@@ -53,7 +53,7 @@ export default function AdminUpdates() {
     if (!window.confirm("Delete this update?")) return;
 
     const res = await fetch(
-      `http://localhost:5000/api/updates/delete/${id}`,
+      `${API}/api/updates/delete/${id}`,
       { method: "DELETE" }
     );
 

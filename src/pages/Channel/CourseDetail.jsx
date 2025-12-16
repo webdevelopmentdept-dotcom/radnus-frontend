@@ -8,10 +8,10 @@ export default function CourseDetail() {
   useEffect(() => {
     loadCourse();
   }, []);
-
+ const API = import.meta.env.VITE_API_BASE_URL;
   const loadCourse = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/courses/${id}`);
+      const res = await fetch(`${API}/api/courses/${id}`);
       const data = await res.json();
       if (data.success) setCourse(data.course);
     } catch (err) {

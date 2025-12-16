@@ -11,10 +11,10 @@ export default function LeadList() {
   useEffect(() => {
     loadLeads();
   }, []);
-
+ const API = import.meta.env.VITE_API_BASE_URL;
   const loadLeads = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/lead/all");
+      const res = await fetch(`${API}/api/lead/all`);
       const data = await res.json();
 
       if (data.success && Array.isArray(data.leads)) {
@@ -33,7 +33,7 @@ export default function LeadList() {
   const approveLead = async (lead) => {
     try {
       const res = await fetch(
-        `http://localhost:5000/api/lead/update-status/${lead._id}`,
+        `${API}/api/lead/update-status/${lead._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -64,7 +64,7 @@ export default function LeadList() {
   const submitRemark = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5000/api/lead/update-status/${selectedLead._id}`,
+        `${API}/api/lead/update-status/${selectedLead._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -112,7 +112,7 @@ export default function LeadList() {
 
   try {
     const res = await fetch(
-      `http://localhost:5000/api/lead/delete/${lead._id}`,
+      `${API}/api/lead/delete/${lead._id}`,
       { method: "DELETE" }
     );
 
@@ -206,7 +206,7 @@ export default function LeadList() {
                         <>
                           {/* VIEW FILE */}
                           <a
-                            href={`http://localhost:5000${l.proof}`}
+                            href={`${API}${l.proof}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn btn-light border me-2 rounded-circle p-2"
@@ -223,7 +223,7 @@ export default function LeadList() {
 
                           {/* DOWNLOAD FILE */}
                           <a
-                            href={`http://localhost:5000/api/lead/download/${l.proof
+                            href={`${API}/api/lead/download/${l.proof
                               .replace("/uploads/", "")}`}
                             className="btn btn-light border rounded-circle p-2"
                             style={{

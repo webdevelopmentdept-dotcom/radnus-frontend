@@ -70,10 +70,10 @@ export default function AddLead() {
 
     if (!partnerId || !partnerName)
       return toast.error("Login again");
-
+ const API = import.meta.env.VITE_API_BASE_URL;
     // CREATE ORDER
     const orderRes = await fetch(
-      "http://localhost:5000/api/payments/create-order",
+      `${API}/api/payments/create-order`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -111,7 +111,7 @@ export default function AddLead() {
         if (proof) fd.append("proof", proof);
 
         const saveRes = await fetch(
-          "http://localhost:5000/api/lead/add-after-payment",
+          `${API}/api/lead/add-after-payment`,
           {
             method: "POST",
             body: fd,
