@@ -15,10 +15,9 @@ export default function AdvanceRecords() {
 
   const loadRecords = async () => {
     try {
-     const res = await fetch(
-  `${API_BASE}/api/lead/advance-records`
-);
-
+      const res = await fetch(
+        `${API_BASE}/api/lead/advance-records`
+      );
       const data = await res.json();
 
       if (data.success) {
@@ -30,7 +29,7 @@ export default function AdvanceRecords() {
   };
 
   /* =========================
-     DELETE RECORD (LEAD)
+     DELETE RECORD
   ========================= */
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this advance record?")) return;
@@ -63,7 +62,7 @@ export default function AdvanceRecords() {
     const s = search.toLowerCase();
     return (
       r.partnerName?.toLowerCase().includes(s) ||
-      r.studentName?.toLowerCase().includes(s) ||
+      r.name?.toLowerCase().includes(s) ||
       r.course?.toLowerCase().includes(s)
     );
   });
@@ -104,10 +103,8 @@ export default function AdvanceRecords() {
                 <th>Partner</th>
                 <th>Student</th>
                 <th>Course</th>
-                <th className="text-end">
-                  Advance Amount (₹)
-                </th>
-                <th style={{ width: "120px" }}>
+                <th className="text-end">Advance Amount (₹)</th>
+                <th className="text-center" style={{ width: "140px" }}>
                   Actions
                 </th>
               </tr>
@@ -130,35 +127,30 @@ export default function AdvanceRecords() {
                   <td>{idx + 1}</td>
 
                   <td>
-                    {rec.createdAt
-                      ? new Date(rec.createdAt)
-                          .toLocaleDateString()
+                    {rec.date
+                      ? new Date(rec.date).toLocaleDateString()
                       : "-"}
                   </td>
 
-                  <td>{rec.partnerName}</td>
-                  <td>{rec.studentName}</td>
-                  <td>{rec.course}</td>
+                  <td>{rec.partnerName || "-"}</td>
+                  <td>{rec.name || "-"}</td>
+                  <td>{rec.course || "-"}</td>
 
                   <td className="text-end fw-semibold">
-                    ₹{rec.amount}
+                    ₹{rec.advance ?? 0}
                   </td>
 
-                  <td>
+                  <td className="text-center text-nowrap">
                     <button
                       className="btn btn-sm btn-outline-primary me-2"
-                      onClick={() =>
-                        alert("Edit screen later")
-                      }
+                      onClick={() => alert("Edit coming soon")}
                     >
                       Edit
                     </button>
 
                     <button
                       className="btn btn-sm btn-outline-danger"
-                      onClick={() =>
-                        handleDelete(rec._id)
-                      }
+                      onClick={() => handleDelete(rec._id)}
                     >
                       Delete
                     </button>
