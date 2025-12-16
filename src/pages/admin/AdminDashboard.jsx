@@ -32,41 +32,49 @@ export default function AdminDashboard() {
     fetchCounts();
   }, []);
 
-  const fetchCounts = async () => {
-    try {
-      const appRes = await fetch(`${API_BASE}/api/applicants`);
-      const appData = await appRes.json();
-      const list = appData?.applicants || [];
-      setApplicants(list);
+ const fetchCounts = async () => {
+  try {
+    // Applicants
+    const appRes = await fetch(`${API_BASE}/api/applicants`);
+    const appData = await appRes.json();
+    const applicantList = appData?.applicants || [];
+    setApplicants(applicantList);
 
-      const partnerRes = await fetch(`${API_BASE}/api/partners/all`);
-      const partnerData = await partnerRes.json();
-      setPartners(Array.isArray(partnerData) ? partnerData.length : 0);
+    // Partners
+    const partnerRes = await fetch(`${API_BASE}/api/partners/all`);
+    const partnerData = await partnerRes.json();
+    setPartners(Array.isArray(partnerData) ? partnerData.length : 0);
 
-      const leadRes = await fetch(`${API_BASE}/api/lead/all`);
-      const leadData = await leadRes.json();
-      setLeads(Array.isArray(leadData) ? leadData.length : 0);
+    // ✅ Leads (FIXED)
+    const leadRes = await fetch(`${API_BASE}/api/lead`);
+    const leadData = await leadRes.json();
+    const leadList = leadData?.leads || [];
 
-      const monthly = getMonthlyLeads(leadData);
-      setMonthlyLeads(monthly);
+    setLeads(leadList.length);
 
-      const courseCounts = { SEMP: 0, Hybrid: 0, LASP: 0 };
-      list.forEach((a) => {
-        const c = a.course?.toLowerCase() || "";
-        if (c.includes("lasp")) courseCounts.LASP++;
-        else if (c.includes("hybrid")) courseCounts.Hybrid++;
-        else if (c.includes("semp")) courseCounts.SEMP++;
-      });
+    // ✅ Monthly leads (FIXED)
+    const monthly = getMonthlyLeads(leadList);
+    setMonthlyLeads(monthly);
 
-      setCourseData([
-        { course: "SEMP", count: courseCounts.SEMP },
-        { course: "Hybrid", count: courseCounts.Hybrid },
-        { course: "LASP", count: courseCounts.LASP },
-      ]);
-    } catch (error) {
-      console.log("Dashboard Error:", error);
-    }
-  };
+    // Course distribution
+    const courseCounts = { SEMP: 0, Hybrid: 0, LASP: 0 };
+    applicantList.forEach((a) => {
+      const c = a.course?.toLowerCase() || "";
+      if (c.includes("lasp")) courseCounts.LASP++;
+      else if (c.includes("hybrid")) courseCounts.Hybrid++;
+      else if (c.includes("semp")) courseCounts.SEMP++;
+    });
+
+    setCourseData([
+      { course: "SEMP", count: courseCounts.SEMP },
+      { course: "Hybrid", count: courseCounts.Hybrid },
+      { course: "LASP", count: courseCounts.LASP },
+    ]);
+  } catch (error) {
+    console.log("Dashboard Error:", error);
+  }
+};
+
 
   return (
     <div className="container mt-4 pb-5">
