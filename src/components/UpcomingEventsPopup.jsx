@@ -67,16 +67,18 @@ export default function UpcomingEventsPopup() {
         <div className="free-marquee">
           <div className="free-marquee-track">
             <span className="free-marquee-text">
-              100% <span className="blink-free">FREE</span> All Training
-              Programs – Enroll Now
+              Below Training Programs are{" "}
+              <span className="blink-free">100% FREE</span> – Offline Only
+              Enroll Now
             </span>
+
             <span className="free-marquee-text">
-              100% <span className="blink-free">FREE</span> All Training
-              Programs – Enroll Now
+              Below Training Programs are{" "}
+              <span className="blink-free">100% FREE</span> – Offline Only
+              Enroll Now
             </span>
           </div>
         </div>
-
         {/* PROGRAM LIST */}
         <h4 className="section-title">📅 This Week Programs</h4>
 
