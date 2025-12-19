@@ -15,8 +15,8 @@ import {
 
 export default function ChannelDashboard() {
   const [darkMode, setDarkMode] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+  const [collapsed, setCollapsed] = useState(window.innerWidth < 600);
   const [partnerName, setPartnerName] = useState("Partner");
 
   /* ---------------- LOAD PARTNER NAME ---------------- */
@@ -27,7 +27,13 @@ export default function ChannelDashboard() {
 
   /* ---------------- RESPONSIVE ---------------- */
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 600);
+    const handleResize = () => {
+      const mobile = window.innerWidth < 600;
+      setIsMobile(mobile);
+      setCollapsed(mobile);
+    };
+
+    handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -103,6 +109,32 @@ export default function ChannelDashboard() {
 
   return (
     <div style={{ display: "flex", height: "100vh", width: "100vw", background: t.bg }}>
+      
+      {/* MOBILE HAMBURGER */}
+      {isMobile && collapsed && (
+  <button
+    onClick={() => setCollapsed(false)}
+    style={{
+      position: "fixed",
+      top: "10px",          // 👈 mela konjam
+      left: "10px",
+      zIndex: 1100,
+      background: t.primary,
+      color: "#fff",
+      border: "none",
+      borderRadius: "8px",  // 👈 small radius
+      padding: "6px",       // 👈 size reduce
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <FiChevronsRight size={18} /> {/* 👈 icon size reduce */}
+  </button>
+)}
+
+
       {/* MOBILE OVERLAY */}
       {!collapsed && isMobile && (
         <div
@@ -118,24 +150,25 @@ export default function ChannelDashboard() {
 
       {/* SIDEBAR */}
       <div style={sidebarStyle}>
-        {/* TOGGLE */}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          style={{
-            border: "none",
-            padding: "8px",
-            borderRadius: "10px",
-            cursor: "pointer",
-            marginBottom: "14px",
-            background: t.primary,
-            color: "#fff",
-          }}
-        >
-          {collapsed ? <FiChevronsRight /> : <FiChevronsLeft />}
-        </button>
+        {/* DESKTOP TOGGLE */}
+        {!isMobile && (
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            style={{
+              border: "none",
+              padding: "8px",
+              borderRadius: "10px",
+              cursor: "pointer",
+              marginBottom: "14px",
+              background: t.primary,
+              color: "#fff",
+            }}
+          >
+            {collapsed ? <FiChevronsRight /> : <FiChevronsLeft />}
+          </button>
+        )}
 
         <div style={{ flexGrow: 1 }}>
-          {/* BRAND */}
           {!collapsed && (
             <div style={{ textAlign: "center", marginBottom: "12px" }}>
               <img
@@ -152,7 +185,6 @@ export default function ChannelDashboard() {
             </div>
           )}
 
-          {/* USER */}
           {!collapsed && (
             <div
               style={{
@@ -190,33 +222,12 @@ export default function ChannelDashboard() {
             </div>
           )}
 
-          {/* THEME */}
-          {!collapsed && (
-            <div style={{ marginBottom: "14px" }}>
-              <p style={{ fontSize: "12px", color: t.textSoft }}>Theme</p>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button
-                  onClick={() => setDarkMode(false)}
-                  style={{ flex: 1, borderRadius: "8px", border: `1px solid ${t.border}` }}
-                >
-                  <FiSun />
-                </button>
-                <button
-                  onClick={() => setDarkMode(true)}
-                  style={{ flex: 1, borderRadius: "8px", border: `1px solid ${t.border}` }}
-                >
-                  <FiMoon />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* NAV */}
           <ul style={{ listStyle: "none", padding: 0 }}>
             {navItems.map((item) => (
               <li key={item.to}>
                 <NavLink
                   to={item.to}
+                  onClick={() => isMobile && setCollapsed(true)}
                   style={({ isActive }) => ({
                     ...linkBase,
                     background: isActive ? t.activeBg : "transparent",
@@ -231,7 +242,6 @@ export default function ChannelDashboard() {
           </ul>
         </div>
 
-        {/* LOGOUT */}
         <NavLink to="/" style={{ ...linkBase, color: "#E11D48" }}>
           <FiLogOut />
           {!collapsed && "Logout"}

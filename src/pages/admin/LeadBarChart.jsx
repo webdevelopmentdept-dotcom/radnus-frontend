@@ -19,7 +19,7 @@ export default function MonthlyLeadBarChart({ data }) {
 
   const highest = Math.max(...data);
   let maxVal = Math.ceil(highest / 5) * 5;
-  if (maxVal < 20) maxVal = 20;  // 🔥 For compact scale
+  if (maxVal < 20) maxVal = 20;
 
   const chartData = {
     labels,
@@ -27,13 +27,11 @@ export default function MonthlyLeadBarChart({ data }) {
       {
         label: "Monthly Leads",
         data,
-        borderRadius: 12,
+        borderRadius: 10,
 
-        // 🔥 COMPACT BAR SIZE
-        barThickness: 28,
-        maxBarThickness: 32,
+        barThickness: 24,
+        maxBarThickness: 28,
 
-        // Smooth gradient
         backgroundColor: (context) => {
           const { ctx, chartArea } = context.chart;
           if (!chartArea) return null;
@@ -76,6 +74,10 @@ export default function MonthlyLeadBarChart({ data }) {
       x: {
         grid: { display: false },
         ticks: {
+          autoSkip: false,          // 🔥 IMPORTANT FIX
+          maxRotation: 30,          // 🔥 Mobile-friendly
+          minRotation: 30,
+          padding: 6,
           font: { size: 11, weight: "600" },
           color: "#555",
         },
@@ -98,7 +100,7 @@ export default function MonthlyLeadBarChart({ data }) {
   };
 
   return (
-    <div style={{ height: "200px", width: "100%" }}>  {/* 🔥 compact height */}
+    <div style={{ height: "220px", width: "100%" }}>
       <Bar data={chartData} options={options} />
     </div>
   );

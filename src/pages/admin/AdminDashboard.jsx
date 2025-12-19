@@ -16,12 +16,12 @@ export default function AdminDashboard() {
     { course: "LASP", count: 0 },
   ]);
 
-  /* ================= MONTHLY LEAD CALCULATION (FIXED) ================= */
+  /* ================= MONTHLY LEAD CALCULATION ================= */
   const getMonthlyLeads = (list) => {
     const months = Array(12).fill(0);
 
     list.forEach((lead) => {
-      if (!lead.createdAt) return;     // ✅ FIX
+      if (!lead.createdAt) return;
       const date = new Date(lead.createdAt);
       const month = date.getMonth();
       if (!isNaN(month)) months[month]++;
@@ -37,29 +37,22 @@ export default function AdminDashboard() {
   /* ================= FETCH DASHBOARD DATA ================= */
   const fetchCounts = async () => {
     try {
-      /* -------- Applicants -------- */
       const appRes = await fetch(`${API_BASE}/api/applicants`);
       const appData = await appRes.json();
       const applicantList = appData?.applicants || [];
       setApplicants(applicantList);
 
-      /* -------- Partners -------- */
       const partnerRes = await fetch(`${API_BASE}/api/partners/all`);
       const partnerData = await partnerRes.json();
       setPartners(Array.isArray(partnerData) ? partnerData.length : 0);
 
-      /* -------- Leads (FIXED API) -------- */
-      const leadRes = await fetch(`${API_BASE}/api/lead/all`); // ✅ FIX
+      const leadRes = await fetch(`${API_BASE}/api/lead/all`);
       const leadData = await leadRes.json();
       const leadList = leadData?.leads || [];
 
       setLeads(leadList.length);
+      setMonthlyLeads(getMonthlyLeads(leadList));
 
-      /* -------- Monthly Leads (FIXED) -------- */
-      const monthly = getMonthlyLeads(leadList);
-      setMonthlyLeads(monthly);
-
-      /* -------- Course Distribution -------- */
       const courseCounts = { SEMP: 0, Hybrid: 0, LASP: 0 };
 
       applicantList.forEach((a) => {
@@ -84,9 +77,9 @@ export default function AdminDashboard() {
 
       {/* ================= HEADER ================= */}
       <div
-        className="p-4 mb-5 rounded-4 d-flex justify-content-between align-items-center shadow-lg"
+        className="p-4 mb-5 rounded-4 shadow-lg d-flex flex-column flex-md-row gap-3 justify-content-between align-items-start align-items-md-center"
         style={{
-          background: "linear-gradient(135deg, #ffffff 40%, #5A2EF9 40%)",
+        background: "linear-gradient(135deg, #ffffff 40%, #5A2EF9 40%)",
           border: "1px solid #eee",
         }}
       >
@@ -115,13 +108,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <button
-          className="btn fw-bold px-4 text-white"
-          style={{ background: "#5A2EF9", borderRadius: "12px" }}
-          onClick={fetchCounts}
-        >
-          🔄 Refresh
-        </button>
       </div>
 
       {/* ================= STATS ================= */}
