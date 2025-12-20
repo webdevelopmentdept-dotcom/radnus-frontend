@@ -1,4 +1,3 @@
-
 import React from "react";
 import bgImage from "../images/homebackground1.webp";
 import illustration from "../images/metricsimag4.webp";
@@ -6,8 +5,8 @@ import CountUp from "react-countup";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
-import bg1Image from "../images/bg2.webp";
 import UpcomingEventsPopup from "./UpcomingEventsPopup";
+
 function RadnusHome() {
   const stats = [
     { end: 8500, label: "Students Trained" },
@@ -34,7 +33,6 @@ function RadnusHome() {
       gtag("event", eventName, params);
     }
   };
-  console.log("UpcomingEventsPopup loaded");
 
   return (
     <>
@@ -46,12 +44,11 @@ function RadnusHome() {
         />
       </Helmet>
 
-      {/* HERO SECTION */}
+      {/* ===== HERO SECTION ===== */}
       <section
-        className="d-flex align-items-center text-white text-center text-md-start"
+        className="hero-section d-flex align-items-center text-white text-center text-md-start"
         style={{
-          background: `url(${bgImage}) center center / cover no-repeat fixed`,
-          minHeight: "90vh",
+          backgroundImage: `url(${bgImage})`,
         }}
       >
         <div className="container">
@@ -84,33 +81,54 @@ function RadnusHome() {
               >
                 Contact Us
               </button>
-              
             </div>
           </div>
         </div>
       </section>
+
       <UpcomingEventsPopup />
 
-      {/* Mobile BG Fix */}
+      {/* ===== HERO CSS (GLOBAL & CORRECT PLACE) ===== */}
       <style>
         {`
-          @media (max-width: 768px) {
-            section.d-flex {
-              background: url(${bg1Image}) 93% center / cover no-repeat !important;
-              background-size: 195% auto !important;
-              background-attachment: scroll !important;
-              min-height: 60vh !important;
+          .hero-section {
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: cover;
+          }
+
+          /* Desktop */
+          @media (min-width: 769px) {
+            .hero-section {
+              min-height: 90vh;
             }
+          }
+
+          /* Mobile */
+          @media (max-width: 768px) {
+            .hero-section {
+              min-height: auto;
+              padding: 60px 0;
+            }
+
+            .hero-section .container {
+              max-width: 100%;
+              padding-left: 16px;
+              padding-right: 16px;
+            }
+          }
+
+          html, body {
+            overflow-x: hidden;
           }
         `}
       </style>
 
-      {/* 🔥 UNLOCKER MARQUEE – CLEAN & FINAL */}
+      {/* ===== UNLOCKER MARQUEE ===== */}
       <section
         style={{
           background: "#ffffff",
           padding: "12px 0",
-
           overflow: "hidden",
           position: "relative",
           whiteSpace: "nowrap",
@@ -125,7 +143,6 @@ function RadnusHome() {
             fontSize: "1.2rem",
           }}
         >
-          {/* Text Loop 1 */}
           <div style={{ display: "inline-flex" }}>
             <span className="mx-4">
               Radnus Unlocker – Reliable Online Unlock Service Provider in India
@@ -141,7 +158,6 @@ function RadnusHome() {
             </span>
           </div>
 
-          {/* Duplicate Loop => Infinite scroll */}
           <div style={{ display: "inline-flex" }}>
             <span className="mx-4">
               Radnus Unlocker – Reliable Online Unlock Service Provider in India
@@ -158,7 +174,6 @@ function RadnusHome() {
           </div>
         </div>
 
-        {/* Desktop CTA */}
         <a
           href="https://radnusunlockers.com"
           target="_blank"
@@ -169,11 +184,10 @@ function RadnusHome() {
             right: "15px",
             top: "50%",
             transform: "translateY(-50%)",
-            background: "#615353ff",
+            background: "#615353",
             color: "white",
             padding: "6px 18px",
             borderRadius: "20px",
-
             textDecoration: "none",
             boxShadow: "0px 2px 5px rgba(0,0,0,0.15)",
           }}
@@ -181,7 +195,6 @@ function RadnusHome() {
           Visit Unlocker →
         </a>
 
-        {/* Mobile CTA */}
         <a
           href="https://radnusunlockers.com"
           target="_blank"
@@ -194,7 +207,6 @@ function RadnusHome() {
             color: "white",
             padding: "6px 2px",
             borderRadius: "5px",
-
             width: "150px",
             marginLeft: "auto",
             marginRight: "auto",
@@ -210,28 +222,23 @@ function RadnusHome() {
               0% { transform: translateX(0); }
               100% { transform: translateX(-50%); }
             }
+
             @media (max-width: 768px) {
-              .unlock-btn-desktop {
-                display: none !important;
-              }
-              .unlock-btn-mobile {
-                display: block !important;
-              }
+              .unlock-btn-desktop { display: none !important; }
+              .unlock-btn-mobile { display: block !important; }
             }
           `}
         </style>
       </section>
 
-      {/* TRACK RECORD */}
+      {/* ===== TRACK RECORD ===== */}
       <section className="text-dark py-1 bg-white" id="track">
         <div className="container">
           <div className="row align-items-center">
-            <div
-              className="col-md-7 text-center text-md-start"
-              style={{ color: "#a80303" }}
-            >
+            <div className="col-md-7 text-center text-md-start">
               <motion.h1
                 className="fw-bold mb-3 fs-1"
+                style={{ color: "#a80303" }}
                 initial={{ y: -40, opacity: 0 }}
                 whileInView={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8 }}
@@ -274,12 +281,12 @@ function RadnusHome() {
         </div>
       </section>
 
-      {/* SERVICES */}
+      {/* ===== SERVICES ===== */}
       <section className="pb-4 bg-white">
         <div className="container text-center">
           <motion.h1
-            style={{ color: "#a80303" }}
             className="fw-bold mb-3"
+            style={{ color: "#a80303" }}
             initial={{ y: -20, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
           >
@@ -297,7 +304,6 @@ function RadnusHome() {
               >
                 <div className="card h-100 shadow-sm rounded-4 p-3 d-flex flex-column justify-content-between">
                   <h6 className="text-dark mb-4 fs-6">{service.title}</h6>
-
                   <Link
                     to={service.path}
                     className="btn btn-sm mt-auto service-btn"
