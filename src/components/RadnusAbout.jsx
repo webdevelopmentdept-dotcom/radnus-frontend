@@ -184,6 +184,12 @@ function RadnusAbout() {
             <strong>20+ years of industry experience</strong>, Radnus has built
             trust through quality, innovation, and job-ready skills.
           </p>
+          <p className="mb-4" style={{ fontSize: "1.2rem" }}>
+            <strong>Shirdi Enterprises</strong> is our sister concern, operating
+            under the same management and values. It supports our extended
+            business operations and strengthens our commitment to reliability,
+            growth, and long-term success.
+          </p>
 
           <div className="row justify-content-center why-icons-row">
             {[

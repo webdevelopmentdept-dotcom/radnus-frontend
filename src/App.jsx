@@ -49,17 +49,33 @@ import Courses from "./pages/Channel/Courses";
 import CourseDetail from "./pages/Channel/CourseDetail";
 import PartnerProfile from "./pages/Channel/ProfilePartner";
 
+//RADNUS CONNECT 
+import RadnusConnectHome from "./components/radnusconnect/RadnusConnectHome";
+import TechnicianForm from "./components/radnusconnect/TechnicianForm";
+import ShopOwnerForm from "./components/radnusconnect/ShopOwnerForm";
+
+
+
+
 function App() {
   const location = useLocation();
 
   // UPDATED CONDITION (Case insensitive + removes header/footer for all channel pages)
-  const hideHeaderFooter =
-    (location.pathname.startsWith("/admin") &&
-      location.pathname !== "/admin/login") ||
-    (location.pathname.startsWith("/hr") &&
-      location.pathname !== "/hr/login") ||
-    (location.pathname.toLowerCase().startsWith("/channel") &&
-      location.pathname.toLowerCase() !== "/channel/login");
+ const hideHeaderFooter =
+  (location.pathname.startsWith("/admin") &&
+    location.pathname !== "/admin/login") ||
+
+  (location.pathname.startsWith("/hr") &&
+    location.pathname !== "/hr/login") ||
+
+  (location.pathname.toLowerCase().startsWith("/channel") &&
+    location.pathname.toLowerCase() !== "/channel/login") ||
+
+  // ✅ RADNUS CONNECT FORMS
+  location.pathname.startsWith("/radnus-connect/technician") ||
+  location.pathname.startsWith("/radnus-connect/shop-owner");
+
+
 
   return (
     <>
@@ -106,7 +122,7 @@ function App() {
         <Route path="/hr/login" element={<HrLogin />} />
         <Route path="/hr/applicants" element={<HrApplicants />} />
 
-        {/* CHANNEL PARTNER */}
+        {/* CHANNEL PARTNER */}   
         <Route path="/channel/login" element={<PartnerLogin />} />
 
         <Route path="/channel" element={<ChannelDashboard />}>
@@ -118,6 +134,12 @@ function App() {
           <Route path="course/:id" element={<CourseDetail />} />
           <Route path="profile" element={<PartnerProfile />} />
         </Route>
+
+
+   {/* RADNUS CONNECT */}  
+  <Route path="/radnus-connect" element={<RadnusConnectHome />} />
+  <Route path="/radnus-connect/technician" element={<TechnicianForm />} />
+  <Route path="/radnus-connect/shop-owner" element={<ShopOwnerForm />} />
 
       </Routes>
 

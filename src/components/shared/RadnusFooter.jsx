@@ -15,7 +15,6 @@ function RadnusFooter() {
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -226,8 +225,15 @@ function RadnusFooter() {
           </Row>
         </Container>
 
-        <div className="text-center text-light mb-3">
+        <div className="text-center text-light mb-1">
           © 2025 All Rights Reserved by Radnus.
+        </div>
+
+        <div
+          className="text-center text-light"
+          style={{ fontSize: "1rem", opacity: 0.85 }}
+        >
+          A brand operated along with its sister concern, Shirdi Enterprises.
         </div>
       </div>
     </footer>

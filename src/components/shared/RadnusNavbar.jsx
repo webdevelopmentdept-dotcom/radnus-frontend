@@ -283,6 +283,15 @@ function RadnusNavbar() {
                   Login
                 </Link>
               </li>
+              <li className="nav-item mx-3">
+                <Link
+                  className="nav-link text-danger"
+                  to="/radnus-connect"
+                  onClick={(e) => closeMenu(e, "/radnus-connect")}
+                >
+                  Radnus Connect
+                </Link>
+              </li>
  
             </ul>
           </div>
