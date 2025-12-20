@@ -118,21 +118,25 @@ const exportExcel = () => {
   );
 };
 const deleteShopOwner = async (id) => {
-  if (!window.confirm("Are you sure you want to delete this record?")) return;
+  if (!window.confirm("Are you sure you want to delete this shop owner?"))
+    return;
 
   try {
-    await fetch(`${API}/api/shop-owner/${id}`, {
+    const res = await fetch(`${API}/api/shop-owner/${id}`, {
       method: "DELETE",
     });
 
-    // UI update
+    if (!res.ok) throw new Error("Delete failed");
+
+    // remove from UI immediately
     setList((prev) => prev.filter((i) => i._id !== id));
     setFiltered((prev) => prev.filter((i) => i._id !== id));
   } catch (err) {
-    alert("Delete failed");
     console.error(err);
+    alert("Delete failed");
   }
 };
+
 
 
   if (loading) return <div className="p-4">Loading…</div>;

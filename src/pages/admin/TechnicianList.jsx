@@ -100,17 +100,24 @@ export default function TechnicianList() {
   };
 
   /* 🗑 DELETE */
-  const deleteTechnician = async (id) => {
-    if (!window.confirm("Delete this technician?")) return;
+ const deleteTechnician = async (id) => {
+  if (!window.confirm("Delete this technician?")) return;
 
-    try {
-      await fetch(`${API}/api/technicians/${id}`, { method: "DELETE" });
-      setList((prev) => prev.filter((i) => i._id !== id));
-      setFiltered((prev) => prev.filter((i) => i._id !== id));
-    } catch {
-      alert("Delete failed");
-    }
-  };
+  try {
+    const res = await fetch(`${API}/api/technician/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) throw new Error("Delete failed");
+
+    setList((prev) => prev.filter((i) => i._id !== id));
+    setFiltered((prev) => prev.filter((i) => i._id !== id));
+  } catch (err) {
+    alert("Delete failed");
+    console.error(err);
+  }
+};
+
 
   if (loading) return <div className="p-4">Loading…</div>;
 
