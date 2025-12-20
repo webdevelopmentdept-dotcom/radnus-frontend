@@ -42,20 +42,23 @@ const [submitting, setSubmitting] = useState(false);
   setSubmitting(true);
 
   try {
-    const res = await fetch("http://localhost:5000/api/shop-owner", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+  const API = import.meta.env.VITE_API_BASE_URL;
 
-    await res.json();
+  const res = await fetch(`${API}/api/shop-owner`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(form),
+  });
 
-    setSubmitted(true);   // ✅ ADD THIS
-  } catch (err) {
-    console.error("Submit error:", err);
-  } finally {
-    setSubmitting(false);
-  }
+  await res.json();
+
+  setSubmitted(true);   // ✅ success state
+} catch (err) {
+  console.error("Submit error:", err);
+} finally {
+  setSubmitting(false);
+}
+
 };
 
 

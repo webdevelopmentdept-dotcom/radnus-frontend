@@ -72,19 +72,22 @@ function TechnicianForm() {
     setSubmitting(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/technician", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+  const API = import.meta.env.VITE_API_BASE_URL;
 
-      await res.json();
-      setSubmitted(true);
-    } catch (err) {
-      console.error("Submit error:", err);
-    } finally {
-      setSubmitting(false);
-    }
+  const res = await fetch(`${API}/api/technician`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(form),
+  });
+
+  await res.json();
+  setSubmitted(true);
+} catch (err) {
+  console.error("Submit error:", err);
+} finally {
+  setSubmitting(false);
+}
+
   };
 
   /* ================= THANK YOU PAGE ================= */
