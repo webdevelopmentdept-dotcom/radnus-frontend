@@ -48,6 +48,22 @@ export default function AdminSidebar() {
       ],
     },
     {
+  module: "Radnus Connect",
+  items: [
+    {
+      name: "Shop Owner List",
+      path: "/admin/radnus-connect/shop-owners",
+      icon: "bi-shop-window"
+    },
+    {
+      name: "Technician List",
+      path: "/admin/radnus-connect/technicians",
+      icon: "bi-person-workspace"
+    }
+  ],
+},
+
+    {
       module: "Channel Partner",
       items: [
         { name: "Partner List", path: "/admin/partners", icon: "bi-person-badge-fill" },

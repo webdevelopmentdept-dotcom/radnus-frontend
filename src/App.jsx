@@ -53,6 +53,10 @@ import PartnerProfile from "./pages/Channel/ProfilePartner";
 import RadnusConnectHome from "./components/radnusconnect/RadnusConnectHome";
 import TechnicianForm from "./components/radnusconnect/TechnicianForm";
 import ShopOwnerForm from "./components/radnusconnect/ShopOwnerForm";
+import ShopOwnerList from "./pages/admin/ShopOwnerList";
+import TechnicianList from "./pages/admin/TechnicianList";
+
+
 
 
 
@@ -116,6 +120,17 @@ function App() {
           <Route path="courses" element={<CourseManagement />} />
           <Route path="settings" element={<SystemSettings />} />
           <Route path="updates" element={<AdminUpdates />} />
+
+          <Route
+  path="/admin/radnus-connect/shop-owners"
+  element={<ShopOwnerList />}
+/>
+<Route
+  path="/admin/radnus-connect/technicians"
+  element={<TechnicianList />}
+/>
+
+
         </Route>
 
         {/* HR */}

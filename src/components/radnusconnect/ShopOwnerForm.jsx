@@ -1,5 +1,6 @@
 import { useState } from "react";
 import tnDistrictData from "./TnDistrictData";
+import { useNavigate } from "react-router-dom";
 
 function ShopOwnerForm() {
   const [step, setStep] = useState(1);
@@ -7,6 +8,8 @@ const [submitted, setSubmitted] = useState(false);
 const [errors, setErrors] = useState({});
 const [selectedDistrict, setSelectedDistrict] = useState("");
 const [submitting, setSubmitting] = useState(false);
+const navigate = useNavigate();
+
 
 
   const [form, setForm] = useState({
@@ -117,11 +120,12 @@ if (submitted) {
         </p>
 
         <button
-          className="btn btn-danger"
-          onClick={() => (window.location.href = "/")}
-        >
-          Back to Home
-        </button>
+  className="btn btn-danger"
+  onClick={() => navigate("/radnus-connect")}
+>
+  Back to Home
+</button>
+
       </div>
     </div>
   );

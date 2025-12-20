@@ -1,5 +1,7 @@
 import { useState } from "react";
 import tnDistrictData from "./TnDistrictData";
+import { useNavigate } from "react-router-dom";
+
 
 function TechnicianForm() {
   const [step, setStep] = useState(1);
@@ -7,6 +9,8 @@ function TechnicianForm() {
   const [errors, setErrors] = useState({});
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate();
+
 
   const [form, setForm] = useState({
     skills: [],
@@ -107,12 +111,13 @@ function TechnicianForm() {
             <br />
             Our team will contact you soon.
           </p>
-          <button
-            className="btn btn-danger"
-            onClick={() => (window.location.href = "/")}
-          >
-            Back to Home
-          </button>
+        <button
+  className="btn btn-danger"
+  onClick={() => navigate("/radnus-connect")}
+>
+  Back to Home
+</button>
+
         </div>
       </div>
     );
