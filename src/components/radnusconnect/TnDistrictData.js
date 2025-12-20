@@ -390,6 +390,13 @@ const TnDistrictData = {
     "Virudhunagar",
     "Watrap",
   ],
+  Pondicherry: [
+
+    "Ozhukarai (Oulgaret)",
+    "Puducherry",
+    "Villianur ",
+       "Bahour",
+  ],
 };
 
 export default TnDistrictData;
