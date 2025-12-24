@@ -77,6 +77,11 @@ export default function TechnicianList() {
       Experience: i.experience,
       JobType: i.jobType,
       PaymentType: i.paymentType,
+      ExpectedSalary:
+  i.paymentType && i.expectedSalary
+    ? `${i.paymentType} - ${i.expectedSalary}`
+    : "",
+
       WorkLocation: i.workLocation,
       JoinReady: i.joinReady,
 
@@ -195,6 +200,7 @@ export default function TechnicianList() {
               <th>District</th>
               <th>Experience</th>
               <th>Job Type</th>
+              <th>Salary</th>
               <th>Location</th>
               <th>Action</th>
             </tr>
@@ -216,6 +222,12 @@ export default function TechnicianList() {
                   <td>{i.district}</td>
                   <td>{i.experience}</td>
                   <td>{i.jobType}</td>
+                  <td>
+  {i.paymentType && i.expectedSalary
+    ? `${i.paymentType} - ₹${i.expectedSalary}`
+    : "-"}
+</td>
+
                   <td>{i.workLocation}</td>
                   <td className="d-flex gap-2">
                     <button
@@ -277,6 +289,17 @@ export default function TechnicianList() {
                   <div className="row">
                     <div className="col-md-4"><Info label="Job Type" value={selected.jobType} /></div>
                     <div className="col-md-4"><Info label="Payment Type" value={selected.paymentType} /></div>
+                    <div className="col-md-4">
+  <Info
+    label="Expected Salary"
+    value={
+      selected.paymentType && selected.expectedSalary
+        ? `${selected.paymentType} - ₹${selected.expectedSalary}`
+        : "-"
+    }
+  />
+</div>
+
                     <div className="col-md-4"><Info label="Work Location" value={selected.workLocation} /></div>
                     <div className="col-md-4"><Info label="Join Ready" value={selected.joinReady} /></div>
                   </div>
