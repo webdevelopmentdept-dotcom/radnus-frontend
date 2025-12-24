@@ -2,7 +2,6 @@ import { useState } from "react";
 import tnDistrictData from "./TnDistrictData";
 import { useNavigate } from "react-router-dom";
 
-
 function TechnicianForm() {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
@@ -11,23 +10,72 @@ function TechnicianForm() {
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
-
   const [form, setForm] = useState({
+    fullName: "",
+    mobile: "",
+    address: "",
+    district: "",
+    taluk: "",
+    experience: "",
+
     skills: [],
     brands: [],
     tools: [],
+
+    jobType: "",
+    paymentType: "",
+    expectedSalary: "",
+
+    workLocation: "",
+    joinReady: "",
+    radnusAgree: "",
+
+    remarks: "",
   });
 
+  /* ✅ MISSING FUNCTION – FIXED */
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
     setErrors((p) => ({ ...p, [name]: false }));
 
     if (name === "district") {
       setSelectedDistrict(value);
       setForm((p) => ({ ...p, taluk: "" }));
     }
+
+    if (name === "paymentType") {
+      setForm((p) => ({ ...p, expectedSalary: "" }));
+    }
   };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (submitting) return;
+
+  setSubmitting(true);
+
+  try {
+    const API = import.meta.env.VITE_API_BASE_URL;
+
+    const res = await fetch(`${API}/api/technician`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+
+    await res.json();
+    setSubmitted(true);
+  } catch (err) {
+    console.error("Submit error:", err);
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const handleCheckbox = (e, field) => {
     const value = e.target.value;
@@ -61,6 +109,8 @@ function TechnicianForm() {
     if (step === 3) {
       if (!form.jobType) newErrors.jobType = true;
       if (!form.paymentType) newErrors.paymentType = true;
+      if (form.paymentType && !form.expectedSalary)
+        newErrors.expectedSalary = true;
       if (!form.workLocation) newErrors.workLocation = true;
       if (!form.joinReady) newErrors.joinReady = true;
       if (!form.radnusAgree) newErrors.radnusAgree = true;
@@ -70,30 +120,6 @@ function TechnicianForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (submitting) return;
-    setSubmitting(true);
-
-    try {
-  const API = import.meta.env.VITE_API_BASE_URL;
-
-  const res = await fetch(`${API}/api/technician`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(form),
-  });
-
-  await res.json();
-  setSubmitted(true);
-} catch (err) {
-  console.error("Submit error:", err);
-} finally {
-  setSubmitting(false);
-}
-
-  };
-
   /* ================= THANK YOU PAGE ================= */
   if (submitted) {
     return (
@@ -101,27 +127,21 @@ function TechnicianForm() {
         className="d-flex justify-content-center align-items-center"
         style={{ minHeight: "100vh", background: "#fbe9ea" }}
       >
-        <div
-          className="bg-white p-5 rounded shadow text-center"
-          style={{ maxWidth: "500px" }}
-        >
+        <div className="bg-white p-5 rounded shadow text-center">
           <h3 className="text-danger fw-bold mb-3">Thank You!</h3>
-          <p className="mb-4">
-            Your technician profile has been submitted successfully.
-            <br />
-            Our team will contact you soon.
-          </p>
-        <button
-  className="btn btn-danger"
-  onClick={() => navigate("/radnus-connect")}
->
-  Back to Home
-</button>
-
+          <p>Your technician profile has been submitted successfully.</p>
+          <button
+            className="btn btn-danger"
+            onClick={() => navigate("/radnus-connect")}
+          >
+            Back to Home
+          </button>
         </div>
       </div>
     );
   }
+
+
 
   return (
     <>
@@ -171,7 +191,7 @@ function TechnicianForm() {
       <div className="container my-5" style={{ maxWidth: "900px" }}>
         <div className="card-box">
           <form>
-            {/* ================= STEP 1 ================= */}
+          {/* ================= STEP 1 ================= */}
             {step === 1 && (
               <>
                 <h6 className="text-danger fw-bold mb-3">
@@ -366,31 +386,73 @@ function TechnicianForm() {
     </div>
 
     {/* Expected Payment */}
-    <div className="mb-3">
-      <label className={errors.paymentType ? "text-danger" : ""}>
-        Expected Payment
-      </label>
-      <div>
-        <label className="me-3">
-          <input
-            type="radio"
-            name="paymentType"
-            value="Daily Wage"
-            onChange={handleChange}
-          />{" "}
-          Daily
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="paymentType"
-            value="Monthly Salary"
-            onChange={handleChange}
-          />{" "}
-          Monthly
-        </label>
-      </div>
+    {!form.paymentType && (
+  <small className="text-muted d-block mt-1">
+    Please select Daily or Monthly to enter expected salary
+  </small>
+)}
+
+<div className="mb-3">
+  <label className={errors.paymentType ? "text-danger" : ""}>
+    Expected Payment Type
+  </label>
+
+  <div className="d-flex gap-4 mt-1">
+    <div className="form-check">
+      <input
+        className="form-check-input"
+        type="radio"
+        name="paymentType"
+        value="Daily"
+        checked={form.paymentType === "Daily"}
+        onChange={handleChange}
+      />
+      <label className="form-check-label">Daily</label>
     </div>
+
+    <div className="form-check">
+      <input
+        className="form-check-input"
+        type="radio"
+        name="paymentType"
+        value="Monthly"
+        checked={form.paymentType === "Monthly"}
+        onChange={handleChange}
+      />
+      <label className="form-check-label">Monthly</label>
+    </div>
+  </div>
+</div>
+
+
+
+
+{/* Expected Salary / Wage */}
+{form.paymentType && (
+  <div className="mb-3">
+    <label className={errors.expectedSalary ? "text-danger" : ""}>
+      {form.paymentType === "Daily"
+        ? "Expected Daily Wage (₹)"
+        : "Expected Monthly Salary (₹)"}
+    </label>
+
+    <input
+      type="number"
+      className={`form-control ${
+        errors.expectedSalary ? "border-danger" : ""
+      }`}
+      name="expectedSalary"
+      placeholder={
+        form.paymentType === "Daily"
+          ? "Eg: 800"
+          : "Eg: 20000"
+      }
+      value={form.expectedSalary}
+      onChange={handleChange}
+    />
+  </div>
+)}
+
 
     {/* Preferred Working Location */}
     <div className="mb-3">
