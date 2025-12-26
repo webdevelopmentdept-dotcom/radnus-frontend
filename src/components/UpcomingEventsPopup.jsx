@@ -1,196 +1,175 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import "./Popup.css";
+
+/* 🔁 Software Tools Rotation */
+const SOFTWARE_TOOLS = [
+  "UMT PRO",
+  "UNLOCK TOOL",
+  "CHIMERA TOOL",
+  "SIGMA TOOL",
+  "CHEETAH TOOL",
+  "AMT TOOL",
+  "HYDRA TOOL",
+];
+
+/* 🔧 Get tool based on week */
+const getToolForWeek = (weekIndex) => {
+  return SOFTWARE_TOOLS[weekIndex % SOFTWARE_TOOLS.length];
+};
 
 export default function UpcomingEventsPopup() {
   const [showPopup, setShowPopup] = useState(false);
+  const [showUpcoming, setShowUpcoming] = useState(false);
+  const [weekOffset, setWeekOffset] = useState(1);
 
-  // Show popup on page load
-  useEffect(() => {
-    setShowPopup(true);
-  }, []);
+ useEffect(() => {
+  setShowPopup(true); // always show on refresh
+}, []);
 
-  useEffect(() => {
-    const closed = localStorage.getItem("popupClosed");
-    if (!closed) setShowPopup(true);
-  }, []);
+const closePopup = () => {
+  setShowPopup(false); // close only for now
+};
 
-  const closePopup = () => {
-    localStorage.setItem("popupClosed", "true");
-    setShowPopup(false);
-  };
 
-  // Helper: Generate weekly events
-  const getWeeklyEvents = () => {
+  const formatDate = (d) =>
+    d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+
+  /* 📅 Get weekly events */
+  const getWeekEvents = (offset, remainingOnly = false) => {
     const today = new Date();
-    const todayDate = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
+    today.setHours(0, 0, 0, 0);
 
-    const day = today.getDay(); // Sunday = 0
+    const day = today.getDay();
     const monday = new Date(today);
-    monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
+    monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
 
-    const formatDate = (date) =>
-      date.toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-      });
+    const toolName = getToolForWeek(offset);
 
-    const events = [
-      {
-        offset: 0,
-        name: "Mobile Exchange Mela",
-        form: "https://forms.gle/Zi7rTw3ty8xbzucc7",
+    const weeklyPrograms = {
+      1: { name: "Mobile Exchange Mela", form: "https://forms.gle/5EGH8oPhQfQuAso59" },
+      2: { name: "Mobile Service Training Demo", form: "https://forms.gle/rDS49wNbpSqXusyy8" },
+      3: {
+        name: `Software Tool Training – ${toolName}`,
+        form: "https://forms.gle/U9g2NJDCzPXJmDLH8",
       },
-      {
-        offset: 1,
-        name: "Mobile Service Training Demo",
-        form: "https://forms.gle/bSdyNZPRooKs3mfD7",
-      },
-      {
-        offset: 2,
-        name: "Software Tool Training UMT PRO ",
-        form: "https://forms.gle/HHRRZafeM66WG1U49",
-      },
-      {
-        offset: 3,
-        name: "Mobile Service Mela",
-        form: "https://forms.gle/dCbKQuBidodCS3CY8",
-      },
-      {
-        offset: 4,
-        name: "Radnus Unlocker Training",
-        form: "https://forms.gle/hrmgCjsLZ89R5kKP6",
-      },
-      {
-        offset: 5,
-        name: "Mobile Service Training Demo",
-        form: "https://forms.gle/RWPb9j8USHBM3jR68",
-      },
-    ];
+      4: { name: "Mobile Service Mela", form: "https://forms.gle/Ks5rTawHXSe2AznNA" },
+      5: { name: "Radnus Unlocker Training", form: "https://forms.gle/uy6MoQRPTPWfaK1A9" },
+      6: { name: "Mobile Service Training Demo", form: "https://forms.gle/kDThKZ9UGmGFJcU89" },
+    };
 
-    return events
-      .map((e) => {
-        const date = new Date(monday.getTime() + e.offset * 86400000);
-        return {
-          title: `${e.name} (${formatDate(date)})`,
-          date,
-          isToday: date.getTime() === todayDate.getTime(),
-          form: e.form,
-        };
-      })
-      .filter((e) => e.date >= todayDate); // Hide past days
-  };
+    const events = [];
 
-  const events = getWeeklyEvents();
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      const d = date.getDay();
 
-  // Form state
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    program: "",
-  });
+      if (weeklyPrograms[d]) {
+        if (remainingOnly && date < today) continue;
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async () => {
-    if (!form.name || !form.phone || !form.program) {
-      alert("Please fill all fields");
-      return;
+        events.push({
+          title: weeklyPrograms[d].name,
+          label: formatDate(date),
+          form: weeklyPrograms[d].form,
+        });
+      }
     }
 
-    try {
-      await fetch(
-        "https://script.google.com/macros/s/AKfycbxRHhLdznwPM_3WUjN8t3-aoBGL-BV9E3LCTC6PvfbRetCtqbwEpY5GccRyA32ht7-r/exec",
-        {
-          method: "POST",
-          mode: "no-cors",
-          body: new URLSearchParams(form),
-        }
-      );
-
-      alert("Thank you! Our team will contact you shortly.");
-      setForm({ name: "", phone: "", program: "" });
-      setShowPopup(false);
-    } catch (error) {
-      alert("Network issue. Please call us directly.");
-      console.error(error);
-    }
+    return events;
   };
 
-  // ❗ Hide popup if closed
+  const thisWeek = getWeekEvents(0, true);
+  const upcoming = getWeekEvents(weekOffset);
+
   if (!showPopup) return null;
 
   return (
     <div className="popup-side">
-      <div className="popup-card popup-attention">
-        {/* CLOSE BUTTON */}
-        <button className="popup-close" onClick={() => setShowPopup(false)}>
+      <div className="popup-card premium">
+        <button className="popup-close" onClick={closePopup}>
           ✕
         </button>
-        {/* FREE MARQUEE */}
-<div className="free-marquee">
-  <div className="free-marquee-track">
-    <span className="free-marquee-text">
-      🚀 Below programs are training sessions only – <span className="blink-free">FREE</span>
-    </span>
 
-    <span className="free-marquee-text">
-      🎯 Enroll now and attend the programs – <span className="blink-free">FREE</span>
-    </span>
-  </div>
-</div>
+        {/* HEADER */}
+        <div className="popup-header">
+          <h3 className="popup-title">
+            Radnus Conducts Daily Professional Programs
+          </h3>
 
+          {/* FREE MARQUEE */}
+          <div className="free-marquee">
+            <div className="free-marquee-track">
+              <span className="free-marquee-text">
+                🚀 Below programs are training sessions only –{" "}
+                <span className="blink-free">FREE</span>
+              </span>
 
-        {/* PROGRAM LIST */}
-        <h4 className="section-title">📅 This Week Programs</h4>
+              <span className="free-marquee-text">
+                🎯 Enroll now and attend the programs –{" "}
+                <span className="blink-free">FREE</span>
+              </span>
+            </div>
+          </div>
+        </div>
 
-        <p className="program-question">
-          Radnus Conducts Daily Professional Programs And Sessions
-        </p>
+        {/* THIS WEEK */}
+        <div className="section">
+          <h4>📅 This Week</h4>
+          <ul className="event-list">
+            {thisWeek.map((e, i) => (
+              <li key={i} className="event-item highlight">
+                <span style={{ fontWeight: "bold" }}>
+                  {e.title} <small>({e.label})</small>
+                </span>
+                <a href={e.form} className="btn-enroll">
+                  Enroll
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-        <ul className="program-list">
-          {events.map((e, i) => (
-            <li key={i} className={e.isToday ? "today-program" : ""}>
-              <span>{e.title}</span>
-              <a
-                href={e.form}
-                target="_blank"
-                rel="noreferrer"
-                className="event-btn"
-              >
-                Enroll
-              </a>
-            </li>
-          ))}
-        </ul>
+        {/* UPCOMING */}
+        <div className="section">
+          <h4
+            className="upcoming-toggle"
+            onClick={() => setShowUpcoming(!showUpcoming)}
+          >
+            📆 Upcoming {showUpcoming ? "▲" : "▶"}
+          </h4>
 
-        <hr />
+          {showUpcoming && (
+            <>
+              <div className="week-nav">
+                <button
+                  disabled={weekOffset <= 1}
+                  onClick={() => setWeekOffset(weekOffset - 1)}
+                >
+                  ⬅
+                </button>
+                <span>Next Weeks</span>
+                <button onClick={() => setWeekOffset(weekOffset + 1)}>➡</button>
+              </div>
 
-        {/* CONTACT */}
-        <h4 className="section-title contact-title">Contact Us</h4>
+              <ul className="event-list">
+                {upcoming.map((e, i) => (
+                  <li key={i} className="event-item">
+                    <span>
+                      {e.title} <small>({e.label})</small>
+                    </span>
+                    <a href={e.form} className="btn-enroll outline">
+                      Enroll
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
 
-        <div className="contact-info">
-          <p className="contact-name">Radnus Communication</p>
-
-          <p>
-            📍{" "}
-            <a
-              href="https://www.google.com/maps?q=Sinnaaya+Plaza,+MG+Road,+Puducherry"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Sinnaaya Plaza, MG Road, Puducherry
-            </a>
-          </p>
-
-          <p>
-            📞 <a href="tel:+916384282689">+91 63842 82689</a>
-          </p>
+        {/* FOOTER */}
+        <div className="popup-footer">
+          📞 <a href="tel:+916384282689">+91 63842 82689</a>
         </div>
       </div>
     </div>

@@ -14,8 +14,8 @@
 ========================= */
 .popup-card {
   position: relative;
-  width: 380px;               
-  max-height: 78vh;           
+  width: 380px;               /* ⬅️ WIDTH increased */
+  max-height: 78vh;           /* ⬅️ HEIGHT unchanged */
   overflow-y: auto;
   background: #fff;
   border-radius: 14px;
@@ -106,30 +106,6 @@
   color: #222;
   padding: 4px 0;
   line-height: 1.4;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.today-program {
-  background: #fff3cd;
-  border-left: 5px solid #ff9800;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-weight: 600;
-}
-
-.event-btn {
-  background: #1976d2;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 5px;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.event-btn:hover {
-  background: #115293;
 }
 
 /* =========================
@@ -154,14 +130,62 @@
   white-space: nowrap;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #222;
-  padding-right: 70px;
+  color: #b80000;
+  padding-right: 70px;   /* ⬅️ suits wider card */
 }
+.popup-header {
+  margin-bottom: 12px;
+}
+
+.popup-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #c60000;
+  line-height: 1.3;
+}
+
+.popup-title .sub-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
+}
+
+/* Marquee container */
+.popup-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  background: linear-gradient(90deg, #fff5f5, #ffecec);
+  border-radius: 6px;
+  margin-top: 6px;
+  padding: 6px 0;
+  border: 1px solid #ffd6d6;
+}
+
+/* Marquee text animation */
+.popup-marquee span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 18s linear infinite;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b30000;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
 
 /* Smooth marquee */
 @keyframes marqueeMove {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
 /* =========================
@@ -216,6 +240,83 @@
 .apply-btn:hover {
   background: #8c0000;
 }
+.popup-card.premium {
+  width: 360px;
+  border-radius: 18px;
+  padding: 18px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  font-family: "Segoe UI", sans-serif;
+}
+
+.popup-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.section h4 {
+  margin: 12px 0 8px;
+  font-size: 15px;
+}
+
+.event-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.event-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9fafb;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.event-item.highlight {
+  background: #fff4f4;
+  border-left: 4px solid #e11d48;
+}
+
+.event-item span small {
+  color: #777;
+}
+
+.btn-enroll {
+  background: #e11d48;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.btn-enroll.outline {
+  background: transparent;
+  border: 1px solid #e11d48;
+  color: #e11d48;
+}
+
+.week-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.upcoming-toggle {
+  cursor: pointer;
+  color: #e11d48;
+}
+
+.popup-footer {
+  text-align: center;
+  margin-top: 12px;
+  font-weight: 600;
+}
 
 @keyframes pulseBtn {
   0% { box-shadow: 0 0 0 0 rgba(184, 0, 0, 0.6); }
@@ -262,7 +363,7 @@ hr {
 ========================= */
 @media (max-width: 480px) {
   .popup-card {
-    width: 94vw;
+    width: 94vw;   /* mobile full width feel */
     padding: 16px;
   }
 }
