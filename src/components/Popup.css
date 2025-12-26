@@ -14,8 +14,8 @@
 ========================= */
 .popup-card {
   position: relative;
-  width: 380px;               /* ⬅️ WIDTH increased */
-  max-height: 78vh;           /* ⬅️ HEIGHT unchanged */
+  width: 380px;               
+  max-height: 78vh;           
   overflow-y: auto;
   background: #fff;
   border-radius: 14px;
@@ -106,6 +106,30 @@
   color: #222;
   padding: 4px 0;
   line-height: 1.4;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.today-program {
+  background: #fff3cd;
+  border-left: 5px solid #ff9800;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.event-btn {
+  background: #1976d2;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.event-btn:hover {
+  background: #115293;
 }
 
 /* =========================
@@ -130,14 +154,14 @@
   white-space: nowrap;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #b80000;
-  padding-right: 70px;   /* ⬅️ suits wider card */
+  color: #222;
+  padding-right: 70px;
 }
 
 /* Smooth marquee */
 @keyframes marqueeMove {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 /* =========================
@@ -238,7 +262,7 @@ hr {
 ========================= */
 @media (max-width: 480px) {
   .popup-card {
-    width: 94vw;   /* mobile full width feel */
+    width: 94vw;
     padding: 16px;
   }
 }

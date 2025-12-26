@@ -4,24 +4,94 @@ import "./Popup.css";
 export default function UpcomingEventsPopup() {
   const [showPopup, setShowPopup] = useState(false);
 
+  // Show popup on page load
+  useEffect(() => {
+    setShowPopup(true);
+  }, []);
+
+  useEffect(() => {
+    const closed = localStorage.getItem("popupClosed");
+    if (!closed) setShowPopup(true);
+  }, []);
+
+  const closePopup = () => {
+    localStorage.setItem("popupClosed", "true");
+    setShowPopup(false);
+  };
+
+  // Helper: Generate weekly events
+  const getWeeklyEvents = () => {
+    const today = new Date();
+    const todayDate = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
+    const day = today.getDay(); // Sunday = 0
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
+
+    const formatDate = (date) =>
+      date.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+      });
+
+    const events = [
+      {
+        offset: 0,
+        name: "Mobile Exchange Mela",
+        form: "https://forms.gle/Zi7rTw3ty8xbzucc7",
+      },
+      {
+        offset: 1,
+        name: "Mobile Service Training Demo",
+        form: "https://forms.gle/bSdyNZPRooKs3mfD7",
+      },
+      {
+        offset: 2,
+        name: "Software Tool Training UMT PRO ",
+        form: "https://forms.gle/HHRRZafeM66WG1U49",
+      },
+      {
+        offset: 3,
+        name: "Mobile Service Mela",
+        form: "https://forms.gle/dCbKQuBidodCS3CY8",
+      },
+      {
+        offset: 4,
+        name: "Radnus Unlocker Training",
+        form: "https://forms.gle/hrmgCjsLZ89R5kKP6",
+      },
+      {
+        offset: 5,
+        name: "Mobile Service Training Demo",
+        form: "https://forms.gle/saturday-form",
+      },
+    ];
+
+    return events
+      .map((e) => {
+        const date = new Date(monday.getTime() + e.offset * 86400000);
+        return {
+          title: `${e.name} (${formatDate(date)})`,
+          date,
+          isToday: date.getTime() === todayDate.getTime(),
+          form: e.form,
+        };
+      })
+      .filter((e) => e.date >= todayDate); // Hide past days
+  };
+
+  const events = getWeeklyEvents();
+
+  // Form state
   const [form, setForm] = useState({
     name: "",
     phone: "",
     program: "",
   });
-
- const programs = [
-    "Radnus Unlocker – 19 Dec",
-    "White Labelling – 22 Dec",
-    "Service Training – 23 Dec",
-    "Machines & Tools Sale – 24 Dec",
-    "Poorvika – 25 Dec",
-  ];
-
-  // Show popup on page load
-  useEffect(() => {
-    setShowPopup(true);
-  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -35,7 +105,7 @@ export default function UpcomingEventsPopup() {
 
     try {
       await fetch(
-        "https://script.google.com/macros/s/AKfycbxRHhLdznwPM_3WUjN8t3-aoBGL-BV9E3LCTC6PvfbRetCtqbwEpY5GccRyA32ht7-r/exec", // 👈 replace with Google Script URL
+        "https://script.google.com/macros/s/AKfycbxRHhLdznwPM_3WUjN8t3-aoBGL-BV9E3LCTC6PvfbRetCtqbwEpY5GccRyA32ht7-r/exec",
         {
           method: "POST",
           mode: "no-cors",
@@ -45,14 +115,14 @@ export default function UpcomingEventsPopup() {
 
       alert("Thank you! Our team will contact you shortly.");
       setForm({ name: "", phone: "", program: "" });
-      setShowPopup(false); // close popup after submit
+      setShowPopup(false);
     } catch (error) {
       alert("Network issue. Please call us directly.");
       console.error(error);
     }
   };
 
-  // ❗ IMPORTANT: hide popup when closed
+  // ❗ Hide popup if closed
   if (!showPopup) return null;
 
   return (
@@ -62,23 +132,20 @@ export default function UpcomingEventsPopup() {
         <button className="popup-close" onClick={() => setShowPopup(false)}>
           ✕
         </button>
-
         {/* FREE MARQUEE */}
-        <div className="free-marquee">
-          <div className="free-marquee-track">
-            <span className="free-marquee-text">
-              Below Training Programs are{" "}
-              <span className="blink-free">100% FREE</span> – Offline Only
-              Enroll Now
-            </span>
+<div className="free-marquee">
+  <div className="free-marquee-track">
+    <span className="free-marquee-text">
+      🚀 Below programs are full training sessions – <span className="blink-free">FREE</span>
+    </span>
 
-            <span className="free-marquee-text">
-              Below Training Programs are{" "}
-              <span className="blink-free">100% FREE</span> – Offline Only
-              Enroll Now
-            </span>
-          </div>
-        </div>
+    <span className="free-marquee-text">
+      🎯 Enroll now and attend the programs – <span className="blink-free">FREE</span>
+    </span>
+  </div>
+</div>
+
+
         {/* PROGRAM LIST */}
         <h4 className="section-title">📅 This Week Programs</h4>
 
@@ -87,51 +154,20 @@ export default function UpcomingEventsPopup() {
         </p>
 
         <ul className="program-list">
-          {programs.map((p, i) => (
-            <li key={i}>👉 {p}</li>
+          {events.map((e, i) => (
+            <li key={i} className={e.isToday ? "today-program" : ""}>
+              <span>{e.title}</span>
+              <a
+                href={e.form}
+                target="_blank"
+                rel="noreferrer"
+                className="event-btn"
+              >
+                Enroll
+              </a>
+            </li>
           ))}
         </ul>
-
-        <hr />
-
-        {/* FORM */}
-        <h4 className="section-title">Enroll Now</h4>
-
-        <input
-          type="text"
-          name="name"
-          placeholder="Your Name"
-          value={form.name}
-          onChange={handleChange}
-          className="contact-input"
-        />
-
-        <input
-          type="tel"
-          name="phone"
-          placeholder="10-digit Mobile Number"
-          value={form.phone}
-          onChange={handleChange}
-          className="contact-input"
-        />
-
-        <select
-          name="program"
-          value={form.program}
-          onChange={handleChange}
-          className="contact-input"
-        >
-          <option value="">Select Program</option>
-          {programs.map((p, i) => (
-            <option key={i} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
-
-        <button className="apply-btn" onClick={handleSubmit}>
-          Enroll Now
-        </button>
 
         <hr />
 
