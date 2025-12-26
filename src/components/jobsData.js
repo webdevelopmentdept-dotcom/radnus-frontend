@@ -73,13 +73,13 @@ const jobsData = [
     contactDetails: "6379905602",
   },*/
 
-  
+
   {
   title: "Accounts Executive",
   type: "Accounts & Finance",
   duration: "Full-time",
-  experience: "6 Months",
-  posted: "2025-11-01",
+  experience: "6 Months – 1 Year",
+  posted: "2025-12-26",
   description:
     "We are looking for a detail-oriented Accounts Executive to manage day-to-day accounting activities. The ideal candidate should have basic accounting knowledge, hands-on experience with entries and reports, and the ability to support financial operations effectively.",
   responsibilities: [
@@ -104,7 +104,7 @@ const jobsData = [
   type: "Inventory & Store Operations",
   duration: "Full-time",
   experience: "6 Months – 1 Year",
-  posted: "2025-11-01",
+  posted: "2025-12-26",
   description:
     "We are looking for a reliable and detail-oriented Stock Assistant to support daily inventory and store operations. The ideal candidate will be responsible for stock handling, record maintenance, and ensuring smooth material movement.",
   responsibilities: [
