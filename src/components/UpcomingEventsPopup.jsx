@@ -67,7 +67,7 @@ export default function UpcomingEventsPopup() {
       {
         offset: 5,
         name: "Mobile Service Training Demo",
-        form: "https://forms.gle/saturday-form",
+        form: "https://forms.gle/RWPb9j8USHBM3jR68",
       },
     ];
 
