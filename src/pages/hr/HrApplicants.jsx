@@ -23,67 +23,114 @@ export default function HrApplicants() {
   };
 
   const filtered = applicants.filter((a) =>
-    (a.name + a.email + a.jobTitle).toLowerCase().includes(search.toLowerCase())
+    (a.name + a.email + a.jobTitle)
+      .toLowerCase()
+      .includes(search.toLowerCase())
   );
 
   return (
-    <div className="p-3">
-      <h3 className="text-center fw-bold text-primary">HR Applicants</h3>
+    <div className="container py-4">
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h4 className="fw-bold text-primary mb-0">
+          HR Applicants
+          <span className="badge bg-dark ms-2">
+            {filtered.length}
+          </span>
+        </h4>
+      </div>
 
-      <input
-        className="form-control mb-3"
-        placeholder="Search applicants..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      {/* Search */}
+      <div className="card shadow-sm mb-3">
+        <div className="card-body">
+          <input
+            className="form-control"
+            placeholder="Search by name, email or job title..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
 
-      <table className="table table-bordered text-center">
-        <thead className="table-dark">
-          <tr>
-            <th>No</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Job Title</th>
-            <th>Resume</th>
-            <th>Delete</th>
-          </tr>
-        </thead>
+      {/* Applicants Table */}
+      <div className="card shadow-sm">
+        <div className="table-responsive">
+          <table className="table align-middle mb-0">
+            <thead className="table-light">
+              <tr>
+                <th>#</th>
+                <th>Candidate</th>
+                <th>Email</th>
+                <th>Job Role</th>
+                <th>Applied Date</th>
+                <th className="text-center">Resume</th>
+                <th className="text-center">Action</th>
+              </tr>
+            </thead>
 
-        <tbody>
-          {filtered.map((a, i) => (
-            <tr key={a._id}>
-              <td>{i + 1}</td>
-              <td>{a.name}</td>
-              <td>{a.email}</td>
-              <td>{a.jobTitle}</td>
+            <tbody>
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="text-center text-muted py-4">
+                    No applicants found
+                  </td>
+                </tr>
+              )}
 
-              <td>
-                {a.resumeUrl ? (
-                  <a
-                    href={`${API_BASE}/${a.resumeUrl}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary"
-                  >
-                    View
-                  </a>
-                ) : (
-                  "No File"
-                )}
-              </td>
+              {filtered.map((a, i) => (
+                <tr key={a._id}>
+                  <td>{i + 1}</td>
 
-              <td>
-                <button
-                  className="btn btn-danger btn-sm"
-                  onClick={() => handleDelete(a._id)}
-                >
-                  Remove
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  <td className="fw-semibold">{a.name}</td>
+
+                  <td className="text-muted">{a.email}</td>
+
+                  <td>
+                    <span className="badge bg-primary-subtle text-primary">
+                      {a.jobTitle}
+                    </span>
+                  </td>
+
+                  <td className="text-muted">
+                    {a.createdAt
+                      ? new Date(a.createdAt).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "-"}
+                  </td>
+
+                  <td className="text-center">
+  {a.resumeUrl ? (
+    <a
+      href={a.resumeUrl}
+      target="_blank"
+      rel="noreferrer"
+      className="btn btn-outline-primary btn-sm"
+    >
+      View
+    </a>
+  ) : (
+    <span className="text-muted">No File</span>
+  )}
+</td>
+
+
+                  <td className="text-center">
+                    <button
+                      className="btn btn-outline-danger btn-sm"
+                      onClick={() => handleDelete(a._id)}
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

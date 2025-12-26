@@ -129,6 +129,8 @@ const Career = ({ jobsData }) => {
               <option>Business Development & Sales</option>
               <option>Sales & Marketing</option>
               <option>IT & Infrastructure</option>
+                  <option>Accounts & Finance</option>
+              <option>Inventory & Store Operations</option> 
             </Form.Select>
           </Col>
 

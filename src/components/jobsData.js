@@ -1,5 +1,5 @@
 const jobsData = [
-  {
+  /*{
     title: "Business Development Associate / Executive",
     type: "Business Development & Sales",
     duration: "Full-time",
@@ -71,7 +71,60 @@ const jobsData = [
     schedule: "Day shift",
     workLocation: "In-person",
     contactDetails: "6379905602",
-  },
+  },*/
+
+  
+  {
+  title: "Accounts Executive",
+  type: "Accounts & Finance",
+  duration: "Full-time",
+  experience: "6 Months",
+  posted: "2025-11-01",
+  description:
+    "We are looking for a detail-oriented Accounts Executive to manage day-to-day accounting activities. The ideal candidate should have basic accounting knowledge, hands-on experience with entries and reports, and the ability to support financial operations effectively.",
+  responsibilities: [
+    "Maintain daily accounting entries and records.",
+    "Handle invoices, bills, and payment follow-ups.",
+    "Assist in preparing financial reports and statements.",
+    "Manage GST-related documentation and filings support.",
+    "Coordinate with internal teams for expense tracking.",
+  ],
+  requirements: [
+    "Minimum 6 months experience in accounting or finance role.",
+    "Basic knowledge of Tally, Excel, or accounting software.",
+    "Understanding of GST and basic taxation concepts.",
+    "Good attention to detail and organizational skills.",
+  ],
+  schedule: "Day shift",
+  workLocation: "In-person",
+  contactDetails: "6379905602",
+},
+{
+  title: "Stock Assistant",
+  type: "Inventory & Store Operations",
+  duration: "Full-time",
+  experience: "6 Months – 1 Year",
+  posted: "2025-11-01",
+  description:
+    "We are looking for a reliable and detail-oriented Stock Assistant to support daily inventory and store operations. The ideal candidate will be responsible for stock handling, record maintenance, and ensuring smooth material movement.",
+  responsibilities: [
+    "Maintain accurate stock records and inventory registers.",
+    "Receive, check, and store incoming materials properly.",
+    "Monitor stock levels and report shortages or excess stock.",
+    "Assist in stock audits and physical verification.",
+    "Coordinate with accounts and operations teams for stock updates.",
+  ],
+  requirements: [
+    "6 months to 1 year experience in stock handling or inventory role.",
+    "Basic knowledge of inventory management processes.",
+    "Ability to maintain records manually or using software.",
+    "Physically fit and willing to handle stock movement.",
+  ],
+  schedule: "Day shift",
+  workLocation: "In-person",
+  contactDetails: "6379905602",
+}
+
 ];
 
 export default jobsData;

@@ -277,7 +277,7 @@ const CareerDetail = () => {
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-                      <Form.Label>Upload Resume (PDF, DOC, DOCX)</Form.Label>
+                      <Form.Label>Upload Resume(PDF only)</Form.Label>
                       <Form.Control
                         type="file"
                         name="resume"
