@@ -136,7 +136,7 @@ export default function UpcomingEventsPopup() {
 <div className="free-marquee">
   <div className="free-marquee-track">
     <span className="free-marquee-text">
-      🚀 Below programs are full training sessions – <span className="blink-free">FREE</span>
+      🚀 Below programs are training sessions only – <span className="blink-free">FREE</span>
     </span>
 
     <span className="free-marquee-text">
@@ -150,7 +150,7 @@ export default function UpcomingEventsPopup() {
         <h4 className="section-title">📅 This Week Programs</h4>
 
         <p className="program-question">
-          Radnus conducts daily professional programs and sessions
+          Radnus Conducts Daily Professional Programs And Sessions
         </p>
 
         <ul className="program-list">
