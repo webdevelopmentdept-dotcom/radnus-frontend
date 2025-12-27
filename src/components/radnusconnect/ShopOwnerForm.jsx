@@ -12,6 +12,7 @@ function ShopOwnerForm() {
 
   // ✅ FULL INITIAL STATE (IMPORTANT)
   const [form, setForm] = useState({
+
     shopName: "",
     ownerName: "",
     mobile: "",
@@ -152,45 +153,44 @@ function ShopOwnerForm() {
   };
 
   /* ================= SUBMIT ================= */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (submitting) return;
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (submitting) return;
 
-    if (!validateStep()) return;
+  if (!validateStep()) return;
 
-    setSubmitting(true);
+  setSubmitting(true);
 
-    try {
-      const API = import.meta.env.VITE_API_BASE_URL;
+  try {
+    const API = import.meta.env.VITE_API_BASE_URL;
 
-      const payload = {
-        ...form,
-        technicianTypes: form.technicianTypes || [],
-        machines: form.machines || [],
-      };
+    const payload = {
+      ...form,
+      technicianTypes: form.technicianTypes || [],
+      machines: form.machines || [],
+    };
 
-      const res = await fetch(`${API}/api/shop-owner`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    const res = await fetch(`${API}/api/shop-owner`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!res.ok) {
-        alert(data.message || "Submit failed");
-        return;
-      }
-
-      setSubmitted(true);
-    } catch (err) {
-      console.error("Submit error:", err);
-      alert("Server error");
-    } finally {
-      setSubmitting(false);
+    if (!res.ok) {
+      alert(data.message || data.error || "Submit failed");
+      return;
     }
-  };
 
+    setSubmitted(true); // ✅ success
+  } catch (err) {
+    console.error("Submit error:", err);
+    alert("Server error");
+  } finally {
+    setSubmitting(false);
+  }
+};
   if (submitted) {
     return (
       <div
