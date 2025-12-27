@@ -4,132 +4,190 @@ import { useNavigate } from "react-router-dom";
 
 function ShopOwnerForm() {
   const [step, setStep] = useState(1);
-const [submitted, setSubmitted] = useState(false);
-const [errors, setErrors] = useState({});
-const [selectedDistrict, setSelectedDistrict] = useState("");
-const [submitting, setSubmitting] = useState(false);
-const navigate = useNavigate();
-
-
+  const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     technicianTypes: [],
     machines: [],
   });
 
-  const handleChange = (e) => {
-  const { name, value } = e.target;
-  setForm({ ...form, [name]: value });
-  setErrors((prev) => ({ ...prev, [name]: false }));
+  /* ================= VALIDATION HELPER ================= */
+  const isInvalidValue = (value) => {
+    if (!value) return true;
+    const v = value.trim();
+    return v === "" || v === "-" || v === "--";
+  };
 
-  if (name === "district") {
-    setSelectedDistrict(value);
-    setForm((p) => ({ ...p, taluk: "" }));
-  }
+  /* ================= TEXT VALIDATION ================= */
+const hasLetter = (value) => {
+  return /[a-zA-Z]/.test(value);
 };
 
+
+  /* ================= HANDLERS ================= */
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setForm((p) => ({ ...p, [name]: value }));
+    setErrors((p) => ({ ...p, [name]: false }));
+
+    if (name === "district") {
+      setSelectedDistrict(value);
+      setForm((p) => ({ ...p, taluk: "" }));
+    }
+  };
 
   const handleCheckbox = (e, field) => {
     const value = e.target.value;
     setForm((prev) => ({
       ...prev,
-      [field]: prev[field].includes(value)
+      [field]: prev[field]?.includes(value)
         ? prev[field].filter((v) => v !== value)
-        : [...prev[field], value],
+        : [...(prev[field] || []), value],
     }));
   };
 
-  const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (submitting) return;
-  setSubmitting(true);
+  /* ================= STEP VALIDATION ================= */
+  const validateStep = () => {
+    let newErrors = {};
 
-  try {
-  const API = import.meta.env.VITE_API_BASE_URL;
+    if (step === 1) {
+  // Shop Name – must contain at least one letter
+  if (
+    isInvalidValue(form.shopName) ||
+    !hasLetter(form.shopName)
+  ) {
+    newErrors.shopName = true;
+  }
 
-  const res = await fetch(`${API}/api/shop-owner`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(form),
-  });
+  // Owner Name – must contain at least one letter
+  if (
+    isInvalidValue(form.ownerName) ||
+    !hasLetter(form.ownerName)
+  ) {
+    newErrors.ownerName = true;
+  }
 
-  await res.json();
-
-  setSubmitted(true);   // ✅ success state
-} catch (err) {
-  console.error("Submit error:", err);
-} finally {
-  setSubmitting(false);
+  if (isInvalidValue(form.mobile)) newErrors.mobile = true;
+  if (isInvalidValue(form.district)) newErrors.district = true;
+  if (isInvalidValue(form.taluk)) newErrors.taluk = true;
+  if (isInvalidValue(form.businessYears)) newErrors.businessYears = true;
+  if (isInvalidValue(form.needTech)) newErrors.needTech = true;
 }
 
-};
-
-
-const validateStep = () => {
-  let newErrors = {};
-
-  if (step === 1) {
-    if (!form.shopName) newErrors.shopName = true;
-    if (!form.ownerName) newErrors.ownerName = true;
-    if (!form.mobile) newErrors.mobile = true;
-    if (!form.district) newErrors.district = true;
-    if (!form.taluk) newErrors.taluk = true;
-    if (!form.businessYears) newErrors.businessYears = true;
-    if (!form.needTech) newErrors.needTech = true;
-  }
 
   if (step === 2) {
-    if (form.technicianTypes.length === 0)
-      newErrors.technicianTypes = true;
-    if (!form.jobType) newErrors.jobType = true;
-    if (!form.experience) newErrors.experience = true;
-    if (!form.paymentType) newErrors.paymentType = true;
+  // Technician Type – at least one checkbox
+  if (!form.technicianTypes || form.technicianTypes.length === 0) {
+    newErrors.technicianTypes = true;
   }
 
-  if (step === 3) {
-  if (!form.toolsSetup) newErrors.toolsSetup = true;
-  if (form.machines.length === 0) newErrors.machines = true;
-  if (!form.timeline) newErrors.timeline = true;
-  if (!form.radnusHire) newErrors.radnusHire = true;
+  // Job Type – radio
+  if (isInvalidValue(form.jobType)) {
+    newErrors.jobType = true;
+  }
+
+  // Experience – dropdown
+  if (
+    isInvalidValue(form.experience) ||
+    form.experience === "Select"
+  ) {
+    newErrors.experience = true;
+  }
+
+  // Payment Type – radio
+  if (isInvalidValue(form.paymentType)) {
+    newErrors.paymentType = true;
+  }
+
+  // Salary Range – text
+  if (isInvalidValue(form.salaryRange)) {
+    newErrors.salaryRange = true;
+  }
+
+  // Working Hours – text
+  if (isInvalidValue(form.workingHours)) {
+    newErrors.workingHours = true;
+  }
+
+  // Food / Accommodation – radio
+  if (isInvalidValue(form.foodAccommodation)) {
+    newErrors.foodAccommodation = true;
+  }
+}
+
+   if (step === 3) {
+  // Tools Setup
+  if (isInvalidValue(form.toolsSetup)) {
+    newErrors.toolsSetup = true;
+  }
+
+  // Machines – at least one checkbox
+  if (!form.machines || form.machines.length === 0) {
+    newErrors.machines = true;
+  }
+
+  // Timeline
+  if (isInvalidValue(form.timeline)) {
+    newErrors.timeline = true;
+  }
+
+  // Hire via Radnus
+  if (isInvalidValue(form.radnusHire)) {
+    newErrors.radnusHire = true;
+  }
 }
 
 
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
+  /* ================= SUBMIT ================= */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
 
-if (submitted) {
-  return (
-    <div
-      className="d-flex justify-content-center align-items-center"
-      style={{ minHeight: "100vh", background: "#fbe9ea" }}
-    >
-      <div
-        className="bg-white p-5 rounded shadow text-center"
-        style={{ maxWidth: "500px" }}
-      >
-        <h3 className="text-danger fw-bold mb-3">
-          Thank You!
-        </h3>
+    if (!validateStep()) return;
 
-        <p className="mb-4">
-          Your requirement has been submitted successfully.
-          <br />
-          Our team will contact you soon.
-        </p>
+    setSubmitting(true);
+    try {
+      const API = import.meta.env.VITE_API_BASE_URL;
 
-        <button
-  className="btn btn-danger"
-  onClick={() => navigate("/radnus-connect")}
->
-  Back to Home
-</button>
+      const res = await fetch(`${API}/api/shop-owner`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
+      const data = await res.json();
+      if (data.success) setSubmitted(true);
+    } catch (err) {
+      console.error("Submit error:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /* ================= SUCCESS SCREEN ================= */
+  if (submitted) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh" }}>
+        <div className="bg-white p-4 rounded shadow text-center">
+          <h4 className="text-danger fw-bold">Thank You!</h4>
+          <p>Your requirement has been submitted successfully.</p>
+          <button className="btn btn-danger" onClick={() => navigate("/radnus-connect")}>
+            Back to Home
+          </button>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+
 
   return (
     <>
@@ -410,26 +468,36 @@ if (submitted) {
     {/* Salary / Working Hours (optional – no validation) */}
     <div className="row mt-3">
       <div className="col-md-6">
-        <label>Salary Range</label>
-        <input
-          className="form-control"
-          name="salaryRange"
-          onChange={handleChange}
-        />
+        <label className={errors.salaryRange ? "text-danger" : ""}>
+  Salary Range
+</label>
+<input
+  className={`form-control ${errors.salaryRange ? "border-danger" : ""}`}
+  name="salaryRange"
+  onChange={handleChange}
+/>
+
       </div>
 
       <div className="col-md-6">
-        <label>Working Hours</label>
-        <input
-          className="form-control"
-          name="workingHours"
-          onChange={handleChange}
-        />
+        <label className={errors.workingHours ? "text-danger" : ""}>
+  Working Hours
+</label>
+<input
+  className={`form-control ${errors.workingHours ? "border-danger" : ""}`}
+  name="workingHours"
+  onChange={handleChange}
+/>
+
       </div>
     </div>
 
     {/* Food / Accommodation (optional) */}
-    <label className="mt-3">Food / Accommodation</label>
+   <label
+  className={`mt-3 ${errors.foodAccommodation ? "text-danger" : ""}`}
+>
+  Food / Accommodation
+</label>
     <br />
     <input
       type="radio"

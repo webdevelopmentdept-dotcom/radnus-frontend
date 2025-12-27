@@ -57,6 +57,9 @@ const handleSubmit = async (e) => {
   e.preventDefault();
   if (submitting) return;
 
+  // ✅ IMPORTANT FIX
+  if (!validateStep()) return;
+
   setSubmitting(true);
 
   try {
@@ -77,6 +80,7 @@ const handleSubmit = async (e) => {
   }
 };
 
+
   const handleCheckbox = (e, field) => {
     const value = e.target.value;
     setForm((prev) => ({
@@ -88,37 +92,83 @@ const handleSubmit = async (e) => {
     setErrors((p) => ({ ...p, [field]: false }));
   };
 
-  const validateStep = () => {
-    let newErrors = {};
 
-    if (step === 1) {
-      if (!form.fullName) newErrors.fullName = true;
-      if (!form.mobile) newErrors.mobile = true;
-      if (!form.address) newErrors.address = true;
-      if (!form.district) newErrors.district = true;
-      if (!form.taluk) newErrors.taluk = true;
-      if (!form.experience) newErrors.experience = true;
-    }
+  /* ================= VALIDATION HELPERS ================= */
+const isInvalidValue = (value) => {
+  if (value === undefined || value === null) return true;
+  if (typeof value !== "string") return false; // arrays safe
+  const v = value.trim();
+  return v === "" || v === "-" || v === "--" || v === "---";
+};
 
-    if (step === 2) {
-      if (form.skills.length === 0) newErrors.skills = true;
-      if (form.brands.length === 0) newErrors.brands = true;
-      if (form.tools.length === 0) newErrors.tools = true;
-    }
+const hasLetter = (value) => {
+  return /[a-zA-Z]/.test(value);
+};
 
-    if (step === 3) {
-      if (!form.jobType) newErrors.jobType = true;
-      if (!form.paymentType) newErrors.paymentType = true;
-      if (form.paymentType && !form.expectedSalary)
-        newErrors.expectedSalary = true;
-      if (!form.workLocation) newErrors.workLocation = true;
-      if (!form.joinReady) newErrors.joinReady = true;
-      if (!form.radnusAgree) newErrors.radnusAgree = true;
-    }
+ const validateStep = () => {
+  let newErrors = {};
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  /* ===== STEP 1 ===== */
+  if (step === 1) {
+    if (isInvalidValue(form.fullName) || !hasLetter(form.fullName))
+      newErrors.fullName = true;
+
+    if (isInvalidValue(form.mobile)) newErrors.mobile = true;
+
+    if (isInvalidValue(form.address) || !hasLetter(form.address))
+      newErrors.address = true;
+
+    if (isInvalidValue(form.district)) newErrors.district = true;
+
+    if (isInvalidValue(form.taluk)) newErrors.taluk = true;
+
+    if (
+      isInvalidValue(form.experience) ||
+      form.experience === "Select"
+    )
+      newErrors.experience = true;
+  }
+
+  /* ===== STEP 2 ===== */
+  if (step === 2) {
+    if (!form.skills || form.skills.length === 0)
+      newErrors.skills = true;
+
+    if (!form.brands || form.brands.length === 0)
+      newErrors.brands = true;
+
+    if (!form.tools || form.tools.length === 0)
+      newErrors.tools = true;
+  }
+
+  /* ===== STEP 3 ===== */
+  if (step === 3) {
+    if (isInvalidValue(form.jobType))
+      newErrors.jobType = true;
+
+    if (isInvalidValue(form.paymentType))
+      newErrors.paymentType = true;
+
+    if (
+      form.paymentType &&
+      isInvalidValue(form.expectedSalary)
+    )
+      newErrors.expectedSalary = true;
+
+    if (isInvalidValue(form.workLocation))
+      newErrors.workLocation = true;
+
+    if (isInvalidValue(form.joinReady))
+      newErrors.joinReady = true;
+
+    if (isInvalidValue(form.radnusAgree))
+      newErrors.radnusAgree = true;
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
+
 
   /* ================= THANK YOU PAGE ================= */
   if (submitted) {
