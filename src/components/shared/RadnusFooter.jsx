@@ -233,7 +233,7 @@ function RadnusFooter() {
           className="text-center text-light"
           style={{ fontSize: "1rem", opacity: 0.85 }}
         >
-          A brand operated along with its sister concern, Shirdi Enterprises.
+          A brand operated under its parent company, Shirdi Enterprises.
         </div>
       </div>
     </footer>
