@@ -84,7 +84,7 @@ const RadnusAcademy = () => {
         />
         <meta
           name="keywords"
-          content="mobile repair training, Radnus academy, mobile chip level course, technician training pondicherry, learn mobile service"
+          content="mobile repair training, Radnus academy, mobile service course in pondicherry,mobile chip level course, technician training pondicherry, learn mobile service"
         />
         <meta name="robots" content="index, follow" />
         <meta name="author" content="Radnus Communication" />
