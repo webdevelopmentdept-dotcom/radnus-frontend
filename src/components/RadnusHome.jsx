@@ -42,6 +42,21 @@ function RadnusHome() {
           name="description"
           content="Radnus Communication empowers mobile entrepreneurs through training, repair services, tools, and startup support since 2003."
         />
+        <meta
+          name="keywords"
+          content="
+      mobile service center pondicherry,
+      mobile repair shop in pondicherry,
+      mobile shop in pondicherry,
+      mobile service center in mahatma gandhi road,
+      best mobile repair shop in pondicherry,
+      mobile phone service pondicherry,
+      smartphone repair pondicherry,
+      Radnus Communication pondicherry,
+      mobile training institute pondicherry,
+      mobile accessories shop pondicherry
+    "
+        />
       </Helmet>
 
       {/* ===== HERO SECTION ===== */}
