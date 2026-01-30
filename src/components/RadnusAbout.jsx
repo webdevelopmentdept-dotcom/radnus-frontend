@@ -11,8 +11,9 @@ import AboutIcon from "../images/abouticon.png";
 import RadnusMission from "../images/radnusmission.webp";
 import PoorvikabrandLogo from "../images/poorvikabrandlogo.webp";
 import PartnerCollab from "../images/partnercollab.webp";
-import AboutBackground from "../images/aboutbackground.webp";
+
 import Slider1 from "../images/slider1.webp";
+import newabout from "../images/newabout.webp"
 import Slider2 from "../images/acadamybackground.webp";
 import Venam from "../images/venam.webp";
 import slider3 from "../images/openspeech.webp";
@@ -117,7 +118,7 @@ function RadnusAbout() {
         style={{ minHeight: "80vh" }}
       >
         <img
-          src={AboutBackground}
+          src={newabout}
           alt="Radnus Communication mobile training background"
           className="position-absolute w-100 h-100"
           style={{ objectFit: "cover", objectPosition: "center", zIndex: 1 }}

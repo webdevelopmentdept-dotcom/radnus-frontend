@@ -16,7 +16,6 @@ export default function Login() {
 
         {/* Center the buttons + Reduce width */}
         <div className="d-flex flex-column gap-3 align-items-center">
-
           <button
             className="btn btn-outline-danger"
             style={{ width: "200px" }}
@@ -41,6 +40,13 @@ export default function Login() {
             Channel Partner
           </button>
 
+          {/* <button
+            className="btn btn-outline-warning"
+            style={{ width: "200px" }}
+            onClick={() => navigate("/employee/login")}
+          >
+            Employee
+          </button> */}
         </div>
       </div>
     </div>

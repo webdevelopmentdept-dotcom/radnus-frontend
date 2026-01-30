@@ -1,4 +1,10 @@
-/* Outer circle */
+
+
+
+body {
+  background: #ffffff !important;
+}
+
 .logo-circle-outer {
  
   border-radius: 50%;

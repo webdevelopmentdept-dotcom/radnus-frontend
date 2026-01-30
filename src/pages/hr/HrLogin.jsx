@@ -29,8 +29,7 @@ export default function HrLogin() {
         setLoading(false);
         return;
       }
-
-      navigate("/hr/applicants");
+      navigate("/hr/dashboard/applicants");
     } catch (err) {
       setError("Server error");
     } finally {
@@ -39,19 +38,35 @@ export default function HrLogin() {
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>
-      <div className="card shadow p-4" style={{ width: "400px", borderRadius: "15px" }}>
+    <div
+      className="d-flex justify-content-center align-items-center"
+      style={{ minHeight: "80vh" }}
+    >
+      <div
+        className="card shadow p-4"
+        style={{ width: "400px", borderRadius: "15px" }}
+      >
         <h3 className="text-center fw-bold text-primary mb-4">HR Login</h3>
 
         <form onSubmit={handleLogin}>
           <div className="mb-3">
             <label className="form-label">Email</label>
-            <input type="email" className="form-control" onChange={(e) => setEmail(e.target.value)} required />
+            <input
+              type="email"
+              className="form-control"
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
 
           <div className="mb-3">
             <label className="form-label">Password</label>
-            <input type="password" className="form-control" onChange={(e) => setPassword(e.target.value)} required />
+            <input
+              type="password"
+              className="form-control"
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </div>
 
           {error && <p className="text-danger text-center">{error}</p>}

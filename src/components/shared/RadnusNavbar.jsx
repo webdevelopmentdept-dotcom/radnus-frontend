@@ -45,10 +45,14 @@ function RadnusNavbar() {
       if (!navbarCollapse) return;
       navbarCollapse.classList.remove("show");
 
-      const collapse =
-        window.bootstrap.Collapse.getInstance(navbarCollapse) ||
-        new window.bootstrap.Collapse(navbarCollapse, { toggle: false });
-      collapse.hide();
+      if (window.bootstrap && window.bootstrap.Collapse) {
+        const collapse =
+          window.bootstrap.Collapse.getInstance(navbarCollapse) ||
+          new window.bootstrap.Collapse(navbarCollapse, { toggle: false });
+        collapse.hide();
+      } else {
+        navbarCollapse.classList.remove("show");
+      }
     }, 300);
   };
 
@@ -134,7 +138,7 @@ function RadnusNavbar() {
                   to="/about"
                   onClick={(e) => closeMenu(e, "/about")}
                 >
-                  Who we are
+           About Us
                 </Link>
               </li>
               {/* Mega Dropdown */}
@@ -145,14 +149,13 @@ function RadnusNavbar() {
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
-                  What we do
+                 Our Services
                 </button>
 
                 <div
-  className="dropdown-menu p-4 border-0 shadow-lg mega-menu-mobile w-100"
-  aria-labelledby="whatWeDoDropdown"
->
-
+                  className="dropdown-menu p-4 border-0 shadow-lg mega-menu-mobile w-100"
+                  aria-labelledby="whatWeDoDropdown"
+                >
                   <div className="container">
                     <div className="row">
                       {/* Column 1 */}
@@ -162,10 +165,10 @@ function RadnusNavbar() {
                           to="/academy"
                           onClick={(e) => closeMenu(e, "/academy")}
                         >
-                          <FiBookOpen className="me-2" /> Radnus Academy
+                          <FiBookOpen className="me-2" />Training & Courses
                         </Link>
                         <p className=" fs-6 ms-4 mb-4">
-                          Skill development, certification & placement
+                          Learn mobile repair & get certified
                         </p>
 
                         <Link
@@ -256,7 +259,7 @@ function RadnusNavbar() {
                   to="/careers"
                   onClick={(e) => closeMenu(e, "/careers")}
                 >
-                  Join Us
+             Careers
                 </Link>
               </li>
 
@@ -270,7 +273,7 @@ function RadnusNavbar() {
                     closeMenu(e, "/#contact", true); // ✅ Existing scroll & collapse logic
                   }}
                 >
-                  Get In Touch
+         Contact Us
                 </a>
               </li>
 
@@ -292,7 +295,6 @@ function RadnusNavbar() {
                   Radnus Connect
                 </Link>
               </li>
- 
             </ul>
           </div>
         </div>

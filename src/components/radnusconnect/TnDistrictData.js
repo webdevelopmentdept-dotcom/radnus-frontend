@@ -396,6 +396,7 @@ const TnDistrictData = {
     "Puducherry",
     "Villianur ",
        "Bahour",
+       "Karaikal"
   ],
 };
 

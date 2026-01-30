@@ -9,6 +9,8 @@ function TechnicianForm() {
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+const [otherDistrict, setOtherDistrict] = useState("");
+const [otherTaluk, setOtherTaluk] = useState("");
 
   const [form, setForm] = useState({
     fullName: "",
@@ -57,7 +59,6 @@ const handleSubmit = async (e) => {
   e.preventDefault();
   if (submitting) return;
 
-  // ✅ IMPORTANT FIX
   if (!validateStep()) return;
 
   setSubmitting(true);
@@ -65,10 +66,16 @@ const handleSubmit = async (e) => {
   try {
     const API = import.meta.env.VITE_API_BASE_URL;
 
+    const payload = {
+      ...form,
+      district: form.district === "Others" ? otherDistrict : form.district,
+      taluk: form.taluk === "Others" ? otherTaluk : form.taluk,
+    };
+
     const res = await fetch(`${API}/api/technician`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
 
     await res.json();
@@ -79,6 +86,7 @@ const handleSubmit = async (e) => {
     setSubmitting(false);
   }
 };
+
 
 
   const handleCheckbox = (e, field) => {
@@ -285,36 +293,63 @@ const hasLetter = (value) => {
                 <label className={errors.district ? "text-danger" : ""}>
                   District
                 </label>
-                <select
-                  className={`form-select mb-3 ${
-                    errors.district ? "border-danger" : ""
-                  }`}
-                  name="district"
-                  onChange={handleChange}
-                >
-                  <option value="">Select</option>
-                  {Object.keys(tnDistrictData).map((d) => (
-                    <option key={d}>{d}</option>
-                  ))}
-                </select>
+               <select
+  className={`form-select mb-3 ${
+    errors.district ? "border-danger" : ""
+  }`}
+  name="district"
+  onChange={handleChange}
+>
+  <option value="">Select</option>
+
+  {Object.keys(tnDistrictData).map((d) => (
+    <option key={d} value={d}>{d}</option>
+  ))}
+
+  <option value="Others">Others</option>
+</select>
+{form.district === "Others" && (
+  <input
+    type="text"
+    className="form-control mb-3"
+    placeholder="Enter District Name"
+    value={otherDistrict}
+    onChange={(e) => setOtherDistrict(e.target.value)}
+  />
+)}
+
 
                 <label className={errors.taluk ? "text-danger" : ""}>
                   Taluk
                 </label>
-                <select
-                  className={`form-select mb-3 ${
-                    errors.taluk ? "border-danger" : ""
-                  }`}
-                  name="taluk"
-                  disabled={!selectedDistrict}
-                  onChange={handleChange}
-                >
-                  <option value="">Select</option>
-                  {selectedDistrict &&
-                    tnDistrictData[selectedDistrict].map((t) => (
-                      <option key={t}>{t}</option>
-                    ))}
-                </select>
+               <select
+  className={`form-select mb-3 ${
+    errors.taluk ? "border-danger" : ""
+  }`}
+  name="taluk"
+  disabled={!selectedDistrict}
+  onChange={handleChange}
+>
+  <option value="">Select</option>
+
+  {selectedDistrict &&
+    selectedDistrict !== "Others" &&
+    tnDistrictData[selectedDistrict]?.map((t) => (
+      <option key={t} value={t}>{t}</option>
+    ))}
+
+  <option value="Others">Others</option>
+</select>
+{form.taluk === "Others" && (
+  <input
+    type="text"
+    className="form-control mb-3"
+    placeholder="Enter Taluk / Area"
+    value={otherTaluk}
+    onChange={(e) => setOtherTaluk(e.target.value)}
+  />
+)}
+
 
                 <label className={errors.experience ? "text-danger" : ""}>
                   Total Experience

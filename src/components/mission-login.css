@@ -1,0 +1,218 @@
+/* ===============================
+   BLOB CONTAINER
+================================ */
+.blob-container {
+  position: relative;
+  height: 420px;
+  width: 100%;
+  max-width: 360px;   /* ✅ ADD THIS */
+}
+.form-panel {
+  position: relative;
+  z-index: 10;   /* ✅ ADD THIS */
+}
+
+
+.mission-left-panel {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;   /* ✅ ADD THIS */
+}
+
+
+/* ===============================
+   BLOB POSITIONING
+================================ */
+.blob {
+  position: absolute;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.12));
+}
+
+.blob-pink {
+  top: 10px;
+  left: 80px;
+}
+
+.blob-teal {
+  top: 160px;
+  left: 20px;
+}
+
+.blob-blue {
+  top: 260px;
+  left: 90px;
+}
+
+.blob-long {
+  top: 140px;
+  left: 200px;
+}
+
+
+/* ===============================
+   EYES
+================================ */
+.eyes {
+  display: flex;
+  gap: 8px;
+  margin-top: -10px;
+}
+
+/* Yellow (long) blob eyes position */
+.eyes-long {
+  position: absolute;
+  top: 40%;
+}
+
+.eye {
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+}
+
+.pupil {
+  width: 7px;
+  height: 7px;
+  background: black;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* ===============================
+   MOUTH
+================================ */
+.mouth {
+  position: absolute;
+  bottom: 32px;
+  font-size: 18px;
+}
+
+/* ===============================
+   EARS (TEAL ONLY)
+================================ */
+.ear {
+  width: 16px;
+  height: 28px;
+  background: #5eead4;
+  position: absolute;
+  top: -12px;
+  border-radius: 6px;
+}
+
+.left-ear {
+  left: 20px;
+}
+
+.right-ear {
+  right: 20px;
+}
+/* ===============================
+   FORM DESIGN
+================================ */
+.form-group-custom label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+.input-custom {
+  height: 48px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 14px;
+  font-size: 14px;
+  transition: all 0.25s ease;
+}
+
+.input-custom::placeholder {
+  color: #9ca3af;
+}
+
+.input-custom:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+
+
+/* xp bar */
+.xp-bar-bg {
+  height: 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  transition: width 0.3s ease;
+}
+/* PASSWORD */
+.password-input-box {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+  user-select: none;
+}
+
+/* INPUT */
+.input-custom {
+  height: 48px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 14px;
+}
+
+.input-custom:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* BUTTON */
+.btn-mission {
+  height: 52px;
+  padding: 0 40px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #c71735, #456368);
+  border: none;
+
+}
+
+.btn-mission:hover {
+  transform: translateY(-2px);
+  background-color: whitesmoke !important;
+
+}
+
+/* XP BAR */
+.xp-bar-bg {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 999px;
+}
+
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+

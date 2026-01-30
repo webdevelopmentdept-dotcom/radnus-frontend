@@ -35,6 +35,8 @@ function ShopOwnerForm() {
     radnusHire: "",
     remarks: "",
   });
+const [otherDistrict, setOtherDistrict] = useState("");
+const [otherTaluk, setOtherTaluk] = useState("");
 
   /* ================= VALIDATION ================= */
   const isInvalidValue = (value) => {
@@ -164,11 +166,14 @@ function ShopOwnerForm() {
   try {
     const API = import.meta.env.VITE_API_BASE_URL;
 
-    const payload = {
-      ...form,
-      technicianTypes: form.technicianTypes || [],
-      machines: form.machines || [],
-    };
+const payload = {
+  ...form,
+  district: form.district === "Others" ? otherDistrict : form.district,
+  taluk: form.taluk === "Others" ? otherTaluk : form.taluk,
+  technicianTypes: form.technicianTypes || [],
+  machines: form.machines || [],
+};
+
 
     const res = await fetch(`${API}/api/shop-owner`, {
       method: "POST",
@@ -320,18 +325,31 @@ function ShopOwnerForm() {
                     <label className={errors.district ? "text-danger" : ""}>
                       District
                     </label>
-                    <select
-                      className={`form-select ${
-                        errors.district ? "border-danger" : ""
-                      }`}
-                      name="district"
-                      onChange={handleChange}
-                    >
-                      <option value="">Select</option>
-                      {Object.keys(tnDistrictData).map((d) => (
-                        <option key={d}>{d}</option>
-                      ))}
-                    </select>
+                 <select
+  className={`form-select ${
+    errors.district ? "border-danger" : ""
+  }`}
+  name="district"
+  onChange={handleChange}
+>
+  <option value="">Select</option>
+
+  {Object.keys(tnDistrictData).map((d) => (
+    <option key={d} value={d}>{d}</option>
+  ))}
+
+  <option value="Others">Others</option>
+</select>
+{form.district === "Others" && (
+  <input
+    type="text"
+    className="form-control mt-2"
+    placeholder="Enter District Name"
+    value={otherDistrict}
+    onChange={(e) => setOtherDistrict(e.target.value)}
+  />
+)}
+
                   </div>
 
                   {/* Taluk */}
@@ -339,20 +357,34 @@ function ShopOwnerForm() {
                     <label className={errors.taluk ? "text-danger" : ""}>
                       Taluk
                     </label>
-                    <select
-                      className={`form-select ${
-                        errors.taluk ? "border-danger" : ""
-                      }`}
-                      name="taluk"
-                      disabled={!selectedDistrict}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select</option>
-                      {selectedDistrict &&
-                        tnDistrictData[selectedDistrict].map((t) => (
-                          <option key={t}>{t}</option>
-                        ))}
-                    </select>
+                   <select
+  className={`form-select ${
+    errors.taluk ? "border-danger" : ""
+  }`}
+  name="taluk"
+  disabled={!selectedDistrict}
+  onChange={handleChange}
+>
+  <option value="">Select</option>
+
+  {selectedDistrict &&
+    selectedDistrict !== "Others" &&
+    tnDistrictData[selectedDistrict]?.map((t) => (
+      <option key={t} value={t}>{t}</option>
+    ))}
+
+  <option value="Others">Others</option>
+</select>
+{form.taluk === "Others" && (
+  <input
+    type="text"
+    className="form-control mt-2"
+    placeholder="Enter Taluk / Area"
+    value={otherTaluk}
+    onChange={(e) => setOtherTaluk(e.target.value)}
+  />
+)}
+
                   </div>
 
                   {/* Shop Address (optional – no validation) */}

@@ -11,15 +11,16 @@ import {
 
 // Images
 import careerBg from "../images/careerbg.webp";
-import img1 from "../images/aboutbackground.webp";
-import img2 from "../images/cimg2.webp";
-import img3 from "../images/cimg3.webp";
-import img4 from "../images/cimg1.webp";
-import img5 from "../images/venam.webp";
-import img6 from "../images/slider1.webp";
+import careerimg5 from '../images/careerimg5.webp';
 
+
+import careerimg2 from '../images/careerimg2.webp';
+import careerimg1 from "../images/careerimg1.webp"
+import careerimg3 from "../images/careerimg3.webp"
+import careerimg4 from "../images/careerimg4.webp"
+import newabout from "../images/newabout.webp"
 const Career = ({ jobsData }) => {
-  const images = [img1, img2, img3, img4, img5, img6];
+  const images = [ newabout , careerimg1, careerimg2, careerimg5, careerimg3, ];
 
   const [department, setDepartment] = useState("");
   const [experience, setExperience] = useState("");
