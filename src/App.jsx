@@ -1,6 +1,6 @@
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
-
+import Gallery from "./components/shared/Gallery";
 /* Shared */
 import RadnusNavbar from "./components/shared/RadnusNavbar";
 import RadnusFooter from "./components/shared/RadnusFooter";
@@ -104,7 +104,7 @@ function App() {
         <Route path="/placement" element={<Placement />} />
         <Route path="/timeline" element={<Timeline />} />
         <Route path="/startup" element={<Startup />} />
-
+<Route path="/gallery" element={<Gallery />} />
         {/* AUTH */}
         <Route path="/login" element={<Login />} />
         {/* <Route path="/employee/login" element={<EmployeeLogin />} /> */}

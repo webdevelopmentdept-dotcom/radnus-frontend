@@ -11,16 +11,14 @@ import {
 
 // Images
 import careerBg from "../images/careerbg.webp";
-import careerimg5 from '../images/careerimg5.webp';
+import careerimg5 from "../images/careerimg5.webp";
+import careerimg2 from "../images/careerimg2.webp";
+import careerimg1 from "../images/careerimg1.webp";
+import careerimg3 from "../images/careerimg3.webp";
+import newabout from "../images/newabout.webp";
 
-
-import careerimg2 from '../images/careerimg2.webp';
-import careerimg1 from "../images/careerimg1.webp"
-import careerimg3 from "../images/careerimg3.webp"
-import careerimg4 from "../images/careerimg4.webp"
-import newabout from "../images/newabout.webp"
 const Career = ({ jobsData }) => {
-  const images = [ newabout , careerimg1, careerimg2, careerimg5, careerimg3, ];
+  const images = [newabout, careerimg1, careerimg2, careerimg5, careerimg3];
 
   const [department, setDepartment] = useState("");
   const [experience, setExperience] = useState("");
@@ -64,13 +62,12 @@ const Career = ({ jobsData }) => {
         />
       </Helmet>
 
-      {/* Hero */}
+      {/* HERO */}
       <section
         className="career-hero d-flex align-items-center"
         style={{
           backgroundImage: `url(${careerBg})`,
           height: "50vh",
-          backgroundRepeat: "no-repeat",
           backgroundSize: "cover",
           backgroundPosition: "center",
           position: "relative",
@@ -79,7 +76,7 @@ const Career = ({ jobsData }) => {
         <div
           className="position-absolute w-100 h-100"
           style={{ background: "rgba(0,0,0,0.4)" }}
-        ></div>
+        />
         <div className="container position-relative text-white">
           <h1 className="display-5 fw-bold mb-3">Join Our Team</h1>
           <p className="lead" style={{ maxWidth: "450px" }}>
@@ -88,7 +85,7 @@ const Career = ({ jobsData }) => {
         </div>
       </section>
 
-      {/* Work Section */}
+      {/* WORK SECTION */}
       <section className="work-section py-4">
         <div className="container">
           <h2 className="fw-bold mb-3">Work at Radnus</h2>
@@ -97,29 +94,25 @@ const Career = ({ jobsData }) => {
             transform careers and technology.
           </p>
 
-          {/* Masonry Grid */}
+          {/* MASONRY GRID */}
           <div className="masonry-grid">
             {images.map((imgSrc, index) => (
               <div className="masonry-item" key={index}>
-                <img
-                  src={imgSrc}
-                  alt={`Culture ${index + 1}`}
-                  className="img-fluid"
-                />
+                <img src={imgSrc} alt={`Culture ${index + 1}`} />
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Open Positions */}
+      {/* OPEN POSITIONS */}
       <section className="bg-light py-5">
         <div className="container text-center mb-5">
           <h2 className="fw-bold fs-3">Open Positions</h2>
           <p className="fs-6">Explore exciting opportunities to grow with us.</p>
         </div>
 
-        {/* Filter */}
+        {/* FILTER */}
         <Row className="mb-5 justify-content-center">
           <Col md={3} sm={6} className="mb-3">
             <Form.Select
@@ -130,8 +123,8 @@ const Career = ({ jobsData }) => {
               <option>Business Development & Sales</option>
               <option>Sales & Marketing</option>
               <option>IT & Infrastructure</option>
-                  <option>Accounts & Finance</option>
-              <option>Inventory & Store Operations</option> 
+              <option>Accounts & Finance</option>
+              <option>Inventory & Store Operations</option>
             </Form.Select>
           </Col>
 
@@ -159,27 +152,26 @@ const Career = ({ jobsData }) => {
           </Col>
         </Row>
 
-        {/* Job Cards */}
+        {/* JOB CARDS */}
         <div className="row justify-content-center">
           {filteredJobs.length > 0 ? (
             filteredJobs.map((job, index) => (
               <div className="col-12 col-md-10 col-lg-8 mb-4" key={index}>
                 <div className="card border-0 shadow-sm p-4 d-flex flex-md-row justify-content-between align-items-center">
                   <div>
-                    <h5 className="fw-bold mb-2 text-dark">{job.title}</h5>
+                    <h5 className="fw-bold mb-2">{job.title}</h5>
                     <div className="d-flex flex-wrap gap-3 text-muted small">
                       <span>
-                        <FaMapMarkerAlt className="me-1" /> {job.type}
+                        <FaMapMarkerAlt /> {job.type}
                       </span>
                       <span>
-                        <FaClock className="me-1" /> {job.duration}
+                        <FaClock /> {job.duration}
                       </span>
                       <span>
-                        <FaMoneyBillAlt className="me-1" />{" "}
-                        {job.salary || "N/A"}
+                        <FaMoneyBillAlt /> {job.salary || "N/A"}
                       </span>
                       <span>
-                        <FaUserTie className="me-1" /> {job.experience}
+                        <FaUserTie /> {job.experience}
                       </span>
                     </div>
                   </div>
@@ -191,7 +183,6 @@ const Career = ({ jobsData }) => {
                     >
                       View
                     </Link>
-
                     <p className="mt-2 text-muted small mb-0">
                       Posted {getTimeAgo(job.posted)}
                     </p>
@@ -207,27 +198,38 @@ const Career = ({ jobsData }) => {
         </div>
       </section>
 
-      {/* Masonry CSS */}
+      {/* MASONRY CSS */}
       <style>{`
-       
         .masonry-grid {
-  column-count: 3;
-  column-gap: 20px;
-}
+          column-count: 3;
+          column-gap: 20px;
+        }
 
-.masonry-item {
-  break-inside: avoid;
-  margin-bottom: 20px;
-}
+        .masonry-item {
+          break-inside: avoid;
+          margin-bottom: 20px;
+        }
 
-.masonry-item img {
-  width: 100%;
-  height: auto;      /* IMPORTANT — keep natural height */
-  object-fit: contain;
-  border-radius: 12px;
-  display: block;
-}
+        .masonry-item img {
+          width: 100%;
+          height: auto;
+          border-radius: 12px;
+          display: block;
+        }
 
+        /* TABLET */
+        @media (max-width: 992px) {
+          .masonry-grid {
+            column-count: 2;
+          }
+        }
+
+        /* MOBILE – ONE IMAGE PER ROW */
+        @media (max-width: 576px) {
+          .masonry-grid {
+            column-count: 1;
+          }
+        }
       `}</style>
     </>
   );

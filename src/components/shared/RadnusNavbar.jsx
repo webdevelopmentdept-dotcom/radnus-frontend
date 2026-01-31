@@ -121,7 +121,7 @@ function RadnusNavbar() {
             className="collapse navbar-collapse justify-content-center"
             id="navbarNav"
           >
-            <ul className="navbar-nav fs-5">
+            <ul className="navbar-nav " style={{fontSize:"18px"}}>
               <li className="nav-item mx-3">
                 <Link
                   className="nav-link text-danger"
@@ -286,6 +286,8 @@ function RadnusNavbar() {
                   Login
                 </Link>
               </li>
+
+              
               <li className="nav-item mx-3">
                 <Link
                   className="nav-link text-danger"
@@ -295,6 +297,17 @@ function RadnusNavbar() {
                   Radnus Connect
                 </Link>
               </li>
+              
+<li className="nav-item mx-3">
+  <Link
+    className="nav-link text-danger"
+    to="/gallery"
+    onClick={(e) => closeMenu(e, "/gallery")}
+  >
+    Gallery
+  </Link>
+</li>
+
             </ul>
           </div>
         </div>
