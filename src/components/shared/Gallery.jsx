@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 
-import Galleryimg1 from "../../images/galleryimg1.webp";
-import Galleryimg2 from "../../images/galleryimg2.webp";
-import Galleryimg3 from "../../images/galleryimg3.webp";
-import Galleryimg4 from "../../images/galleryimg4.webp";
-import Galleryimg5 from "../../images/galleryimg5.webp";
-import Galleryimg6 from "../../images/galleryimg6.webp";
-import Galleryimg7 from "../../images/galleryimg7.webp";
-import Galleryimg8 from "../../images/galleryimg8.webp";
-import Galleryimg9 from "../../images/galleryimg9.webp";
-import Galleryimg10 from "../../images/galleryimg10.webp";
-import Galleryimg11 from "../../images/galleryimg11.webp";
-import Galleryimg12 from "../../images/galleryimg12.webp";
-import Galleryimg13 from "../../images/galleryimg13.webp";
+import Galleryimg1 from "../../images/galleryimg01.webp";
+import Galleryimg2 from "../../images/galleryimg02.webp";
+import Galleryimg3 from "../../images/galleryimg03.webp";
+import Galleryimg4 from "../../images/galleryimg04.webp";
+import Galleryimg5 from "../../images/galleryimg05.webp";
+import Galleryimg6 from "../../images/galleryimg06.webp";
+import Galleryimg7 from "../../images/galleryimg07.webp";
+import Galleryimg8 from "../../images/galleryimg08.webp";
+import Galleryimg9 from "../../images/galleryimg09.webp";
+import Galleryimg10 from "../../images/galleryimg010.webp";
+import Galleryimg11 from "../../images/galleryimg011.webp";
+import Galleryimg12 from "../../images/galleryimg012.webp";
+import Galleryimg13 from "../../images/galleryimg013.webp";
 
 const Gallery = () => {
   const [selectedImg, setSelectedImg] = useState(null);
