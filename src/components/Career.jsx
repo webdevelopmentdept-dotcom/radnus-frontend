@@ -98,7 +98,8 @@ const Career = ({ jobsData }) => {
           <div className="masonry-grid">
             {images.map((imgSrc, index) => (
               <div className="masonry-item" key={index}>
-                <img src={imgSrc} alt={`Culture ${index + 1}`} />
+              <img src={imgSrc} alt={`Culture ${index + 1}`} loading="lazy" decoding="async" />
+
               </div>
             ))}
           </div>

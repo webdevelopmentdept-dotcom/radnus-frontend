@@ -3,6 +3,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import Gallery from "./components/shared/Gallery";
 /* Shared */
 import RadnusNavbar from "./components/shared/RadnusNavbar";
+import TopServiceBar from "./components/shared/TopServiceBar";
 import RadnusFooter from "./components/shared/RadnusFooter";
 
 /* Public */

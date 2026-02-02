@@ -229,31 +229,44 @@ const Gallery = () => {
 
 
 
-      <div className="gallery-grid">
-        {images.map((img, i) => (
-          <div
-            key={img.id}
-            className={`gallery-item ${img.type}`}
-            onClick={() => openLightbox(img, i)}
-          >
-            <img src={img.url} alt={img.title} />
-            <div className="overlay">
-              <span>{img.title}</span>
-            </div>
-          </div>
-        ))}
+   <div className="gallery-grid">
+  {images.map((img, i) => (
+    <div
+      key={img.id}
+      className={`gallery-item ${img.type}`}
+      onClick={() => openLightbox(img, i)}
+    >
+      <img
+        src={img.url}
+        alt={img.title}
+        loading="lazy"
+        decoding="async"
+      />
+      <div className="overlay">
+        <span>{img.title}</span>
       </div>
+    </div>
+  ))}
+</div>
 
-      {selectedImg && (
-        <div className="lightbox" onClick={closeLightbox}>
-          <div className="lightbox-main" onClick={(e) => e.stopPropagation()}>
-            <button className="close" onClick={closeLightbox}>✕</button>
-            <button className="nav prev" onClick={(e) => navigate(-1, e)}>‹</button>
-            <img src={selectedImg.url} className="lightbox-img" alt="" />
-            <button className="nav next" onClick={(e) => navigate(1, e)}>›</button>
-          </div>
-        </div>
-      )}
+
+{selectedImg && (
+  <div className="lightbox" onClick={closeLightbox}>
+    <div className="lightbox-main" onClick={(e) => e.stopPropagation()}>
+      <button className="close" onClick={closeLightbox}>✕</button>
+      <button className="nav prev" onClick={(e) => navigate(-1, e)}>‹</button>
+      <img
+        src={selectedImg.url}
+        className="lightbox-img"
+        alt=""
+        loading="lazy"
+        decoding="async"
+      />
+      <button className="nav next" onClick={(e) => navigate(1, e)}>›</button>
+    </div>
+  </div>
+)}
+
     </section>
   );
 };
