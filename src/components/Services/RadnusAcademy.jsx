@@ -4,7 +4,6 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { AiOutlineCheck } from "react-icons/ai";
 import Card from "react-bootstrap/Card";
 import { Navigate } from "react-router-dom";
-import AcadamyImage from "../../images/acadamybackground.webp";
 import SempHybridAcademy from "../../images/semphybridacademy.webp";
 import SempAcademy from "../../images/sempacademy.webp";
 import LaspAcademy from "../../images/laspacademy.webp";
@@ -21,21 +20,21 @@ const RadnusAcademy = () => {
 
   const cards = [
     {
-      img: SempAcademy,
+      img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016645/sempacademy_dehkbt.webp",
       title: "SEMP",
       description: "25 days of practical training in mobile hardware & eMMC..",
       button: "Read More",
       key: "semp",
     },
     {
-      img: SempHybridAcademy,
+      img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016645/semphybridacademy_ng9mi3.webp",
       title: "SEMP(Hybrid)",
       text: "25-day weekend training in mobile hardware & eMMC.",
       button: "Read More",
       key: "hybrid",
     },
     {
-      img: LaspAcademy,
+      img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016576/laspacademy_kymdx4.webp",
       title: "LASP",
       text: "18 days of training in laptop and desktop, basic to chip-level training.",
       button: "Read More",
@@ -105,7 +104,7 @@ const RadnusAcademy = () => {
       {/* Hero Section */}
       <section className="hero-section position-relative text-center text-dark d-flex flex-column justify-content-center align-items-center">
         <img
-          src={AcadamyImage}
+          src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016353/acadamybackground_urhu8a.webp"
           alt="Hero Background"
           className="hero-img position-absolute top-0 start-0 w-100 h-100"
         />
@@ -296,7 +295,7 @@ const RadnusAcademy = () => {
             </div>
             <div className="col-lg-6 p-0 position-relative d-flex">
               <img
-                src={SempBackground}
+                src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016645/sempbackground_dkauaw.webp"
                 alt="SEMP Training"
                 className="img-fluid w-100 h-100"
                 style={{ objectFit: "cover" }}
@@ -387,7 +386,7 @@ const RadnusAcademy = () => {
             </div>
             <div className="col-lg-6 p-0 position-relative d-flex">
               <img
-                src={SempHybridBackground}
+                src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016645/semphybridbackground_c1ukyo.webp"
                 alt="SEMP Hybrid Training"
                 className="img-fluid w-100 h-100"
                 style={{ objectFit: "cover" }}
@@ -470,7 +469,7 @@ const RadnusAcademy = () => {
             </div>
             <div className="col-lg-6 p-0 position-relative d-flex">
               <img
-                src={LaspAcademy}
+                src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016576/laspacademy_kymdx4.webp"
                 alt="LASP Training"
                 className="img-fluid w-100 h-100"
                 style={{ objectFit: "cover" }}

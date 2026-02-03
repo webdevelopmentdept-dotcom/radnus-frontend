@@ -32,32 +32,32 @@ const categories = [
       {
         title: "CC Pin Change",
         desc: "Replace damaged charging pins with high-quality new connectors.",
-        image: CCPin,
+        image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016369/ccpinimg_xrslpe.webp",
       },
       {
         title: "Display Change",
         desc: "Fix cracked or unresponsive displays using original parts.",
-        image: Display,
+        image:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016464/displayimg_qxpjne.webp",
       },
       {
         title: "Battery Change",
         desc: "Boost performance with a new, genuine battery replacement.",
-        image: Battery,
+        image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016353/batteryimg_iehndz.webp",
       },
       {
         title: "Backdoor Change",
         desc: "Restore your phone’s back panel for a fresh, premium look.",
-        image: Backdoor,
+        image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016352/backdoorimg_vuowfy.webp",
       },
       {
         title: "Camera Change",
         desc: "Repair or replace faulty front/rear cameras with OEM modules.",
-        image: Camera,
+        image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016368/cameraimg_wevszu.webp",
       },
       {
         title: "Frame Change",
         desc: "Fix bent or damaged mobile frames for better durability.",
-        image: Frame,
+        image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016491/frameimg_ohdd5i.webp",
       },
     ],
   },
@@ -68,17 +68,17 @@ const categories = [
       {
         title: "Mic Change",
         desc: "Fix low or no sound issues caused by a faulty mic unit.",
-        image: Audio,
+        image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016352/audioimg_bxls30.webp",
       },
       {
         title: "Speaker / Air Speaker Change",
         desc: "Replace damaged speakers to restore clear and crisp sound.",
-        image: Audio,
+        image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016352/audioimg_bxls30.webp",
       },
       {
         title: "Charging Port Fix / Replacement",
         desc: "Solve loose or damaged charging ports with secure replacements.",
-        image: Audio,
+        image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016352/audioimg_bxls30.webp",
       },
     ],
   },
@@ -89,27 +89,27 @@ const categories = [
       {
         title: "Water Lock Set",
         desc: "Recover phones affected by water damage through advanced ultrasonic cleaning and precise IC repair. Our expert technicians carefully remove corrosion, clean internal components, and restore full functionality to devices that have suffered water exposure.",
-        image: WaterLock,
+        image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016780/waterlockimg_z5mriz.webp",
       },
       {
         title: "Dead Mobile Repair",
         desc: "Revive completely dead devices through advanced board-level diagnostics and component repair. Our skilled technicians identify and replace faulty ICs, power lines, and circuits to bring non-responsive phones back to life with precision and reliability.",
-        image: Deadmobile,
+        image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016464/deadmobile_pjsldl.webp",
       },
       {
         title: "Restart Problem Fix",
         desc: "Fix restart, hang, and boot-loop issues with expert IC rework and software calibration. Our technicians diagnose the root cause at the board level to ensure stable performance and prevent future system crashes or random restarts.",
-        image: Restart,
+        image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016644/restartimg_usfajp.webp",
       },
       {
         title: "IC Repairs",
         desc: "Repair Charger IC, Power IC, Network IC, Lighting IC, Graphics IC, and Touch IC failures with advanced micro-soldering and precision rework techniques. Our skilled engineers use professional tools to accurately diagnose and replace damaged ICs, restoring full functionality and long-term performance to your device.",
-        image: IcRepairs,
+        image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016537/icrepairsimg_bdmqjy.webp",
       },
       {
         title: "RAM / eMMC / CPU Reballing",
         desc: "Reball or replace IC components such as RAM, eMMC, and CPU using advanced rework stations and precision tools. Our experts ensure perfect solder alignment and thermal balance to restore stable performance, fix boot failures, and extend your device’s lifespan.",
-        image: Reballing,
+        image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016644/reballingimg_oxgy7d.webp",
       },
     ],
   },
@@ -193,7 +193,7 @@ const Service = () => {
       <section
         className="position-relative d-flex align-items-center text-start overflow-hidden"
         style={{
-          backgroundImage: `url(${MobileServiceBg})`,
+          backgroundImage: `url(https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016645/servicebg1_qy30vn.webp)`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -316,7 +316,7 @@ const Service = () => {
                         }}
                       >
                         <img
-                          src={Audio}
+                          src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016352/audioimg_bxls30.webp"
                           alt="IC Service Lab"
                           className="img-fluid rounded-3"
                           style={{ maxHeight: "420px", objectFit: "cover" }}

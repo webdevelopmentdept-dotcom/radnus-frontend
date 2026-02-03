@@ -6,17 +6,7 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { Container, Row, Col, Image, Card } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import RadnusVision from "../images/radnusvision.webp";
-import AboutIcon from "../images/abouticon.png";
-import RadnusMission from "../images/radnusmission.webp";
-import PoorvikabrandLogo from "../images/poorvikabrandlogo.webp";
-import PartnerCollab from "../images/partnercollab.webp";
 
-import Slider1 from "../images/slider1.webp";
-import newabout from "../images/newabout.webp"
-import Slider2 from "../images/acadamybackground.webp";
-import Venam from "../images/venam.webp";
-import slider3 from "../images/openspeech.webp";
 import { Link } from "react-router-dom";
 import {
   FiClock,
@@ -118,7 +108,7 @@ function RadnusAbout() {
         style={{ minHeight: "80vh" }}
       >
         <img
-          src={newabout}
+          src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016578/newabout_b8iiuk.webp"
           alt="Radnus Communication mobile training background"
           className="position-absolute w-100 h-100"
           style={{ objectFit: "cover", objectPosition: "center", zIndex: 1 }}
@@ -265,7 +255,7 @@ function RadnusAbout() {
                   <div className="logo-circle-outer me-3">
                     <div className="logo-circle-inner">
                       <img
-                        src={PoorvikabrandLogo}
+                        src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016614/poorvikabrandlogo_hdltqf.webp"
                         alt="Poorvika Mobile Retailer logo"
                         className="img-fluid"
                       />
@@ -299,7 +289,7 @@ function RadnusAbout() {
           <Col xs={12} md={6}>
             <Card className="h-100 shadow-sm overflow-hidden">
               <Card.Img
-                src={PartnerCollab}
+                src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016614/partnercollab_ueqebb.webp"
                 alt="Radnus and Poorvika partnership event"
                 className="img-fluid"
                 style={{ objectFit: "cover", height: "100%" }}
@@ -346,22 +336,22 @@ function RadnusAbout() {
         >
           {[
             {
-              img: Slider1,
+              img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016646/slider1_hk20ng.webp",
               title: "Grand Inauguration",
               text: "Celebrating the grand launch of Radnus Communication",
             },
             {
-              img: slider3,
+              img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016410/cimg2_ihqrsx.webp",
               title: "Opening Speech",
               text: "Founder Sundar addressing students and entrepreneurs",
             },
             {
-              img: Slider2,
+              img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016353/acadamybackground_urhu8a.webp",
               title: "All Together",
               text: "Capturing moments with our mobile training batch",
             },
             {
-              img: Venam,
+              img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016725/venam_skyswp.webp",
               title: "Gift Presentation",
               text: "Commemorating collaboration with Poorvika Mobile Retailer",
             },
@@ -398,7 +388,7 @@ function RadnusAbout() {
           {/* Mission */}
           <Col md={5} className="text-start">
             <Image
-              src={RadnusMission}
+              src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016644/radnusvision_jklx5e.webp"
               alt="Radnus Communication mission"
               thumbnail
               className="mb-3"
@@ -422,7 +412,7 @@ function RadnusAbout() {
             >
               <li className="d-flex align-items-start mb-2">
                 <img
-                  src={AboutIcon}
+                  src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016351/abouticon_qljabg.png"
                   alt="Arrow Icon"
                   className="me-2 mt-1"
                   style={{ width: "20px" }}
@@ -432,7 +422,7 @@ function RadnusAbout() {
               </li>
               <li className="d-flex align-items-start mb-2">
                 <img
-                  src={AboutIcon}
+                  src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016351/abouticon_qljabg.png"
                   alt="Arrow Icon"
                   className="me-2 mt-1"
                   style={{ width: "20px" }}
@@ -442,7 +432,7 @@ function RadnusAbout() {
               </li>
               <li className="d-flex align-items-start mb-2">
                 <img
-                  src={AboutIcon}
+                  src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016351/abouticon_qljabg.png"
                   alt="Arrow Icon"
                   className="me-2 mt-1"
                   style={{ width: "20px" }}
@@ -452,7 +442,7 @@ function RadnusAbout() {
               </li>
               <li className="d-flex align-items-start mb-2">
                 <img
-                  src={AboutIcon}
+                  src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016351/abouticon_qljabg.png"
                   alt="Arrow Icon"
                   className="me-2 mt-1"
                   style={{ width: "20px" }}
@@ -462,7 +452,7 @@ function RadnusAbout() {
               </li>
               <li className="d-flex align-items-start mb-2">
                 <img
-                  src={AboutIcon}
+                  src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016351/abouticon_qljabg.png"
                   alt="Arrow Icon"
                   className="me-2 mt-1"
                   style={{ width: "20px" }}
@@ -476,7 +466,7 @@ function RadnusAbout() {
           {/* Vision */}
           <Col md={5} className="text-start">
             <Image
-              src={RadnusVision}
+              src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016644/radnusvision_jklx5e.webp"
               alt="Radnus Communication vision"
               thumbnail
               className="mb-3"
@@ -500,7 +490,7 @@ function RadnusAbout() {
             >
               <li className="d-flex align-items-start mb-2">
                 <img
-                  src={AboutIcon}
+                  src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016351/abouticon_qljabg.png"
                   alt="Arrow Icon"
                   className="me-2 mt-1"
                   style={{ width: "20px" }}
@@ -510,7 +500,7 @@ function RadnusAbout() {
               </li>
               <li className="d-flex align-items-start mb-2">
                 <img
-                  src={AboutIcon}
+                  src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016351/abouticon_qljabg.png"
                   alt="Arrow Icon"
                   className="me-2 mt-1"
                   style={{ width: "20px" }}
@@ -520,7 +510,7 @@ function RadnusAbout() {
               </li>
               <li className="d-flex align-items-start mb-2">
                 <img
-                  src={AboutIcon}
+                  src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016351/abouticon_qljabg.png"
                   alt="Arrow Icon"
                   className="me-2 mt-1"
                   style={{ width: "20px" }}
@@ -530,7 +520,7 @@ function RadnusAbout() {
               </li>
               <li className="d-flex align-items-start mb-2">
                 <img
-                  src={AboutIcon}
+                  src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016351/abouticon_qljabg.png"
                   alt="Arrow Icon"
                   className="me-2 mt-1"
                   style={{ width: "20px" }}
@@ -540,7 +530,7 @@ function RadnusAbout() {
               </li>
               <li className="d-flex align-items-start mb-2">
                 <img
-                  src={AboutIcon}
+                  src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016351/abouticon_qljabg.png"
                   alt="Arrow Icon"
                   className="me-2 mt-1"
                   style={{ width: "20px" }}

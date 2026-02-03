@@ -1,6 +1,5 @@
 import React from "react";
-import bgImage from "../images/homebackground1.webp";
-import illustration from "../images/metricsimag4.webp";
+
 import CountUp from "react-countup";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -62,9 +61,11 @@ function RadnusHome() {
       {/* ===== HERO SECTION ===== */}
       <section
         className="hero-section d-flex align-items-center text-white text-center text-md-start"
-        style={{
-          backgroundImage: `url(${bgImage})`,
-        }}
+      style={{
+  backgroundImage:
+    "url('https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016537/homebackground1_kpdvq3.webp')",
+}}
+
       >
         <div className="container">
           <div className="row">
@@ -283,7 +284,10 @@ function RadnusHome() {
 
             <div className="col-md-5 d-flex justify-content-center align-items-center mt-2 mt-md-0">
               <motion.img
-                src={illustration}
+                src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016576/metricsimag4_tyqtei.webp"
+
+
+                
                 alt="Metrics Illustration"
                 className="img-fluid"
                 style={{ maxHeight: "700px", objectFit: "contain" }}

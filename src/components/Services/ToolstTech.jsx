@@ -15,6 +15,7 @@ import Borneo1 from "../../images/borneo1.webp";
 import Unlock from "../../images/unlock.webp";
 import Bornedual from "../../images/bornedual.webp";
 import Umt from "../../images/umt.webp";
+
 import Griffen from "../../images/griffen.webp";
 import Pragmafix from "../../images/pragmafix.webp";
 import Chimera from "../../images/chimera.webp";

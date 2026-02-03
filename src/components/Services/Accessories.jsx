@@ -41,47 +41,48 @@ import { Card } from "react-bootstrap";
 
 const products = [
   {
-    img: Charger1,
+    img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016388/chargerimg3_emu9s4.webp",
     name: "Super Fast Charger",
   },
   {
-    img: Charger2,
+    img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016388/chargerimg2_aonlju.webp",
     name: "Dual USB Charger",
   },
   {
-    img: Charger3,
+    img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016388/chargerimg3_emu9s4.webp",
     name: "Smart Charger",
   },
   {
-    img: Charger4,
+    img:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770116302/carchargerimg_crrcbg.webp",
     name: "Car Charger",
   },
   {
-    img: Charger5,
+    img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016724/universalchargerimg_cnibqe.webp",
     name: "Universal Charger",
   },
   {
-    img: Charger6,
+    img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016578/normalchargerimg_kgqgfx.webp",
     name: "Basic Charger",
   },
 ];
 
 const mobiles = [
-  {
-    name: "Bluetooth Speaker",
-    img: Speaker1,
-  },
+{
+  name: "Bluetooth Speaker",
+  img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016646/speakerimg1_xrrh6a.webp",
+}
+,
   {
     name: "MTIJIEY MJ-1618",
-    img: Speaker4,
+    img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016690/speakerimg4_vwlex5.webp",
   },
   {
     name: "MTIJIEY MJ-5329",
-    img: Speaker3,
+    img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016690/speakerimg3_yigcbs.webp",
   },
   {
     name: "WIRELESS SPEAKER",
-    img: Speaker2,
+    img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016690/speakerimg2_mrm3kd.webp",
   },
 ];
 
@@ -124,27 +125,27 @@ const Accessories = () => {
 
   const expoSlides = [
     {
-      img: OtgImg,
+      img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016613/otgimage1_ys5rwo.webp",
       title: "Otg",
       desc: "Compact OTG for fast and easy data transfer between devices.",
     },
     {
-      img: Datacable1,
+      img:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016460/datacableimg_xkuina.webp",
       title: "Connector",
       desc: "Durable connector for reliable and efficient device connectivity.",
     },
     {
-      img: Datacable2,
+      img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016460/datacableimg1_j0rv2g.webp",
       title: "3in1 Datacable",
       desc: "Versatile 3-in-1 data cable for charging and syncing multiple devices with a single cable.",
     },
     {
-      img: Datacable3,
+      img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016464/datacableimg3_ngyooz.webp",
       title: "Datacables",
       desc: "High-quality data cable ensuring quick charging and reliable connectivity.",
     },
     {
-      img: Battery,
+      img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016352/batteryimage_znswug.webp",
       title: "Battery",
       desc: "Compact button phone battery delivering reliable power for essential usage.",
     },
@@ -213,8 +214,7 @@ const Accessories = () => {
       <section
         className="hero-section d-flex align-items-center"
         style={{
-          backgroundImage: `url(${HeroImage})`,
-          backgroundSize: "cover",
+            backgroundImage: "url('https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016351/accessoriesbackground3_rqdstw.webp')",
           backgroundPosition: "center",
           color: "#fff",
           position: "relative",
@@ -300,7 +300,7 @@ const Accessories = () => {
 
           const dataSets = [
             {
-              img: mobileImg,
+              img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016614/powerbankimg_ncnu6t.webp",
               features: [
                 {
                   id: 1,
@@ -331,7 +331,7 @@ const Accessories = () => {
               ],
             },
             {
-              img: mobileImg1,
+              img:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016614/powerbankimg1_ffhk6o.webp",
               features: [
                 {
                   id: 1,
@@ -813,17 +813,17 @@ const Accessories = () => {
           <div className="row justify-content-center">
             {[
               {
-                img: Headsets1,
+                img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016536/headphoneimg_adjlmy.webp",
                 title: "Hands Free",
                 desc: "Clear sound wired headset with deep bass and comfortable fit more varieties available in our store.",
               },
               {
-                img: Headsets2,
+                img:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016576/neckbandimg_v79ual.webp",
                 title: "Neckband",
                 desc: "Lightweight wired neckband, comfortable for day-to-day use more varieties available in our store.",
               },
               {
-                img: Headsets3,
+                img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016465/earpodsimg_m3mzle.webp",
                 title: "Airpods",
                 desc: "Compact Airpods with lightweight design and clear sound. more varieties available in our store.",
               },
@@ -1179,7 +1179,7 @@ const Accessories = () => {
             <motion.img
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.3 }}
-              src={TreamsLogo}
+              src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016692/treamslogo2_eheq8x.webp"
               alt="Treams"
               style={{
                 maxWidth: "100%",
@@ -1202,7 +1202,7 @@ const Accessories = () => {
             <motion.img
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.3 }}
-              src={RivieraLogo}
+              src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016644/rivieralogo_m1knry.webp"
               alt="Riviera"
               style={{
                 maxWidth: "100%",

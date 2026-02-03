@@ -97,18 +97,18 @@ function WhiteLabelPage() {
       category: "Charger",
       images: [
         {
-          src: Charger21AV8,
+          src:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016387/charger21av8_uzngss.webp",
           name: "Charger 2.1A (V8)",
           description: "Single-port charger with reliable performance",
         },
         {
-          src: Charger21ATypeC,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016387/charger21atypec_votsw6.webp",
           name: "Charger 2.1A (Type-C)",
           description:
             "Single-port charger designed for safe and efficient charging.",
         },
         {
-          src: Charger21AIphone,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016387/charger21aiphone_ikt4nm.webp",
           name: "Charger 2.1A (Iphone)",
           description:
             "Single-port charger durable build and consistent output.",
@@ -120,17 +120,17 @@ function WhiteLabelPage() {
       category: "Charger",
       images: [
         {
-          src: Charger15WV8,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016387/charger15wv8_s6xyzl.webp",
           name: "Charger 15W (V8)",
           description: "Dual-port charger with fast and stable charging.",
         },
         {
-          src: Charger15WtypeC,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016387/charger15wtypec_rxgwde.webp",
           name: "Charger 15W (Type-C)",
           description: "Dual-port charger with over-current protection.",
         },
         {
-          src: Charger25WC,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016387/charger25wc_oomx3h.webp",
           name: "Charger 15W (Iphone)",
           description: "Dual-port charger with compact and durable design.",
         },
@@ -141,17 +141,17 @@ function WhiteLabelPage() {
       category: "Charger",
       images: [
         {
-          src: Charger25WV8,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016387/charger25wv8_xe0sbv.webp",
           name: "Charger 25W (V8)",
           description: "Dual-port charger for efficient daily charging.",
         },
         {
-          src: Charger25WC,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016387/charger25wc_oomx3h.webp",
           name: "Charger 25W (Type-C)",
           description: "Dual-port charger with premium build quality.",
         },
         {
-          src: Charger25Wiphone,
+          src:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016387/charger25wiphone_iisfrk.webp",
           name: "Charger 25W (Iphone)",
           description: "Dual-port charger built with durable materials.",
         },
@@ -164,7 +164,7 @@ function WhiteLabelPage() {
       category: "Charger",
       images: [
         {
-          src: ChargerTC38PD,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016388/chargertc38pd_r50pu9.webp",
           name: "Charger TC-38PD",
           description: "Compatible with USB-C and Type-C devices.",
         },
@@ -175,13 +175,13 @@ function WhiteLabelPage() {
       category: "Charger",
       images: [
         {
-          src: ChargerTC698V8,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016388/chargertc698v8_jt4qdv.webp",
           name: "Charger TC-698 (V8)",
           description:
             "Dual-port charger with sleek design and safe operation.",
         },
         {
-          src: ChargerT698TypeC,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016388/chargert698typec_gyndlg.webp",
           name: "Charger TC-698 (Type-C)",
           description: "Dual-port charger with reliable current output.",
         },
@@ -192,14 +192,14 @@ function WhiteLabelPage() {
       category: "Charger",
       images: [
         {
-          src: ChargerTC699V8,
+          src:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016408/chargertc699v8_w2ykia.webp",
           name: "Charger TC-699 (V8)",
           description:
             "Compact dual-port charger with intelligent safety features.",
         },
 
         {
-          src: ChargerTC699Iphone,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016389/chargertc699iphone_jkknfl.webp",
           name: "Charger TC-699 (Iphone)",
           description: "Durable Dual-port charger with sleek modern design.",
         },
@@ -210,17 +210,17 @@ function WhiteLabelPage() {
       category: "Charger",
       images: [
         {
-          src: ChargerTC755V8,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016408/chargertc755v8_jfilsy.webp",
           name: "Charger TC-755 (V8)",
           description: "Reliable single-port charger ideal for everyday use.",
         },
         {
-          src: TC175Image,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016691/tc175image_fiiflv.webp",
           name: "Charger 3.4A (TC-175)",
           description: "Fast single-port charger with Auto-ID and 3.4A output.",
         },
         {
-          src: ChargerTC755iphone,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016408/chargertc755iphone_sxsosh.webp",
           name: "Charger TC-755 (Iphone)",
           description:
             "Lightweight single-port charger for convenient portability.",
@@ -233,7 +233,7 @@ function WhiteLabelPage() {
       category: "Neckband",
       images: [
         {
-          src: NeckBandX4,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016577/neckbandx4_kfv97d.webp",
           name: "NeckBand X4 450MAH",
           description: "Bluetooth NeckBand  450mAh battery and clear audio.",
         },
@@ -244,7 +244,7 @@ function WhiteLabelPage() {
       category: "Neckband",
       images: [
         {
-          src: NeckBandX6,
+          src:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016577/neckbandx6_jwtsjh.webp",
           name: "NeckBand X6",
           description: "Bluetooth NeckBand X6 with balanced audio.",
         },
@@ -255,7 +255,7 @@ function WhiteLabelPage() {
       category: "Neckband",
       images: [
         {
-          src: NeckBandBTclassic,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016576/neckbandbtclassic_oh1mry.webp",
           name: "NeckBand BT classic",
           description: "Bluetooth NeckBand  with  high-fidelity audio.",
         },
@@ -266,7 +266,7 @@ function WhiteLabelPage() {
       category: "Neckband",
       images: [
         {
-          src: NeckBandNB3,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016577/neckbandnb3_qlskpm.webp",
           name: "NeckBand NB-03",
           description: "Bluetooth NeckBand with deep bass",
         },
@@ -277,12 +277,12 @@ function WhiteLabelPage() {
       category: "Data Cable",
       images: [
         {
-          src: DataCable2AV8,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016409/datacable2av8_lgswdu.webp",
           name: "Data Cable 2.1A (V8)",
           description: "Compact V8 cable with 2.1A fast charging support.",
         },
         {
-          src: DataCable21ATypeC,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016410/datacable21atypec_i0xoem.webp",
           name: "Data Cable 2.1A (Type-C)",
           description: "Durable Type-C cable with 2.1A output for smartphones.",
         },
@@ -293,17 +293,17 @@ function WhiteLabelPage() {
       category: "Data Cable",
       images: [
         {
-          src: DataCable24AV8,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016429/datacable24atypec_wts6sa.webp",
           name: "Data Cable 2.4A (V8)",
           description: "High-speed V8 data cable for quick sync and charging.",
         },
         {
-          src: DataCable24ATypeC,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016429/datacable24atypec_wts6sa.webp",
           name: "Data Cable 2.4A (Type-C)",
           description: "Premium Type-C cable supporting 2.4A fast charging.",
         },
         {
-          src: DataCable24AiPhone,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016424/datacable24aiphone_srl0zs.webp",
           name: "Data Cable 2.4A (iPhone)",
           description: "Reliable Lightning cable for iPhone fast charging.",
         },
@@ -314,17 +314,17 @@ function WhiteLabelPage() {
       category: "Data Cable",
       images: [
         {
-          src: DataCable35AV8,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016446/datacable35av8_nfekt4.webp",
           name: "Data Cable 3.5A (V8)",
           description: "Ultra-fast V8 cable with 3.5A output for power users.",
         },
         {
-          src: DataCable3ATypeC,
+          src:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016410/datacable3atypec_msulzr.webp",
           name: "Data Cable 3.5A (Type-C)",
           description: "3.5A Type-C cable with reinforced braided design.",
         },
         {
-          src: DataCable35AiPhone,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016429/datacable35aiphone_pifwhu.webp",
           name: "Data Cable 3.5A (iPhone)",
           description: "Lightning 3.5A cable for iPhone ultra-fast charging.",
         },
@@ -336,7 +336,7 @@ function WhiteLabelPage() {
       category: "Data Cable",
       images: [
         {
-          src: DataCable65W6ATypeC,
+          src:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016459/datacable65w6atypec_iybn5h.webp",
           name: "Data Cable 65W 6A(C)",
           description: "USB-C 65W/6A fast charge for laptops & phones.",
         },
@@ -347,7 +347,7 @@ function WhiteLabelPage() {
       category: "Data Cable",
       images: [
         {
-          src: DataCable25WCtoIphone,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016429/datacable25wctoiphone_argnwz.webp",
           name: "Data Cable 25W(C-Iphone)",
           description:
             "Durable 25W cable for iPhone fast charging and data transfer.",
@@ -359,13 +359,13 @@ function WhiteLabelPage() {
       category: "Data Cable",
       images: [
         {
-          src: DataCable120WTypeC,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016460/datacable120wtypec_qastny.webp",
           name: "Data Cable 120W (Type-C)",
           description:
             "Ultra-fast 120W USB-C for high-power charging and syncing.",
         },
         {
-          src: DataCable120WCtoC,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016459/datacable120wctoc_flsemk.webp",
           name: "Data Cable 120W(C to C)",
           description:
             "Premium 120W Type-C to Type-C cable in laptops and mobiles.",
@@ -377,7 +377,7 @@ function WhiteLabelPage() {
       category: "Handsfree",
       images: [
         {
-          src: HFSuperbassPouch,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016537/hfsuperbasspouch_dwips1.webp",
           name: "HF Superbass (Pouch)",
           description: "Over-ear handsfree with deep bass and portable pouch.",
         },
@@ -388,7 +388,7 @@ function WhiteLabelPage() {
       category: "Handsfree",
       images: [
         {
-          src: HFIceCream,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016537/hficecream_owpive.webp",
           name: "HF Ice Cream",
           description: "Lightweight colorful handsfree with crisp sound.",
         },
@@ -399,7 +399,7 @@ function WhiteLabelPage() {
       category: "Handsfree",
       images: [
         {
-          src: HFClothWire,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016536/hfclothwire_kt89ch.webp",
           name: "HF Cloth Wire",
           description:
             "Durable wired HF braided cloth cable for tangle-free usage.",
@@ -411,7 +411,7 @@ function WhiteLabelPage() {
       category: "Handsfree",
       images: [
         {
-          src: HFBlackRing,
+          src:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016536/hfblackring_ygklmi.webp",
           name: "HF Black Ring",
           description: "Black HF headphones, balanced sound, comfy cushions.",
         },
@@ -422,7 +422,7 @@ function WhiteLabelPage() {
       category: "Handsfree",
       images: [
         {
-          src: HFMagnetic,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016537/hfmagnetic_oufrvp.webp",
           name: "HF Magnetic",
           description:
             "Magnetic earbuds, tangle-free, snap together for easy storage.",
@@ -434,7 +434,7 @@ function WhiteLabelPage() {
       category: "Handsfree",
       images: [
         {
-          src: Silverring,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016645/silverring_ylqahf.webp",
           name: "HF Sliver Ring",
           description:
             "Silver-accent Handsfree with clear audio and comfy fit.",
@@ -446,7 +446,7 @@ function WhiteLabelPage() {
       category: "Handsfree",
       images: [
         {
-          src: HFEchoXTypec,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016537/hfechoxtypec_z5cz0l.webp",
           name: "HF Echo-X (Type-c)",
           description: "Type-C Hi-Fi Handsfree, echo-free, immersive sound.",
         },
@@ -457,7 +457,7 @@ function WhiteLabelPage() {
       category: "PD & Car Charger",
       images: [
         {
-          src: PDCharger25W,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016614/pdcharger25w_ivbsyt.webp",
           name: "PD Charger 25W",
           description: "Compact 25W PD charger with Type-C to iPhone support",
         },
@@ -468,7 +468,7 @@ function WhiteLabelPage() {
       category: "PD & Car Charger",
       images: [
         {
-          src: PDCharger45W,
+          src: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016614/pdcharger45w_r15al3.webp",
           name: "PD Charger 45W",
           description: "Compact 45W PD charger with Type-C to Type-C support.",
         },
@@ -479,7 +479,7 @@ function WhiteLabelPage() {
       category: "PD & Car Charger",
       images: [
         {
-          src: PDCharger80WTC38,
+          src:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016614/pdcharger80wtc38_jw9lx4.webp",
           name: "PD Charger 80W (TC-38))",
           description: "Compact 80W PD charger with USB-C support..",
         },
@@ -743,7 +743,7 @@ function WhiteLabelPage() {
                 }}
               ></div>
               <img
-                src={WarrantyLogo}
+                src="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016725/warrantylogo_zm423a.webp"
                 alt="Warranty Icon - White label products"
                 className="position-relative float-icon"
                 style={{ width: "70px", height: "70px" }}
