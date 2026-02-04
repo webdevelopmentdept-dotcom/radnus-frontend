@@ -1,21 +1,7 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { BsArrowRightCircleFill } from "react-icons/bs";
-import placement from "../../images/placement.webp";
-import PartnerCollab from "../../images/partnercollab.webp";
-import Africon from "../../images/africon.png";
-import Australia from "../../images/austarlia.webp";
-import Canada from "../../images/canada.webp";
-import Oman from "../../images/oman.webp";
-import Qatar from "../../images/qatar.webp";
-import Saudi from "../../images/saudi.webp";
-import Singapore from "../../images/singapore.webp";
-import Srilanka from "../../images/srilanka.webp";
-import Uae from "../../images/uae.webp";
-import Uk from "../../images/uk.webp";
-import Usa from "../../images/usa.webp";
-import Nepal from "../../images/nepal.webp";
-import Malasiya from "../../images/malasiya.webp";
+
 import { Helmet } from "react-helmet";
 
 const Placement = () => {
@@ -36,19 +22,19 @@ const Placement = () => {
   ];
 
   const countries = [
-    { name: "UAE", img: Uae },
-    { name: "Qatar", img: Qatar },
-    { name: "Saudi Arabia", img: Saudi },
-    { name: "Oman", img: Oman },
-    { name: "Singapore", img: Singapore },
-    { name: "Malaysia", img: Malasiya },
-    { name: "Sri Lanka", img: Srilanka },
-    { name: "Nepal", img: Nepal },
-    { name: "UK", img: Uk },
-    { name: "USA", img: Usa },
-    { name: "Canada", img: Canada },
-    { name: "Australia", img: Australia },
-    { name: "Africa Region", img: Africon },
+    { name: "UAE", img:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016724/uae_zi3vid.webp" },
+    { name: "Qatar", img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016615/qatar_twjwby.webp" },
+    { name: "Saudi Arabia", img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016645/saudi_rzerz4.webp" },
+    { name: "Oman", img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016578/oman_tsqcrp.webp" },
+    { name: "Singapore", img:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016646/singapore_b7oldv.webp" },
+    { name: "Malaysia", img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016576/malasiya_gp740r.webp" },
+    { name: "Sri Lanka", img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016645/saudi_rzerz4.webp" },
+    { name: "Nepal", img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770196713/nepal_bbmnlu.webp" },
+    { name: "UK", img:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016724/uk_l2ygs3.webp" },
+    { name: "USA", img:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016724/usa_mneowa.webp" },
+    { name: "Canada", img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016368/canada_tlry3w.webp" },
+    { name: "Australia", img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016352/austarlia_to2zwu.webp" },
+    { name: "Africa Region", img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016352/africon_j8tkax.png" },
   ];
 
   return (
@@ -151,7 +137,7 @@ const Placement = () => {
         </div>
 
         <img
-          src={placement}
+          src={"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016614/placement_d5pekg.webp"}
           alt="Mobile Repair Training"
           className="img-fluid rounded shadow mt-4"
           style={{ maxHeight: "400px", transition: "transform 0.3s ease" }}
@@ -181,7 +167,7 @@ const Placement = () => {
               }
             >
               <img
-                src={PartnerCollab}
+                src={"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016614/partnercollab_ueqebb.webp"}
                 alt="Radnus Global Placement"
                 className="img-fluid w-100 h-100"
                 style={{ objectFit: "cover", borderRadius: "50%" }}

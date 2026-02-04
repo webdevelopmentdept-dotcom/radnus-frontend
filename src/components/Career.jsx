@@ -9,16 +9,11 @@ import {
   FaUserTie,
 } from "react-icons/fa";
 
-// Images
-import careerBg from "../images/careerbg.webp";
-import careerimg5 from "../images/careerimg5.webp";
-import careerimg2 from "../images/careerimg2.webp";
-import careerimg1 from "../images/careerimg1.webp";
-import careerimg3 from "../images/careerimg3.webp";
-import newabout from "../images/newabout.webp";
+
+
 
 const Career = ({ jobsData }) => {
-  const images = [newabout, careerimg1, careerimg2, careerimg5, careerimg3];
+  const images = ["https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016578/newabout_b8iiuk.webp", "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016369/careerimg1_dxnprm.webp", "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016369/careerimg2_byg1r6.webp", "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016370/careerimg5_ao8cvi.webp", "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016369/careerimg3_mecscz.webp"];
 
   const [department, setDepartment] = useState("");
   const [experience, setExperience] = useState("");
@@ -66,7 +61,7 @@ const Career = ({ jobsData }) => {
       <section
         className="career-hero d-flex align-items-center"
         style={{
-          backgroundImage: `url(${careerBg})`,
+          backgroundImage: `url(https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016368/careerbg_kmhop6.webp)`,
           height: "50vh",
           backgroundSize: "cover",
           backgroundPosition: "center",

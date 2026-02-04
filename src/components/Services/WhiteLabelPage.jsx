@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Helmet } from "react-helmet";
-import WhiteLabeling from "../../images/whitelabeling.webp";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Navigation } from "swiper/modules";
 import "swiper/css";
@@ -8,56 +7,7 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Charger25WC from "../../images/charger25wc.webp";
-import TC175Image from "../../images/tc175image.webp";
-import WarrantyLogo from "../../images/warrantylogo.webp";
-import PDCharger80WTC38 from "../../images/pdcharger80wtc38.webp";
 
-import Charger15WV8 from "../../images/charger15wv8.webp";
-import Charger21AV8 from "../../images/charger21av8.webp";
-import Charger21ATypeC from "../../images/charger21atypec.webp";
-import Charger21AIphone from "../../images/charger21aiphone.webp";
-import Charger15WtypeC from "../../images/charger15wtypec.webp";
-
-import Charger25WV8 from "../../images/charger25wv8.webp";
-import Charger25Wiphone from "../../images/charger25wiphone.webp";
-import ChargerTC38PD from "../../images/chargertc38pd.webp";
-import ChargerTC698V8 from "../../images/chargertc698v8.webp";
-import ChargerT698TypeC from "../../images/chargert698typec.webp";
-
-import ChargerTC699V8 from "../../images/chargertc699v8.webp";
-
-import ChargerTC699Iphone from "../../images/chargertc699iphone.webp";
-import ChargerTC755V8 from "../../images/chargertc755v8.webp";
-import ChargerTC755iphone from "../../images/chargertc755iphone.webp";
-import NeckBandX4 from "../../images/neckbandx4.webp";
-import NeckBandX6 from "../../images/neckbandx6.webp";
-import NeckBandBTclassic from "../../images/neckbandbtclassic.webp";
-import NeckBandNB3 from "../../images/neckbandnb3.webp";
-import DataCable2AV8 from "../../images/datacable2av8.webp";
-import DataCable21ATypeC from "../../images/datacable21atypec.webp";
-import DataCable24AV8 from "../../images/datacable24av8.webp";
-import DataCable24ATypeC from "../../images/datacable24atypec.webp";
-
-import DataCable24AiPhone from "../../images/datacable24aiphone.webp";
-
-import DataCable35AV8 from "../../images/datacable35av8.webp";
-import DataCable3ATypeC from "../../images/datacable3atypec.webp";
-import DataCable35AiPhone from "../../images/datacable35aiphone.webp";
-import DataCable65W6ATypeC from "../../images/datacable65w6atypec.webp";
-import DataCable25WCtoIphone from "../../images/datacable25wctoiphone.webp";
-import DataCable120WTypeC from "../../images/datacable120wtypec.webp";
-import DataCable120WCtoC from "../../images/datacable120wctoc.webp";
-
-import HFSuperbassPouch from "../../images/hfsuperbasspouch.webp";
-import PDCharger25W from "../../images/pdcharger25w.webp";
-import PDCharger45W from "../../images/pdcharger45w.webp";
-import HFClothWire from "../../images/hfclothwire.webp";
-import HFIceCream from "../../images/hficecream.webp";
-import HFBlackRing from "../../images/hfblackring.webp";
-import HFMagnetic from "../../images/hfmagnetic.webp";
-import Silverring from "../../images/silverring.webp";
-import HFEchoXTypec from "../../images/hfechoxtypec.webp";
 function WhiteLabelPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [category, setCategory] = useState("All");
@@ -526,7 +476,7 @@ function WhiteLabelPage() {
       <div
         className="container-fluid d-flex justify-content-center align-items-center white-label-hero position-relative pb-1"
         style={{
-          backgroundImage: `url(${WhiteLabeling})`,
+          backgroundImage: `url(https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016691/trainingform_dqahx7.webp)`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           height: "55vh",

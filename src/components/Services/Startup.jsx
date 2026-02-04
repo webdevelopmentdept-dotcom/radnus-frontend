@@ -1,7 +1,6 @@
 import React from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
-// Import your background image (place image in src/assets or similar)
-import LoanBg from "../../images/startupbg1.webp";
+
 import { Helmet } from "react-helmet";
 
 import { motion } from "framer-motion"; // <-- change path/name as needed
@@ -9,7 +8,7 @@ import { motion } from "framer-motion"; // <-- change path/name as needed
 export default function Startup({
   title = "Empowering India's Entrepreneurs",
   description = "Helping startups access PMEGP loans, other startup loan schemes, and startup funding loans with expert guidance, fast approval, and transparent support.",
-  backgroundImage = LoanBg,
+  backgroundImage ="https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770187175/startupbg1_fmc7ai.webp",
 }) {
   return (
     <>

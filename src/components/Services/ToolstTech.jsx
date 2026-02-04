@@ -1,53 +1,32 @@
 import React from "react";
-import SoftwareTool from "../../images/softwaretool.webp";
-import HardwareTool from "../../images/hardwaretool.webp";
-import Bowler from "../../images/bowler.webp";
-import Tempercut from "../../images/tempercut.webp";
-import Thermal from "../../images/thermal.webp";
-import Skincut from "../../images/skincut.webp";
-import Microscope from "../../images/microscope.webp";
-import Dcpower from "../../images/dcpower.webp";
-import Uvfluxpaste from "../../images/uvfluxpaste.webp";
-import Tthree from "../../images/tthree.webp";
-import Androidbooster from "../../images/androidbooster.webp";
-import Soldering from "../../images/soldering.webp";
-import Borneo1 from "../../images/borneo1.webp";
-import Unlock from "../../images/unlock.webp";
-import Bornedual from "../../images/bornedual.webp";
-import Umt from "../../images/umt.webp";
 
-import Griffen from "../../images/griffen.webp";
-import Pragmafix from "../../images/pragmafix.webp";
-import Chimera from "../../images/chimera.webp";
-import ChimeraPro from "../../images/chimerapro.webp";
 
-import Eft from "../../images/eft.webp";
 import { Helmet } from "react-helmet";
 
 const ToolsTech = () => {
   const hardwareTools = [
-    { img: Bowler, name: "Bowler" },
-    { img: Tempercut, name: "Temper Cut" },
-    { img: Thermal, name: "Thermal Tool" },
-    { img: Skincut, name: "Skin Cutter" },
-    { img: Microscope, name: "Microscope" },
-    { img: Dcpower, name: "DC Power" },
-    { img: Uvfluxpaste, name: "UV Flux Paste" },
-    { img: Tthree, name: "T3 Tool" },
-    { img: Androidbooster, name: "Android Booster" },
-    { img: Soldering, name: "Soldering Tool" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016354/bowler_anvnw7.webp", name: "Bowler" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016691/tempercut_wzqliq.webp", name: "Temper Cut" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016691/thermal_mkd0ii.webp", name: "Thermal Tool" },
+    { img:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016646/skincut_j6r88n.webp", name: "Skin Cutter" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016576/microscope_b08hpk.webp", name: "Microscope" },
+    { img:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016464/dcpower_zfo10a.webp", name: "DC Power" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016725/uvfluxpaste_lzyh2o.webp", name: "UV Flux Paste" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016692/tthree_fs0skt.webp", name: "T3 Tool" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016351/androidbooster_pe5sld.webp", name: "Android Booster" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016646/soldering_dpf78a.webp", name: "Soldering Tool" },
   ];
 
   const softwareTools = [
-    { img: Borneo1, name: "Borneo Schematics", note: "Single User" },
-    { img: Bornedual, name: "Borneo Schematics", note: "Double User" },
-    { img: Unlock, name: "UNLOCK Tool", note: "Single User Only" },
-    { img: Umt, name: "UMT (Ultimate Multi Tool)" },
-    { img: Griffen, name: "Griffen Unlocker" },
-    { img: Pragmafix, name: "Pragmafix Schematic" },
-    { img: Chimera, name: "Chimera Tool (Samsung)" },
-    { img: ChimeraPro, name: "Chimera Pro Tool" },
-    { img: Eft, name: "EFT Pro", note: "With Dongle" },
+    { img:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016353/borneo1_kkkizh.webp", name: "Borneo Schematics", note: "Single User" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016353/bornedual_ory56d.webp", name: "Borneo Schematics", note: "Double User" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016724/unlock_s4vpnu.webp", name: "UNLOCK Tool", note: "Single User Only" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016724/umt_xs1tgl.webp", name: "UMT (Ultimate Multi Tool)" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016536/griffen_dxpchr.webp", name: "Griffen Unlocker" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016614/pragmafix_zxohpb.webp", name: "Pragmafix Schematic" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016408/chimera_kgimen.webp", name: "Chimera Tool (Samsung)" },
+    { img:"https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016408/chimerapro_xmobo6.webp", name: "Chimera Pro Tool" },
+    { img: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016466/eft_wufmmd.webp", name: "EFT Pro", note: "With Dongle" },
   ];
   // ✅ Google Ads Conversion Tracking Function
   const trackConversion = (eventLabel) => {
@@ -97,7 +76,7 @@ const ToolsTech = () => {
           <div
             className="flex-fill"
             style={{
-              backgroundImage: `url(${SoftwareTool})`,
+              backgroundImage: `url(https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016646/softwaretool_orodyq.webp)`,
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
@@ -105,7 +84,7 @@ const ToolsTech = () => {
           <div
             className="flex-fill"
             style={{
-              backgroundImage: `url(${HardwareTool})`,
+              backgroundImage: `url(https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016536/hardwaretool_cudtax.webp)`,
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
@@ -116,7 +95,7 @@ const ToolsTech = () => {
         <div
           className="d-md-none h-100 mobile-banner"
           style={{
-            backgroundImage: `url(${SoftwareTool})`,
+            backgroundImage: `url(https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016646/softwaretool_orodyq.webp)`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}

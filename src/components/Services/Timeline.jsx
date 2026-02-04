@@ -2,12 +2,8 @@ import React from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-// 🖼️ Import different images for each milestone
-import Img2003 from "../../images/start.webp";
-import Img2011 from "../../images/newimg.webp";
-import Img2017 from "../../images/venam.webp";
+
 import { Helmet } from "react-helmet";
-import Img2025 from "../../images/cimg2.webp";
 
 export default function Timeline() {
   const milestones = [
@@ -15,25 +11,25 @@ export default function Timeline() {
       year: "2003",
       title: "The Beginning",
       desc: "Founded as Univercell Mobile, setting new benchmarks in mobile repair and retail services through innovation, trust, and customer satisfaction.",
-      image: Img2003,
+      image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016691/start_c5gsur.webp",
     },
     {
       year: "2011",
       title: "Rebranding & Expansion",
       desc: "We evolved into Radnus Communication — expanding into OEM solutions, tools, and accessories while building trust across India.",
-      image: Img2011,
+      image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016577/newimg_q7ktb1.webp",
     },
     {
       year: "2017",
       title: "Innovation in Mobility",
       desc: "Launched a new era of premium-quality mobile accessories and professional repair tools, strengthening our retail network and customer reach across India.",
-      image: Img2017,
+      image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016725/venam_skyswp.webp",
     },
     {
       year: "2025",
       title: "The Franchise Revolution",
       desc: "Evolving into a franchise-driven ecosystem — empowering entrepreneurs and bringing advanced mobile solutions to every corner of India.",
-      image: Img2025,
+      image: "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016410/cimg2_ihqrsx.webp",
     },
   ];
 

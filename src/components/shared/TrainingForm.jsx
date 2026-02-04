@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import TrainingFormimg from "../../images/trainingform.webp";
 import { useNavigate } from "react-router-dom";
 
 const TrainingForm = ({ course, onCloseForm }) => {
@@ -104,7 +103,7 @@ const TrainingForm = ({ course, onCloseForm }) => {
     <section
       className="vw-100 vh-100 d-flex align-items-center justify-content-center text-white"
       style={{
-        backgroundImage: `url(${TrainingFormimg})`,
+        backgroundImage: `url(https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016691/trainingform_dqahx7.webp)`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",

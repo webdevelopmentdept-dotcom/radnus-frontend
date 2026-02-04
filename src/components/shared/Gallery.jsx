@@ -38,6 +38,9 @@ const Gallery = () => {
 
   useEffect(() => {
     const observer = new IntersectionObserver(
+
+
+      
       ([entry]) => entry.isIntersecting && setIsVisible(true),
       { threshold: 0.2 }
     );

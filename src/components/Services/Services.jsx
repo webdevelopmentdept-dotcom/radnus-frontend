@@ -7,20 +7,7 @@ import "swiper/css";
 import "swiper/css/pagination";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { useNavigate } from "react-router-dom"; // ✅ Added for navigation
-// 🖼️ Assets
-import CCPin from "../../images/ccpinimg.webp";
-import Display from "../../images/displayimg.webp";
-import Battery from "../../images/batteryimg.webp";
-import Backdoor from "../../images/backdoorimg.webp";
-import Camera from "../../images/cameraimg.webp";
-import Frame from "../../images/frameimg.webp";
-import Audio from "../../images/audioimg.webp";
-import WaterLock from "../../images/waterlockimg.webp";
-import Deadmobile from "../../images/deadmobile.webp";
-import Restart from "../../images/restartimg.webp";
-import IcRepairs from "../../images/icrepairsimg.webp";
-import Reballing from "../../images/reballingimg.webp";
-import MobileServiceBg from "../../images/servicebg1.webp";
+
 import { Helmet } from "react-helmet";
 
 // 🧩 CATEGORY DATA

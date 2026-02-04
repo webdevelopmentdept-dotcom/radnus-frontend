@@ -4,11 +4,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { AiOutlineCheck } from "react-icons/ai";
 import Card from "react-bootstrap/Card";
 import { Navigate } from "react-router-dom";
-import SempHybridAcademy from "../../images/semphybridacademy.webp";
-import SempAcademy from "../../images/sempacademy.webp";
-import LaspAcademy from "../../images/laspacademy.webp";
-import SempBackground from "../../images/sempbackground.webp";
-import SempHybridBackground from "../../images/semphybridbackground.webp";
+
 import TrainingForm from "../shared/TrainingForm";
 import { Package, Shirt, BookOpen, IdCard, Award } from "lucide-react";
 import { Helmet } from "react-helmet";
