@@ -5,6 +5,7 @@ export default function HrPending() {
   const [selected, setSelected] = useState(null);
   const [remark, setRemark] = useState("");
   const [previewFile, setPreviewFile] = useState(null);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // 🔥 FETCH DATA
   useEffect(() => {

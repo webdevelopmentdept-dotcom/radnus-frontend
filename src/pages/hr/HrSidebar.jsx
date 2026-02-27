@@ -4,6 +4,7 @@ import { useState } from "react";
 export default function HrSidebar() {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   const logout = () => {
     localStorage.clear();

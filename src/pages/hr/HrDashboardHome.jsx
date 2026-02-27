@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
 export default function HrDashboardHome() {
+  
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,

@@ -4,6 +4,7 @@ export default function HrApproved() {
   const [employees, setEmployees] = useState([]);
   const [selected, setSelected] = useState(null);
   const [files, setFiles] = useState({});
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // ✅ FETCH APPROVED EMPLOYEES
   useEffect(() => {

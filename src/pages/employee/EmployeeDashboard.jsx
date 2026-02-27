@@ -26,6 +26,7 @@ export default function EmployeeDashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [showSidebar, setShowSidebar] = useState(false);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 useEffect(() => {
   const fetchData = async () => {
@@ -105,10 +106,9 @@ const handleSave = async () => {
   try {
   await axios.put(`${API_BASE}/api/employee/update-profile`, {
   employeeId: employee.id,
-  ...editData   // 🔥 FULL DATA
+  ...editData   
 });
 
-    // 🔥 refetch மட்டும் போதும்
     const updated = await axios.get(
       `${API_BASE}/api/employee/me/${employee.id}`
     );

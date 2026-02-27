@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 export default function HrDashboard() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const handleResize = () => {

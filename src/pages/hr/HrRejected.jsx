@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 export default function HrRejected() {
   const [employees, setEmployees] = useState([]);
   const [selected, setSelected] = useState(null);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+
 
   useEffect(() => {
     fetch(`${API_BASE}/api/hr/rejected`)

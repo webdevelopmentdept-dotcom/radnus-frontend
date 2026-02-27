@@ -28,6 +28,7 @@ export default function EmployeeLogin() {
   const [rememberMe, setRememberMe] = useState(false);
 
   const [isRegister, setIsRegister] = useState(true);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   const form = useForm({
     defaultValues: {

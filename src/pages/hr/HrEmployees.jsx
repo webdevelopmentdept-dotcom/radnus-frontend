@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 export default function HrEmployees() {
   const [employees, setEmployees] = useState([]);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // 🔥 FETCH ALL EMPLOYEES
   useEffect(() => {

@@ -45,12 +45,14 @@ const DOCUMENTS = [
 ];
 
 export default function UploadDocuments() {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
   const [files, setFiles] = useState({});
   const [previews, setPreviews] = useState({});
   
   const [statuses, setStatuses] = useState({});
   const [dragActive, setDragActive] = useState(null);
-  const [previewModal, setPreviewModal] = useState(null); // { file, url, type }
+  const [previewModal, setPreviewModal] = useState(null);
+   // { file, url, type }
 const [links, setLinks] = useState({});
   const handleFileChange = (docId, file) => {
     if (file) {
