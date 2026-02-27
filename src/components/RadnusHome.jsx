@@ -60,6 +60,7 @@ function RadnusHome() {
 
       {/* ===== HERO SECTION ===== */}
       <section
+      
         className="hero-section d-flex align-items-center text-white text-center text-md-start"
       style={{
   backgroundImage:
@@ -67,6 +68,38 @@ function RadnusHome() {
 }}
 
       >
+
+
+
+        <section
+  style={{
+    background: "#fff",
+    borderBottom: "1px solid #eee",
+    padding: "10px 0",
+  }}
+>
+  
+
+  <style>
+    {`
+      .quick-btn {
+        padding: 8px 16px;
+        border-radius: 20px;
+        background: #f5f5f5;
+        color: #000;
+        text-decoration: none;
+        font-size: 14px;
+        transition: 0.3s;
+      }
+
+      .quick-btn:hover {
+        background: #a80303;
+        color: white;
+        transform: scale(1.05);
+      }
+    `}
+  </style>
+</section>
         <div className="container">
           <div className="row">
             <div className="col-md-5 col-12">

@@ -2,9 +2,13 @@ import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 
 export const useEmployeeLogin = () => {
-  return useMutation((data) =>
-    axios
-      .post("http://localhost:5000/api/employee/login", data)
-      .then((res) => res.data)
-  );
+  return useMutation({
+    mutationFn: async (data) => {
+      const res = await axios.post(
+        `${API_BASE}/api/employee/login`,
+        data
+      );
+      return res.data;
+    },
+  });
 };

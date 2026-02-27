@@ -1,6 +1,8 @@
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
 import Gallery from "./components/shared/Gallery";
+import './index.css';
+import './App.css';
 /* Shared */
 import RadnusNavbar from "./components/shared/RadnusNavbar";
 import TopServiceBar from "./components/shared/TopServiceBar";
@@ -24,14 +26,15 @@ import jobsData from "./components/jobsData";
 
 /* Auth */
 import Login from "./pages/auth/Login";
-import EmployeeLogin from "./EmployeeLogin";
+
 import HrLogin from "./pages/hr/HrLogin";
 import AdminLogin from "./pages/admin/AdminLogin";
 import PartnerLogin from "./pages/Channel/PartnerLogin";
 
 /* Employee */
 import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
-
+import Employeelogin from "./pages/employee/Employeelogin";
+import UploadDocuments from "./pages/employee/UploadDocuments";
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
@@ -58,7 +61,10 @@ import MyLeads from "./pages/Channel/MyLeads";
 import Courses from "./pages/Channel/Courses";
 import CourseDetail from "./pages/Channel/CourseDetail";
 import PartnerProfile from "./pages/Channel/ProfilePartner";
-
+import HrDashboardHome from "./pages/hr/HrDashboardHome";
+import HrPending from "./pages/hr/HrPending";
+import HrApproved from "./pages/hr/HrApproved";
+import HrRejected from "./pages/hr/HrRejected";
 /* Radnus Connect */
 import RadnusConnectHome from "./components/radnusconnect/RadnusConnectHome";
 import TechnicianForm from "./components/radnusconnect/TechnicianForm";
@@ -66,7 +72,9 @@ import ShopOwnerForm from "./components/radnusconnect/ShopOwnerForm";
 
 /* 🔐 EMPLOYEE PROTECTED ROUTE */
 const EmployeeProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem("employeeToken");
+ const token =
+  localStorage.getItem("employeeToken") ||
+  sessionStorage.getItem("employeeToken");
   return token ? children : <Navigate to="/employee/login" replace />;
 };
 
@@ -108,11 +116,18 @@ function App() {
 <Route path="/gallery" element={<Gallery />} />
         {/* AUTH */}
         <Route path="/login" element={<Login />} />
-        {/* <Route path="/employee/login" element={<EmployeeLogin />} /> */}
+        <Route path="/employee/login" element={<Employeelogin />} />
         <Route path="/hr/login" element={<HrLogin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/channel/login" element={<PartnerLogin />} />
-
+<Route
+  path="/employee/upload-docs"
+  element={
+    <EmployeeProtectedRoute>
+      <UploadDocuments />
+    </EmployeeProtectedRoute>
+  }
+/>
         {/* ✅ EMPLOYEE DASHBOARD */}
         <Route
           path="/employee/dashboard"
@@ -123,12 +138,16 @@ function App() {
           }
         />
 
-        {/* HR */}
-        <Route path="/hr/dashboard" element={<HrDashboard />}>
-          <Route path="applicants" element={<HrApplicants />} />
-          <Route path="employees" element={<HrEmployees />} />
-        </Route>
 
+     <Route path="/hr/dashboard" element={<HrDashboard />}>
+  <Route index element={<HrDashboardHome />} />   {/* ✅ main dashboard */}
+  <Route path="applicants" element={<HrApplicants />} />
+  <Route path="employees" element={<HrEmployees />} />
+   <Route path="hr-pending" element={<HrPending />} />
+   <Route path="hr-approved" element={<HrApproved />} />
+    <Route path="hr-reject" element={<HrRejected />} />
+
+</Route>
         {/* ADMIN */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />

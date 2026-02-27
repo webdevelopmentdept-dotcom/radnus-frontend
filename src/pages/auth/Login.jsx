@@ -40,13 +40,13 @@ export default function Login() {
             Channel Partner
           </button>
 
-          {/* <button
+          <button
             className="btn btn-outline-warning"
             style={{ width: "200px" }}
             onClick={() => navigate("/employee/login")}
           >
             Employee
-          </button> */}
+          </button>
         </div>
       </div>
     </div>
