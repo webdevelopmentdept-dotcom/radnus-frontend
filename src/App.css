@@ -730,3 +730,180 @@ textarea:active {
   }
 }
 
+
+
+/* =========================
+   📱 MOBILE (0px - 576px)
+========================= */
+@media (max-width: 576px) {
+
+  .dashboard-container {
+    padding: 1rem;
+  }
+
+  .profile-header {
+    padding: 1.5rem 1rem;
+    text-align: center;
+  }
+
+  .profile-header h1 {
+    font-size: 1.4rem;
+  }
+
+  .profile-img {
+    width: 70px;
+    height: 70px;
+  }
+
+  .topbar {
+    padding: 0 1rem;
+    justify-content: space-between;
+  }
+
+  .sidebar {
+    width: 220px;
+  }
+
+  .doc-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .btn-view {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .card {
+    margin-bottom: 1rem;
+  }
+
+  .section-title {
+    font-size: 1rem;
+  }
+}
+
+
+/* =========================
+   📱 TABLET (577px - 991px)
+========================= */
+@media (min-width: 577px) and (max-width: 991px) {
+
+  .dashboard-container {
+    padding: 1.5rem;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .profile-img {
+    width: 80px;
+    height: 80px;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -250px;
+  }
+
+  .sidebar.show {
+    left: 0;
+  }
+
+  .topbar {
+    padding: 0 1.5rem;
+  }
+
+  .doc-item {
+    flex-wrap: wrap;
+  }
+}
+
+
+/* =========================
+   💻 DESKTOP (992px+)
+========================= */
+@media (min-width: 992px) {
+
+  .sidebar {
+    position: relative;
+    left: 0;
+  }
+
+  .overlay {
+    display: none !important;
+  }
+
+  .menu-btn {
+    display: none !important;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .dashboard-container {
+    padding: 2rem 3rem;
+  }
+
+  .profile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .profile-img {
+    width: 90px;
+    height: 90px;
+  }
+
+  .doc-item {
+    flex-direction: row;
+  }
+
+}
+
+/* 🔥 FINAL FIXES */
+
+/* MOBILE FULL WIDTH FIX */
+@media (max-width: 768px) {
+  .dashboard-wrapper {
+    display: block !important;   /* 🔥 முக்கிய fix */
+  }
+
+  .main-content {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+}
+
+
+/* DOCUMENT MOBILE FIX */
+@media (max-width: 768px) {
+  .doc-item {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .doc-item input {
+    width: 100% !important;
+  }
+}
+
+
+/* DESKTOP BUTTON ALIGN FIX */
+@media (min-width: 992px) {
+  .profile-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+
+  .profile-header .btn {
+    white-space: nowrap;
+  }
+}

@@ -54,7 +54,7 @@ useEffect(() => {
   fetchData();
 
   // 🔥 AUTO REFRESH EVERY 5 SEC
-  const interval = setInterval(fetchData, 5000);
+  const interval = setInterval(fetchData, 15000);
 
   return () => clearInterval(interval);
 
@@ -89,7 +89,7 @@ const handleEditToggle = () => {
     `${API_BASE}/api/employee/replace-doc`,
     formData
   );
-
+localStorage.setItem("employeeId", res.data.id);
   // 🔥 IMPORTANT FIX
   const updatedDocs = [...editData.documents];
   updatedDocs[index] = res.data;
@@ -186,9 +186,12 @@ const isRejected = employee.status === "rejected";
   
 </div>
       <aside className={`sidebar ${showSidebar ? 'show' : ''}`}>
-         <button onClick={() => setShowSidebar(false)}>
-      <X size={20} />
-    </button>
+         <button 
+  onClick={() => setShowSidebar(false)} 
+  className="d-md-none"
+>
+  <X size={20} />
+</button>
         <div className="sidebar-brand">
           <Building size={24} />
           <span>Employee Portal</span>
@@ -501,7 +504,13 @@ const isRejected = employee.status === "rejected";
                               ) : (
                                 <>
                                   <h6 className="mb-0 fw-bold">{doc.docType}</h6>
-                                  <span className="text-muted small">PDF Document</span>
+                               <span className="text-muted small">
+  {doc.fileUrl.endsWith(".pdf")
+    ? "PDF"
+    : /\.(jpg|jpeg|png)/i.test(doc.fileUrl)
+    ? "Image"
+    : "Document"}
+</span>
                                 </>
                               )}
                             </div>

@@ -55,15 +55,14 @@ export default function UploadDocuments() {
    // { file, url, type }
 const [links, setLinks] = useState({});
   const handleFileChange = (docId, file) => {
-    if (file) {
-      setFiles((prev) => ({ ...prev, [docId]: file }));
-      setStatuses((prev) => ({ ...prev, [docId]: "idle" }));
-      
-      // Generate preview URL
-      const url = URL.createObjectURL(file);
-      setPreviews((prev) => ({ ...prev, [docId]: url }));
-    }
-  };
+  if (file) {
+    setFiles((prev) => ({ ...prev, [docId]: file }));
+    setStatuses((prev) => ({ ...prev, [docId]: "idle" }));
+
+    const url = URL.createObjectURL(file); // ✅ correct
+    setPreviews((prev) => ({ ...prev, [docId]: url }));
+  }
+};
   
 const isAllRequiredUploaded = () => {
   return DOCUMENTS
@@ -106,10 +105,15 @@ const isAllRequiredUploaded = () => {
     );
 
     setStatuses((prev) => ({ ...prev, [docId]: "success" }));
+setFiles((prev) => {
+  const newFiles = { ...prev };
+  delete newFiles[docId];
+  return newFiles;
+});
   } catch (err) {
-    console.log(err);
-    setStatuses((prev) => ({ ...prev, [docId]: "error" }));
-  }
+  console.log(err.response?.data || err.message);
+  alert(err.response?.data?.message || "Upload failed");
+}
 };
 
   const removeFile = (docId) => {
@@ -133,17 +137,19 @@ const isAllRequiredUploaded = () => {
     });
   };
 
-  const openPreview = (docId) => {
-    const file = files[docId];
-    const url = previews[docId];
-    if (file && url) {
-      setPreviewModal({
-        name: file.name,
-        url: url,
-        type: file.type
-      });
-    }
-  };
+const openPreview = (docId) => {
+  const url = previews[docId];
+  if (!url) return;
+
+  const isImage = /\.(jpg|jpeg|png|webp)$/i.test(url);
+  const isPdf = url.toLowerCase().includes(".pdf");
+
+  setPreviewModal({
+    name: docId,
+    url: url,
+    type: isPdf ? "application/pdf" : isImage ? "image" : "other"
+  });
+};
 
   // Cleanup object URLs on unmount
   useEffect(() => {
@@ -172,6 +178,33 @@ const isAllRequiredUploaded = () => {
   };
 
   checkStatus();
+}, []);
+
+useEffect(() => {
+  const fetchDocs = async () => {
+    const employeeId = localStorage.getItem("employeeId");
+
+    if (!employeeId) return;
+
+    const res = await axios.get(
+      `${API_BASE}/api/employee/me/${employeeId}`
+    );
+
+    const uploadedDocs = res.data.documents;
+
+    const statusObj = {};
+    const previewObj = {};
+
+    uploadedDocs.forEach(doc => {
+      statusObj[doc.docType] = "success";
+      previewObj[doc.docType] = doc.fileUrl; // 🔥 Google Drive URL
+    });
+
+    setStatuses(statusObj);
+    setPreviews(previewObj);
+  };
+
+  fetchDocs();
 }, []);
 
   return (
@@ -266,7 +299,7 @@ const isAllRequiredUploaded = () => {
         id={`file-input-${doc.id}`}
         type="file"
         className="d-none"
-        accept="image/*,application/pdf"
+      accept="image/*,application/pdf,.doc,.docx"
         onChange={(e) => handleFileChange(doc.id, e.target.files?.[0])}
       />
     </div>
@@ -339,27 +372,26 @@ const isAllRequiredUploaded = () => {
                   <button type="button" className="btn-close" onClick={() => setPreviewModal(null)}></button>
                 </div>
                 <div className="modal-body p-4 text-center">
-                  {previewModal.type.startsWith('image/') ? (
-                    <img 
-                      src={previewModal.url} 
-                      alt="Preview" 
-                      className="img-fluid rounded shadow-sm" 
-                      style={{ maxHeight: '70vh' }}
-                    />
-                  ) : previewModal.type === 'application/pdf' ? (
-                    <iframe 
-                      src={previewModal.url} 
-                      title="PDF Preview" 
-                      width="100%" 
-                      height="500px" 
-                      className="rounded border"
-                    />
-                  ) : (
-                    <div className="py-5 text-muted">
-                      <FileText size={48} className="mb-3" />
-                      <p>Preview not available for this file type.</p>
-                    </div>
-                  )}
+                 {previewModal.type === "image" ? (
+  <img 
+    src={previewModal.url} 
+    className="img-fluid"
+  />
+) : previewModal.type === "application/pdf" ? (
+  <iframe 
+    src={previewModal.url} 
+    width="100%" 
+    height="500px"
+  />
+) : (
+  <a 
+    href={previewModal.url} 
+    target="_blank"
+    className="btn btn-primary"
+  >
+    Download File
+  </a>
+)}
                 </div>
                 <div className="modal-footer border-0 pt-0">
                   <button type="button" className="btn btn-light rounded-pill px-4" onClick={() => setPreviewModal(null)}>Close</button>
