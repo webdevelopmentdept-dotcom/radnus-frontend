@@ -143,6 +143,10 @@ export default function HrPending() {
               <p><b>Department:</b> {selected.department}</p>
               <p><b>Email:</b> {selected.email}</p>
               <p><b>Mobile:</b> {selected.mobile}</p>
+               <p>
+    <b>Created At:</b>{" "}
+    {new Date(selected.createdAt).toLocaleString()}
+  </p>
             </div>
 
             {/* DOCUMENTS */}
