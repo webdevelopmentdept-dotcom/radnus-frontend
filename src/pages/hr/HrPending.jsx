@@ -240,20 +240,30 @@ export default function HrPending() {
               ✕
             </button>
 
-            {isPDF(previewFile) ? (
-              <iframe
-                src={previewFile}
-                width="100%"
-                height="500px"
-                title="preview"
-              />
-            ) : (
-              <img
-                src={previewFile}
-                alt="preview"
-                className="preview-img"
-              />
-            )}
+           {previewFile?.endsWith(".pdf") ? (
+  <iframe
+    src={previewFile}
+    width="100%"
+    height="500px"
+  />
+) : previewFile?.match(/\.(doc|docx)$/) ? (
+  <iframe
+    src={`https://docs.google.com/gview?url=${previewFile}&embedded=true`}
+    width="100%"
+    height="500px"
+  />
+) : previewFile?.match(/\.(jpg|jpeg|png)$/) ? (
+  <img
+    src={previewFile}
+    alt="preview"
+    className="preview-img"
+  />
+) : (
+  <div className="text-center">
+    <p>Preview not supported</p>
+    <a href={previewFile} target="_blank">Download</a>
+  </div>
+)}
 
           </div>
         </div>
