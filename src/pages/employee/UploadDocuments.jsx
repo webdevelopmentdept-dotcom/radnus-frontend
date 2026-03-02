@@ -142,12 +142,11 @@ const openPreview = (docId) => {
   if (!url) return;
 
   const isImage = /\.(jpg|jpeg|png|webp)$/i.test(url);
-  const isPdf = url.toLowerCase().includes(".pdf");
 
   setPreviewModal({
     name: docId,
     url: url,
-    type: isPdf ? "application/pdf" : isImage ? "image" : "other"
+    type: isImage ? "image" : "other"
   });
 };
 
@@ -299,7 +298,7 @@ useEffect(() => {
         id={`file-input-${doc.id}`}
         type="file"
         className="d-none"
-      accept="image/*,application/pdf,.doc,.docx"
+        accept="image/*,.doc,.docx"
         onChange={(e) => handleFileChange(doc.id, e.target.files?.[0])}
       />
     </div>
@@ -357,50 +356,82 @@ useEffect(() => {
       </div>
 
       {/* Preview Modal */}
-      <AnimatePresence>
-        {previewModal && (
-          <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="modal-dialog modal-lg modal-dialog-centered"
-            >
-              <div className="modal-content border-0 shadow-lg" style={{ borderRadius: '1.5rem' }}>
-                <div className="modal-header border-0 pb-0">
-                  <h5 className="modal-title fw-bold">{previewModal.name}</h5>
-                  <button type="button" className="btn-close" onClick={() => setPreviewModal(null)}></button>
-                </div>
-                <div className="modal-body p-4 text-center">
-                 {previewModal.type === "image" ? (
-  <img 
-    src={previewModal.url} 
-    className="img-fluid"
-  />
-) : previewModal.type === "application/pdf" ? (
-  <iframe 
-    src={previewModal.url} 
-    width="100%" 
-    height="500px"
-  />
-) : (
-  <a 
-    href={previewModal.url} 
-    target="_blank"
-    className="btn btn-primary"
-  >
-    Download File
-  </a>
-)}
-                </div>
-                <div className="modal-footer border-0 pt-0">
-                  <button type="button" className="btn btn-light rounded-pill px-4" onClick={() => setPreviewModal(null)}>Close</button>
-                </div>
-              </div>
-            </motion.div>
+      {/* Preview Modal */}
+<AnimatePresence>
+  {previewModal && (
+    <div
+      className="modal fade show d-block"
+      tabIndex="-1"
+      style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="modal-dialog modal-lg modal-dialog-centered"
+      >
+        <div
+          className="modal-content border-0 shadow-lg"
+          style={{ borderRadius: "1.5rem" }}
+        >
+          {/* HEADER */}
+          <div className="modal-header border-0 pb-0">
+            <h5 className="modal-title fw-bold">
+              {previewModal.name}
+            </h5>
+            <button
+              type="button"
+              className="btn-close"
+              onClick={() => setPreviewModal(null)}
+            ></button>
           </div>
-        )}
-      </AnimatePresence>
+
+          {/* BODY */}
+          <div className="modal-body p-4 text-center">
+            
+            {/* ✅ IMAGE PREVIEW */}
+            {previewModal.type === "image" ? (
+              <img
+                src={previewModal.url}
+                className="img-fluid rounded"
+                style={{ maxHeight: "70vh", objectFit: "contain" }}
+              />
+            ) : (
+              <>
+                {/* ❌ DOC preview not possible directly */}
+                <p className="text-muted mb-3">
+                  Preview not available for this file type
+                </p>
+
+                {/* ✅ DOWNLOAD BUTTON */}
+                <a
+                  href={previewModal.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                >
+                  ⬇ Download File
+                </a>
+              </>
+            )}
+
+          </div>
+
+          {/* FOOTER */}
+          <div className="modal-footer border-0 pt-0">
+            <button
+              type="button"
+              className="btn btn-light rounded-pill px-4"
+              onClick={() => setPreviewModal(null)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
 <div className="text-center mt-4">
 
   <button

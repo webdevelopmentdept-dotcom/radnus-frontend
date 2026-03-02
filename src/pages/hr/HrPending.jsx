@@ -240,30 +240,77 @@ export default function HrPending() {
               ✕
             </button>
 
-           {previewFile?.endsWith(".pdf") ? (
-  <iframe
-    src={previewFile}
-    width="100%"
-    height="500px"
-  />
-) : previewFile?.match(/\.(doc|docx)$/) ? (
-  <iframe
-    src={`https://docs.google.com/gview?url=${previewFile}&embedded=true`}
-    width="100%"
-    height="500px"
-  />
-) : previewFile?.match(/\.(jpg|jpeg|png)$/) ? (
-  <img
-    src={previewFile}
-    alt="preview"
-    className="preview-img"
-  />
-) : (
-  <div className="text-center">
-    <p>Preview not supported</p>
-    <a href={previewFile} target="_blank">Download</a>
-  </div>
-)}
+          <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
+
+  {/* PDF */}
+  {previewFile?.endsWith(".pdf") && (
+    <>
+      <iframe
+        src={previewFile}
+        width="100%"
+        height="500px"
+      />
+
+      <div className="text-center mt-3">
+        <a
+          href={previewFile}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-primary"
+        >
+          ⬇ Download PDF
+        </a>
+      </div>
+    </>
+  )}
+
+  {/* DOC */}
+  {previewFile?.match(/\.(doc|docx)$/) && (
+    <>
+      <iframe
+        src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`}
+        width="100%"
+        height="500px"
+      />
+
+      <div className="text-center mt-3">
+        <a
+          href={previewFile}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-primary"
+        >
+          ⬇ Download File
+        </a>
+      </div>
+    </>
+  )}
+
+  {/* IMAGE */}
+  {previewFile?.match(/\.(jpg|jpeg|png)$/) && (
+    <img
+      src={previewFile}
+      alt="preview"
+      className="preview-img"
+    />
+  )}
+
+  {/* FALLBACK */}
+  {!previewFile?.match(/\.(pdf|doc|docx|jpg|jpeg|png)$/) && (
+    <div className="text-center">
+      <p>Preview not supported</p>
+
+      <a
+        href={previewFile}
+        target="_blank"
+        className="btn btn-primary"
+      >
+        ⬇ Download
+      </a>
+    </div>
+  )}
+
+</div>
 
           </div>
         </div>
