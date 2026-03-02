@@ -85,22 +85,32 @@ const handleEditToggle = () => {
   formData.append("file", file);
   formData.append("docId", editData.documents[index]._id);
 
-  const res = await axios.post(
-    `${API_BASE}/api/employee/replace-doc`,
-    formData
-  );
-localStorage.setItem("employeeId", res.data.id);
-  // 🔥 IMPORTANT FIX
-  const updatedDocs = [...editData.documents];
-  updatedDocs[index] = res.data;
+  try {
+    const res = await axios.post(
+      `${API_BASE}/api/employee/replace-doc`,
+      formData
+    );
 
+    const updatedDocs = [...editData.documents];
+    updatedDocs[index] = res.data;
 
+    setEditData(prev => ({
+      ...prev,
+      documents: updatedDocs
+    }));
 
-  // 👉 ALSO update main employee state
-  setEmployee(prev => ({
-    ...prev,
-    documents: updatedDocs
-  }));
+    setEmployee(prev => ({
+      ...prev,
+      documents: updatedDocs
+    }));
+
+    // ✅ ADD THIS
+    alert("Document updated successfully ✅");
+
+  } catch (err) {
+    console.log(err);
+    alert("Update failed ❌");
+  }
 };
 const handleSave = async () => {
   try {
