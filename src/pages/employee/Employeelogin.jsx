@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+  import React, { useState, useEffect } from "react";
 import {
   Container,
   Row,
@@ -23,18 +23,19 @@ export default function EmployeeLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [xp, setXp] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
-
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-
   const [isRegister, setIsRegister] = useState(true);
-  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   const form = useForm({
+    mode: "onChange",
     defaultValues: {
       name: "",
       email: "",
       password: "",
+      confirmPassword: "",
+      mobile: "",
+      department: "",
+      designation: "",
     },
   });
 
@@ -74,100 +75,84 @@ export default function EmployeeLogin() {
     setXp(v);
   }, [watched, isRegister]);
 
-  // Mouse
+  // Mouse tracking
   useEffect(() => {
     const move = (e) => setMousePos({ x: e.clientX, y: e.clientY });
     window.addEventListener("mousemove", move);
     return () => window.removeEventListener("mousemove", move);
   }, []);
 
-  // 🔥 SUBMIT
+  // SUBMIT
   const onSubmit = (data) => {
-    console.log("🚀 FORM DATA:", data); 
-    if (isRegister && data.password !== confirmPassword) return;
-
-    // ✅ REGISTER
     if (isRegister) {
       registerMutation.mutate(data, {
         onSuccess: () => {
-          // 🔥 AUTO LOGIN AFTER REGISTER
           loginMutation.mutate(
             { email: data.email, password: data.password },
             {
-             onSuccess: (res) => {
-  const { token, documentsCompleted, id } = res;
+              onSuccess: (res) => {
+                const { token, documentsCompleted, id } = res;
 
-  if (!token) {
-    setErrorMsg("Login failed after register");
-    setIsRegister(false);
-    return;
-  }
+                if (!token) {
+                  setErrorMsg("Login failed after register");
+                  setIsRegister(false);
+                  return;
+                }
 
-  // ✅ SAVE ID (IMPORTANT)
-  localStorage.setItem("employeeId", id);
+                localStorage.setItem("employeeId", id);
 
-  // ✅ SAVE TOKEN
-  if (rememberMe) {
-    localStorage.setItem("employeeToken", token);
-  } else {
-    sessionStorage.setItem("employeeToken", token);
-  }
+                if (rememberMe) {
+                  localStorage.setItem("employeeToken", token);
+                } else {
+                  sessionStorage.setItem("employeeToken", token);
+                }
 
-  // 🔥 MAIN FIX
-  if (!documentsCompleted) {
-    navigate("/employee/upload-docs"); // ✅ GO HERE FIRST
-  } else {
-    navigate("/employee/dashboard");
-  }
-},
-              onError: (err) => {
-                console.log("LOGIN ERROR", err);
+                if (!documentsCompleted) {
+                  navigate("/employee/upload-docs");
+                } else {
+                  navigate("/employee/dashboard");
+                }
+              },
+              onError: () => {
                 setErrorMsg("Auto login failed, please login");
                 setIsRegister(false);
               },
             }
           );
         },
+        onError: (err) => {
+          const msg = err?.response?.data?.message;
 
-       onError: (err) => {
-  const msg = err?.response?.data?.message;
-
-  if (msg === "EMPLOYEE_EXISTS") {
-    setErrorMsg("Already registered. Please login.");
-    setIsRegister(false); // 🔥 switch to login
-  
-form.setValue("email", data.email);
-  } else {
-    setErrorMsg("Server error. Try again.");
-  }
-},
+          if (msg === "EMPLOYEE_EXISTS") {
+            setErrorMsg("Already registered. Please login.");
+            setIsRegister(false);
+            form.setValue("email", data.email);
+          } else {
+            setErrorMsg("Server error. Try again.");
+          }
+        },
       });
-    }
-
-    // ✅ LOGIN
-    else {
+    } else {
       loginMutation.mutate(
         { email: data.email, password: data.password },
         {
-       onSuccess: (res) => {
-  const { token, documentsCompleted, id } = res;
+          onSuccess: (res) => {
+            const { token, documentsCompleted, id } = res;
 
-  // ✅ ADD THIS LINE
-  localStorage.setItem("employeeId", id);
+            localStorage.setItem("employeeId", id);
 
-  if (rememberMe) {
-    localStorage.setItem("employeeToken", token);
-  } else {
-    sessionStorage.setItem("employeeToken", token);
-  }
+            if (rememberMe) {
+              localStorage.setItem("employeeToken", token);
+            } else {
+              sessionStorage.setItem("employeeToken", token);
+            }
 
-  if (!documentsCompleted) {
-    navigate("/employee/upload-docs");
-  } else {
-    navigate("/employee/dashboard");
-  }
-},
-
+            if (!documentsCompleted) {
+              navigate("/employee/upload-docs");
+            } else {
+              navigate("/employee/dashboard");
+            }
+          },
           onError: () => {
             setErrorMsg("Invalid email or password");
           },
@@ -190,10 +175,7 @@ form.setValue("email", data.email);
               <div className="blob-container">
                 {["pink", "teal", "blue", "long"].map((t) => (
                   <div key={t} className={`blob blob-${t}`}>
-                    <InteractiveBlob
-                      type={t}
-                      mousePosition={mousePos}
-                    />
+                    <InteractiveBlob type={t} mousePosition={mousePos} />
                   </div>
                 ))}
               </div>
@@ -206,9 +188,7 @@ form.setValue("email", data.email);
               </h3>
 
               <p className="text-muted text-center">
-                {isRegister
-                  ? "Create your account"
-                  : "Login to continue"}
+                {isRegister ? "Create your account" : "Login to continue"}
               </p>
 
               {errorMsg && (
@@ -238,47 +218,90 @@ form.setValue("email", data.email);
                     <span>{xp}%</span>
                   </div>
                   <div className="xp-bar-bg">
-                    <div
-                      className="xp-fill"
-                      style={{ width: `${xp}%` }}
-                    />
+                    <div className="xp-fill" style={{ width: `${xp}%` }} />
                   </div>
                 </div>
               )}
 
               <Form onSubmit={form.handleSubmit(onSubmit)}>
                 <Row className="g-3">
+
                   {isRegister && (
                     <Col md={12}>
-                      <Form.Control
-                        {...form.register("name")}
-                        placeholder="Full Name"
-                      />
+                    <Form.Control
+  {...form.register("name", {
+    required: "Name is required",
+    minLength: {
+      value: 3,
+      message: "Minimum 3 characters",
+    },
+    pattern: {
+      value: /^[A-Za-z\s]+$/,
+      message: "Only alphabets allowed",
+    },
+  })}
+  placeholder="Full Name"
+/>
+
+<p className="text-danger">
+  {form.formState.errors.name?.message}
+</p>
                     </Col>
                   )}
 
                   <Col md={12}>
                     <Form.Control
-                      {...form.register("email")}
+                      {...form.register("email", {
+                        required: "Email is required",
+                        pattern: {
+                          value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                          message: "Invalid email format",
+                        },
+                      })}
                       placeholder="Email"
                     />
+                    <p className="text-danger">
+                      {form.formState.errors.email?.message}
+                    </p>
                   </Col>
 
                   <Col xs={12}>
                     <div className="position-relative">
-                      <Form.Control
-                        type={showPassword ? "text" : "password"}
-                        {...form.register("password")}
-                        placeholder="Password"
-                      />
-                      <span
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="position-absolute top-50 end-0 translate-middle-y pe-3"
-                        style={{ cursor: "pointer" }}
-                      >
-                        {showPassword ? "🙈" : "👁️"}
-                      </span>
-                    </div>
+  <Form.Control
+    type={showPassword ? "text" : "password"}
+    {...form.register("password", {
+      required: "Password is required",
+      minLength: {
+        value: 6,
+        message: "Minimum 6 characters",
+      },
+      pattern: {
+        value: /^(?=.*[A-Z])(?=.*[0-9]).*$/,
+        message: "Must include uppercase & number",
+      },
+    })}
+    placeholder="Password"
+  />
+
+  {/* 👁️ Eye Icon */}
+  <span
+    onClick={() => setShowPassword(!showPassword)}
+    style={{
+      position: "absolute",
+      right: "15px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      cursor: "pointer",
+      fontSize: "18px",
+    }}
+  >
+    {showPassword ? "🙈" : "👁️"}
+  </span>
+</div>
+
+<p className="text-danger">
+  {form.formState.errors.password?.message}
+</p>
 
                     {isRegister && (
                       <div className="mt-2">
@@ -286,9 +309,7 @@ form.setValue("email", data.email);
                         <div className="progress">
                           <div
                             className="progress-bar"
-                            style={{
-                              width: `${(strength / 4) * 100}%`,
-                            }}
+                            style={{ width: `${(strength / 4) * 100}%` }}
                           />
                         </div>
                       </div>
@@ -296,42 +317,71 @@ form.setValue("email", data.email);
                   </Col>
 
                   {isRegister && (
-                    <Col xs={12}>
+                    <>
+                      <Col xs={12}>
+                        <Form.Control
+                          type="password"
+                          placeholder="Confirm Password"
+                          {...form.register("confirmPassword", {
+                            required: "Confirm your password",
+                            validate: (value) =>
+                              value === password ||
+                              "Passwords do not match",
+                          })}
+                        />
+                        <p className="text-danger">
+                          {form.formState.errors.confirmPassword?.message}
+                        </p>
+                      </Col>
+
+                      <Col md={12}>
                       <Form.Control
-                        type="password"
-                        placeholder="Confirm Password"
-                        value={confirmPassword}
-                        onChange={(e) =>
-                          setConfirmPassword(e.target.value)
-                        }
-                      />
-                    </Col>
+  type="tel"
+  inputMode="numeric"
+  maxLength={10}
+  onInput={(e) => {
+    e.target.value = e.target.value.replace(/[^0-9]/g, "");
+  }}
+  {...form.register("mobile", {
+    required: "Mobile number required",
+    pattern: {
+      value: /^[6-9]\d{9}$/,
+      message: "Enter valid 10-digit mobile number",
+    },
+  })}
+  placeholder="Mobile Number"
+/>
+
+<p className="text-danger">
+  {form.formState.errors.mobile?.message}
+</p>
+                      </Col>
+
+                      <Col md={12}>
+                        <Form.Control
+                          {...form.register("department", {
+                            required: "Department required",
+                          })}
+                          placeholder="Department"
+                        />
+                        <p className="text-danger">
+                          {form.formState.errors.department?.message}
+                        </p>
+                      </Col>
+
+                      <Col md={12}>
+                        <Form.Control
+                          {...form.register("designation", {
+                            required: "Designation required",
+                          })}
+                          placeholder="Designation"
+                        />
+                        <p className="text-danger">
+                          {form.formState.errors.designation?.message}
+                        </p>
+                      </Col>
+                    </>
                   )}
-
-                    {isRegister && (
-  <>
-    <Col md={12}>
-      <Form.Control
-        {...form.register("mobile")}
-        placeholder="Mobile Number"
-      />
-    </Col>
-
-    <Col md={12}>
-      <Form.Control
-        {...form.register("department")}
-        placeholder="Department"
-      />
-    </Col>
-
-    <Col md={12}>
-      <Form.Control
-        {...form.register("designation")}
-        placeholder="Designation"
-      />
-    </Col>
-  </>
-)}
 
                   <Col xs={12}>
                     <Form.Check
@@ -347,10 +397,7 @@ form.setValue("email", data.email);
                   <Col xs={12}>
                     <Button
                       type="submit"
-                      disabled={
-                        isPending ||
-                        (isRegister && password !== confirmPassword)
-                      }
+                      disabled={isPending || !form.formState.isValid}
                       className="w-100"
                     >
                       {isPending ? (
@@ -364,6 +411,7 @@ form.setValue("email", data.email);
                       )}
                     </Button>
                   </Col>
+
                 </Row>
               </Form>
             </Col>

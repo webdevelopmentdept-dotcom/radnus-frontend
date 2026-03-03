@@ -42,6 +42,7 @@ export default function UploadDocuments() {
   const [dragActive, setDragActive] = useState(null);
   const [previewModal, setPreviewModal] = useState(null);
   const [links, setLinks] = useState({});
+  const [showAlert, setShowAlert] = useState(true);
 
   /* ─── File Selection ─── */
   const handleFileChange = (docId, file) => {
@@ -187,8 +188,56 @@ export default function UploadDocuments() {
     };
   }, []);
 
+  useEffect(() => {
+  setShowAlert(true);
+}, []);
+
   /* ─── Render ─── */
   return (
+    <>
+    {showAlert && (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      background: "rgba(0,0,0,0.6)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 5000,
+    }}
+  >
+    <div
+      style={{
+        background: "#fff",
+        padding: "25px",
+        borderRadius: "12px",
+        maxWidth: "400px",
+        textAlign: "center",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+      }}
+    >
+      <h5 className="fw-bold mb-3">⚠️ Upload Notice</h5>
+
+      <p className="text-muted">
+        Only <b>Images & Documents</b> are allowed. <br />
+        <span style={{ color: "red" }}>
+          PDF files are not supported.
+        </span>
+      </p>
+
+      <button
+        className="btn btn-primary mt-3 w-100"
+        onClick={() => setShowAlert(false)}
+      >
+        OK
+      </button>
+    </div>
+  </div>
+)}
     <div className="container py-5">
       <header className="mb-5">
         <div className="d-flex align-items-center gap-3 mb-2">
@@ -199,7 +248,7 @@ export default function UploadDocuments() {
         </div>
         <p className="text-muted">
           Please upload the following documents to complete your onboarding.
-          Supported formats: PDF, JPG, PNG (Max 5MB).
+          Supported formats: DOC, JPG, PNG (Max 5MB).
         </p>
       </header>
 
@@ -398,5 +447,7 @@ export default function UploadDocuments() {
         </div>
       </footer>
     </div>
+    </>
   );
+  
 }

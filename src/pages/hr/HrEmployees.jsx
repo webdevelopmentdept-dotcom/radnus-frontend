@@ -5,22 +5,32 @@ export default function HrEmployees() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   const handleDelete = async (id) => {
-  const confirmDelete = window.confirm("Are you sure you want to delete?");
+
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete this employee?"
+  );
+
   if (!confirmDelete) return;
 
   try {
-   fetch(`${API_BASE}/api/employee/employees/${id}`,  {
-      method: "DELETE",
-    });
+    const res = await fetch(
+      `${API_BASE}/api/employee/employees/${id}`,
+      {
+        method: "DELETE",
+      }
+    );
 
     if (res.ok) {
+      alert("Employee deleted successfully ✅");
+
       // ✅ remove from UI instantly
-      setEmployees(prev => prev.filter(emp => emp._id !== id));
+      setEmployees((prev) => prev.filter((emp) => emp._id !== id));
     } else {
-      alert("Failed to delete");
+      alert("Failed to delete ❌");
     }
   } catch (err) {
     console.log(err);
+    alert("Something went wrong ❌");
   }
 };
 
