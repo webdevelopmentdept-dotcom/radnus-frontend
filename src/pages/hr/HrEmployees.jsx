@@ -9,7 +9,7 @@ export default function HrEmployees() {
   if (!confirmDelete) return;
 
   try {
-    const res = await fetch(`${API_BASE}/api/hr/employees/${id}`, {
+   fetch(`${API_BASE}/api/employee/employees/${id}`,  {
       method: "DELETE",
     });
 
