@@ -4,6 +4,26 @@ export default function HrEmployees() {
   const [employees, setEmployees] = useState([]);
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+  const handleDelete = async (id) => {
+  const confirmDelete = window.confirm("Are you sure you want to delete?");
+  if (!confirmDelete) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/hr/employees/${id}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      // ✅ remove from UI instantly
+      setEmployees(prev => prev.filter(emp => emp._id !== id));
+    } else {
+      alert("Failed to delete");
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
   // 🔥 FETCH ALL EMPLOYEES
   useEffect(() => {
     fetch(`${API_BASE}/api/hr/employees`)
@@ -27,6 +47,7 @@ export default function HrEmployees() {
                 <th>Email</th>
                 <th>Department</th>
                 <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
 
@@ -65,6 +86,15 @@ export default function HrEmployees() {
                         <span className="badge bg-danger">Rejected</span>
                       )}
                     </td>
+
+                    <td>
+  <button
+    className="btn btn-sm btn-danger"
+    onClick={() => handleDelete(emp._id)}
+  >
+    Delete
+  </button>
+</td>
 
                   </tr>
                 ))
