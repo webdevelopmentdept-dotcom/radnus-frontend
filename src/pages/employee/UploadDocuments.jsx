@@ -98,7 +98,6 @@ export default function UploadDocuments() {
         { headers: { "Content-Type": "multipart/form-data" } }
       );
 
-      console.log("✅ Upload success:", res.data);
 
       // ✅ Save the Cloudinary URL as the preview so modal works after upload
       setPreviews((prev) => ({ ...prev, [docId]: res.data.fileUrl }));
@@ -109,7 +108,6 @@ export default function UploadDocuments() {
       setFiles((prev) => { const n = { ...prev }; delete n[docId]; return n; });
 
     } catch (err) {
-      console.log("❌ Upload error:", err.response?.data || err.message);
       setStatuses((prev) => ({ ...prev, [docId]: "error" }));
       alert(err.response?.data?.message || "Upload failed");
     }
@@ -142,9 +140,8 @@ export default function UploadDocuments() {
         employeeId: localStorage.getItem("employeeId"),
       });
       alert("Documents Submitted ✅");
-      // window.location.href = "/employee/dashboard";
+      window.location.href = "/employee/dashboard";
     } catch (err) {
-      console.log(err);
       alert(err.response?.data?.message || "Submission failed ❌");
     }
   };
@@ -174,7 +171,7 @@ export default function UploadDocuments() {
         setStatuses(statusObj);
         setPreviews(previewObj);
       } catch (err) {
-        console.log("Fetch error:", err);
+        alert(err.response?.data?.message);
       }
     };
 
