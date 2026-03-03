@@ -143,10 +143,6 @@ export default function HrPending() {
               <p><b>Department:</b> {selected.department}</p>
               <p><b>Email:</b> {selected.email}</p>
               <p><b>Mobile:</b> {selected.mobile}</p>
-               <p>
-    <b>Created At:</b>{" "}
-    {new Date(selected.createdAt).toLocaleString()}
-  </p>
             </div>
 
             {/* DOCUMENTS */}
@@ -234,91 +230,40 @@ export default function HrPending() {
 
       {/* ===== PREVIEW MODAL ===== */}
       {previewFile && (
-        <div className="preview-modal">
-          <div className="preview-box">
+  <div className="preview-modal">
+    <div className="preview-box">
 
-            <button
-              className="close-btn"
-              onClick={() => setPreviewFile(null)}
-            >
-              ✕
-            </button>
-
-          <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
-
-  {/* PDF */}
-  {previewFile?.endsWith(".pdf") && (
-    <>
-      <iframe
-        src={previewFile}
-        width="100%"
-        height="500px"
-      />
-
-      <div className="text-center mt-3">
-        <a
-          href={previewFile}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-primary"
-        >
-          ⬇ Download PDF
-        </a>
-      </div>
-    </>
-  )}
-
-  {/* DOC */}
-  {previewFile?.match(/\.(doc|docx)$/) && (
-    <>
-      <iframe
-        src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`}
-        width="100%"
-        height="500px"
-      />
-
-      <div className="text-center mt-3">
-        <a
-          href={previewFile}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-primary"
-        >
-          ⬇ Download File
-        </a>
-      </div>
-    </>
-  )}
-
-  {/* IMAGE */}
-  {previewFile?.match(/\.(jpg|jpeg|png)$/) && (
-    <img
-      src={previewFile}
-      alt="preview"
-      className="preview-img"
-    />
-  )}
-
-  {/* FALLBACK */}
-  {!previewFile?.match(/\.(pdf|doc|docx|jpg|jpeg|png)$/) && (
-    <div className="text-center">
-      <p>Preview not supported</p>
-
-      <a
-        href={previewFile}
-        target="_blank"
-        className="btn btn-primary"
+      <button
+        className="close-btn"
+        onClick={() => setPreviewFile(null)}
       >
-        ⬇ Download
-      </a>
-    </div>
-  )}
+        ✕
+      </button>
 
-</div>
-
-          </div>
+      {previewFile?.endsWith(".pdf") ? (
+        <iframe src={previewFile} width="100%" height="500px" />
+      ) : previewFile?.match(/\.(doc|docx)$/) ? (
+        <iframe
+          src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`}
+          width="100%"
+          height="500px"
+        />
+      ) : previewFile?.match(/\.(jpg|jpeg|png)$/) ? (
+        <img
+          src={previewFile}
+          alt="preview"
+          className="preview-img"
+        />
+      ) : (
+        <div className="text-center">
+          <p>Preview not supported</p>
+          <a href={previewFile} target="_blank">Download</a>
         </div>
       )}
+
+    </div>
+  </div>
+)}
 
       {/* ===== STYLES ===== */}
       <style>{`

@@ -85,32 +85,22 @@ const handleEditToggle = () => {
   formData.append("file", file);
   formData.append("docId", editData.documents[index]._id);
 
-  try {
-    const res = await axios.post(
-      `${API_BASE}/api/employee/replace-doc`,
-      formData
-    );
+  const res = await axios.post(
+    `${API_BASE}/api/employee/replace-doc`,
+    formData
+  );
+localStorage.setItem("employeeId", res.data.id);
+  // 🔥 IMPORTANT FIX
+  const updatedDocs = [...editData.documents];
+  updatedDocs[index] = res.data;
 
-    const updatedDocs = [...editData.documents];
-    updatedDocs[index] = res.data;
 
-    setEditData(prev => ({
-      ...prev,
-      documents: updatedDocs
-    }));
 
-    setEmployee(prev => ({
-      ...prev,
-      documents: updatedDocs
-    }));
-
-    // ✅ ADD THIS
-    alert("Document updated successfully ✅");
-
-  } catch (err) {
-    console.log(err);
-    alert("Update failed ❌");
-  }
+  // 👉 ALSO update main employee state
+  setEmployee(prev => ({
+    ...prev,
+    documents: updatedDocs
+  }));
 };
 const handleSave = async () => {
   try {
@@ -515,7 +505,9 @@ const isRejected = employee.status === "rejected";
                                 <>
                                   <h6 className="mb-0 fw-bold">{doc.docType}</h6>
                                <span className="text-muted small">
-  {doc.fileUrl.endsWith(".pdf")
+  {!doc.fileUrl
+    ? "No File"
+    : doc.fileUrl.endsWith(".pdf")
     ? "PDF"
     : /\.(jpg|jpeg|png)/i.test(doc.fileUrl)
     ? "Image"
