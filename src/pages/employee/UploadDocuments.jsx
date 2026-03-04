@@ -34,6 +34,26 @@ const DOCUMENTS = [
 ];
 
 export default function UploadDocuments() {
+  useEffect(() => {
+  const employeeId = localStorage.getItem("employeeId");
+
+  if (!employeeId) {
+    window.location.href = "/employee/login";
+    return;
+  }
+
+  axios
+    .get(`${API_BASE}/api/employee/me/${employeeId}`)
+    .then((res) => {
+      if (res.data.documentsCompleted === true) {
+        window.location.href = "/employee/dashboard";
+      }
+    })
+    .catch(() => {
+      window.location.href = "/employee/login";
+    });
+
+}, []);
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   const [files, setFiles] = useState({});

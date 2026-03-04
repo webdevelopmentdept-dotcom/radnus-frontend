@@ -147,11 +147,11 @@ export default function EmployeeLogin() {
               sessionStorage.setItem("employeeToken", token);
             }
 
-            if (!documentsCompleted) {
-              navigate("/employee/upload-docs");
-            } else {
-              navigate("/employee/dashboard");
-            }
+          if (documentsCompleted === true) {
+  navigate("/employee/dashboard");
+} else {
+  navigate("/employee/upload-docs");
+}
           },
           onError: () => {
             setErrorMsg("Invalid email or password");
