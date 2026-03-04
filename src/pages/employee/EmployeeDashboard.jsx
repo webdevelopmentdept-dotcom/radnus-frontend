@@ -80,7 +80,9 @@ const handleEditToggle = () => {
   const handleCancel = () => {
     setIsEditing(false);
   };
- const handleDocReplace = async (index, file) => {
+
+const handleDocReplace = async (index, file) => {
+
   const formData = new FormData();
   formData.append("file", file);
   formData.append("docId", editData.documents[index]._id);
@@ -89,24 +91,27 @@ const handleEditToggle = () => {
     `${API_BASE}/api/employee/replace-doc`,
     formData
   );
-localStorage.setItem("employeeId", res.data.id);
-  // 🔥 IMPORTANT FIX
+
   const updatedDocs = [...editData.documents];
   updatedDocs[index] = res.data;
 
+  setEditData(prev => ({
+    ...prev,
+    documents: updatedDocs
+  }));
 
-
-  // 👉 ALSO update main employee state
   setEmployee(prev => ({
     ...prev,
     documents: updatedDocs
   }));
 };
-const handleSave = async () => {
+
+
+  const handleSave = async () => {
   try {
   await axios.put(`${API_BASE}/api/employee/update-profile`, {
-  employeeId: employee.id,
-  ...editData   
+ employeeId: employee._id || employee.id,
+    ...editData   
 });
 
     const updated = await axios.get(
@@ -357,13 +362,16 @@ const isRejected = employee.status === "rejected";
                 </>
               ) : (
                 <>
-<button 
-  type="button"   // 🔥 ADD THIS
-  onClick={handleEditToggle} 
+<button
+  type="button"
+  onClick={(e) => {
+    e.preventDefault();
+    handleEditToggle();
+  }}
   className="btn btn-light d-flex align-items-center gap-2 fw-semibold text-primary"
 >
-                    <User size={18} /> Edit Profile
-                  </button>
+  <User size={18} /> Edit Profile
+</button>
                   
                 </>
               )}
@@ -494,9 +502,31 @@ const isRejected = employee.status === "rejected";
                                     />
                                   </div>
                                   <div className="col-md-6">
-                                 <input 
+   <input
   type="file"
-  onChange={(e) => handleDocReplace(index, e.target.files[0])}
+  accept=".doc,.docx,image/*"
+  onChange={(e) => {
+
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      alert("Only Image or DOC files allowed");
+      return;
+    }
+
+    handleDocReplace(index, file);
+
+  }}
 />
                                       
                                   </div>
