@@ -120,17 +120,26 @@ export default function EmployeeLogin() {
             }
           );
         },
-        onError: (err) => {
-          const msg = err?.response?.data?.message;
+       onError: (err) => {
 
-          if (msg === "EMPLOYEE_EXISTS") {
-            setErrorMsg("Already registered. Please login.");
-            setIsRegister(false);
-            form.setValue("email", data.email);
-          } else {
-            setErrorMsg("Server error. Try again.");
-          }
-        },
+  const msg = err?.response?.data?.message;
+
+  if (msg === "EMAIL_ALREADY_REGISTERED") {
+    setErrorMsg("Email already registered. Please login.");
+    setIsRegister(false);
+    form.setValue("email", data.email);
+  }
+
+  else if (msg === "MOBILE_ALREADY_REGISTERED") {
+    setErrorMsg("Mobile number already registered. Try another number.");
+    setIsRegister(true);
+  }
+
+  else {
+    setErrorMsg("Server error. Try again.");
+  }
+
+},
       });
     } else {
       loginMutation.mutate(
