@@ -366,17 +366,29 @@ export default function EmployeeLogin() {
 </p>
                       </Col>
 
-                      <Col md={12}>
-                        <Form.Control
-                          {...form.register("department", {
-                            required: "Department required",
-                          })}
-                          placeholder="Department"
-                        />
-                        <p className="text-danger">
-                          {form.formState.errors.department?.message}
-                        </p>
-                      </Col>
+                    <Col md={12}>
+  <Form.Select
+    {...form.register("department", {
+      required: "Department required",
+    })}
+  >
+    <option value="">Select Department</option>
+    <option value="Human Resource">Human Resource</option>
+    <option value="Marketing">Marketing</option>
+    <option value="Sales">Sales</option>
+    <option value="Admission">Admission</option>
+    <option value="Account">Account</option>
+    <option value="Supply Chain Management">Supply Chain Management</option>
+    <option value="IT">IT</option>
+    <option value="Front Office Executive">Front Office Executive</option>
+    <option value="Service">Service</option>
+    <option value="Academy Department">Academy Department</option>
+  </Form.Select>
+
+  <p className="text-danger">
+    {form.formState.errors.department?.message}
+  </p>
+</Col>
 
                       <Col md={12}>
                         <Form.Control
