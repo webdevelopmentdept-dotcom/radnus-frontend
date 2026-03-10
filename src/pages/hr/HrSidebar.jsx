@@ -234,6 +234,48 @@ export default function HrSidebar() {
           📊 Employees
         </NavLink>
 
+        <div style={sectionTitle}>Performance</div>
+        <NavLink
+          to="/hr/dashboard/performance/kpi-templates"
+          style={({ isActive }) => ({
+            ...linkBase,
+            ...(isActive ? activeStyle : {}),
+          })}
+        >
+          🎯 KPI Templates
+        </NavLink>
+
+        <NavLink
+          to="/hr/dashboard/performance/assign-kpi"
+          style={({ isActive }) => ({
+            ...linkBase,
+            ...(isActive ? activeStyle : {}),
+          })}
+        >
+          📋 Assign KPIs
+        </NavLink>
+
+        <NavLink
+          to="/hr/dashboard/performance/reviews"
+          style={({ isActive }) => ({
+            ...linkBase,
+            ...(isActive ? activeStyle : {}),
+          })}
+        >
+          ⭐ Reviews
+        </NavLink>
+
+        <NavLink
+          to="/hr/dashboard/performance/reports"
+          style={({ isActive }) => ({
+            ...linkBase,
+            ...(isActive ? activeStyle : {}),
+          })}
+        >
+          📊 Performance Reports
+        </NavLink>
+
+
         <NavLink
           to="/hr/dashboard/reports/attendance"
           style={({ isActive }) => ({

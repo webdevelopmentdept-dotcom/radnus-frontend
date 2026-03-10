@@ -35,10 +35,14 @@ import PartnerLogin from "./pages/Channel/PartnerLogin";
 import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 import Employeelogin from "./pages/employee/Employeelogin";
 import UploadDocuments from "./pages/employee/UploadDocuments";
+// import MyPerformance from "./pages/employee/MyPerformance";
+// import SelfAssessment from "./pages/employee/Selfassessment";
+
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
 import HrEmployees from "./pages/hr/HrEmployees";
+// import KpiTemplates from "./pages/hr/KpiTemplates";
 
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
@@ -65,6 +69,8 @@ import HrDashboardHome from "./pages/hr/HrDashboardHome";
 import HrPending from "./pages/hr/HrPending";
 import HrApproved from "./pages/hr/HrApproved";
 import HrRejected from "./pages/hr/HrRejected";
+// import AssignKpi from "./pages/hr/AssignKpi";
+
 /* Radnus Connect */
 import RadnusConnectHome from "./components/radnusconnect/RadnusConnectHome";
 import TechnicianForm from "./components/radnusconnect/TechnicianForm";
@@ -72,9 +78,9 @@ import ShopOwnerForm from "./components/radnusconnect/ShopOwnerForm";
 
 /* 🔐 EMPLOYEE PROTECTED ROUTE */
 const EmployeeProtectedRoute = ({ children }) => {
- const token =
-  localStorage.getItem("employeeToken") ||
-  sessionStorage.getItem("employeeToken");
+  const token =
+    localStorage.getItem("employeeToken") ||
+    sessionStorage.getItem("employeeToken");
   return token ? children : <Navigate to="/employee/login" replace />;
 };
 
@@ -113,21 +119,21 @@ function App() {
         <Route path="/placement" element={<Placement />} />
         <Route path="/timeline" element={<Timeline />} />
         <Route path="/startup" element={<Startup />} />
-<Route path="/gallery" element={<Gallery />} />
+        <Route path="/gallery" element={<Gallery />} />
         {/* AUTH */}
         <Route path="/login" element={<Login />} />
         <Route path="/employee/login" element={<Employeelogin />} />
         <Route path="/hr/login" element={<HrLogin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/channel/login" element={<PartnerLogin />} />
-<Route
-  path="/employee/upload-docs"
-  element={
-    <EmployeeProtectedRoute>
-      <UploadDocuments />
-    </EmployeeProtectedRoute>
-  }
-/>
+        <Route
+          path="/employee/upload-docs"
+          element={
+            <EmployeeProtectedRoute>
+              <UploadDocuments />
+            </EmployeeProtectedRoute>
+          }
+        />
         {/* ✅ EMPLOYEE DASHBOARD */}
         <Route
           path="/employee/dashboard"
@@ -138,16 +144,23 @@ function App() {
           }
         />
 
+        {/* <Route path="/employee/performance" element={<MyPerformance />} />
+        <Route path="/employee/self-assessment" element={<SelfAssessment />} /> */}
 
-     <Route path="/hr/dashboard" element={<HrDashboard />}>
-  <Route index element={<HrDashboardHome />} />   {/* ✅ main dashboard */}
-  <Route path="applicants" element={<HrApplicants />} />
-  <Route path="employees" element={<HrEmployees />} />
-   <Route path="hr-pending" element={<HrPending />} />
-   <Route path="hr-approved" element={<HrApproved />} />
-    <Route path="hr-reject" element={<HrRejected />} />
 
-</Route>
+        <Route path="/hr/dashboard" element={<HrDashboard />}>
+          <Route index element={<HrDashboardHome />} /> 
+          <Route path="applicants" element={<HrApplicants />} />
+          <Route path="employees" element={<HrEmployees />} />
+          <Route path="hr-pending" element={<HrPending />} />
+          <Route path="hr-approved" element={<HrApproved />} />
+          <Route path="hr-reject" element={<HrRejected />} />
+          {/* <Route path="performance/assign-kpi" element={<AssignKpi />} />
+          <Route path="performance/kpi-templates" element={<KpiTemplates />} /> */}
+
+
+
+        </Route>
         {/* ADMIN */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />

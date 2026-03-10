@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  Briefcase, 
-  Building, 
-  FileText, 
-  CheckCircle, 
-  Clock, 
+import {
+  User,
+  Mail,
+  Phone,
+  Briefcase,
+  Building,
+  FileText,
+  CheckCircle,
+  Clock,
   ExternalLink,
   LogOut,
   Plus,
@@ -17,6 +17,8 @@ import {
   Settings,
   Bell,
   Menu,
+   TrendingUp,      // ← add this
+  ClipboardList ,
   X
 } from "lucide-react";
 
@@ -28,104 +30,104 @@ export default function EmployeeDashboard() {
   const [showSidebar, setShowSidebar] = useState(false);
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const id = localStorage.getItem("employeeId");
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const id = localStorage.getItem("employeeId");
 
-      if (!id) {
-        window.location.href = "/login";
-        return;
+        if (!id) {
+          window.location.href = "/login";
+          return;
+        }
+
+        const res = await axios.get(
+          `${API_BASE}/api/employee/me/${id}`
+        );
+
+        setEmployee(res.data);
+        setEditData(res.data);
+        setLoading(false);
+
+      } catch (err) {
+        console.log(err);
       }
+    };
 
-      const res = await axios.get(
-        `${API_BASE}/api/employee/me/${id}`
-      );
+    fetchData();
 
-      setEmployee(res.data);
-      setEditData(res.data);
-      setLoading(false);
+    // 🔥 AUTO REFRESH EVERY 5 SEC
+    const interval = setInterval(fetchData, 15000);
 
-    } catch (err) {
-      console.log(err);
-    }
-  };
+    return () => clearInterval(interval);
 
-  fetchData();
-
-  // 🔥 AUTO REFRESH EVERY 5 SEC
-  const interval = setInterval(fetchData, 15000);
-
-  return () => clearInterval(interval);
-
-}, []);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("employeeId");
     window.location.href = "/login";
   };
 
-const handleEditToggle = () => {
-  console.log("EDIT CLICKED", employee);
+  const handleEditToggle = () => {
+    console.log("EDIT CLICKED", employee);
 
-  if (!employee) {
-    alert("Employee data load ஆகல");
-    return;
-  }
+    if (!employee) {
+      alert("Employee data load ஆகல");
+      return;
+    }
 
-  setEditData(JSON.parse(JSON.stringify(employee)));
-  setIsEditing(true);
-};
+    setEditData(JSON.parse(JSON.stringify(employee)));
+    setIsEditing(true);
+  };
 
   const handleCancel = () => {
     setIsEditing(false);
   };
 
-const handleDocReplace = async (index, file) => {
+  const handleDocReplace = async (index, file) => {
 
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("docId", editData.documents[index]._id);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("docId", editData.documents[index]._id);
 
-  const res = await axios.post(
-    `${API_BASE}/api/employee/replace-doc`,
-    formData
-  );
+    const res = await axios.post(
+      `${API_BASE}/api/employee/replace-doc`,
+      formData
+    );
 
-  const updatedDocs = [...editData.documents];
-  updatedDocs[index] = res.data;
+    const updatedDocs = [...editData.documents];
+    updatedDocs[index] = res.data;
 
-  setEditData(prev => ({
-    ...prev,
-    documents: updatedDocs
-  }));
+    setEditData(prev => ({
+      ...prev,
+      documents: updatedDocs
+    }));
 
-  setEmployee(prev => ({
-    ...prev,
-    documents: updatedDocs
-  }));
-};
+    setEmployee(prev => ({
+      ...prev,
+      documents: updatedDocs
+    }));
+  };
 
 
   const handleSave = async () => {
-  try {
-  await axios.put(`${API_BASE}/api/employee/update-profile`, {
- employeeId: employee._id || employee.id,
-    ...editData   
-});
+    try {
+      await axios.put(`${API_BASE}/api/employee/update-profile`, {
+        employeeId: employee._id || employee.id,
+        ...editData
+      });
 
-    const updated = await axios.get(
-      `${API_BASE}/api/employee/me/${employee.id}`
-    );
+      const updated = await axios.get(
+        `${API_BASE}/api/employee/me/${employee.id}`
+      );
 
-    setEmployee(updated.data);
-    setEditData(updated.data);
-    setIsEditing(false);
+      setEmployee(updated.data);
+      setEditData(updated.data);
+      setIsEditing(false);
 
-  } catch (err) {
-    console.log(err);
-  }
-};
+    } catch (err) {
+      console.log(err);
+    }
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
     setEditData(prev => ({ ...prev, [name]: value }));
@@ -156,16 +158,16 @@ const handleDocReplace = async (index, file) => {
     );
   }
 
-if (!employee) {
-  return (
-    <div className="container mt-5 text-center">
-      <h3>Employee not found</h3>
-    </div>
-  );
-}
+  if (!employee) {
+    return (
+      <div className="container mt-5 text-center">
+        <h3>Employee not found</h3>
+      </div>
+    );
+  }
 
-    const isApproved = employee.status === "approved";
-const isRejected = employee.status === "rejected";
+  const isApproved = employee.status === "approved";
+  const isRejected = employee.status === "rejected";
 
   const styles = `
     .profile-header {
@@ -188,15 +190,15 @@ const isRejected = employee.status === "rejected";
       {/* SIDEBAR */}
       <div className="d-md-none text-end p-2">
 
-  
-</div>
+
+      </div>
       <aside className={`sidebar ${showSidebar ? 'show' : ''}`}>
-         <button 
-  onClick={() => setShowSidebar(false)} 
-  className="d-md-none"
->
-  <X size={20} />
-</button>
+        <button
+          onClick={() => setShowSidebar(false)}
+          className="d-md-none"
+        >
+          <X size={20} />
+        </button>
         <div className="sidebar-brand">
           <Building size={24} />
           <span>Employee Portal</span>
@@ -222,6 +224,15 @@ const isRejected = employee.status === "rejected";
             <Settings size={20} />
             <span>Settings</span>
           </a>
+          <a href="/employee/performance" className="nav-link-custom">
+            <TrendingUp size={20} />
+            <span>My Performance</span>
+          </a>
+
+          <a href="/employee/self-assessment" className="nav-link-custom">
+            <ClipboardList size={20} />
+            <span>Self Assessment</span>
+          </a>
           <div className="mt-auto pt-4">
             <button onClick={handleLogout} className="nav-link-custom border-0 bg-transparent w-100 text-start">
               <LogOut size={20} />
@@ -233,27 +244,27 @@ const isRejected = employee.status === "rejected";
 
       {/* MAIN CONTENT */}
       {showSidebar && (
-  <div 
-    className="overlay"
-    onClick={() => setShowSidebar(false)}
-  ></div>
-)}
+        <div
+          className="overlay"
+          onClick={() => setShowSidebar(false)}
+        ></div>
+      )}
       <main className="main-content">
         {/* TOPBAR */}
         <header className="topbar">
           <div className="d-flex align-items-center gap-3">
-           <button 
-  className="menu-btn d-md-none"
-  onClick={() => setShowSidebar(true)}
->
-  <Menu size={22} />
-</button>
+            <button
+              className="menu-btn d-md-none"
+              onClick={() => setShowSidebar(true)}
+            >
+              <Menu size={22} />
+            </button>
             <div className="d-flex align-items-center gap-2">
               <span className="fw-bold text-primary d-none d-sm-inline">Welcome back, {employee.name.split(' ')[0]}!</span>
               <div className="bg-light rounded-circle p-2">
                 <Bell size={20} className="text-secondary" />
               </div>
-              <div className="bg-primary text-white rounded-circle p-2 d-flex align-items-center justify-content-center" style={{width: '40px', height: '40px'}}>
+              <div className="bg-primary text-white rounded-circle p-2 d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
                 {employee.name.charAt(0)}
               </div>
             </div>
@@ -264,74 +275,74 @@ const isRejected = employee.status === "rejected";
           {/* TOP PROFILE HEADER */}
           <div className="profile-header d-md-flex align-items-center justify-content-between">
             <div className="d-flex align-items-center gap-4 flex-grow-1">
-             <div className="profile-avatar-wrapper">
-  <img
-    src={
-      employee.profileImage ||
-      "https://ui-avatars.com/api/?name=" + employee.name
-    }
-    alt="profile"
-    className="profile-img"
-  />
+              <div className="profile-avatar-wrapper">
+                <img
+                  src={
+                    employee.profileImage ||
+                    "https://ui-avatars.com/api/?name=" + employee.name
+                  }
+                  alt="profile"
+                  className="profile-img"
+                />
 
-  {isEditing && (
-<input
-  type="file"
-  onChange={async (e) => {
-    const file = e.target.files[0];
+                {isEditing && (
+                  <input
+                    type="file"
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
 
-    const formData = new FormData();
-    formData.append("file", file);
+                      const formData = new FormData();
+                      formData.append("file", file);
 
-    // ❗ FIX 1: correct ID
-    formData.append("employeeId", employee.id);
+                      // ❗ FIX 1: correct ID
+                      formData.append("employeeId", employee.id);
 
-    // ❗ STEP 1: upload image
-    await axios.post(
-      `${API_BASE}/api/employee/upload-profile`,
-      formData
-    );
+                      // ❗ STEP 1: upload image
+                      await axios.post(
+                        `${API_BASE}/api/employee/upload-profile`,
+                        formData
+                      );
 
-    // ❗ STEP 2: refetch full data
-    const res = await axios.get(
-      `${API_BASE}/api/employee/me/${employee.id}`
-    );
+                      // ❗ STEP 2: refetch full data
+                      const res = await axios.get(
+                        `${API_BASE}/api/employee/me/${employee.id}`
+                      );
 
-    // ❗ STEP 3: update UI
-    setEmployee(res.data);
-  }}
-/>
-  )}
-</div>
+                      // ❗ STEP 3: update UI
+                      setEmployee(res.data);
+                    }}
+                  />
+                )}
+              </div>
               <div className="flex-grow-1">
-              {isEditing ? (
+                {isEditing ? (
                   <div className="row g-2">
                     <div className="col-md-6">
-                      <input 
-                        type="text" 
-                        className="form-control form-control-lg mb-2" 
-                        name="name" 
-                        value={editData.name || ""} 
+                      <input
+                        type="text"
+                        className="form-control form-control-lg mb-2"
+                        name="name"
+                        value={editData.name || ""}
                         onChange={handleChange}
                         placeholder="Full Name"
                       />
                     </div>
                     <div className="col-md-6">
-                      <input 
-                        type="text" 
-                        className="form-control mb-2" 
-                        name="designation" 
-                        value={editData.designation || ""} 
+                      <input
+                        type="text"
+                        className="form-control mb-2"
+                        name="designation"
+                        value={editData.designation || ""}
                         onChange={handleChange}
                         placeholder="Designation"
                       />
                     </div>
                     <div className="col-md-6">
-                      <input 
-                        type="text" 
-                        className="form-control" 
-                        name="department" 
-                        value={editData.department || ""} 
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="department"
+                        value={editData.department || ""}
                         onChange={handleChange}
                         placeholder="Department"
                       />
@@ -362,17 +373,17 @@ const isRejected = employee.status === "rejected";
                 </>
               ) : (
                 <>
-<button
-  type="button"
-  onClick={(e) => {
-    e.preventDefault();
-    handleEditToggle();
-  }}
-  className="btn btn-light d-flex align-items-center gap-2 fw-semibold text-primary"
->
-  <User size={18} /> Edit Profile
-</button>
-                  
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleEditToggle();
+                    }}
+                    className="btn btn-light d-flex align-items-center gap-2 fw-semibold text-primary"
+                  >
+                    <User size={18} /> Edit Profile
+                  </button>
+
                 </>
               )}
             </div>
@@ -389,11 +400,11 @@ const isRejected = employee.status === "rejected";
                   <div className="mb-3">
                     <label className="text-muted small text-uppercase fw-bold">Email Address</label>
                     {isEditing ? (
-                      <input 
-                        type="email" 
-                        className="form-control" 
-                        name="email" 
-                        value={editData.email || ""} 
+                      <input
+                        type="email"
+                        className="form-control"
+                        name="email"
+                        value={editData.email || ""}
                         onChange={handleChange}
                       />
                     ) : (
@@ -405,11 +416,11 @@ const isRejected = employee.status === "rejected";
                   <div className="mb-0">
                     <label className="text-muted small text-uppercase fw-bold">Mobile Number</label>
                     {isEditing ? (
-                      <input 
-                        type="text" 
-                        className="form-control" 
-                        name="mobile" 
-                        value={editData.mobile || ""} 
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="mobile"
+                        value={editData.mobile || ""}
                         onChange={handleChange}
                       />
                     ) : (
@@ -426,37 +437,37 @@ const isRejected = employee.status === "rejected";
                   <h5 className="section-title">
                     <CheckCircle size={20} /> Onboarding Status
                   </h5>
-        <div className="text-center py-3">
-  {isApproved ? (
-    <div>
-      <div className="status-badge status-completed d-inline-block mb-3">
-        <CheckCircle size={16} className="me-1" /> APPROVED
-      </div>
-      <p className="small text-muted mb-0">
-        Your documents have been approved by HR ✅
-      </p>
-    </div>
-  ) : isRejected ? (
-    <div>
-      <div className="status-badge status-rejected d-inline-block mb-3">
-        ❌ REJECTED
-      </div>
+                  <div className="text-center py-3">
+                    {isApproved ? (
+                      <div>
+                        <div className="status-badge status-completed d-inline-block mb-3">
+                          <CheckCircle size={16} className="me-1" /> APPROVED
+                        </div>
+                        <p className="small text-muted mb-0">
+                          Your documents have been approved by HR ✅
+                        </p>
+                      </div>
+                    ) : isRejected ? (
+                      <div>
+                        <div className="status-badge status-rejected d-inline-block mb-3">
+                          ❌ REJECTED
+                        </div>
 
-      <p className="small text-danger mb-0">
-        {employee.remarks || "Rejected by HR"}
-      </p>
-    </div>
-  ) : (
-    <div>
-      <div className="status-badge status-pending d-inline-block mb-3">
-        <Clock size={16} className="me-1" /> PENDING
-      </div>
-      <p className="small text-muted mb-0">
-        Waiting for HR approval ⏳
-      </p>
-    </div>
-  )}
-</div>
+                        <p className="small text-danger mb-0">
+                          {employee.remarks || "Rejected by HR"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="status-badge status-pending d-inline-block mb-3">
+                          <Clock size={16} className="me-1" /> PENDING
+                        </div>
+                        <p className="small text-muted mb-0">
+                          Waiting for HR approval ⏳
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -475,7 +486,7 @@ const isRejected = employee.status === "rejected";
                       </button>
                     )}
                   </div>
-                  
+
                   {((isEditing ? editData.documents : employee.documents) || []).length === 0 ? (
                     <div className="text-center py-5">
                       <FileText size={48} className="text-muted opacity-25 mb-3" />
@@ -483,7 +494,7 @@ const isRejected = employee.status === "rejected";
                     </div>
                   ) : (
                     <div className="mt-3">
-                     {((isEditing ? editData.documents : employee.documents) || []).map((doc, index) => (
+                      {((isEditing ? editData.documents : employee.documents) || []).map((doc, index) => (
                         <div key={index} className="doc-item">
                           <div className="d-flex align-items-center gap-3 flex-grow-1">
                             <div className="bg-light p-2 rounded">
@@ -493,71 +504,71 @@ const isRejected = employee.status === "rejected";
                               {isEditing ? (
                                 <div className="row g-2">
                                   <div className="col-md-6">
-                                    <input 
-                                      type="text" 
-                                      className="form-control form-control-sm" 
-                                      value={doc.docType} 
+                                    <input
+                                      type="text"
+                                      className="form-control form-control-sm"
+                                      value={doc.docType}
                                       onChange={(e) => handleDocChange(index, 'docType', e.target.value)}
                                       placeholder="Document Type"
                                     />
                                   </div>
                                   <div className="col-md-6">
-   <input
-  type="file"
-  accept=".doc,.docx,image/*"
-  onChange={(e) => {
+                                    <input
+                                      type="file"
+                                      accept=".doc,.docx,image/*"
+                                      onChange={(e) => {
 
-    const file = e.target.files[0];
+                                        const file = e.target.files[0];
 
-    if (!file) return;
+                                        if (!file) return;
 
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/jpg",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ];
+                                        const allowedTypes = [
+                                          "image/jpeg",
+                                          "image/png",
+                                          "image/jpg",
+                                          "application/msword",
+                                          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                        ];
 
-    if (!allowedTypes.includes(file.type)) {
-      alert("Only Image or DOC files allowed");
-      return;
-    }
+                                        if (!allowedTypes.includes(file.type)) {
+                                          alert("Only Image or DOC files allowed");
+                                          return;
+                                        }
 
-    handleDocReplace(index, file);
+                                        handleDocReplace(index, file);
 
-  }}
-/>
-                                      
+                                      }}
+                                    />
+
                                   </div>
                                 </div>
                               ) : (
                                 <>
                                   <h6 className="mb-0 fw-bold">{doc.docType}</h6>
-                               <span className="text-muted small">
-  {!doc.fileUrl
-    ? "No File"
-    : doc.fileUrl.endsWith(".pdf")
-    ? "PDF"
-    : /\.(jpg|jpeg|png)/i.test(doc.fileUrl)
-    ? "Image"
-    : "Document"}
-</span>
+                                  <span className="text-muted small">
+                                    {!doc.fileUrl
+                                      ? "No File"
+                                      : doc.fileUrl.endsWith(".pdf")
+                                        ? "PDF"
+                                        : /\.(jpg|jpeg|png)/i.test(doc.fileUrl)
+                                          ? "Image"
+                                          : "Document"}
+                                  </span>
                                 </>
                               )}
                             </div>
                           </div>
                           <div className="ms-3 d-flex gap-2">
                             {!isEditing && (
-  <a 
-    href={doc.fileUrl} 
-    target="_blank" 
-    rel="noopener noreferrer"
-    className="btn-view d-flex align-items-center gap-2"
-  >
-    View <ExternalLink size={14} />
-  </a>
-)}
+                              <a
+                                href={doc.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn-view d-flex align-items-center gap-2"
+                              >
+                                View <ExternalLink size={14} />
+                              </a>
+                            )}
                           </div>
                         </div>
                       ))}
