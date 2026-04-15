@@ -5,42 +5,53 @@ export default function HrEmployees() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   const handleDelete = async (id) => {
-
-  const confirmDelete = window.confirm(
-    "Are you sure you want to delete this employee?"
-  );
-
-  if (!confirmDelete) return;
-
-  try {
-    const res = await fetch(
-      `${API_BASE}/api/employee/employees/${id}`,
-      {
-        method: "DELETE",
-      }
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this employee?"
     );
+    if (!confirmDelete) return;
 
-    if (res.ok) {
-      alert("Employee deleted successfully ✅");
+    try {
+      const res = await fetch(`${API_BASE}/api/employee/employees/${id}`, {
+        method: "DELETE",
+      });
 
-      // ✅ remove from UI instantly
-      setEmployees((prev) => prev.filter((emp) => emp._id !== id));
-    } else {
-      alert("Failed to delete ❌");
+      if (res.ok) {
+        alert("Employee deleted successfully ✅");
+        setEmployees((prev) => prev.filter((emp) => emp._id !== id));
+      } else {
+        alert("Failed to delete ❌");
+      }
+    } catch (err) {
+      console.log(err);
+      alert("Something went wrong ❌");
     }
-  } catch (err) {
-    console.log(err);
-    alert("Something went wrong ❌");
-  }
-};
+  };
 
-  // 🔥 FETCH ALL EMPLOYEES
   useEffect(() => {
     fetch(`${API_BASE}/api/hr/employees`)
-      .then(res => res.json())
-      .then(data => setEmployees(data))
-      .catch(err => console.log(err));
+      .then((res) => res.json())
+      .then((data) => setEmployees(data))
+      .catch((err) => console.log(err));
   }, []);
+
+  const getStatusBadge = (emp) => {
+    if (emp.status === "active") {
+      return <span className="badge bg-success">✅ Active</span>;
+    }
+    if (emp.status === "approved") {
+      return <span className="badge bg-info text-dark">👍 Approved</span>;
+    }
+    if (emp.status === "rejected") {
+      return <span className="badge bg-danger">❌ Rejected</span>;
+    }
+    if (emp.status === "pending") {
+      if (emp.reuploaded) {
+        return <span className="badge bg-warning text-dark">🔁 Re-uploaded</span>;
+      }
+      return <span className="badge bg-secondary">⏳ Pending</span>;
+    }
+    return <span className="badge bg-secondary">⏳ Pending</span>;
+  };
 
   return (
     <div className="container-fluid p-3">
@@ -48,7 +59,6 @@ export default function HrEmployees() {
 
       <div className="card shadow-sm">
         <div className="card-body table-responsive">
-
           <table className="table table-hover align-middle">
             <thead>
               <tr>
@@ -64,55 +74,31 @@ export default function HrEmployees() {
             <tbody>
               {employees.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="text-center text-muted">
+                  <td colSpan="6" className="text-center text-muted">
                     No employees found
                   </td>
                 </tr>
               ) : (
-                employees.map(emp => (
+                employees.map((emp) => (
                   <tr key={emp._id}>
                     <td>{emp.employeeId}</td>
                     <td>{emp.name}</td>
                     <td>{emp.email}</td>
                     <td>{emp.department}</td>
-
-                    {/* STATUS */}
+                    <td>{getStatusBadge(emp)}</td>
                     <td>
-                      {emp.status === "approved" && (
-                        <span className="badge bg-success">Approved</span>
-                      )}
-
-                      {emp.status === "pending" && (
-                        emp.reuploaded ? (
-                          <span className="badge bg-warning text-dark">
-                            🔁 Re-uploaded
-                          </span>
-                        ) : (
-                          <span className="badge bg-secondary">Pending</span>
-                        )
-                      )}
-
-                      {emp.status === "rejected" && (
-                        <span className="badge bg-danger">Rejected</span>
-                      )}
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleDelete(emp._id)}
+                      >
+                        Delete
+                      </button>
                     </td>
-
-                    <td>
-  <button
-    className="btn btn-sm btn-danger"
-    onClick={() => handleDelete(emp._id)}
-  >
-    Delete
-  </button>
-</td>
-
                   </tr>
                 ))
               )}
             </tbody>
-
           </table>
-
         </div>
       </div>
     </div>

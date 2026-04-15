@@ -10,6 +10,42 @@ const FREQUENCIES = ["daily", "weekly", "monthly", "quarterly"];
 const defaultItem = { kpi_name: "", target: "", unit: "tasks", weight: "", frequency: "monthly" };
 const defaultForm = { template_name: "", role: "", department: "", description: "", kpi_items: [{ ...defaultItem }] };
 
+// Inject responsive styles
+const STYLES = `
+  .kpi-page { padding: 28px 32px; }
+  .kpi-header { flex-direction: row; align-items: center; }
+  .kpi-header-btn { white-space: nowrap; }
+  .kpi-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+  .kpi-card-actions { flex-direction: row; }
+  .modal-grid { grid-template-columns: 1fr 1fr; }
+  .kpi-item-grid { grid-template-columns: 2fr 1fr 1fr 1fr 1fr; }
+  .view-table { display: table; }
+  .view-table-mobile { display: none; }
+
+  @media (max-width: 768px) {
+    .kpi-page { padding: 16px; }
+    .kpi-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px; }
+    .kpi-header-btn { width: 100%; text-align: center; justify-content: center; }
+    .kpi-grid { grid-template-columns: 1fr !important; }
+    .kpi-card-kpi-row { flex-direction: column !important; align-items: flex-start !important; gap: 4px; }
+    .kpi-card-kpi-row-right { flex-wrap: wrap; }
+    .modal-inner { padding: 16px !important; }
+    .modal-grid { grid-template-columns: 1fr !important; }
+    .kpi-item-grid { grid-template-columns: 1fr 1fr !important; }
+    .kpi-item-grid > div:first-child { grid-column: 1 / -1; }
+    .modal-footer { flex-direction: column !important; }
+    .modal-footer button { width: 100%; }
+    .view-table { display: none !important; }
+    .view-table-mobile { display: block !important; }
+    .kpi-card-actions button { padding: 10px 0 !important; font-size: 14px !important; }
+  }
+
+  @media (max-width: 480px) {
+    .kpi-item-grid { grid-template-columns: 1fr !important; }
+    .kpi-item-grid > div:first-child { grid-column: 1; }
+  }
+`;
+
 export default function KpiTemplates() {
     const [templates, setTemplates] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -40,28 +76,14 @@ export default function KpiTemplates() {
         setTimeout(() => setToast(null), 3000);
     };
 
-    const openCreate = () => {
-        setForm(defaultForm);
-        setEditingId(null);
-        setShowModal(true);
-    };
-
+    const openCreate = () => { setForm(defaultForm); setEditingId(null); setShowModal(true); };
     const openEdit = (t) => {
-        setForm({
-            template_name: t.template_name,
-            role: t.role,
-            department: t.department,
-            description: t.description || "",
-            kpi_items: t.kpi_items.map(i => ({ ...i }))
-        });
+        setForm({ template_name: t.template_name, role: t.role, department: t.department, description: t.description || "", kpi_items: t.kpi_items.map(i => ({ ...i })) });
         setEditingId(t._id);
         setShowModal(true);
     };
-
     const closeModal = () => { setShowModal(false); setEditingId(null); setForm(defaultForm); };
-
     const handleFormChange = (field, value) => setForm(f => ({ ...f, [field]: value }));
-
     const handleItemChange = (idx, field, value) => {
         setForm(f => {
             const items = [...f.kpi_items];
@@ -69,11 +91,8 @@ export default function KpiTemplates() {
             return { ...f, kpi_items: items };
         });
     };
-
     const addItem = () => setForm(f => ({ ...f, kpi_items: [...f.kpi_items, { ...defaultItem }] }));
-
     const removeItem = (idx) => setForm(f => ({ ...f, kpi_items: f.kpi_items.filter((_, i) => i !== idx) }));
-
     const totalWeight = form.kpi_items.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0);
 
     const handleSubmit = async () => {
@@ -86,16 +105,10 @@ export default function KpiTemplates() {
             const method = editingId ? "PUT" : "POST";
             const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
             const data = await res.json();
-            if (data.success) {
-                showToast(editingId ? "Template updated!" : "Template created!");
-                fetchTemplates();
-                closeModal();
-            } else showToast(data.message || "Error", "error");
-        } catch {
-            showToast("Server error", "error");
-        } finally {
-            setSaving(false);
-        }
+            if (data.success) { showToast(editingId ? "Template updated!" : "Template created!"); fetchTemplates(); closeModal(); }
+            else showToast(data.message || "Error", "error");
+        } catch { showToast("Server error", "error"); }
+        finally { setSaving(false); }
     };
 
     const handleDelete = async (id) => {
@@ -108,29 +121,23 @@ export default function KpiTemplates() {
     };
 
     return (
-        <div style={{ fontFamily: "'Segoe UI', sans-serif", minHeight: "100vh", background: "#f4f6fb", padding: "28px 32px" }}>
+        <div className="kpi-page" style={{ fontFamily: "'Segoe UI', sans-serif", minHeight: "100vh", background: "#f4f6fb" }}>
+            <style>{STYLES}</style>
 
             {/* Toast */}
             {toast && (
-                <div style={{
-                    position: "fixed", top: 20, right: 24, zIndex: 9999,
-                    background: toast.type === "error" ? "#ff4d4f" : "#52c41a",
-                    color: "#fff", padding: "12px 20px", borderRadius: 8,
-                    boxShadow: "0 4px 16px rgba(0,0,0,0.15)", fontWeight: 500, fontSize: 14
-                }}>{toast.msg}</div>
+                <div style={{ position: "fixed", top: 20, right: 16, zIndex: 9999, background: toast.type === "error" ? "#ff4d4f" : "#52c41a", color: "#fff", padding: "12px 20px", borderRadius: 8, boxShadow: "0 4px 16px rgba(0,0,0,0.15)", fontWeight: 500, fontSize: 14, maxWidth: "calc(100vw - 32px)" }}>
+                    {toast.msg}
+                </div>
             )}
 
             {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+            <div className="kpi-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, gap: 12 }}>
                 <div>
                     <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#1a1a2e" }}>KPI Templates</h2>
                     <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 14 }}>Create and manage KPI templates for each role</p>
                 </div>
-                <button onClick={openCreate} style={{
-                    background: "#2563eb", color: "#fff", border: "none", borderRadius: 8,
-                    padding: "10px 20px", fontWeight: 600, fontSize: 14, cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 8
-                }}>
+                <button className="kpi-header-btn" onClick={openCreate} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 600, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
                     + Create Template
                 </button>
             </div>
@@ -139,35 +146,25 @@ export default function KpiTemplates() {
             {loading ? (
                 <div style={{ textAlign: "center", padding: 60, color: "#6b7280" }}>Loading templates...</div>
             ) : templates.length === 0 ? (
-                <div style={{
-                    background: "#fff", borderRadius: 12, padding: "60px 0", textAlign: "center",
-                    border: "1px solid #e5e7eb"
-                }}>
+                <div style={{ background: "#fff", borderRadius: 12, padding: "60px 0", textAlign: "center", border: "1px solid #e5e7eb" }}>
                     <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
                     <p style={{ color: "#6b7280", fontSize: 15 }}>No KPI templates yet. Create your first one!</p>
-                    <button onClick={openCreate} style={{
-                        background: "#2563eb", color: "#fff", border: "none", borderRadius: 8,
-                        padding: "10px 20px", fontWeight: 600, cursor: "pointer", marginTop: 8
-                    }}>Create Template</button>
+                    <button onClick={openCreate} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 600, cursor: "pointer", marginTop: 8 }}>Create Template</button>
                 </div>
             ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
+                <div className="kpi-grid" style={{ display: "grid", gap: 20 }}>
                     {templates.map(t => (
-                        <div key={t._id} style={{
-                            background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb",
-                            overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)"
-                        }}>
+                        <div key={t._id} style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
                             {/* Card Header */}
                             <div style={{ background: "#2563eb", padding: "16px 20px" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                                    <div>
-                                        <h3 style={{ margin: 0, color: "#fff", fontSize: 15, fontWeight: 700 }}>{t.template_name}</h3>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <h3 style={{ margin: 0, color: "#fff", fontSize: 15, fontWeight: 700, wordBreak: "break-word" }}>{t.template_name}</h3>
                                         <p style={{ margin: "4px 0 0", color: "#bfdbfe", fontSize: 13 }}>{t.role} · {t.department}</p>
                                     </div>
-                                    <span style={{
-                                        background: "rgba(255,255,255,0.2)", color: "#fff",
-                                        padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600
-                                    }}>{t.kpi_items?.length || 0} KPIs</span>
+                                    <span style={{ background: "rgba(255,255,255,0.2)", color: "#fff", padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
+                                        {t.kpi_items?.length || 0} KPIs
+                                    </span>
                                 </div>
                             </div>
 
@@ -175,17 +172,11 @@ export default function KpiTemplates() {
                             <div style={{ padding: "16px 20px" }}>
                                 {t.description && <p style={{ margin: "0 0 12px", color: "#6b7280", fontSize: 13 }}>{t.description}</p>}
                                 {t.kpi_items?.slice(0, 3).map((item, i) => (
-                                    <div key={i} style={{
-                                        display: "flex", justifyContent: "space-between", alignItems: "center",
-                                        padding: "8px 0", borderBottom: "1px solid #f3f4f6"
-                                    }}>
-                                        <span style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>{item.kpi_name}</span>
-                                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                    <div key={i} className="kpi-card-kpi-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f3f4f6", gap: 8 }}>
+                                        <span style={{ fontSize: 13, color: "#374151", fontWeight: 500, flex: 1, minWidth: 0, wordBreak: "break-word" }}>{item.kpi_name}</span>
+                                        <div className="kpi-card-kpi-row-right" style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
                                             <span style={{ fontSize: 12, color: "#6b7280" }}>Target: {item.target} {item.unit}</span>
-                                            <span style={{
-                                                background: "#eff6ff", color: "#2563eb", fontSize: 11,
-                                                fontWeight: 700, padding: "2px 7px", borderRadius: 4
-                                            }}>{item.weight}%</span>
+                                            <span style={{ background: "#eff6ff", color: "#2563eb", fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 4 }}>{item.weight}%</span>
                                         </div>
                                     </div>
                                 ))}
@@ -195,19 +186,10 @@ export default function KpiTemplates() {
                             </div>
 
                             {/* Actions */}
-                            <div style={{ padding: "12px 20px", borderTop: "1px solid #f3f4f6", display: "flex", gap: 8 }}>
-                                <button onClick={() => setViewTemplate(t)} style={{
-                                    flex: 1, padding: "8px 0", border: "1px solid #e5e7eb", borderRadius: 7,
-                                    background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer"
-                                }}>View</button>
-                                <button onClick={() => openEdit(t)} style={{
-                                    flex: 1, padding: "8px 0", border: "1px solid #2563eb", borderRadius: 7,
-                                    background: "#eff6ff", color: "#2563eb", fontSize: 13, fontWeight: 500, cursor: "pointer"
-                                }}>Edit</button>
-                                <button onClick={() => setDeleteConfirm(t._id)} style={{
-                                    flex: 1, padding: "8px 0", border: "1px solid #fecaca", borderRadius: 7,
-                                    background: "#fff5f5", color: "#ef4444", fontSize: 13, fontWeight: 500, cursor: "pointer"
-                                }}>Delete</button>
+                            <div className="kpi-card-actions" style={{ padding: "12px 20px", borderTop: "1px solid #f3f4f6", display: "flex", gap: 8 }}>
+                                <button onClick={() => setViewTemplate(t)} style={{ flex: 1, padding: "8px 0", border: "1px solid #e5e7eb", borderRadius: 7, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>View</button>
+                                <button onClick={() => openEdit(t)} style={{ flex: 1, padding: "8px 0", border: "1px solid #2563eb", borderRadius: 7, background: "#eff6ff", color: "#2563eb", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>Edit</button>
+                                <button onClick={() => setDeleteConfirm(t._id)} style={{ flex: 1, padding: "8px 0", border: "1px solid #fecaca", borderRadius: 7, background: "#fff5f5", color: "#ef4444", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>Delete</button>
                             </div>
                         </div>
                     ))}
@@ -216,29 +198,22 @@ export default function KpiTemplates() {
 
             {/* Create/Edit Modal */}
             {showModal && (
-                <div style={{
-                    position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000,
-                    display: "flex", alignItems: "center", justifyContent: "center", padding: 20
-                }}>
-                    <div style={{
-                        background: "#fff", borderRadius: 14, width: "100%", maxWidth: 680,
-                        maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)"
-                    }}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+                    <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 680, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
                         {/* Modal Header */}
-                        <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", zIndex: 1 }}>
                             <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>
                                 {editingId ? "Edit KPI Template" : "Create KPI Template"}
                             </h3>
                             <button onClick={closeModal} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#6b7280" }}>✕</button>
                         </div>
 
-                        <div style={{ padding: "24px" }}>
+                        <div className="modal-inner" style={{ padding: "24px" }}>
                             {/* Basic Info */}
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                            <div className="modal-grid" style={{ display: "grid", gap: 16, marginBottom: 16 }}>
                                 <div>
                                     <label style={labelStyle}>Template Name *</label>
-                                    <input value={form.template_name} onChange={e => handleFormChange("template_name", e.target.value)}
-                                        placeholder="e.g. Developer KPI Template" style={inputStyle} />
+                                    <input value={form.template_name} onChange={e => handleFormChange("template_name", e.target.value)} placeholder="e.g. Developer KPI Template" style={inputStyle} />
                                 </div>
                                 <div>
                                     <label style={labelStyle}>Role *</label>
@@ -256,44 +231,35 @@ export default function KpiTemplates() {
                                 </div>
                                 <div>
                                     <label style={labelStyle}>Description</label>
-                                    <input value={form.description} onChange={e => handleFormChange("description", e.target.value)}
-                                        placeholder="Optional description" style={inputStyle} />
+                                    <input value={form.description} onChange={e => handleFormChange("description", e.target.value)} placeholder="Optional description" style={inputStyle} />
                                 </div>
                             </div>
 
                             {/* KPI Items */}
                             <div style={{ marginTop: 8 }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
                                     <label style={{ fontWeight: 700, fontSize: 14, color: "#1a1a2e" }}>KPI Items</label>
-                                    <span style={{
-                                        fontSize: 13, fontWeight: 600,
-                                        color: totalWeight === 100 ? "#16a34a" : totalWeight > 100 ? "#ef4444" : "#f59e0b"
-                                    }}>Total Weight: {totalWeight}% {totalWeight === 100 ? "✓" : totalWeight > 100 ? "(Over!)" : "(Need 100%)"}</span>
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: totalWeight === 100 ? "#16a34a" : totalWeight > 100 ? "#ef4444" : "#f59e0b" }}>
+                                        Total Weight: {totalWeight}% {totalWeight === 100 ? "✓" : totalWeight > 100 ? "(Over!)" : "(Need 100%)"}
+                                    </span>
                                 </div>
 
                                 {form.kpi_items.map((item, idx) => (
-                                    <div key={idx} style={{
-                                        background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10,
-                                        padding: 16, marginBottom: 12
-                                    }}>
+                                    <div key={idx} style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: 16, marginBottom: 12 }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
                                             <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>KPI #{idx + 1}</span>
                                             {form.kpi_items.length > 1 && (
-                                                <button onClick={() => removeItem(idx)} style={{
-                                                    background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 13, fontWeight: 500
-                                                }}>Remove</button>
+                                                <button onClick={() => removeItem(idx)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 13, fontWeight: 500 }}>Remove</button>
                                             )}
                                         </div>
-                                        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 10 }}>
+                                        <div className="kpi-item-grid" style={{ display: "grid", gap: 10 }}>
                                             <div>
                                                 <label style={labelStyle}>KPI Name *</label>
-                                                <input value={item.kpi_name} onChange={e => handleItemChange(idx, "kpi_name", e.target.value)}
-                                                    placeholder="e.g. Tasks Completed" style={inputStyle} />
+                                                <input value={item.kpi_name} onChange={e => handleItemChange(idx, "kpi_name", e.target.value)} placeholder="e.g. Tasks Completed" style={inputStyle} />
                                             </div>
                                             <div>
                                                 <label style={labelStyle}>Target *</label>
-                                                <input type="number" value={item.target} onChange={e => handleItemChange(idx, "target", e.target.value)}
-                                                    placeholder="20" style={inputStyle} />
+                                                <input type="number" value={item.target} onChange={e => handleItemChange(idx, "target", e.target.value)} placeholder="20" style={inputStyle} />
                                             </div>
                                             <div>
                                                 <label style={labelStyle}>Unit</label>
@@ -303,8 +269,7 @@ export default function KpiTemplates() {
                                             </div>
                                             <div>
                                                 <label style={labelStyle}>Weight %</label>
-                                                <input type="number" value={item.weight} onChange={e => handleItemChange(idx, "weight", e.target.value)}
-                                                    placeholder="40" style={inputStyle} />
+                                                <input type="number" value={item.weight} onChange={e => handleItemChange(idx, "weight", e.target.value)} placeholder="40" style={inputStyle} />
                                             </div>
                                             <div>
                                                 <label style={labelStyle}>Frequency</label>
@@ -316,23 +281,17 @@ export default function KpiTemplates() {
                                     </div>
                                 ))}
 
-                                <button onClick={addItem} style={{
-                                    width: "100%", padding: "10px 0", border: "2px dashed #d1d5db", borderRadius: 8,
-                                    background: "none", color: "#6b7280", fontSize: 14, cursor: "pointer", fontWeight: 500
-                                }}>+ Add KPI Item</button>
+                                <button onClick={addItem} style={{ width: "100%", padding: "10px 0", border: "2px dashed #d1d5db", borderRadius: 8, background: "none", color: "#6b7280", fontSize: 14, cursor: "pointer", fontWeight: 500 }}>
+                                    + Add KPI Item
+                                </button>
                             </div>
 
                             {/* Footer Buttons */}
-                            <div style={{ display: "flex", gap: 12, marginTop: 24, justifyContent: "flex-end" }}>
-                                <button onClick={closeModal} style={{
-                                    padding: "10px 24px", border: "1px solid #e5e7eb", borderRadius: 8,
-                                    background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer"
-                                }}>Cancel</button>
-                                <button onClick={handleSubmit} disabled={saving} style={{
-                                    padding: "10px 28px", border: "none", borderRadius: 8,
-                                    background: saving ? "#93c5fd" : "#2563eb", color: "#fff",
-                                    fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 14
-                                }}>{saving ? "Saving..." : editingId ? "Update Template" : "Create Template"}</button>
+                            <div className="modal-footer" style={{ display: "flex", gap: 12, marginTop: 24, justifyContent: "flex-end" }}>
+                                <button onClick={closeModal} style={{ padding: "10px 24px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                                <button onClick={handleSubmit} disabled={saving} style={{ padding: "10px 28px", border: "none", borderRadius: 8, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 14 }}>
+                                    {saving ? "Saving..." : editingId ? "Update Template" : "Create Template"}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -341,47 +300,62 @@ export default function KpiTemplates() {
 
             {/* View Modal */}
             {viewTemplate && (
-                <div style={{
-                    position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000,
-                    display: "flex", alignItems: "center", justifyContent: "center", padding: 20
-                }}>
-                    <div style={{
-                        background: "#fff", borderRadius: 14, width: "100%", maxWidth: 600,
-                        maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)"
-                    }}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+                    <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
                         <div style={{ background: "#2563eb", padding: "20px 24px", borderRadius: "14px 14px 0 0" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                                <div>
-                                    <h3 style={{ margin: 0, color: "#fff", fontSize: 18, fontWeight: 700 }}>{viewTemplate.template_name}</h3>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <h3 style={{ margin: 0, color: "#fff", fontSize: 18, fontWeight: 700, wordBreak: "break-word" }}>{viewTemplate.template_name}</h3>
                                     <p style={{ margin: "4px 0 0", color: "#bfdbfe", fontSize: 13 }}>{viewTemplate.role} · {viewTemplate.department}</p>
                                 </div>
-                                <button onClick={() => setViewTemplate(null)} style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontSize: 16 }}>✕</button>
+                                <button onClick={() => setViewTemplate(null)} style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontSize: 16, flexShrink: 0 }}>✕</button>
                             </div>
                         </div>
                         <div style={{ padding: 24 }}>
                             {viewTemplate.description && <p style={{ color: "#6b7280", marginBottom: 20 }}>{viewTemplate.description}</p>}
-                            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-                                <thead>
-                                    <tr style={{ background: "#f8fafc" }}>
-                                        {["KPI Name", "Target", "Unit", "Weight", "Frequency"].map(h => (
-                                            <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontWeight: 700, color: "#374151", borderBottom: "2px solid #e5e7eb" }}>{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {viewTemplate.kpi_items.map((item, i) => (
-                                        <tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                                            <td style={{ padding: "10px 12px", fontWeight: 500, color: "#1a1a2e" }}>{item.kpi_name}</td>
-                                            <td style={{ padding: "10px 12px", color: "#374151" }}>{item.target}</td>
-                                            <td style={{ padding: "10px 12px", color: "#374151" }}>{item.unit}</td>
-                                            <td style={{ padding: "10px 12px" }}>
-                                                <span style={{ background: "#eff6ff", color: "#2563eb", fontWeight: 700, padding: "3px 8px", borderRadius: 4, fontSize: 12 }}>{item.weight}%</span>
-                                            </td>
-                                            <td style={{ padding: "10px 12px", color: "#6b7280", textTransform: "capitalize" }}>{item.frequency}</td>
+
+                            {/* Desktop Table */}
+                            <div className="view-table" style={{ overflowX: "auto" }}>
+                                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, minWidth: 400 }}>
+                                    <thead>
+                                        <tr style={{ background: "#f8fafc" }}>
+                                            {["KPI Name", "Target", "Unit", "Weight", "Frequency"].map(h => (
+                                                <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontWeight: 700, color: "#374151", borderBottom: "2px solid #e5e7eb", whiteSpace: "nowrap" }}>{h}</th>
+                                            ))}
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {viewTemplate.kpi_items.map((item, i) => (
+                                            <tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                                                <td style={{ padding: "10px 12px", fontWeight: 500, color: "#1a1a2e" }}>{item.kpi_name}</td>
+                                                <td style={{ padding: "10px 12px", color: "#374151" }}>{item.target}</td>
+                                                <td style={{ padding: "10px 12px", color: "#374151" }}>{item.unit}</td>
+                                                <td style={{ padding: "10px 12px" }}>
+                                                    <span style={{ background: "#eff6ff", color: "#2563eb", fontWeight: 700, padding: "3px 8px", borderRadius: 4, fontSize: 12 }}>{item.weight}%</span>
+                                                </td>
+                                                <td style={{ padding: "10px 12px", color: "#6b7280", textTransform: "capitalize" }}>{item.frequency}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Mobile Cards (replaces table on small screens) */}
+                            <div className="view-table-mobile">
+                                {viewTemplate.kpi_items.map((item, i) => (
+                                    <div key={i} style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                                            <span style={{ fontWeight: 700, color: "#1a1a2e", fontSize: 14 }}>{item.kpi_name}</span>
+                                            <span style={{ background: "#eff6ff", color: "#2563eb", fontWeight: 700, padding: "3px 8px", borderRadius: 4, fontSize: 12 }}>{item.weight}%</span>
+                                        </div>
+                                        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                                            <span style={{ fontSize: 12, color: "#6b7280" }}>Target: <strong style={{ color: "#374151" }}>{item.target} {item.unit}</strong></span>
+                                            <span style={{ fontSize: 12, color: "#6b7280", textTransform: "capitalize" }}>Freq: <strong style={{ color: "#374151" }}>{item.frequency}</strong></span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
                             <div style={{ marginTop: 16, padding: "10px 12px", background: "#f0fdf4", borderRadius: 8, display: "flex", justifyContent: "space-between" }}>
                                 <span style={{ fontWeight: 700, color: "#16a34a" }}>Total Weight</span>
                                 <span style={{ fontWeight: 700, color: "#16a34a" }}>{viewTemplate.kpi_items.reduce((s, i) => s + i.weight, 0)}%</span>
@@ -393,23 +367,14 @@ export default function KpiTemplates() {
 
             {/* Delete Confirm */}
             {deleteConfirm && (
-                <div style={{
-                    position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000,
-                    display: "flex", alignItems: "center", justifyContent: "center"
-                }}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
                     <div style={{ background: "#fff", borderRadius: 12, padding: 28, maxWidth: 360, width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
                         <div style={{ fontSize: 36, marginBottom: 12 }}>🗑️</div>
                         <h3 style={{ margin: "0 0 8px", color: "#1a1a2e" }}>Delete Template?</h3>
                         <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 20 }}>This action cannot be undone.</p>
                         <div style={{ display: "flex", gap: 12 }}>
-                            <button onClick={() => setDeleteConfirm(null)} style={{
-                                flex: 1, padding: "10px 0", border: "1px solid #e5e7eb", borderRadius: 8,
-                                background: "#fff", fontWeight: 600, cursor: "pointer"
-                            }}>Cancel</button>
-                            <button onClick={() => handleDelete(deleteConfirm)} style={{
-                                flex: 1, padding: "10px 0", border: "none", borderRadius: 8,
-                                background: "#ef4444", color: "#fff", fontWeight: 700, cursor: "pointer"
-                            }}>Delete</button>
+                            <button onClick={() => setDeleteConfirm(null)} style={{ flex: 1, padding: "10px 0", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={() => handleDelete(deleteConfirm)} style={{ flex: 1, padding: "10px 0", border: "none", borderRadius: 8, background: "#ef4444", color: "#fff", fontWeight: 700, cursor: "pointer" }}>Delete</button>
                         </div>
                     </div>
                 </div>
@@ -419,7 +384,4 @@ export default function KpiTemplates() {
 }
 
 const labelStyle = { display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 5 };
-const inputStyle = {
-    width: "100%", padding: "9px 11px", border: "1px solid #d1d5db", borderRadius: 7,
-    fontSize: 13, color: "#1a1a2e", background: "#fff", boxSizing: "border-box", outline: "none"
-};
+const inputStyle = { width: "100%", padding: "9px 11px", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 13, color: "#1a1a2e", background: "#fff", boxSizing: "border-box", outline: "none" };

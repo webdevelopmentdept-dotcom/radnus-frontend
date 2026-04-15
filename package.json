@@ -12,6 +12,8 @@
   "dependencies": {
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.2.2",
+    "@hugeicons/core-free-icons": "^4.0.0",
+    "@hugeicons/react": "^1.1.6",
     "@tanstack/react-query": "^5.90.19",
     "axios": "^1.13.2",
     "bootstrap": "^5.3.8",
@@ -41,7 +43,7 @@
     "react-router-hash-link": "^2.4.3",
     "react-slick": "^0.31.0",
     "react-toastify": "^11.0.5",
-    "recharts": "^3.4.1",
+    "recharts": "^3.8.1",
     "slick-carousel": "^1.8.1",
     "sweetalert2": "^11.26.3",
     "swiper": "^12.0.2",

@@ -26,7 +26,6 @@ import jobsData from "./components/jobsData";
 
 /* Auth */
 import Login from "./pages/auth/Login";
-
 import HrLogin from "./pages/hr/HrLogin";
 import AdminLogin from "./pages/admin/AdminLogin";
 import PartnerLogin from "./pages/Channel/PartnerLogin";
@@ -35,14 +34,64 @@ import PartnerLogin from "./pages/Channel/PartnerLogin";
 import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 import Employeelogin from "./pages/employee/Employeelogin";
 import UploadDocuments from "./pages/employee/UploadDocuments";
-// import MyPerformance from "./pages/employee/MyPerformance";
-// import SelfAssessment from "./pages/employee/Selfassessment";
+import MyPerformance from "./pages/employee/Myperformance";
+import SelfAssessment from "./pages/employee/Selfassessment";
+// import EmployeeSalaryDashboard from "./pages/employee/EmployeeSalaryDashboard";
+import MyPackage from "./pages/employee/Mypackage";
+import MyDocuments from "./pages/employee/Mydocuments";
+import EmployeeAttendance from "./pages/employee/EmployeeAttendance";
+import EmployeeNotifications from "./pages/employee/EmployeeNotifications";
+import MyProfile from "./pages/employee/Myprofile";
+import FeedbackFill from "./pages/employee/FeedbackFill";
+import ImpactBonusEmployee from "./pages/employee/ImpactBonusEmployee";
+import WellnessEmployee from "./pages/employee/WellnessEmployee";
+import Myclubs from "./pages/employee/Myclubs";
+import EmployeeLeadershipTrack from "./pages/employee/EmployeeLeadershipTrack";
+import EmployeeRetentionPlan from "./pages/employee/EmployeeRetentionPlan";
+import AlumniNetworkEmployee from "./pages/employee/Alumninetworkemployee";
+import TrainingRoadmapEmployee from "./pages/employee/Trainingroadmapemployee ";
 
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
 import HrEmployees from "./pages/hr/HrEmployees";
-// import KpiTemplates from "./pages/hr/KpiTemplates";
+import KpiTemplates from "./pages/hr/KpiTemplates";
+// import HRActivationForm from "./pages/hr/HRActivationForm";
+import HRAttendancePage from "./pages/hr/Hrattendancepage";
+import HRLeaveRequests from "./pages/hr/Hrleaverequests";
+import HrSettings from "./pages/hr/HrSettings";
+import HrActiveEmployees from "./pages/hr/Hractiveemployees";
+import HrNotifications from "./pages/hr/HrNotifications";
+import JobPostings from "./pages/hr/JobPosting";
+import OkrDashboard from "./pages/hr/Okrdashboard";
+import GradeMaster from "./pages/hr/Grademaster";
+import AssignGrade from "./pages/hr/AssignGrade";
+import GradeReports from "./pages/hr/GradeReport";
+import OkrSetup from "./pages/hr/Okrsetup";
+import FeedbackCycleSetup from "./pages/hr/Feedbackcyclesetup";
+import VariablePayDashboard from "./pages/hr/VariablePayDashboard";
+import FeedbackNominations from "./pages/hr/Feedbacknominations";
+import FeedbackSubmissions from "./pages/hr/FeedbackSubmissions";
+import HrManagerFeedback from "./pages/hr/Hrmanagerfeedback";
+import AwardsDashboard from "./pages/hr/AwardsDashboard";
+import FeedbackReports from "./pages/hr/Feedbackreports";
+import EsopDashboard from "./pages/hr/EsopDashboard";
+import ImpactBonusDashboard from "./pages/hr/ImpactBonusDashboard";
+import DepartmentMaster from "./pages/hr/Departmentmaster";
+import WellnessHr from "./pages/hr/WellnessHr";
+import Corporateclubshr from "./pages/hr/Corporateclubshr";
+import RetentionPlan from "./pages/hr/RetentionPlan";
+import HrDashboardHome from "./pages/hr/HrDashboardHome";
+import HrPending from "./pages/hr/HrPending";
+import HrApproved from "./pages/hr/HrApproved";
+import HrRejected from "./pages/hr/HrRejected";
+import AssignKpi from "./pages/hr/AssignKpi";
+import PerformanceReviews from "./pages/hr/PerformanceReviews";
+import PerformanceReports from "./pages/hr/Performancereports";
+import EngagementCalendar from "./pages/hr/EngagementCalender";
+import HrLeadershipTrack from "./pages/hr/HrLeadershipTrack";
+import AlumniNetwork from "./pages/hr/AlumniNetwork";
+import TrainingRoadmapHR from "./pages/hr/Trainingroadmaphr";
 
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
@@ -65,11 +114,6 @@ import MyLeads from "./pages/Channel/MyLeads";
 import Courses from "./pages/Channel/Courses";
 import CourseDetail from "./pages/Channel/CourseDetail";
 import PartnerProfile from "./pages/Channel/ProfilePartner";
-import HrDashboardHome from "./pages/hr/HrDashboardHome";
-import HrPending from "./pages/hr/HrPending";
-import HrApproved from "./pages/hr/HrApproved";
-import HrRejected from "./pages/hr/HrRejected";
-// import AssignKpi from "./pages/hr/AssignKpi";
 
 /* Radnus Connect */
 import RadnusConnectHome from "./components/radnusconnect/RadnusConnectHome";
@@ -144,21 +188,98 @@ function App() {
           }
         />
 
-        {/* <Route path="/employee/performance" element={<MyPerformance />} />
-        <Route path="/employee/self-assessment" element={<SelfAssessment />} /> */}
-
-
-        <Route path="/hr/dashboard" element={<HrDashboard />}>
-          <Route index element={<HrDashboardHome />} /> 
+        <Route path="/employee/performance" element={<MyPerformance />} />
+        <Route path="/employee/self-assessment" element={<SelfAssessment />} />
+        {/* <Route path="/employee/my-salary" element={<EmployeeSalaryDashboard />} /> */}
+        <Route path="/employee/my-salary" element={<MyPackage />} />
+        <Route path="/employee/my-documents" element={<MyDocuments />} />
+        <Route path="/employee/attendance" element={<EmployeeAttendance />} />
+        <Route path="/employee/notifications" element={<EmployeeNotifications />} />
+        <Route path="/employee/profile" element={<MyProfile />} />
+        <Route path="/employee/360-feedback" element={<FeedbackFill />} />
+        <Route path="/employee/dashboard/impact-bonus" element={<ImpactBonusEmployee />} />
+        <Route path="/employee/wellness" element={<WellnessEmployee />} />
+        <Route path="/employee/clubs" element={<Myclubs />} />
+       <Route path="/employee/leadership-track" element={<EmployeeLeadershipTrack />} />
+        <Route path="/employee/retention" element={<EmployeeRetentionPlan />} />
+        <Route path="/employee/alumni-network" element={<AlumniNetworkEmployee />} />
+        <Route path="/employee/training" element={<TrainingRoadmapEmployee />} />
+        {/* <Route path="/hr/dashboard" element={<HrDashboard />}>
+          <Route index element={<HrDashboardHome />} />
           <Route path="applicants" element={<HrApplicants />} />
           <Route path="employees" element={<HrEmployees />} />
           <Route path="hr-pending" element={<HrPending />} />
           <Route path="hr-approved" element={<HrApproved />} />
           <Route path="hr-reject" element={<HrRejected />} />
-          {/* <Route path="performance/assign-kpi" element={<AssignKpi />} />
-          <Route path="performance/kpi-templates" element={<KpiTemplates />} /> */}
+          <Route path="settings" element={<HrSettings />} />
+         <Route path="active-employees" element={<HrActiveEmployees />} />
+          <Route path="/hr/dashboard/attendance/daily" element={<HRAttendancePage />} />
+          <Route path="/hr/dashboard/attendance/monthly" element={<HRAttendancePage />} />
+          <Route path="/hr/dashboard/leave/requests" element={<HRLeaveRequests />} /> */}
+
+        <Route path="/hr/dashboard" element={<HrDashboard />}>
+
+          <Route index element={<HrDashboardHome />} />
+
+          <Route path="applicants" element={<HrApplicants />} />
+          <Route path="job-postings" element={<JobPostings />} />
+          <Route path="employees" element={<HrEmployees />} />
+
+          <Route path="hr-pending" element={<HrPending />} />
+          <Route path="hr-approved" element={<HrApproved />} />
+          <Route path="hr-reject" element={<HrRejected />} />
+
+          <Route path="active-employees" element={<HrActiveEmployees />} />
+
+          <Route path="attendance/daily" element={<HRAttendancePage />} />
+          <Route path="attendance/monthly" element={<HRAttendancePage />} />
+
+          <Route path="leave/requests" element={<HRLeaveRequests />} />
+
+          <Route path="masters/departments" element={<DepartmentMaster />} />
+
+          <Route path="/hr/dashboard/wellness" element={<WellnessHr />} />
+          <Route path="/hr/dashboard/clubs" element={<Corporateclubshr />} />
+
+          <Route path="retention-plan" element={<RetentionPlan role="hr" />} />
 
 
+          <Route path="feedback/setup" element={<FeedbackCycleSetup />} />
+          <Route path="feedback/nominations" element={<FeedbackNominations />} />
+          <Route path="feedback/submissions" element={<FeedbackSubmissions />} />
+          <Route path="feedback/manager-feedback" element={<HrManagerFeedback />} />
+          <Route path="/hr/dashboard/feedback/reports" element={<FeedbackReports />} />
+
+          <Route path="performance/kpi-templates" element={<KpiTemplates />} />
+          <Route path="performance/assign-kpi" element={<AssignKpi />} />
+          <Route path="performance/reviews" element={<PerformanceReviews />} />
+          <Route path="performance/reports" element={<PerformanceReports />} />
+          <Route path="performance/okr-dashboard" element={<OkrDashboard />} />
+          <Route path="performance/okr-setup" element={<OkrSetup />} />
+          <Route path="performance/variable-pay" element={<VariablePayDashboard />} />
+          <Route path="performance/esop" element={<EsopDashboard />} />
+
+          <Route path="grading/grade-master" element={<GradeMaster />} />
+          <Route path="grading/assign-grade" element={<AssignGrade />} />
+          <Route path="grading/grade-reports" element={<GradeReports />} />
+
+          <Route path="settings" element={<HrSettings />} />
+          <Route path="notifications" element={<HrNotifications />} />
+
+          <Route path="recognition/awards" element={<AwardsDashboard />} />
+          <Route path="recognition/impact-bonus" element={<ImpactBonusDashboard />} />
+          <Route path="recognition/engagement-calendar" element={<EngagementCalendar />} />
+
+          <Route path="leadership-track" element={<HrLeadershipTrack />} />
+          <Route path="alumni-network" element={<AlumniNetwork/>} />
+
+          <Route path="/hr/dashboard/training" element={<TrainingRoadmapHR />} />
+          
+
+          <Route path="performance/kpi-templates" element={<KpiTemplates />} />
+          <Route path="performance/assign-kpi" element={<AssignKpi />} />
+          <Route path="performance/reviews" element={<PerformanceReviews />} />
+          <Route path="performance/reports" element={<PerformanceReports />} />
 
         </Route>
         {/* ADMIN */}

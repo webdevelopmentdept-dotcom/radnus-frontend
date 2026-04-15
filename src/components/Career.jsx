@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";  // ← useEffect add
+import axios from "axios";                             // ← axios add
 import { Link } from "react-router-dom";
 import { Form, Row, Col } from "react-bootstrap";
 import { Helmet } from "react-helmet";
@@ -9,41 +10,44 @@ import {
   FaUserTie,
 } from "react-icons/fa";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL;  // ← add
 
-
-
-const Career = ({ jobsData }) => {
+const Career = () => {   // ← { jobsData } remove, empty பண்ணு
   const images = ["https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016578/newabout_b8iiuk.webp", "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016369/careerimg1_dxnprm.webp", "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016369/careerimg2_byg1r6.webp", "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016370/careerimg5_ao8cvi.webp", "https://res.cloudinary.com/dp9jv4wyh/image/upload/v1770016369/careerimg3_mecscz.webp"];
 
+  const [jobsData, setJobsData] = useState([]);        // ← add
+  const [loading, setLoading] = useState(true);        // ← add
   const [department, setDepartment] = useState("");
   const [experience, setExperience] = useState("");
   const [jobType, setJobType] = useState("");
 
-  // Time Ago function
+  // ← இந்த useEffect மட்டும் add பண்ணு
+  useEffect(() => {
+    axios.get(`${API_BASE}/api/jobs/public`)
+      .then((res) => setJobsData(res.data.jobs || []))
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Time Ago function — தொடல
   const getTimeAgo = (date) => {
     if (!date) return "N/A";
     const postedDate = new Date(date);
     const now = new Date();
     const diffDays = Math.floor((now - postedDate) / (1000 * 60 * 60 * 24));
-
     if (diffDays < 1) return "Today";
     if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
     if (diffDays < 365)
-      return `${Math.floor(diffDays / 30)} month${
-        Math.floor(diffDays / 30) > 1 ? "s" : ""
-      } ago`;
-    return `${Math.floor(diffDays / 365)} year${
-      Math.floor(diffDays / 365) > 1 ? "s" : ""
-    } ago`;
+      return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? "s" : ""} ago`;
+    return `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? "s" : ""} ago`;
   };
 
-  // Filter Jobs
+  // Filter Jobs — தொடல
   const filteredJobs = jobsData.filter((job) => {
     return (
       (department === "" || job.type === department) &&
       (experience === "" || job.experience === experience) &&
-      (jobType === "" ||
-        job.duration.toLowerCase().includes(jobType.toLowerCase()))
+      (jobType === "" || job.duration.toLowerCase().includes(jobType.toLowerCase()))
     );
   });
 
@@ -57,7 +61,7 @@ const Career = ({ jobsData }) => {
         />
       </Helmet>
 
-      {/* HERO */}
+      {/* HERO — தொடல */}
       <section
         className="career-hero d-flex align-items-center"
         style={{
@@ -68,10 +72,7 @@ const Career = ({ jobsData }) => {
           position: "relative",
         }}
       >
-        <div
-          className="position-absolute w-100 h-100"
-          style={{ background: "rgba(0,0,0,0.4)" }}
-        />
+        <div className="position-absolute w-100 h-100" style={{ background: "rgba(0,0,0,0.4)" }} />
         <div className="container position-relative text-white">
           <h1 className="display-5 fw-bold mb-3">Join Our Team</h1>
           <p className="lead" style={{ maxWidth: "450px" }}>
@@ -80,7 +81,7 @@ const Career = ({ jobsData }) => {
         </div>
       </section>
 
-      {/* WORK SECTION */}
+      {/* WORK SECTION — தொடல */}
       <section className="work-section py-4">
         <div className="container">
           <h2 className="fw-bold mb-3">Work at Radnus</h2>
@@ -88,33 +89,27 @@ const Career = ({ jobsData }) => {
             At Radnus, we innovate, collaborate and create opportunities that
             transform careers and technology.
           </p>
-
-          {/* MASONRY GRID */}
           <div className="masonry-grid">
             {images.map((imgSrc, index) => (
               <div className="masonry-item" key={index}>
-              <img src={imgSrc} alt={`Culture ${index + 1}`} loading="lazy" decoding="async" />
-
+                <img src={imgSrc} alt={`Culture ${index + 1}`} loading="lazy" decoding="async" />
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* OPEN POSITIONS */}
+      {/* OPEN POSITIONS — தொடல */}
       <section className="bg-light py-5">
         <div className="container text-center mb-5">
           <h2 className="fw-bold fs-3">Open Positions</h2>
           <p className="fs-6">Explore exciting opportunities to grow with us.</p>
         </div>
 
-        {/* FILTER */}
+        {/* FILTER — தொடல */}
         <Row className="mb-5 justify-content-center">
           <Col md={3} sm={6} className="mb-3">
-            <Form.Select
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-            >
+            <Form.Select value={department} onChange={(e) => setDepartment(e.target.value)}>
               <option value="">Select Department</option>
               <option>Business Development & Sales</option>
               <option>Sales & Marketing</option>
@@ -123,24 +118,16 @@ const Career = ({ jobsData }) => {
               <option>Inventory & Store Operations</option>
             </Form.Select>
           </Col>
-
           <Col md={3} sm={6} className="mb-3">
-            <Form.Select
-              value={experience}
-              onChange={(e) => setExperience(e.target.value)}
-            >
+            <Form.Select value={experience} onChange={(e) => setExperience(e.target.value)}>
               <option value="">Experience Level</option>
               <option>Fresher</option>
               <option>0-1 Years</option>
               <option>3–5 Years</option>
             </Form.Select>
           </Col>
-
           <Col md={3} sm={6} className="mb-3">
-            <Form.Select
-              value={jobType}
-              onChange={(e) => setJobType(e.target.value)}
-            >
+            <Form.Select value={jobType} onChange={(e) => setJobType(e.target.value)}>
               <option value="">Job Type</option>
               <option>Full-Time</option>
               <option>Internship</option>
@@ -148,30 +135,23 @@ const Career = ({ jobsData }) => {
           </Col>
         </Row>
 
-        {/* JOB CARDS */}
+        {/* JOB CARDS — loading மட்டும் add, மத்தது தொடல */}
         <div className="row justify-content-center">
-          {filteredJobs.length > 0 ? (
+          {loading ? (
+            <h5 className="text-center text-secondary py-5">Loading...</h5>  // ← add
+          ) : filteredJobs.length > 0 ? (
             filteredJobs.map((job, index) => (
               <div className="col-12 col-md-10 col-lg-8 mb-4" key={index}>
                 <div className="card border-0 shadow-sm p-4 d-flex flex-md-row justify-content-between align-items-center">
                   <div>
                     <h5 className="fw-bold mb-2">{job.title}</h5>
                     <div className="d-flex flex-wrap gap-3 text-muted small">
-                      <span>
-                        <FaMapMarkerAlt /> {job.type}
-                      </span>
-                      <span>
-                        <FaClock /> {job.duration}
-                      </span>
-                      <span>
-                        <FaMoneyBillAlt /> {job.salary || "N/A"}
-                      </span>
-                      <span>
-                        <FaUserTie /> {job.experience}
-                      </span>
+                      <span><FaMapMarkerAlt /> {job.type}</span>
+                      <span><FaClock /> {job.duration}</span>
+                      <span><FaMoneyBillAlt /> {job.salary || "N/A"}</span>
+                      <span><FaUserTie /> {job.experience}</span>
                     </div>
                   </div>
-
                   <div className="text-end mt-3 mt-md-0">
                     <Link
                       to={`/careers/${encodeURIComponent(job.title)}`}
@@ -194,38 +174,13 @@ const Career = ({ jobsData }) => {
         </div>
       </section>
 
-      {/* MASONRY CSS */}
+      {/* MASONRY CSS — தொடல */}
       <style>{`
-        .masonry-grid {
-          column-count: 3;
-          column-gap: 20px;
-        }
-
-        .masonry-item {
-          break-inside: avoid;
-          margin-bottom: 20px;
-        }
-
-        .masonry-item img {
-          width: 100%;
-          height: auto;
-          border-radius: 12px;
-          display: block;
-        }
-
-        /* TABLET */
-        @media (max-width: 992px) {
-          .masonry-grid {
-            column-count: 2;
-          }
-        }
-
-        /* MOBILE – ONE IMAGE PER ROW */
-        @media (max-width: 576px) {
-          .masonry-grid {
-            column-count: 1;
-          }
-        }
+        .masonry-grid { column-count: 3; column-gap: 20px; }
+        .masonry-item { break-inside: avoid; margin-bottom: 20px; }
+        .masonry-item img { width: 100%; height: auto; border-radius: 12px; display: block; }
+        @media (max-width: 992px) { .masonry-grid { column-count: 2; } }
+        @media (max-width: 576px) { .masonry-grid { column-count: 1; } }
       `}</style>
     </>
   );

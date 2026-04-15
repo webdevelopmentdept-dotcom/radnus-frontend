@@ -737,10 +737,17 @@ textarea:active {
 ========================= */
 @media (max-width: 576px) {
 
+  /* General Mobile Layout */
+  body {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
   .dashboard-container {
     padding: 1rem;
   }
 
+  /* Profile Header Mobile */
   .profile-header {
     padding: 1.5rem 1rem;
     text-align: center;
@@ -755,15 +762,59 @@ textarea:active {
     height: 70px;
   }
 
+  /* Topbar Mobile */
   .topbar {
     padding: 0 1rem;
     justify-content: space-between;
+    height: auto;
+    min-height: 60px;
   }
 
+  /* Sidebar Mobile */
   .sidebar {
     width: 220px;
+    transform: translateX(-100%);
   }
 
+  .sidebar.show {
+    transform: translateX(0);
+  }
+
+  .sidebar-nav {
+    padding: 0.5rem 0;
+  }
+
+  .nav-link-custom {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  /* Navigation Mobile */
+  .navbar {
+    padding: 0.5rem 1rem !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+  }
+
+  .navbar-brand img {
+    max-height: 40px;
+  }
+
+  .navbar-nav {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .nav-item {
+    margin: 0;
+  }
+
+  .nav-link {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+
+  /* Documents Mobile */
   .doc-item {
     flex-direction: column;
     align-items: flex-start;
@@ -773,14 +824,273 @@ textarea:active {
   .btn-view {
     width: 100%;
     justify-content: center;
+    padding: 0.5rem;
   }
 
+  /* Cards Mobile */
   .card {
+    margin-bottom: 1rem;
+    border-radius: 8px;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  /* Buttons Mobile */
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Forms Mobile */
+  .form-control {
+    font-size: 14px;
+    padding: 0.75rem;
+  }
+
+  /* Tables Mobile */
+  .table-responsive {
+    font-size: 12px;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.5rem;
+  }
+
+  /* Section Titles Mobile */
+  .section-title {
+    font-size: 1.2rem;
     margin-bottom: 1rem;
   }
 
-  .section-title {
+  /* Hero Section Mobile */
+  .hero-section {
+    min-height: 80vh !important;
+    padding: 2rem 1rem !important;
+  }
+
+  .hero-section h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .hero-section p {
     font-size: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Grid Layouts Mobile */
+  .grid {
+    gap: 1rem;
+  }
+
+  .col-12 {
+    margin-bottom: 1rem;
+  }
+
+  /* Footer Mobile */
+  .footer {
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+
+  .footer .col-md-3 {
+    margin-bottom: 1.5rem;
+  }
+
+  /* Cards Grid Mobile */
+  .service-card {
+    margin-bottom: 1rem;
+  }
+
+  /* Contact Form Mobile */
+  .contact-form {
+    padding: 1rem;
+  }
+
+  /* Stats Section Mobile */
+  .stats-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+    text-align: center;
+  }
+
+  /* Gallery Mobile */
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+
+  /* Dropdown Mobile */
+  .dropdown-menu {
+    width: 100% !important;
+    position: static !important;
+    box-shadow: none !important;
+  }
+
+  .dropdown-menu .row {
+    flex-direction: column !important;
+  }
+
+  .dropdown-item {
+    padding: 0.75rem 1rem;
+  }
+
+  /* Mega Menu Mobile */
+  .mega-menu-mobile {
+    padding: 1rem;
+  }
+
+  .mega-menu-mobile p {
+    display: none;
+  }
+
+  .mega-menu-mobile .border-start {
+    border: none !important;
+  }
+
+  /* Login Form Mobile */
+  .login-card {
+    padding: 1.5rem;
+  }
+
+  /* Timeline Mobile */
+  .timeline-item {
+    padding: 1rem;
+  }
+
+  .timeline-content {
+    margin-left: 0;
+    text-align: center;
+  }
+
+  /* Services Mobile */
+  .service-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  /* About Section Mobile */
+  .about-section {
+    padding: 2rem 1rem;
+  }
+
+  .about-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Team Mobile */
+  .team-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .team-member {
+    text-align: center;
+  }
+
+  /* Blog Mobile */
+  .blog-post {
+    margin-bottom: 1.5rem;
+  }
+
+  .blog-post h3 {
+    font-size: 1.3rem;
+  }
+
+  /* Testimonials Mobile */
+  .testimonial-card {
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  /* FAQ Mobile */
+  .accordion {
+    margin-bottom: 1rem;
+  }
+
+  .accordion-button {
+    padding: 1rem;
+  }
+
+  /* Contact Info Mobile */
+  .contact-info {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  /* Map Mobile */
+  .map-container {
+    height: 300px;
+  }
+
+  /* Download Section Mobile */
+  .download-section {
+    padding: 2rem 1rem;
+    text-align: center;
+  }
+
+  /* Career Mobile */
+  .career-card {
+    margin-bottom: 1rem;
+  }
+
+  /* Mobile Navigation Toggle */
+  .menu-btn {
+    display: block;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1001;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #4e73df;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  }
+
+  /* Animation for mobile menu */
+  .mobile-menu-enter {
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  /* Back to top button mobile */
+  .back-to-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #4e73df;
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    z-index: 1000;
   }
 }
 
@@ -790,14 +1100,26 @@ textarea:active {
 ========================= */
 @media (min-width: 577px) and (max-width: 991px) {
 
+  /* General Tablet Layout */
+  body {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
   .dashboard-container {
     padding: 1.5rem;
   }
 
+  /* Profile Header Tablet */
   .profile-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
+    padding: 2rem;
+  }
+
+  .profile-header h1 {
+    font-size: 1.8rem;
   }
 
   .profile-img {
@@ -805,21 +1127,314 @@ textarea:active {
     height: 80px;
   }
 
+  /* Sidebar Tablet */
   .sidebar {
     position: fixed;
     left: -250px;
+    width: 250px;
+    height: 100vh;
+    z-index: 1000;
+    transition: transform 0.3s ease;
   }
 
   .sidebar.show {
-    left: 0;
+    transform: translateX(0);
   }
 
-  .topbar {
-    padding: 0 1.5rem;
+  .sidebar-nav {
+    padding: 1rem 0;
   }
 
+  .nav-link-custom {
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+  }
+
+  /* Navigation Tablet */
+  .navbar {
+    padding: 0.75rem 1.5rem !important;
+  }
+
+  .navbar-brand img {
+    max-height: 50px;
+  }
+
+  .navbar-nav {
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  .nav-item {
+    margin: 0;
+  }
+
+  .nav-link {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+
+  /* Documents Tablet */
   .doc-item {
     flex-wrap: wrap;
+    padding: 1.5rem;
+  }
+
+  .btn-view {
+    width: auto;
+    margin-top: 0.5rem;
+  }
+
+  /* Cards Tablet */
+  .card {
+    margin-bottom: 1.5rem;
+    border-radius: 10px;
+  }
+
+  .card-body {
+    padding: 1.5rem;
+  }
+
+  /* Buttons Tablet */
+  .btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Forms Tablet */
+  .form-control {
+    font-size: 15px;
+    padding: 0.875rem;
+  }
+
+  /* Tables Tablet */
+  .table-responsive {
+    font-size: 13px;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.75rem;
+  }
+
+  /* Section Titles Tablet */
+  .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Hero Section Tablet */
+  .hero-section {
+    min-height: 90vh !important;
+    padding: 3rem 2rem !important;
+  }
+
+  .hero-section h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-section p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+  }
+
+  /* Grid Layouts Tablet */
+  .grid {
+    gap: 1.5rem;
+  }
+
+  .col-12 {
+    margin-bottom: 1.5rem;
+  }
+
+  /* Footer Tablet */
+  .footer {
+    text-align: center;
+    padding: 3rem 2rem;
+  }
+
+  .footer .col-md-3 {
+    margin-bottom: 2rem;
+  }
+
+  /* Cards Grid Tablet */
+  .service-card {
+    margin-bottom: 1.5rem;
+  }
+
+  /* Contact Form Tablet */
+  .contact-form {
+    padding: 2rem;
+  }
+
+  /* Stats Section Tablet */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .stat-card {
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  /* Gallery Tablet */
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+
+  /* Dropdown Tablet */
+  .dropdown-menu {
+    width: 300px !important;
+  }
+
+  .dropdown-menu .row {
+    flex-direction: row !important;
+  }
+
+  .dropdown-item {
+    padding: 0.75rem 1rem;
+  }
+
+  /* Mega Menu Tablet */
+  .mega-menu-mobile {
+    padding: 1.5rem;
+  }
+
+  .mega-menu-mobile p {
+    display: block;
+    font-size: 0.9rem;
+  }
+
+  /* Login Form Tablet */
+  .login-card {
+    padding: 2rem;
+    max-width: 500px;
+  }
+
+  /* Timeline Tablet */
+  .timeline-item {
+    padding: 1.5rem;
+  }
+
+  .timeline-content {
+    margin-left: 1rem;
+  }
+
+  /* Services Tablet */
+  .service-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  /* About Section Tablet */
+  .about-section {
+    padding: 3rem 2rem;
+  }
+
+  .about-section h2 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Team Tablet */
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .team-member {
+    text-align: center;
+  }
+
+  /* Blog Tablet */
+  .blog-post {
+    margin-bottom: 2rem;
+  }
+
+  .blog-post h3 {
+    font-size: 1.5rem;
+  }
+
+  /* Testimonials Tablet */
+  .testimonial-card {
+    padding: 2rem;
+    text-align: center;
+  }
+
+  /* FAQ Tablet */
+  .accordion {
+    margin-bottom: 1.5rem;
+  }
+
+  .accordion-button {
+    padding: 1.25rem;
+  }
+
+  /* Contact Info Tablet */
+  .contact-info {
+    text-align: left;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Map Tablet */
+  .map-container {
+    height: 400px;
+  }
+
+  /* Download Section Tablet */
+  .download-section {
+    padding: 3rem 2rem;
+    text-align: center;
+  }
+
+  /* Career Tablet */
+  .career-card {
+    margin-bottom: 1.5rem;
+  }
+
+  /* Tablet Navigation Toggle */
+  .menu-btn {
+    display: block;
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1001;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #4e73df;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  /* Back to top button tablet */
+  .back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #4e73df;
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    z-index: 1000;
+    font-size: 1.2rem;
   }
 }
 
@@ -894,7 +1509,6 @@ textarea:active {
   }
 }
 
-
 /* DESKTOP BUTTON ALIGN FIX */
 @media (min-width: 992px) {
   .profile-header {
@@ -906,4 +1520,27 @@ textarea:active {
   .profile-header .btn {
     white-space: nowrap;
   }
+}
+
+
+
+.dashboard-wrapper{
+  display:flex;
+  height:100vh;
+  overflow:hidden;
+}
+
+.sidebar{
+  width:260px;
+  height:100vh;
+  position:fixed;
+  left:0;
+  top:0;
+}
+
+.main-content{
+  margin-left:260px;
+  height:100vh;
+  overflow-y:auto;
+  flex:1;
 }
