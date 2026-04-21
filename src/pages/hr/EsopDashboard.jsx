@@ -1,6 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
-import { Plus, Download, TrendingUp, Users, Award, RefreshCw } from "lucide-react";
+import {
+  Plus, Download, TrendingUp, Users, Award, RefreshCw,
+  FileText, Calendar, Shield, CheckCircle, Building2,
+  BarChart3, Layers, Star, ChevronRight, AlertCircle,
+  Briefcase, Target, Lock, BookOpen, Activity, Zap
+} from "lucide-react";
 import * as XLSX from "xlsx";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -45,10 +50,10 @@ const ELIGIBILITY = [
 ];
 
 const IMPACT = [
-  { icon:"🏗️", text:"Builds a leadership-driven ownership culture" },
-  { icon:"💎", text:"Enhances loyalty, accountability, and strategic thinking" },
-  { icon:"🌟", text:"Attracts high-caliber professionals to senior roles" },
-  { icon:"📈", text:"Strengthens succession planning and long-term retention" },
+  { icon: Building2,  text:"Builds a leadership-driven ownership culture" },
+  { icon: Star,       text:"Enhances loyalty, accountability, and strategic thinking" },
+  { icon: Zap,        text:"Attracts high-caliber professionals to senior roles" },
+  { icon: BarChart3,  text:"Strengthens succession planning and long-term retention" },
 ];
 
 const inp = {
@@ -56,26 +61,39 @@ const inp = {
   borderRadius:8, fontSize:13, color:"#1a1a2e", background:"#fff",
   boxSizing:"border-box", outline:"none"
 };
-const lbl = { display:"block", fontSize:11, fontWeight:700, color:"#374151", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.04em" };
+const lbl = {
+  display:"block", fontSize:11, fontWeight:700, color:"#374151",
+  marginBottom:5, textTransform:"uppercase", letterSpacing:"0.04em"
+};
 
 const STYLES = `
   .esop-page { padding: 28px 32px; }
   .esop-stats { grid-template-columns: repeat(4, 1fr); }
   .esop-grade-grid { grid-template-columns: repeat(5, 1fr); }
   .esop-form-grid { grid-template-columns: 1fr 1fr; }
-  .esop-table { display: block !important; }
-  .esop-cards { display: none !important; }
+  .esop-policy-grid { grid-template-columns: 1fr 1fr; }
+  .esop-gov-grid { grid-template-columns: 1fr 1fr; }
+  .esop-table-wrap { display: block; }
+  .esop-cards { display: none; }
+  .esop-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 12px; }
+  .esop-header-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .esop-header-btns { display: flex; gap: 8px; flex-shrink: 0; }
   @media (max-width: 1024px) {
     .esop-stats { grid-template-columns: repeat(2,1fr) !important; }
     .esop-grade-grid { grid-template-columns: repeat(3,1fr) !important; }
   }
   @media (max-width: 768px) {
-    .esop-page { padding: 16px; }
+    .esop-page { padding: 16px 12px 16px 12px !important; }
     .esop-stats { grid-template-columns: repeat(2,1fr) !important; }
     .esop-grade-grid { grid-template-columns: repeat(2,1fr) !important; }
     .esop-form-grid { grid-template-columns: 1fr !important; }
-    .esop-table { display: none !important; }
-    .esop-cards { display: flex !important; flex-direction: column; gap:12px; padding:12px 16px; }
+    .esop-policy-grid { grid-template-columns: 1fr !important; }
+    .esop-gov-grid { grid-template-columns: 1fr !important; }
+    .esop-table-wrap { display: none !important; }
+    .esop-cards { display: flex !important; flex-direction: column; gap: 12px; padding: 12px; }
+    .esop-header { flex-direction: column; align-items: flex-start !important; gap: 10px; }
+    .esop-header-btns { width: 100%; }
+    .esop-header-btns button { flex: 1 1 auto !important; justify-content: center; }
   }
 `;
 
@@ -105,19 +123,16 @@ export default function EsopDashboard() {
     try {
       const [gRes, eRes, sRes] = await Promise.all([
         axios.get(`${API_BASE}/api/esop`),
-        axios.get(`${API_BASE}/api/hr/employees`), // ✅ FIXED: same as HrActiveEmployees
+        axios.get(`${API_BASE}/api/hr/employees`),
         axios.get(`${API_BASE}/api/esop/summary`),
       ]);
       if (gRes.data.success) setGrants(gRes.data.data);
-
-      // ✅ FIXED: active employees only — same filter as HrActiveEmployees.jsx
       if (eRes.data) {
         const active = Array.isArray(eRes.data)
           ? eRes.data.filter(emp => emp.status === "active")
           : [];
         setEmps(active);
       }
-
       if (sRes.data.success) setSummary(sRes.data.data);
     } catch { showMsg("Failed to load", "error"); }
     finally { setLoading(false); }
@@ -138,9 +153,13 @@ export default function EsopDashboard() {
         ...form,
         designation: GRADE_CONFIG[form.grade]?.designation,
       });
-      showMsg("ESOP granted successfully! 🎉");
+      showMsg("ESOP granted successfully!");
       setShowForm(false);
-      setForm({ employee_id:"", grade:"L7", designation:"", total_options:1000, allocation_pct:0.10, exercise_price:"", company_valuation:"", grant_date:"", vesting_start:"", approved_by:"", payout_method:"shares", notes:"" });
+      setForm({
+        employee_id:"", grade:"L7", designation:"", total_options:1000,
+        allocation_pct:0.10, exercise_price:"", company_valuation:"",
+        grant_date:"", vesting_start:"", approved_by:"", payout_method:"shares", notes:""
+      });
       fetchAll();
     } catch (err) {
       showMsg(err?.response?.data?.message || "Failed", "error");
@@ -150,7 +169,7 @@ export default function EsopDashboard() {
   const handleStatus = async (id, status) => {
     try {
       await axios.patch(`${API_BASE}/api/esop/${id}/status`, { status });
-      showMsg("Status updated ✓");
+      showMsg("Status updated");
       fetchAll();
     } catch { showMsg("Failed", "error"); }
   };
@@ -165,7 +184,6 @@ export default function EsopDashboard() {
   const getVestedPct = (grant) => {
     if (!grant.vesting_start) return 0;
     const years = (Date.now() - new Date(grant.vesting_start)) / (1000*60*60*24*365);
-    if (years < 1) return 0;
     if (years < 2) return 0;
     if (years < 3) return 25;
     if (years < 4) return 50;
@@ -178,7 +196,7 @@ export default function EsopDashboard() {
       "#": i+1, "Employee": g.employee_id?.name,
       "Grade": g.grade, "Designation": g.designation,
       "Options": g.total_options, "Alloc %": g.allocation_pct,
-      "Exercise Price (₹)": g.exercise_price,
+      "Exercise Price (Rs)": g.exercise_price,
       "Status": STATUS_CFG[g.status]?.label,
     }));
     const wb = XLSX.utils.book_new();
@@ -187,7 +205,7 @@ export default function EsopDashboard() {
   };
 
   if (loading) return (
-    <div style={{ display:"flex",justifyContent:"center",alignItems:"center",height:"60vh" }}>
+    <div style={{ display:"flex", justifyContent:"center", alignItems:"center", height:"60vh" }}>
       <p style={{ color:"#6b7280" }}>Loading ESOP data...</p>
     </div>
   );
@@ -198,19 +216,30 @@ export default function EsopDashboard() {
     <div className="esop-page" style={{ fontFamily:"'Segoe UI',sans-serif", minHeight:"100vh", background:"#f4f6fb" }}>
       <style>{STYLES}</style>
 
+      {/* Toast */}
       {toast && (
-        <div style={{ position:"fixed", top:20, right:16, zIndex:9999, background:toast.type==="error"?"#ef4444":"#10b981", color:"#fff", padding:"12px 20px", borderRadius:8, fontWeight:600, fontSize:14, boxShadow:"0 4px 16px rgba(0,0,0,.15)" }}>
+        <div style={{
+          position:"fixed", top:20, right:16, zIndex:9999,
+          background: toast.type==="error" ? "#ef4444" : "#10b981",
+          color:"#fff", padding:"12px 20px", borderRadius:8,
+          fontWeight:600, fontSize:14, boxShadow:"0 4px 16px rgba(0,0,0,.15)"
+        }}>
           {toast.msg}
         </div>
       )}
 
       {/* Header */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:24, gap:12, flexWrap:"wrap" }}>
-        <div>
-          <h2 style={{ margin:0, fontSize:22, fontWeight:800, color:"#1a1a2e" }}>📈 R-ESOP Dashboard</h2>
-          <p style={{ margin:"4px 0 0", color:"#6b7280", fontSize:14 }}>Employee Stock Option Plan · L6 to L10 · Radnus Leadership Equity</p>
+      <div className="esop-header">
+        <div className="esop-header-title">
+          <div style={{ width:38, height:38, borderRadius:10, background:"#1a1a2e", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <TrendingUp size={20} color="#fff" />
+          </div>
+          <div style={{ minWidth:0 }}>
+            <h2 style={{ margin:0, fontSize:20, fontWeight:800, color:"#1a1a2e" }}>R-ESOP Dashboard</h2>
+            <p style={{ margin:"2px 0 0", color:"#6b7280", fontSize:12 }}>Employee Stock Option Plan · L6–L10</p>
+          </div>
         </div>
-        <div style={{ display:"flex", gap:8 }}>
+        <div className="esop-header-btns">
           <button onClick={fetchAll} style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 14px", background:"#fff", border:"1px solid #e5e7eb", borderRadius:8, fontWeight:600, fontSize:13, cursor:"pointer", color:"#374151" }}>
             <RefreshCw size={14}/> Refresh
           </button>
@@ -227,10 +256,10 @@ export default function EsopDashboard() {
       {summary && (
         <div className="esop-stats" style={{ display:"grid", gap:14, marginBottom:24 }}>
           {[
-            { label:"Total Grants",    value:summary.total,     color:"#1a1a2e", bg:"#f3f4f6" },
-            { label:"Active Vesting",  value:summary.vesting,   color:"#f59e0b", bg:"#fffbeb" },
-            { label:"Fully Vested",    value:summary.vested,    color:"#3b82f6", bg:"#eff6ff" },
-            { label:"Exercised",       value:summary.exercised, color:"#10b981", bg:"#ecfdf5" },
+            { label:"Total Grants",   value:summary.total,     color:"#1a1a2e", bg:"#f3f4f6", Icon:Users },
+            { label:"Active Vesting", value:summary.vesting,   color:"#f59e0b", bg:"#fffbeb", Icon:Activity },
+            { label:"Fully Vested",   value:summary.vested,    color:"#3b82f6", bg:"#eff6ff", Icon:CheckCircle },
+            { label:"Exercised",      value:summary.exercised, color:"#10b981", bg:"#ecfdf5", Icon:Award },
           ].map((s,i) => (
             <div key={i} style={{ background:"#fff", borderRadius:12, padding:"16px 20px", border:"1px solid #e5e7eb", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div>
@@ -238,7 +267,7 @@ export default function EsopDashboard() {
                 <p style={{ margin:0, fontSize:26, fontWeight:900, color:s.color }}>{s.value}</p>
               </div>
               <div style={{ width:44, height:44, borderRadius:10, background:s.bg, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                {i===0?<Users size={20} color={s.color}/>:i===1?<TrendingUp size={20} color={s.color}/>:<Award size={20} color={s.color}/>}
+                <s.Icon size={20} color={s.color} />
               </div>
             </div>
           ))}
@@ -247,15 +276,15 @@ export default function EsopDashboard() {
 
       {/* Grade Structure */}
       <div className="esop-grade-grid" style={{ display:"grid", gap:12, marginBottom:24 }}>
-        {Object.entries(GRADE_CONFIG).map(([grade, cfg]) => (
-          <div key={grade} style={{ background:"#fff", borderRadius:12, border:`1px solid ${cfg.color}33`, overflow:"hidden" }}>
-            <div style={{ background:cfg.color, padding:"10px 14px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        {Object.entries(GRADE_CONFIG).map(([grade, gc]) => (
+          <div key={grade} style={{ background:"#fff", borderRadius:12, border:`1px solid ${gc.color}33`, overflow:"hidden" }}>
+            <div style={{ background:gc.color, padding:"10px 14px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <span style={{ color:"#fff", fontWeight:900, fontSize:15 }}>{grade}</span>
               <span style={{ background:"rgba(255,255,255,.2)", color:"#fff", fontSize:10, padding:"2px 8px", borderRadius:20, fontWeight:700 }}>ESOP</span>
             </div>
             <div style={{ padding:"12px 14px" }}>
-              <p style={{ margin:"0 0 4px", fontSize:12, fontWeight:700, color:"#1a1a2e" }}>{cfg.designation}</p>
-              <p style={{ margin:0, fontSize:13, fontWeight:900, color:cfg.color }}>{cfg.min}% – {cfg.max}%</p>
+              <p style={{ margin:"0 0 4px", fontSize:12, fontWeight:700, color:"#1a1a2e" }}>{gc.designation}</p>
+              <p style={{ margin:0, fontSize:13, fontWeight:900, color:gc.color }}>{gc.min}% – {gc.max}%</p>
               <p style={{ margin:"2px 0 0", fontSize:10, color:"#9ca3af" }}>Stock allocation</p>
             </div>
           </div>
@@ -263,10 +292,11 @@ export default function EsopDashboard() {
       </div>
 
       {/* Policy Overview */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:24 }}>
+      <div className="esop-policy-grid" style={{ display:"grid", gap:16, marginBottom:24 }}>
         <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden" }}>
-          <div style={{ background:"#1a1a2e", padding:"14px 18px" }}>
-            <p style={{ margin:0, color:"#fff", fontWeight:800, fontSize:14 }}>📋 R-ESOP Policy Overview</p>
+          <div style={{ background:"#1a1a2e", padding:"14px 18px", display:"flex", alignItems:"center", gap:8 }}>
+            <FileText size={15} color="#fff" />
+            <p style={{ margin:0, color:"#fff", fontWeight:800, fontSize:14 }}>R-ESOP Policy Overview</p>
           </div>
           <div style={{ padding:"14px 18px" }}>
             {POLICY.map((p,i) => (
@@ -279,7 +309,10 @@ export default function EsopDashboard() {
         </div>
 
         <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", padding:"18px 20px" }}>
-          <p style={{ margin:"0 0 14px", fontWeight:800, fontSize:14, color:"#1a1a2e" }}>⏳ Vesting Schedule</p>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+            <Calendar size={15} color="#1a1a2e" />
+            <p style={{ margin:0, fontWeight:800, fontSize:14, color:"#1a1a2e" }}>Vesting Schedule</p>
+          </div>
           {VESTING_SCHEDULE.map((v,i) => (
             <div key={i} style={{ marginBottom:10 }}>
               <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4, fontSize:13 }}>
@@ -291,13 +324,17 @@ export default function EsopDashboard() {
               </div>
             </div>
           ))}
-          <div style={{ marginTop:12, padding:"10px 14px", background:"#eff6ff", borderRadius:8, fontSize:12, color:"#1e40af" }}>
-            💡 1-year cliff: No vesting in Year 1. 25% vests each year from Year 2–5.
+          <div style={{ marginTop:12, padding:"10px 14px", background:"#eff6ff", borderRadius:8, fontSize:12, color:"#1e40af", display:"flex", gap:8, alignItems:"flex-start" }}>
+            <AlertCircle size={14} style={{ flexShrink:0, marginTop:1 }} />
+            <span>1-year cliff: No vesting in Year 1. 25% vests each year from Year 2–5.</span>
           </div>
-          <p style={{ margin:"16px 0 8px", fontWeight:800, fontSize:13, color:"#1a1a2e" }}>✅ Eligibility Criteria</p>
+          <div style={{ display:"flex", alignItems:"center", gap:8, margin:"16px 0 8px" }}>
+            <CheckCircle size={14} color="#10b981" />
+            <p style={{ margin:0, fontWeight:800, fontSize:13, color:"#1a1a2e" }}>Eligibility Criteria</p>
+          </div>
           {ELIGIBILITY.map((e,i) => (
             <div key={i} style={{ display:"flex", gap:8, marginBottom:6, fontSize:12, color:"#374151" }}>
-              <span style={{ color:"#10b981", fontWeight:700, flexShrink:0 }}>•</span>
+              <ChevronRight size={13} color="#10b981" style={{ flexShrink:0, marginTop:1 }} />
               <span>{e}</span>
             </div>
           ))}
@@ -308,16 +345,19 @@ export default function EsopDashboard() {
       {showForm && (
         <div style={{ background:"#fff", borderRadius:16, border:"1px solid #e5e7eb", marginBottom:24, overflow:"hidden", boxShadow:"0 4px 24px rgba(0,0,0,.07)" }}>
           <div style={{ background:"#1a1a2e", padding:"16px 22px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-            <p style={{ margin:0, color:"#fff", fontWeight:800, fontSize:15 }}>📈 Grant New ESOP</p>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <TrendingUp size={16} color="#fff" />
+              <p style={{ margin:0, color:"#fff", fontWeight:800, fontSize:15 }}>Grant New ESOP</p>
+            </div>
             <button onClick={() => setShowForm(false)} style={{ background:"rgba(255,255,255,.1)", border:"none", borderRadius:7, padding:"5px 12px", color:"#d1d5db", cursor:"pointer", fontSize:13 }}>✕</button>
           </div>
           <div style={{ padding:22 }}>
-            {/* Grade selector */}
             <div style={{ marginBottom:16 }}>
               <label style={lbl}>Grade / Level</label>
               <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
                 {Object.entries(GRADE_CONFIG).map(([g,c]) => (
-                  <button key={g} onClick={() => setForm(f=>({...f, grade:g, allocation_pct:c.min, designation:c.designation}))}
+                  <button key={g}
+                    onClick={() => setForm(f=>({...f, grade:g, allocation_pct:c.min, designation:c.designation}))}
                     style={{ padding:"8px 16px", border:`2px solid ${form.grade===g?c.color:"#e5e7eb"}`, borderRadius:8, background: form.grade===g?c.bg:"#fff", color: form.grade===g?c.color:"#6b7280", fontWeight:700, fontSize:13, cursor:"pointer" }}>
                     {g} · {c.designation}
                   </button>
@@ -329,7 +369,6 @@ export default function EsopDashboard() {
             </div>
 
             <div className="esop-form-grid" style={{ display:"grid", gap:14, marginBottom:14 }}>
-              {/* ✅ FIXED: Active employees only in dropdown */}
               <div>
                 <label style={lbl}>Employee * <span style={{ color:"#10b981", fontWeight:600 }}>(Active only)</span></label>
                 <select style={inp} value={form.employee_id} onChange={e=>setForm(f=>({...f,employee_id:e.target.value}))}>
@@ -346,7 +385,6 @@ export default function EsopDashboard() {
                   }
                 </select>
               </div>
-
               <div>
                 <label style={lbl}>Total Options</label>
                 <input type="number" style={inp} value={form.total_options} onChange={e=>setForm(f=>({...f,total_options:Number(e.target.value)}))} />
@@ -356,11 +394,11 @@ export default function EsopDashboard() {
                 <input type="number" step="0.01" style={inp} value={form.allocation_pct} onChange={e=>setForm(f=>({...f,allocation_pct:Number(e.target.value)}))} min={cfg?.min} max={cfg?.max} />
               </div>
               <div>
-                <label style={lbl}>Exercise Price (₹/share) *</label>
+                <label style={lbl}>Exercise Price (Rs/share) *</label>
                 <input type="number" style={inp} value={form.exercise_price} onChange={e=>setForm(f=>({...f,exercise_price:e.target.value}))} placeholder="e.g. 100" />
               </div>
               <div>
-                <label style={lbl}>Company Valuation (₹ crore)</label>
+                <label style={lbl}>Company Valuation (Rs crore)</label>
                 <input type="number" style={inp} value={form.company_valuation} onChange={e=>setForm(f=>({...f,company_valuation:e.target.value}))} placeholder="e.g. 50" />
               </div>
               <div>
@@ -384,19 +422,18 @@ export default function EsopDashboard() {
               </div>
             </div>
 
-            {/* Live calculation */}
             {form.exercise_price && form.company_valuation && (
               <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:10, padding:"14px 18px", marginBottom:16, display:"flex", gap:24, flexWrap:"wrap" }}>
                 <div>
                   <p style={{ margin:"0 0 2px", fontSize:11, color:"#6b7280", fontWeight:700 }}>TOTAL VALUE AT EXERCISE</p>
                   <p style={{ margin:0, fontSize:18, fontWeight:900, color:"#10b981" }}>
-                    ₹{(form.total_options * Number(form.exercise_price)).toLocaleString("en-IN")}
+                    Rs {(form.total_options * Number(form.exercise_price)).toLocaleString("en-IN")}
                   </p>
                 </div>
                 <div>
-                  <p style={{ margin:"0 0 2px", fontSize:11, color:"#6b7280", fontWeight:700 }}>IF RADNUS = ₹{form.company_valuation}Cr</p>
+                  <p style={{ margin:"0 0 2px", fontSize:11, color:"#6b7280", fontWeight:700 }}>IF RADNUS = Rs {form.company_valuation}Cr</p>
                   <p style={{ margin:0, fontSize:18, fontWeight:900, color:"#3b82f6" }}>
-                    ₹{(Number(form.company_valuation) * 1e7 * (form.allocation_pct/100)).toLocaleString("en-IN")} potential value
+                    Rs {(Number(form.company_valuation) * 1e7 * (form.allocation_pct/100)).toLocaleString("en-IN")} potential value
                   </p>
                 </div>
               </div>
@@ -409,8 +446,9 @@ export default function EsopDashboard() {
 
             <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
               <button onClick={() => setShowForm(false)} style={{ padding:"10px 24px", border:"1px solid #e5e7eb", borderRadius:8, background:"#fff", color:"#374151", fontWeight:600, cursor:"pointer" }}>Cancel</button>
-              <button onClick={handleGrant} disabled={saving} style={{ padding:"10px 28px", border:"none", borderRadius:8, background:saving?"#93c5fd":"#1a1a2e", color:"#fff", fontWeight:700, fontSize:14, cursor:saving?"not-allowed":"pointer" }}>
-                {saving ? "Granting..." : "Grant ESOP 📈"}
+              <button onClick={handleGrant} disabled={saving} style={{ display:"flex", alignItems:"center", gap:6, padding:"10px 28px", border:"none", borderRadius:8, background:saving?"#93c5fd":"#1a1a2e", color:"#fff", fontWeight:700, fontSize:14, cursor:saving?"not-allowed":"pointer" }}>
+                <TrendingUp size={15} />
+                {saving ? "Granting..." : "Grant ESOP"}
               </button>
             </div>
           </div>
@@ -421,7 +459,7 @@ export default function EsopDashboard() {
       <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden" }}>
         <div style={{ padding:"16px 20px", borderBottom:"1px solid #f3f4f6", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:8 }}>
           <h3 style={{ margin:0, fontSize:15, fontWeight:700, color:"#1a1a2e" }}>All ESOP Grants ({filtered.length})</h3>
-          <div style={{ display:"flex", gap:8 }}>
+          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
             <select style={{ ...inp, width:"auto", fontSize:12 }} value={filterGrade} onChange={e=>setFG(e.target.value)}>
               <option value="All">All Grades</option>
               {Object.keys(GRADE_CONFIG).map(g => <option key={g} value={g}>{g}</option>)}
@@ -435,14 +473,16 @@ export default function EsopDashboard() {
 
         {filtered.length === 0 ? (
           <div style={{ textAlign:"center", padding:"60px 0" }}>
-            <div style={{ fontSize:40, marginBottom:10 }}>📈</div>
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:12 }}>
+              <TrendingUp size={40} color="#d1d5db" />
+            </div>
             <p style={{ color:"#6b7280", fontWeight:600 }}>No ESOP grants yet</p>
             <p style={{ color:"#9ca3af", fontSize:13 }}>Click "Grant ESOP" to issue the first grant</p>
           </div>
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="esop-table" style={{ overflowX:"auto" }}>
+            <div className="esop-table-wrap" style={{ overflowX:"auto" }}>
               <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
                 <thead>
                   <tr style={{ background:"#f8fafc" }}>
@@ -453,8 +493,8 @@ export default function EsopDashboard() {
                 </thead>
                 <tbody>
                   {filtered.map((g,i) => {
-                    const gc  = GRADE_CONFIG[g.grade] || {};
-                    const st  = STATUS_CFG[g.status];
+                    const gc   = GRADE_CONFIG[g.grade] || {};
+                    const st   = STATUS_CFG[g.status];
                     const vPct = getVestedPct(g);
                     return (
                       <tr key={g._id} style={{ borderBottom:"1px solid #f3f4f6", background:i%2===0?"#fff":"#fafafa" }}>
@@ -474,7 +514,7 @@ export default function EsopDashboard() {
                         </td>
                         <td style={{ padding:"13px 16px", fontWeight:700, color:"#1a1a2e" }}>{g.total_options?.toLocaleString()}</td>
                         <td style={{ padding:"13px 16px", color:"#374151" }}>{g.allocation_pct}%</td>
-                        <td style={{ padding:"13px 16px", color:"#374151" }}>₹{Number(g.exercise_price).toLocaleString("en-IN")}</td>
+                        <td style={{ padding:"13px 16px", color:"#374151" }}>Rs {Number(g.exercise_price).toLocaleString("en-IN")}</td>
                         <td style={{ padding:"13px 16px", minWidth:100 }}>
                           <div style={{ background:"#f3f4f6", borderRadius:99, height:6, overflow:"hidden", marginBottom:3 }}>
                             <div style={{ width:`${vPct}%`, height:"100%", background:"#3b82f6", borderRadius:99 }}/>
@@ -498,7 +538,7 @@ export default function EsopDashboard() {
               </table>
             </div>
 
-            {/* Mobile Cards */}
+            {/* Mobile Cards — properly shown on small screens */}
             <div className="esop-cards">
               {filtered.map(g => {
                 const gc   = GRADE_CONFIG[g.grade] || {};
@@ -506,28 +546,65 @@ export default function EsopDashboard() {
                 const vPct = getVestedPct(g);
                 return (
                   <div key={g._id} style={{ border:"1px solid #e5e7eb", borderRadius:10, padding:"14px 16px", background:"#fff" }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-                      <div>
-                        <p style={{ margin:0, fontWeight:700, color:"#1a1a2e" }}>{g.employee_id?.name}</p>
-                        <p style={{ margin:0, fontSize:12, color:"#6b7280" }}>{g.employee_id?.department}</p>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <div style={{ width:36, height:36, borderRadius:"50%", background:gc.bg, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, color:gc.color, fontSize:14, flexShrink:0 }}>
+                          {g.employee_id?.name?.charAt(0)||"?"}
+                        </div>
+                        <div>
+                          <p style={{ margin:0, fontWeight:700, color:"#1a1a2e", fontSize:14 }}>{g.employee_id?.name}</p>
+                          <p style={{ margin:0, fontSize:11, color:"#9ca3af" }}>{g.employee_id?.department}</p>
+                        </div>
                       </div>
-                      <div style={{ display:"flex", gap:6, alignItems:"flex-start" }}>
-                        <span style={{ background:gc.bg, color:gc.color, padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:700 }}>{g.grade}</span>
-                        <span style={{ background:st.bg, color:st.color, padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:700 }}>{st.label}</span>
+                      <div style={{ display:"flex", gap:5, flexShrink:0 }}>
+                        <span style={{ background:gc.bg, color:gc.color, padding:"3px 8px", borderRadius:20, fontSize:11, fontWeight:700 }}>{g.grade}</span>
+                        <span style={{ background:st.bg, color:st.color, padding:"3px 8px", borderRadius:20, fontSize:11, fontWeight:700 }}>{st.label}</span>
                       </div>
                     </div>
+
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"6px 12px", fontSize:13, marginBottom:10 }}>
-                      <div><span style={{ color:"#9ca3af", fontSize:10 }}>OPTIONS</span><p style={{ margin:"2px 0 0", fontWeight:800, color:"#1a1a2e" }}>{g.total_options?.toLocaleString()}</p></div>
-                      <div><span style={{ color:"#9ca3af", fontSize:10 }}>EXERCISE PRICE</span><p style={{ margin:"2px 0 0", fontWeight:700 }}>₹{Number(g.exercise_price).toLocaleString("en-IN")}</p></div>
+                      <div>
+                        <span style={{ color:"#9ca3af", fontSize:10, fontWeight:700, textTransform:"uppercase" }}>Options</span>
+                        <p style={{ margin:"2px 0 0", fontWeight:800, color:"#1a1a2e" }}>{g.total_options?.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span style={{ color:"#9ca3af", fontSize:10, fontWeight:700, textTransform:"uppercase" }}>Exercise Price</span>
+                        <p style={{ margin:"2px 0 0", fontWeight:700, color:"#374151" }}>Rs {Number(g.exercise_price).toLocaleString("en-IN")}</p>
+                      </div>
+                      <div>
+                        <span style={{ color:"#9ca3af", fontSize:10, fontWeight:700, textTransform:"uppercase" }}>Allocation</span>
+                        <p style={{ margin:"2px 0 0", fontWeight:700, color:"#374151" }}>{g.allocation_pct}%</p>
+                      </div>
+                      <div>
+                        <span style={{ color:"#9ca3af", fontSize:10, fontWeight:700, textTransform:"uppercase" }}>Designation</span>
+                        <p style={{ margin:"2px 0 0", fontWeight:700, color:"#374151", fontSize:12 }}>{g.designation}</p>
+                      </div>
                     </div>
-                    <div style={{ background:"#f3f4f6", borderRadius:99, height:6, overflow:"hidden", marginBottom:6 }}>
+
+                    <div style={{ background:"#f3f4f6", borderRadius:99, height:6, overflow:"hidden", marginBottom:5 }}>
                       <div style={{ width:`${vPct}%`, height:"100%", background:"#3b82f6", borderRadius:99 }}/>
                     </div>
                     <p style={{ margin:"0 0 10px", fontSize:12, color:"#6b7280" }}>{vPct}% vested</p>
+
                     <div style={{ display:"flex", gap:6 }}>
-                      {g.status==="granted"  && <button onClick={()=>handleStatus(g._id,"vesting")}  style={{ flex:1, padding:"7px", background:"#fffbeb", border:"1px solid #fde68a", borderRadius:7, color:"#d97706", fontSize:12, fontWeight:600, cursor:"pointer" }}>Start Vesting</button>}
-                      {g.status==="vesting"  && <button onClick={()=>handleStatus(g._id,"vested")}   style={{ flex:1, padding:"7px", background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:7, color:"#2563eb", fontSize:12, fontWeight:600, cursor:"pointer" }}>Mark Vested</button>}
-                      {g.status==="vested"   && <button onClick={()=>handleStatus(g._id,"exercised")} style={{ flex:1, padding:"7px", background:"#ecfdf5", border:"1px solid #6ee7b7", borderRadius:7, color:"#10b981", fontSize:12, fontWeight:600, cursor:"pointer" }}>Exercise</button>}
+                      {g.status==="granted"  && (
+                        <button onClick={()=>handleStatus(g._id,"vesting")}
+                          style={{ flex:1, padding:"8px", background:"#fffbeb", border:"1px solid #fde68a", borderRadius:7, color:"#d97706", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                          Start Vesting
+                        </button>
+                      )}
+                      {g.status==="vesting"  && (
+                        <button onClick={()=>handleStatus(g._id,"vested")}
+                          style={{ flex:1, padding:"8px", background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:7, color:"#2563eb", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                          Mark Vested
+                        </button>
+                      )}
+                      {g.status==="vested"   && (
+                        <button onClick={()=>handleStatus(g._id,"exercised")}
+                          style={{ flex:1, padding:"8px", background:"#ecfdf5", border:"1px solid #6ee7b7", borderRadius:7, color:"#10b981", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                          Exercise
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -538,9 +615,12 @@ export default function EsopDashboard() {
       </div>
 
       {/* Governance & Impact */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginTop:20 }}>
+      <div className="esop-gov-grid" style={{ display:"grid", gap:16, marginTop:20 }}>
         <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", padding:"18px 20px" }}>
-          <p style={{ margin:"0 0 12px", fontWeight:700, fontSize:14, color:"#1a1a2e" }}>⚖️ Governance & Compliance</p>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
+            <Shield size={15} color="#1a1a2e" />
+            <p style={{ margin:0, fontWeight:700, fontSize:14, color:"#1a1a2e" }}>Governance & Compliance</p>
+          </div>
           {[
             "Administered under Companies Act, 2013 – Rule 12",
             "All grants approved by Board of Directors and recorded in ESOP Register",
@@ -548,15 +628,20 @@ export default function EsopDashboard() {
             "Exit terms and forfeiture conditions clearly defined in offer letter annexure",
           ].map((t,i) => (
             <div key={i} style={{ display:"flex", gap:8, marginBottom:8, fontSize:13, color:"#374151" }}>
-              <span style={{ color:"#3b82f6", fontWeight:700, flexShrink:0 }}>•</span><span>{t}</span>
+              <ChevronRight size={14} color="#3b82f6" style={{ flexShrink:0, marginTop:1 }} />
+              <span>{t}</span>
             </div>
           ))}
         </div>
+
         <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", padding:"18px 20px" }}>
-          <p style={{ margin:"0 0 12px", fontWeight:700, fontSize:14, color:"#1a1a2e" }}>🎯 Expected Impact</p>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
+            <Target size={15} color="#1a1a2e" />
+            <p style={{ margin:0, fontWeight:700, fontSize:14, color:"#1a1a2e" }}>Expected Impact</p>
+          </div>
           {IMPACT.map((h,i) => (
             <div key={i} style={{ display:"flex", gap:10, alignItems:"flex-start", background:"#f8fafc", borderRadius:8, padding:"10px 12px", border:"1px solid #e5e7eb", marginBottom:8 }}>
-              <span style={{ fontSize:16, flexShrink:0 }}>{h.icon}</span>
+              <h.icon size={16} color="#3b82f6" style={{ flexShrink:0, marginTop:1 }} />
               <p style={{ margin:0, fontSize:12, color:"#374151", lineHeight:1.5 }}>{h.text}</p>
             </div>
           ))}

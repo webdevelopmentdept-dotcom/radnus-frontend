@@ -386,6 +386,19 @@ export default function HrSidebar() {
             Variable Pay
           </NavLink>
 
+          {/* ══════════════════════════════
+                 APPRAISAL
+            ══════════════════════════════ */}
+          <div className="hr-section">Appraisal</div>
+
+          <NavLink to="/hr/dashboard/appraisal"
+            className={({ isActive }) => isActive ? "active" : ""}
+            onClick={close}>
+            <HugeiconsIcon icon={ChartAverageIcon} size={18} color="currentColor" strokeWidth={1.8} />
+            Appraisal Hub
+          </NavLink>
+
+
           <NavLink to="/hr/dashboard/performance/esop"
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
@@ -511,6 +524,36 @@ export default function HrSidebar() {
 
             Training Roadmap
           </NavLink>
+
+
+          {/* ══════════════════════════════
+    INCENTIVE
+══════════════════════════════ */}
+<div className="hr-section">Incentive</div>
+
+<NavLink to="/hr/dashboard/incentives/plans"
+  className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+  onClick={close}>
+  <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
+  Incentive Plans
+  <span className="hr-flow-label">1</span>
+</NavLink>
+
+<NavLink to="/hr/dashboard/incentives/assign"
+  className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+  onClick={close}>
+  <HugeiconsIcon icon={UserMultiple02Icon} size={16} color="currentColor" strokeWidth={1.8} />
+  Assign Plans
+  <span className="hr-flow-label">2</span>
+</NavLink>
+
+<NavLink to="/hr/dashboard/incentives/results"
+  className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+  onClick={close}>
+  <HugeiconsIcon icon={Medal01Icon} size={16} color="currentColor" strokeWidth={1.8} />
+  Results & Payout
+  <span className="hr-flow-label">3</span>
+</NavLink>
 
           {/* ══════════════════════════════
                       MASTERS

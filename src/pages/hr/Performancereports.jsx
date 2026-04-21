@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import * as XLSX from "xlsx";
-import { Download, TrendingUp, Users, Award, BarChart2, Building2, User, Globe } from "lucide-react";
+import { Download, TrendingUp, Users, Award, BarChart2, Building2, User, Globe, AlertTriangle } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -44,6 +44,10 @@ const STYLES = `
   .rp-member-cards      { display: none   !important; }
   .rp-overall-panels    { grid-template-columns: 1fr 1fr; }
 
+  .gap-panels           { grid-template-columns: 1fr 1fr; }
+  .gap-kpi-table-wrap   { display: block !important; }
+  .gap-kpi-card-list    { display: none !important; }
+
   @media (max-width: 768px) {
     .rp-page { padding: 16px; }
     .rp-header { flex-direction: column !important; gap: 12px; }
@@ -63,6 +67,9 @@ const STYLES = `
     .rp-member-cards      { display: flex  !important; flex-direction: column; gap: 10px; padding: 12px 16px; }
 
     .rp-overall-panels    { grid-template-columns: 1fr !important; }
+    .gap-panels           { grid-template-columns: 1fr !important; }
+    .gap-kpi-table-wrap   { display: none !important; }
+    .gap-kpi-card-list    { display: flex !important; flex-direction: column; gap: 10px; }
   }
 
   @media (max-width: 480px) {
@@ -118,6 +125,401 @@ function RatingDistribution({ counts, total }) {
   );
 }
 
+// ── GAP ANALYSIS VIEW ─────────────────────────────────────────────────────────
+function GapAnalysisView({ reviews }) {
+  const [filterPeriod, setFilterPeriod] = useState("All");
+  const [filterDept, setFilterDept] = useState("All");
+  const [gapThreshold, setGapThreshold] = useState(15);
+
+  const periods = useMemo(() => ["All", ...[...new Set(reviews.map(r => r.period).filter(Boolean))].sort((a, b) => b.localeCompare(a))], [reviews]);
+  const departments = useMemo(() => ["All", ...[...new Set(reviews.map(r => r.employee_id?.department).filter(Boolean))].sort()], [reviews]);
+
+  const filtered = useMemo(() => {
+    let data = [...reviews];
+    if (filterPeriod !== "All") data = data.filter(r => r.period === filterPeriod);
+    if (filterDept !== "All") data = data.filter(r => r.employee_id?.department === filterDept);
+    return data;
+  }, [reviews, filterPeriod, filterDept]);
+
+  // Per-employee gap: target_score (100) vs final_score
+  const employeeGaps = useMemo(() => {
+    return filtered.map(r => {
+      const targetScore = 100;
+      const actualScore = r.final_score || 0;
+      const selfScore = r.self_score || 0;
+      const gap = targetScore - actualScore;
+      const selfVsHr = selfScore - actualScore; // positive = employee overestimated
+      return { ...r, gap, selfVsHr, targetScore };
+    }).sort((a, b) => b.gap - a.gap);
+  }, [filtered]);
+
+  // KPI-level gap aggregated across all reviews
+  const kpiGaps = useMemo(() => {
+    const map = {};
+    filtered.forEach(r => {
+      (r.kpi_breakdown || []).forEach(kpi => {
+        const name = kpi.kpi_name;
+        if (!map[name]) map[name] = { name, totalTarget: 0, totalActual: 0, count: 0, unit: kpi.unit || "" };
+        map[name].totalTarget += kpi.target || 0;
+        map[name].totalActual += kpi.actual_value || 0;
+        map[name].count += 1;
+      });
+    });
+    return Object.values(map).map(k => {
+      const avgTarget = k.totalTarget / k.count;
+      const avgActual = k.totalActual / k.count;
+      const achPct = avgTarget ? Math.min(Math.round((avgActual / avgTarget) * 100), 100) : 0;
+      const gapPct = 100 - achPct;
+      return { ...k, avgTarget: Math.round(avgTarget * 10) / 10, avgActual: Math.round(avgActual * 10) / 10, achPct, gapPct };
+    }).sort((a, b) => b.gapPct - a.gapPct);
+  }, [filtered]);
+
+  // Department-level gap
+  const deptGaps = useMemo(() => {
+    const map = {};
+    filtered.forEach(r => {
+      const dept = r.employee_id?.department || "Unknown";
+      if (!map[dept]) map[dept] = { dept, totalScore: 0, count: 0 };
+      map[dept].totalScore += r.final_score || 0;
+      map[dept].count += 1;
+    });
+    return Object.values(map).map(d => {
+      const avg = Math.round(d.totalScore / d.count);
+      const gap = 100 - avg;
+      return { ...d, avg, gap };
+    }).sort((a, b) => b.gap - a.gap);
+  }, [filtered]);
+
+  const atRisk = employeeGaps.filter(e => e.gap >= gapThreshold);
+  const avgGap = employeeGaps.length ? Math.round(employeeGaps.reduce((s, e) => s + e.gap, 0) / employeeGaps.length) : 0;
+  const maxGap = employeeGaps.length ? Math.max(...employeeGaps.map(e => e.gap)) : 0;
+  const worstKpi = kpiGaps[0];
+
+  const getGapColor = (gap) => {
+    if (gap <= 10) return "#16a34a";
+    if (gap <= 25) return "#d97706";
+    if (gap <= 40) return "#ea580c";
+    return "#dc2626";
+  };
+
+  return (
+    <>
+      {/* Summary Cards */}
+      <StatCards items={[
+        { label: "Total Reviewed", value: filtered.length, icon: <Users size={20} color="#2563eb" />, color: "#2563eb", bg: "#eff6ff" },
+        { label: "Avg Gap", value: `${avgGap}%`, icon: <BarChart2 size={20} color={getGapColor(avgGap)} />, color: getGapColor(avgGap), bg: avgGap <= 10 ? "#f0fdf4" : avgGap <= 25 ? "#fffbeb" : "#fef2f2", sub: "Target vs Actual" },
+        { label: "Max Gap", value: `${maxGap}%`, icon: <TrendingUp size={20} color="#dc2626" />, color: "#dc2626", bg: "#fef2f2" },
+        { label: "At-Risk Employees", value: atRisk.length, icon: <AlertTriangle size={20} color="#ea580c" />, color: "#ea580c", bg: "#fff7ed", sub: `Gap ≥ ${gapThreshold}%` },
+      ]} />
+
+      {/* Filters */}
+      <div style={{ background: "#fff", borderRadius: 14, padding: "16px 20px", border: "1px solid #e5e7eb", marginBottom: 20, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <div style={{ minWidth: 160 }}>
+          <label style={labelStyle}>Period</label>
+          <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)} style={inputStyle}>
+            {periods.map(p => <option key={p}>{p}</option>)}
+          </select>
+        </div>
+        <div style={{ minWidth: 160 }}>
+          <label style={labelStyle}>Department</label>
+          <select value={filterDept} onChange={e => setFilterDept(e.target.value)} style={inputStyle}>
+            {departments.map(d => <option key={d}>{d}</option>)}
+          </select>
+        </div>
+        <div style={{ minWidth: 180 }}>
+          <label style={labelStyle}>At-Risk Threshold: <strong style={{ color: "#ea580c" }}>Gap ≥ {gapThreshold}%</strong></label>
+          <input type="range" min={5} max={50} step={5} value={gapThreshold} onChange={e => setGapThreshold(Number(e.target.value))}
+            style={{ width: "100%", accentColor: "#ea580c" }} />
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 60, color: "#9ca3af", background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb" }}>
+          <div style={{ fontSize: 40, marginBottom: 10 }}>📊</div>
+          <p style={{ fontWeight: 600 }}>No data for selected filters</p>
+        </div>
+      ) : (
+        <>
+          {/* Top Panels: Department Gap + Worst KPIs */}
+          <div className="gap-panels" style={{ display: "grid", gap: 20, marginBottom: 20 }}>
+            {/* Department Gap */}
+            <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", overflow: "hidden" }}>
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid #f3f4f6" }}>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "#1a1a2e" }}>🏢 Department Performance Gap</p>
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280" }}>Lower avg = higher gap from target (100%)</p>
+              </div>
+              <div style={{ padding: "16px 20px" }}>
+                {deptGaps.map((d, i) => {
+                  const gapColor = getGapColor(d.gap);
+                  const { color: scoreColor } = getRatingInfo(d.avg);
+                  return (
+                    <div key={d.dept} style={{ marginBottom: i < deptGaps.length - 1 ? 16 : 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, alignItems: "center" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>{d.dept}</span>
+                        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: scoreColor }}>{d.avg}%</span>
+                          <span style={{ background: "#fef2f2", color: gapColor, fontWeight: 800, fontSize: 12, padding: "2px 8px", borderRadius: 6 }}>↓{d.gap}% gap</span>
+                        </div>
+                      </div>
+                      <div style={{ background: "#f3f4f6", borderRadius: 99, height: 10, overflow: "hidden", position: "relative" }}>
+                        <div style={{ width: `${d.avg}%`, height: "100%", background: scoreColor, borderRadius: 99, transition: "width 0.5s" }} />
+                        {/* Gap indicator */}
+                        <div style={{ position: "absolute", right: 0, top: 0, width: `${d.gap}%`, height: "100%", background: `${gapColor}22`, borderLeft: `2px dashed ${gapColor}` }} />
+                      </div>
+                      <p style={{ margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }}>{d.count} employee{d.count !== 1 ? "s" : ""}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* KPI Gap Leaderboard */}
+            <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", overflow: "hidden" }}>
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid #f3f4f6" }}>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "#1a1a2e" }}>📉 KPI Gap Analysis</p>
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280" }}>Aggregated across all employees — sorted by gap</p>
+              </div>
+              <div style={{ padding: "16px 20px" }}>
+                {kpiGaps.map((kpi, i) => {
+                  const gapColor = getGapColor(kpi.gapPct);
+                  const achColor = kpi.achPct >= 90 ? "#16a34a" : kpi.achPct >= 75 ? "#2563eb" : kpi.achPct >= 50 ? "#d97706" : "#dc2626";
+                  return (
+                    <div key={kpi.name} style={{ marginBottom: i < kpiGaps.length - 1 ? 14 : 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5, alignItems: "flex-start", gap: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#1f2937", flex: 1 }}>{kpi.name}</span>
+                        <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center" }}>
+                          <span style={{ fontSize: 11, color: "#6b7280" }}>Avg: {kpi.avgActual}/{kpi.avgTarget} {kpi.unit}</span>
+                          <span style={{ background: "#fef2f2", color: gapColor, fontWeight: 800, fontSize: 12, padding: "2px 8px", borderRadius: 6 }}>↓{kpi.gapPct}%</span>
+                        </div>
+                      </div>
+                      <div style={{ background: "#f3f4f6", borderRadius: 99, height: 8, overflow: "hidden" }}>
+                        <div style={{ width: `${kpi.achPct}%`, height: "100%", background: achColor, borderRadius: 99, transition: "width 0.5s" }} />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
+                        <span style={{ fontSize: 11, color: achColor, fontWeight: 600 }}>{kpi.achPct}% achieved</span>
+                        <span style={{ fontSize: 11, color: "#9ca3af" }}>{kpi.count} reviews</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {kpiGaps.length === 0 && <p style={{ color: "#9ca3af", textAlign: "center", padding: "20px 0", fontSize: 13 }}>No KPI data</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* At-Risk Employees */}
+          {atRisk.length > 0 && (
+            <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #fca5a5", marginBottom: 20, overflow: "hidden" }}>
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid #fca5a5", background: "#fef2f2", display: "flex", alignItems: "center", gap: 10 }}>
+                <AlertTriangle size={18} color="#dc2626" />
+                <div>
+                  <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "#dc2626" }}>⚠️ At-Risk Employees (Gap ≥ {gapThreshold}%)</p>
+                  <p style={{ margin: "2px 0 0", fontSize: 12, color: "#6b7280" }}>{atRisk.length} employee{atRisk.length !== 1 ? "s" : ""} need immediate attention</p>
+                </div>
+              </div>
+
+              {/* Desktop Table */}
+              <div className="gap-kpi-table-wrap" style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                  <thead>
+                    <tr style={{ background: "#f8fafc" }}>
+                      {["Employee", "Dept", "Period", "Final Score", "Self Score", "HR Gap", "Self vs HR", "Action Needed"].map(h => (
+                        <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontWeight: 700, color: "#374151", borderBottom: "2px solid #e5e7eb", whiteSpace: "nowrap", fontSize: 13 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {atRisk.map((r, i) => {
+                      const { label, color, bg } = getRatingInfo(r.final_score || 0);
+                      const gapColor = getGapColor(r.gap);
+                      const selfVsHrColor = r.selfVsHr > 10 ? "#ea580c" : r.selfVsHr < -10 ? "#2563eb" : "#16a34a";
+                      const action = r.gap >= 40 ? "Urgent Coaching" : r.gap >= 25 ? "Performance Plan" : "Monitor Closely";
+                      const actionColor = r.gap >= 40 ? "#dc2626" : r.gap >= 25 ? "#ea580c" : "#d97706";
+                      return (
+                        <tr key={r._id} style={{ borderBottom: "1px solid #f3f4f6", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                          <td style={{ padding: "12px 16px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <div style={{ width: 32, height: 32, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color, fontSize: 13 }}>{r.employee_id?.name?.charAt(0) || "?"}</div>
+                              <div>
+                                <p style={{ margin: 0, fontWeight: 700, color: "#1a1a2e", fontSize: 13 }}>{r.employee_id?.name || "—"}</p>
+                                <p style={{ margin: 0, fontSize: 11, color: "#6b7280" }}>{r.employee_id?.designation || ""}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ padding: "12px 16px", color: "#374151", fontSize: 13 }}>{r.employee_id?.department || "—"}</td>
+                          <td style={{ padding: "12px 16px" }}><span style={{ background: "#f3f4f6", padding: "3px 8px", borderRadius: 5, fontWeight: 600, fontSize: 12 }}>{r.period}</span></td>
+                          <td style={{ padding: "12px 16px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <span style={{ fontWeight: 800, color, fontSize: 16 }}>{r.final_score ?? "—"}%</span>
+                            </div>
+                          </td>
+                          <td style={{ padding: "12px 16px" }}>
+                            <span style={{ fontWeight: 700, color: "#2563eb", fontSize: 14 }}>{r.self_score ?? "—"}%</span>
+                          </td>
+                          <td style={{ padding: "12px 16px" }}>
+                            <span style={{ fontWeight: 800, color: gapColor, fontSize: 16 }}>↓{r.gap}%</span>
+                          </td>
+                          <td style={{ padding: "12px 16px" }}>
+                            <span style={{ fontWeight: 700, color: selfVsHrColor, fontSize: 13 }}>
+                              {r.selfVsHr > 0 ? `+${r.selfVsHr}% overrated` : r.selfVsHr < 0 ? `${r.selfVsHr}% underrated` : "Accurate"}
+                            </span>
+                          </td>
+                          <td style={{ padding: "12px 16px" }}>
+                            <span style={{ background: `${actionColor}15`, color: actionColor, fontWeight: 700, padding: "4px 10px", borderRadius: 6, fontSize: 12 }}>{action}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="gap-kpi-card-list" style={{ padding: "12px 16px" }}>
+                {atRisk.map(r => {
+                  const { label, color, bg } = getRatingInfo(r.final_score || 0);
+                  const gapColor = getGapColor(r.gap);
+                  const action = r.gap >= 40 ? "Urgent Coaching" : r.gap >= 25 ? "Performance Plan" : "Monitor Closely";
+                  return (
+                    <div key={r._id} style={{ border: "1px solid #fca5a5", borderRadius: 10, padding: "14px", background: "#fff" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ width: 34, height: 34, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color, fontSize: 13 }}>{r.employee_id?.name?.charAt(0) || "?"}</div>
+                          <div>
+                            <p style={{ margin: 0, fontWeight: 700, color: "#1a1a2e", fontSize: 14 }}>{r.employee_id?.name || "—"}</p>
+                            <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{r.employee_id?.department}</p>
+                          </div>
+                        </div>
+                        <span style={{ fontWeight: 900, color: gapColor, fontSize: 18 }}>↓{r.gap}%</span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px", fontSize: 13, marginBottom: 8 }}>
+                        <div><span style={{ color: "#9ca3af", fontSize: 11, fontWeight: 600, textTransform: "uppercase" }}>Final Score</span><p style={{ margin: "2px 0 0", fontWeight: 800, color, fontSize: 15 }}>{r.final_score}%</p></div>
+                        <div><span style={{ color: "#9ca3af", fontSize: 11, fontWeight: 600, textTransform: "uppercase" }}>Self Score</span><p style={{ margin: "2px 0 0", fontWeight: 800, color: "#2563eb", fontSize: 15 }}>{r.self_score ?? "—"}%</p></div>
+                        <div><span style={{ color: "#9ca3af", fontSize: 11, fontWeight: 600, textTransform: "uppercase" }}>Period</span><p style={{ margin: "2px 0 0" }}><span style={{ background: "#f3f4f6", padding: "2px 8px", borderRadius: 5, fontWeight: 600, fontSize: 12 }}>{r.period}</span></p></div>
+                        <div><span style={{ color: "#9ca3af", fontSize: 11, fontWeight: 600, textTransform: "uppercase" }}>Action</span><p style={{ margin: "2px 0 0", color: "#ea580c", fontWeight: 700, fontSize: 12 }}>{action}</p></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* All Employees Gap Table */}
+          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", overflow: "hidden" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #f3f4f6" }}>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "#1a1a2e" }}>👥 All Employees — Gap Overview</p>
+              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280" }}>Sorted by gap (highest first)</p>
+            </div>
+            <div className="gap-kpi-table-wrap" style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                <thead>
+                  <tr style={{ background: "#f8fafc" }}>
+                    {["#", "Employee", "Dept", "Period", "Target", "Final Score", "Gap", "Self Score", "Self vs HR", "KPI Gaps"].map(h => (
+                      <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontWeight: 700, color: "#374151", borderBottom: "2px solid #e5e7eb", whiteSpace: "nowrap", fontSize: 13 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {employeeGaps.map((r, i) => {
+                    const { label, color, bg } = getRatingInfo(r.final_score || 0);
+                    const gapColor = getGapColor(r.gap);
+                    const selfVsHrColor = r.selfVsHr > 10 ? "#ea580c" : r.selfVsHr < -5 ? "#2563eb" : "#16a34a";
+
+                    // KPI-level gaps for this employee
+                    const kpiGapList = (r.kpi_breakdown || []).map(kpi => {
+                      const achPct = kpi.target ? Math.min(Math.round((kpi.actual_value / kpi.target) * 100), 100) : 0;
+                      return { name: kpi.kpi_name, gap: 100 - achPct };
+                    }).filter(k => k.gap > 0).sort((a, b) => b.gap - a.gap).slice(0, 2);
+
+                    return (
+                      <tr key={r._id} style={{ borderBottom: "1px solid #f3f4f6", background: r.gap >= gapThreshold ? "#fff7ed" : i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                        <td style={{ padding: "12px 16px", color: "#9ca3af", fontWeight: 600 }}>{i + 1}</td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ width: 30, height: 30, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color, fontSize: 12 }}>{r.employee_id?.name?.charAt(0) || "?"}</div>
+                            <div>
+                              <p style={{ margin: 0, fontWeight: 700, color: "#1a1a2e", fontSize: 13 }}>{r.employee_id?.name || "—"}</p>
+                              <p style={{ margin: 0, fontSize: 11, color: "#6b7280" }}>{r.employee_id?.designation || ""}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "12px 16px", fontSize: 13, color: "#374151" }}>{r.employee_id?.department || "—"}</td>
+                        <td style={{ padding: "12px 16px" }}><span style={{ background: "#f3f4f6", padding: "3px 8px", borderRadius: 5, fontWeight: 600, fontSize: 12 }}>{r.period}</span></td>
+                        <td style={{ padding: "12px 16px", fontWeight: 700, color: "#6b7280" }}>100%</td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontWeight: 900, color, fontSize: 16 }}>{r.final_score ?? "—"}%</span>
+                            <div style={{ flex: 1, background: "#f3f4f6", borderRadius: 99, height: 6, overflow: "hidden", minWidth: 60 }}>
+                              <div style={{ width: `${r.final_score || 0}%`, height: "100%", background: color, borderRadius: 99 }} />
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontWeight: 800, color: gapColor, fontSize: 16 }}>↓{r.gap}%</span>
+                            {r.gap >= gapThreshold && <span style={{ fontSize: 14 }}>⚠️</span>}
+                          </div>
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <span style={{ fontWeight: 700, color: "#2563eb" }}>{r.self_score ?? "—"}%</span>
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <span style={{ fontWeight: 700, color: selfVsHrColor, fontSize: 12 }}>
+                            {r.selfVsHr > 0 ? `+${r.selfVsHr}% over` : r.selfVsHr < 0 ? `${r.selfVsHr}% under` : "Match"}
+                          </span>
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                            {kpiGapList.map((k, ki) => (
+                              <span key={ki} style={{ fontSize: 11, color: getGapColor(k.gap), fontWeight: 600 }}>
+                                {k.name.length > 16 ? k.name.slice(0, 16) + "…" : k.name}: ↓{k.gap}%
+                              </span>
+                            ))}
+                            {kpiGapList.length === 0 && <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 600 }}>✓ On Target</span>}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards for all-employee gap */}
+            <div className="gap-kpi-card-list" style={{ padding: "12px 16px" }}>
+              {employeeGaps.map((r, i) => {
+                const { color, bg } = getRatingInfo(r.final_score || 0);
+                const gapColor = getGapColor(r.gap);
+                return (
+                  <div key={r._id} style={{ border: `1px solid ${r.gap >= gapThreshold ? "#fca5a5" : "#e5e7eb"}`, borderRadius: 10, padding: "14px", background: r.gap >= gapThreshold ? "#fff7ed" : "#fff" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color, fontSize: 12 }}>{r.employee_id?.name?.charAt(0) || "?"}</div>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 700, color: "#1a1a2e", fontSize: 13 }}>{r.employee_id?.name || "—"}</p>
+                          <p style={{ margin: 0, fontSize: 11, color: "#6b7280" }}>{r.employee_id?.department}</p>
+                        </div>
+                      </div>
+                      <span style={{ fontWeight: 900, color: gapColor, fontSize: 17 }}>↓{r.gap}% {r.gap >= gapThreshold ? "⚠️" : ""}</span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "4px 8px", fontSize: 12 }}>
+                      <div><span style={{ color: "#9ca3af", fontSize: 10, fontWeight: 600 }}>FINAL</span><p style={{ margin: "1px 0 0", fontWeight: 800, color }}>{r.final_score}%</p></div>
+                      <div><span style={{ color: "#9ca3af", fontSize: 10, fontWeight: 600 }}>SELF</span><p style={{ margin: "1px 0 0", fontWeight: 800, color: "#2563eb" }}>{r.self_score ?? "—"}%</p></div>
+                      <div><span style={{ color: "#9ca3af", fontSize: 10, fontWeight: 600 }}>PERIOD</span><p style={{ margin: "1px 0 0", fontWeight: 600, color: "#374151" }}>{r.period}</p></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+// ── INDIVIDUAL VIEW ───────────────────────────────────────────────────────────
 function IndividualView({ reviews }) {
   const [filterDept, setFilterDept] = useState("All");
   const [filterPeriod, setFilterPeriod] = useState("All");
@@ -260,7 +662,7 @@ function IndividualView({ reviews }) {
                                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                                     <thead>
                                       <tr style={{ background: "#f1f5f9" }}>
-                                        {["KPI Name", "Target", "Self Report", "Actual", "Achievement", "Weight", "Score"].map(h => (
+                                        {["KPI Name", "Target", "Self Report", "Actual", "Achievement", "Gap", "Weight", "Score"].map(h => (
                                           <th key={h} style={{ padding: "9px 14px", textAlign: "left", fontWeight: 700, color: "#6b7280", borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap" }}>{h}</th>
                                         ))}
                                       </tr>
@@ -268,7 +670,9 @@ function IndividualView({ reviews }) {
                                     <tbody>
                                       {(r.kpi_breakdown || []).map((kpi, ki) => {
                                         const achPct = kpi.target ? Math.min(Math.round((kpi.actual_value / kpi.target) * 100), 100) : 0;
+                                        const gapPct = 100 - achPct;
                                         const achColor = achPct >= 100 ? "#16a34a" : achPct >= 75 ? "#2563eb" : achPct >= 50 ? "#d97706" : "#dc2626";
+                                        const gapColor = gapPct <= 10 ? "#16a34a" : gapPct <= 25 ? "#d97706" : "#dc2626";
                                         const totalW = r.kpi_breakdown.reduce((s, k) => s + (k.weight || 0), 0);
                                         const w = totalW === 0 ? (100 / r.kpi_breakdown.length) : (kpi.weight || 0);
                                         const kpiScore = Math.round(achPct * (w / 100));
@@ -285,6 +689,9 @@ function IndividualView({ reviews }) {
                                                 </div>
                                                 <span style={{ fontWeight: 700, color: achColor, fontSize: 12 }}>{achPct}%</span>
                                               </div>
+                                            </td>
+                                            <td style={{ padding: "10px 14px" }}>
+                                              <span style={{ fontWeight: 800, color: gapColor, fontSize: 13 }}>↓{gapPct}%</span>
                                             </td>
                                             <td style={{ padding: "10px 14px", color: "#6b7280" }}>{kpi.weight}%</td>
                                             <td style={{ padding: "10px 14px", fontWeight: 700, color: achColor }}>{kpiScore}pts</td>
@@ -345,6 +752,7 @@ function IndividualView({ reviews }) {
   );
 }
 
+// ── TEAM VIEW ─────────────────────────────────────────────────────────────────
 function TeamView({ reviews }) {
   const [filterPeriod, setFilterPeriod] = useState("All");
   const [expandedDept, setExpandedDept] = useState(null);
@@ -504,6 +912,7 @@ function TeamView({ reviews }) {
   );
 }
 
+// ── OVERALL VIEW ──────────────────────────────────────────────────────────────
 function OverallView({ reviews }) {
   const [filterPeriod, setFilterPeriod] = useState("All");
   const periods = useMemo(() => ["All", ...[...new Set(reviews.map(r => r.period).filter(Boolean))].sort((a, b) => b.localeCompare(a))], [reviews]);
@@ -610,6 +1019,7 @@ function OverallView({ reviews }) {
   );
 }
 
+// ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 export default function PerformanceReports() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -620,7 +1030,6 @@ export default function PerformanceReports() {
 
   const fetchReports = async () => {
     try {
-      // ✅ FIXED: uses self-assessment route that transforms data correctly
       const res = await axios.get(`${API_BASE}/api/self-assessment/performance-reviews/all`);
       if (res.data.success) setReviews(res.data.data);
     } catch { showToast("Failed to load reports", "error"); }
@@ -639,22 +1048,24 @@ export default function PerformanceReports() {
       "Period":        r.period || "—",
       "Self Score (%)":  r.self_score ?? "—",
       "Final Score (%)": r.final_score ?? "—",
+      "Gap (%)": r.final_score != null ? 100 - r.final_score : "—",
       "Rating":        r.rating || "—",
       "HR Comment":    r.hr_comment || "—",
       "Reviewed On":   r.createdAt ? new Date(r.createdAt).toLocaleDateString("en-IN") : "—"
     }));
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [{ wch: 4 }, { wch: 22 }, { wch: 20 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 22 }, { wch: 40 }, { wch: 14 }];
+    ws["!cols"] = [{ wch: 4 }, { wch: 22 }, { wch: 20 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 10 }, { wch: 22 }, { wch: 40 }, { wch: 14 }];
     XLSX.utils.book_append_sheet(wb, ws, "Performance Summary");
     XLSX.writeFile(wb, `Performance_Report_${new Date().toLocaleDateString("en-IN").replace(/\//g, "-")}.xlsx`);
     showToast("Excel report downloaded! ✅");
   };
 
   const VIEWS = [
-    { key: "individual", label: "Individual", icon: <User size={15} /> },
-    { key: "team",       label: "Team / Dept", icon: <Building2 size={15} /> },
-    { key: "overall",    label: "Overall", icon: <Globe size={15} /> },
+    { key: "individual", label: "Individual",   icon: <User size={15} /> },
+    { key: "team",       label: "Team / Dept",  icon: <Building2 size={15} /> },
+    { key: "overall",    label: "Overall",      icon: <Globe size={15} /> },
+    { key: "gap",        label: "Gap Analysis", icon: <AlertTriangle size={15} /> },
   ];
 
   return (
@@ -679,7 +1090,7 @@ export default function PerformanceReports() {
 
       <div className="rp-view-toggle" style={{ display: "flex", gap: 8, marginBottom: 24, background: "#fff", padding: 6, borderRadius: 14, border: "1px solid #e5e7eb" }}>
         {VIEWS.map(v => (
-          <button key={v.key} className="rp-view-btn" onClick={() => setActiveView(v.key)} style={{ display: "flex", alignItems: "center", gap: 8, borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 700, background: activeView === v.key ? "#1a1a2e" : "transparent", color: activeView === v.key ? "#fff" : "#6b7280", transition: "all 0.18s" }}>
+          <button key={v.key} className="rp-view-btn" onClick={() => setActiveView(v.key)} style={{ display: "flex", alignItems: "center", gap: 8, borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 700, background: activeView === v.key ? (v.key === "gap" ? "#ea580c" : "#1a1a2e") : "transparent", color: activeView === v.key ? "#fff" : "#6b7280", transition: "all 0.18s" }}>
             {v.icon}{v.label}
           </button>
         ))}
@@ -696,6 +1107,7 @@ export default function PerformanceReports() {
           {activeView === "individual" && <IndividualView reviews={reviews} />}
           {activeView === "team"       && <TeamView reviews={reviews} />}
           {activeView === "overall"    && <OverallView reviews={reviews} />}
+          {activeView === "gap"        && <GapAnalysisView reviews={reviews} />}
         </>
       )}
     </div>

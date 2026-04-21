@@ -28,12 +28,6 @@ export default function HrNotifications() {
   const [filter,        setFilter]        = useState("all");
   const [markingAll,    setMarkingAll]    = useState(false);
 
-  // ✅ இதா மாத்துங்க — redirect இல்லாம
-const hrId = localStorage.getItem("hrId") 
-          || localStorage.getItem("hr_id")
-          || localStorage.getItem("userId")
-          || localStorage.getItem("id");
-
 useEffect(() => {
   // redirect பண்ணாம — HR dashboard already protected
   fetchNotifications();

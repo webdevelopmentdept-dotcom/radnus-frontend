@@ -1,21 +1,24 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Calendar } from "lucide-react";
+import {
+  Calendar, ClipboardList, Clock, CheckCircle2, PartyPopper,
+  Inbox, BarChart2, MousePointerClick, Filter, User, CheckCheck
+} from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const getRatingInfo = (score) => {
-  if (score >= 90) return { label: "Outstanding", color: "#16a34a", bg: "#f0fdf4" };
-  if (score >= 75) return { label: "Exceeds Expectations", color: "#2563eb", bg: "#eff6ff" };
-  if (score >= 60) return { label: "Meets Expectations", color: "#d97706", bg: "#fffbeb" };
-  if (score >= 45) return { label: "Needs Improvement", color: "#ea580c", bg: "#fff7ed" };
-  return { label: "Unsatisfactory", color: "#dc2626", bg: "#fef2f2" };
+  if (score >= 90) return { label: "Outstanding",           color: "#16a34a", bg: "#f0fdf4" };
+  if (score >= 75) return { label: "Exceeds Expectations",  color: "#2563eb", bg: "#eff6ff" };
+  if (score >= 60) return { label: "Meets Expectations",    color: "#d97706", bg: "#fffbeb" };
+  if (score >= 45) return { label: "Needs Improvement",     color: "#ea580c", bg: "#fff7ed" };
+  return             { label: "Unsatisfactory",             color: "#dc2626", bg: "#fef2f2" };
 };
 
 const getProgressColor = (pct) => {
   if (pct >= 100) return "#16a34a";
-  if (pct >= 75) return "#2563eb";
-  if (pct >= 50) return "#d97706";
+  if (pct >= 75)  return "#2563eb";
+  if (pct >= 50)  return "#d97706";
   return "#dc2626";
 };
 
@@ -24,64 +27,57 @@ const STYLES = `
   .pr-stats { grid-template-columns: repeat(3, 1fr); }
   .pr-tabs { width: fit-content; }
   .pr-tab-btn { padding: 8px 18px; font-size: 13px; }
-
   .pr-logs-layout { grid-template-columns: 1fr 300px; }
   .pr-logs-filter-grid { grid-template-columns: 2fr 1fr 1fr; }
   .pr-logs-sidebar { display: flex; }
-
   .pr-table-wrap { display: block !important; }
   .pr-card-list { display: none !important; }
-
   .pr-kpi-grid { grid-template-columns: 1fr 1fr; }
   .pr-modal-header-right { flex-direction: row; align-items: center; gap: 12px; }
   .pr-modal-footer { flex-direction: row; justify-content: flex-end; }
   .pr-modal-footer button { width: auto; }
 
   @media (max-width: 768px) {
-    .pr-page { padding: 16px; }
-    .pr-stats { grid-template-columns: 1fr !important; }
-
+    .pr-page { padding: 16px !important; }
+    .pr-stats { grid-template-columns: 1fr 1fr !important; }
     .pr-tabs { width: 100% !important; overflow-x: auto; display: flex !important; flex-wrap: nowrap !important; }
     .pr-tab-btn { white-space: nowrap; font-size: 12px !important; padding: 7px 12px !important; }
-
     .pr-table-wrap { display: none !important; }
     .pr-card-list { display: flex !important; flex-direction: column; gap: 12px; padding: 12px 16px; }
-
     .pr-logs-layout { grid-template-columns: 1fr !important; }
     .pr-logs-filter-grid { grid-template-columns: 1fr !important; }
     .pr-logs-sidebar { flex-direction: column; }
-
     .pr-kpi-grid { grid-template-columns: 1fr !important; }
     .pr-modal-header-right { flex-direction: row; gap: 8px !important; }
     .pr-modal-footer { flex-direction: column !important; gap: 10px !important; }
     .pr-modal-footer button { width: 100% !important; }
-
     .pr-log-entry { flex-direction: column !important; align-items: flex-start !important; gap: 6px !important; }
   }
 
   @media (max-width: 480px) {
+    .pr-stats { grid-template-columns: 1fr !important; }
     .pr-tab-btn { font-size: 11px !important; padding: 6px 10px !important; }
     .pr-modal-header-right { gap: 6px !important; }
   }
 `;
 
 export default function PerformanceReviews() {
-  const [assessments, setAssessments] = useState([]);
-  const [completedReviews, setCompletedReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [assessments, setAssessments]               = useState([]);
+  const [completedReviews, setCompletedReviews]     = useState([]);
+  const [loading, setLoading]                       = useState(true);
   const [selectedAssessment, setSelectedAssessment] = useState(null);
-  const [reviewForm, setReviewForm] = useState({ items: [], hr_comment: "" });
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(null);
-  const [activeTab, setActiveTab] = useState("pending");
+  const [reviewForm, setReviewForm]                 = useState({ items: [], hr_comment: "" });
+  const [saving, setSaving]                         = useState(false);
+  const [toast, setToast]                           = useState(null);
+  const [activeTab, setActiveTab]                   = useState("pending");
 
-  const [allAssignments, setAllAssignments] = useState([]);
-  const [selectedEmployeeLog, setSelectedEmployeeLog] = useState("");
-  const [logDateFrom, setLogDateFrom] = useState("");
-  const [logDateTo, setLogDateTo] = useState("");
-  const [employeeLogs, setEmployeeLogs] = useState([]);
-  const [logTotals, setLogTotals] = useState({});
-  const [logsLoading, setLogsLoading] = useState(false);
+  const [allAssignments, setAllAssignments]             = useState([]);
+  const [selectedEmployeeLog, setSelectedEmployeeLog]   = useState("");
+  const [logDateFrom, setLogDateFrom]                   = useState("");
+  const [logDateTo, setLogDateTo]                       = useState("");
+  const [employeeLogs, setEmployeeLogs]                 = useState([]);
+  const [logTotals, setLogTotals]                       = useState({});
+  const [logsLoading, setLogsLoading]                   = useState(false);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -125,39 +121,32 @@ export default function PerformanceReviews() {
     });
   };
 
-  // ✅ Fixed calcLiveScore — correct weighted average
   const calcLiveScore = () => {
     if (!reviewForm.items.length) return 0;
     const totalWeight = reviewForm.items.reduce((s, i) => s + (i.weight || 0), 0);
     const equalWeight = 100 / reviewForm.items.length;
     let total = 0;
-
     reviewForm.items.forEach(item => {
       const val = parseFloat(item.actual_value) || 0;
       const pct = Math.min((val / item.target) * 100, 100);
-      // ✅ totalWeight 0 ஆ இருந்தா equal weight use பண்ணு, இல்லன்னா correct weighted avg
       const w = totalWeight === 0 ? equalWeight : (item.weight || 0);
       const divisor = totalWeight === 0 ? 100 : totalWeight;
       total += pct * (w / divisor);
     });
-
     return Math.round(total);
   };
 
-  // ✅ Fixed calcSelfScore — same logic as calcLiveScore
   const calcSelfScore = (a) => {
     if (!a.items.length) return 0;
     const totalWeight = a.items.reduce((sum, i) => sum + (i.weight || 0), 0);
     const equalWeight = 100 / a.items.length;
     let s = 0;
-
     a.items.forEach(item => {
       const pct = Math.min((item.self_value / item.target) * 100, 100);
       const w = totalWeight === 0 ? equalWeight : (item.weight || 0);
       const divisor = totalWeight === 0 ? 100 : totalWeight;
       s += pct * (w / divisor);
     });
-
     return Math.round(s);
   };
 
@@ -176,8 +165,11 @@ export default function PerformanceReviews() {
         hr_comment: reviewForm.hr_comment
       };
       const res = await axios.post(`${API_BASE}/api/performance-reviews`, payload);
-      if (res.data.success) { showToast("Review finalized successfully! ✅"); setSelectedAssessment(null); fetchData(); }
-      else showToast(res.data.message || "Error", "error");
+      if (res.data.success) {
+        showToast("Review finalized successfully!");
+        setSelectedAssessment(null);
+        fetchData();
+      } else showToast(res.data.message || "Error", "error");
     } catch (err) { showToast(err.response?.data?.message || "Server error", "error"); }
     finally { setSaving(false); }
   };
@@ -207,7 +199,7 @@ export default function PerformanceReviews() {
 
   const filteredLogs = employeeLogs.filter(log => {
     if (logDateFrom && log.log_date < logDateFrom) return false;
-    if (logDateTo && log.log_date > logDateTo) return false;
+    if (logDateTo   && log.log_date > logDateTo)   return false;
     return true;
   });
 
@@ -222,16 +214,30 @@ export default function PerformanceReviews() {
   const { label: liveLabel, color: liveColor } = getRatingInfo(liveScore);
   const pendingAssessments = assessments.filter(a => !isReviewed(a._id));
 
+  const STATS = [
+    { label: "Total Submitted", value: assessments.length,         color: "#2563eb", bg: "#eff6ff", Icon: ClipboardList },
+    { label: "Pending Review",  value: pendingAssessments.length,  color: "#d97706", bg: "#fffbeb", Icon: Clock         },
+    { label: "Completed",       value: completedReviews.length,    color: "#16a34a", bg: "#f0fdf4", Icon: CheckCircle2  },
+  ];
+
+  const TABS = [
+    { id: "pending",   Icon: Clock,         label: `Pending (${pendingAssessments.length})` },
+    { id: "completed", Icon: CheckCircle2,  label: `Completed (${completedReviews.length})` },
+    { id: "dailylogs", Icon: Calendar,      label: "Daily Logs" },
+  ];
+
   return (
     <div className="pr-page" style={{ fontFamily: "'Segoe UI', sans-serif", minHeight: "100vh", background: "#f4f6fb" }}>
       <style>{STYLES}</style>
 
+      {/* Toast */}
       {toast && (
-        <div style={{ position: "fixed", top: 20, right: 16, zIndex: 9999, background: toast.type === "error" ? "#ff4d4f" : "#52c41a", color: "#fff", padding: "12px 20px", borderRadius: 8, boxShadow: "0 4px 16px rgba(0,0,0,0.15)", fontWeight: 500, fontSize: 14, maxWidth: "calc(100vw - 32px)" }}>
+        <div style={{ position: "fixed", top: 16, right: 16, left: 16, zIndex: 9999, background: toast.type === "error" ? "#ff4d4f" : "#52c41a", color: "#fff", padding: "12px 16px", borderRadius: 8, fontWeight: 600, fontSize: 13, textAlign: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.15)", maxWidth: "calc(100vw - 32px)" }}>
           {toast.msg}
         </div>
       )}
 
+      {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#1a1a2e" }}>Performance Reviews</h2>
         <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 14 }}>Review employee self assessments and finalize scores</p>
@@ -239,34 +245,32 @@ export default function PerformanceReviews() {
 
       {/* Stats */}
       <div className="pr-stats" style={{ display: "grid", gap: 16, marginBottom: 24 }}>
-        {[
-          { label: "Total Submitted", value: assessments.length, color: "#2563eb", bg: "#eff6ff", icon: "📋" },
-          { label: "Pending Review", value: pendingAssessments.length, color: "#d97706", bg: "#fffbeb", icon: "⏳" },
-          { label: "Completed", value: completedReviews.length, color: "#16a34a", bg: "#f0fdf4", icon: "✅" },
-        ].map((s, i) => (
+        {STATS.map((s, i) => (
           <div key={i} style={{ background: "#fff", borderRadius: 12, padding: "18px 20px", border: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <p style={{ margin: "0 0 4px", fontSize: 12, color: "#6b7280", fontWeight: 600, textTransform: "uppercase" }}>{s.label}</p>
               <p style={{ margin: 0, fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</p>
             </div>
-            <div style={{ width: 48, height: 48, borderRadius: 12, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{s.icon}</div>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <s.Icon size={22} color={s.color} />
+            </div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
       <div className="pr-tabs" style={{ display: "flex", gap: 4, background: "#fff", borderRadius: 10, padding: 4, border: "1px solid #e5e7eb", marginBottom: 20 }}>
-        {[
-          { id: "pending", label: `⏳ Pending (${pendingAssessments.length})` },
-          { id: "completed", label: `✅ Completed (${completedReviews.length})` },
-          { id: "dailylogs", label: `📅 Daily Logs` },
-        ].map(tab => (
+        {TABS.map(tab => (
           <button key={tab.id} className="pr-tab-btn" onClick={() => setActiveTab(tab.id)} style={{
+            display: "flex", alignItems: "center", gap: 6,
             padding: "8px 18px", border: "none", borderRadius: 8, cursor: "pointer",
             fontWeight: 600, fontSize: 13,
             background: activeTab === tab.id ? "#2563eb" : "transparent",
-            color: activeTab === tab.id ? "#fff" : "#6b7280"
-          }}>{tab.label}</button>
+            color:      activeTab === tab.id ? "#fff"    : "#6b7280"
+          }}>
+            <tab.Icon size={13} />
+            {tab.label}
+          </button>
         ))}
       </div>
 
@@ -277,7 +281,7 @@ export default function PerformanceReviews() {
             <div style={{ textAlign: "center", padding: 48, color: "#6b7280" }}>Loading...</div>
           ) : pendingAssessments.length === 0 ? (
             <div style={{ textAlign: "center", padding: "56px 0" }}>
-              <div style={{ fontSize: 40, marginBottom: 10 }}>🎉</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><PartyPopper size={40} color="#d1d5db" /></div>
               <p style={{ color: "#6b7280" }}>All assessments have been reviewed!</p>
             </div>
           ) : (
@@ -287,7 +291,7 @@ export default function PerformanceReviews() {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc" }}>
-                      {["Employee", "Department", "Period", "KPIs", "Self Score", "Submitted On", "Action"].map(h => (
+                      {["Employee","Department","Period","KPIs","Self Score","Submitted On","Action"].map(h => (
                         <th key={h} style={{ padding: "12px 20px", textAlign: "left", fontWeight: 700, color: "#374151", borderBottom: "2px solid #e5e7eb", whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
@@ -328,9 +332,9 @@ export default function PerformanceReviews() {
               <div className="pr-card-list">
                 {pendingAssessments.map(a => {
                   const selfScore = calcSelfScore(a);
-                  const { color, bg } = getRatingInfo(selfScore);
+                  const { color } = getRatingInfo(selfScore);
                   return (
-                    <div key={a._id} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px 16px", background: "#fff" }}>
+                    <div key={a._id} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px", background: "#fff" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#2563eb", flexShrink: 0 }}>
@@ -376,7 +380,7 @@ export default function PerformanceReviews() {
         <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", overflow: "hidden" }}>
           {completedReviews.length === 0 ? (
             <div style={{ textAlign: "center", padding: "56px 0" }}>
-              <div style={{ fontSize: 40, marginBottom: 10 }}>📋</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><ClipboardList size={40} color="#d1d5db" /></div>
               <p style={{ color: "#6b7280" }}>No completed reviews yet.</p>
             </div>
           ) : (
@@ -386,7 +390,7 @@ export default function PerformanceReviews() {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc" }}>
-                      {["Employee", "Department", "Period", "Final Score", "Rating", "Reviewed On"].map(h => (
+                      {["Employee","Department","Period","Final Score","Rating","Reviewed On"].map(h => (
                         <th key={h} style={{ padding: "12px 20px", textAlign: "left", fontWeight: 700, color: "#374151", borderBottom: "2px solid #e5e7eb", whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
@@ -424,7 +428,7 @@ export default function PerformanceReviews() {
                 {completedReviews.map(r => {
                   const { label, color, bg } = getRatingInfo(r.final_score);
                   return (
-                    <div key={r._id} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px 16px", background: "#fff" }}>
+                    <div key={r._id} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px", background: "#fff" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#2563eb", flexShrink: 0 }}>
@@ -466,7 +470,9 @@ export default function PerformanceReviews() {
           <div>
             {/* Filter Bar */}
             <div style={{ background: "#fff", borderRadius: 14, padding: 20, border: "1px solid #e5e7eb", marginBottom: 20 }}>
-              <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1a1a2e" }}>🔍 Filter Logs</h3>
+              <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1a1a2e", display: "flex", alignItems: "center", gap: 8 }}>
+                <Filter size={15} color="#374151" /> Filter Logs
+              </h3>
               <div className="pr-logs-filter-grid" style={{ display: "grid", gap: 14 }}>
                 <div>
                   <label style={labelStyle}>Select Employee</label>
@@ -492,14 +498,14 @@ export default function PerformanceReviews() {
             <div style={{ background: "#fff", borderRadius: 14, padding: 24, border: "1px solid #e5e7eb" }}>
               {!selectedEmployeeLog ? (
                 <div style={{ textAlign: "center", padding: "48px 0", color: "#9ca3af" }}>
-                  <div style={{ fontSize: 40, marginBottom: 10 }}>👆</div>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><MousePointerClick size={40} color="#d1d5db" /></div>
                   <p style={{ fontWeight: 600 }}>Select an employee to view their daily logs</p>
                 </div>
               ) : logsLoading ? (
                 <div style={{ textAlign: "center", padding: 40, color: "#6b7280" }}>Loading logs...</div>
               ) : filteredLogs.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "48px 0", color: "#9ca3af" }}>
-                  <div style={{ fontSize: 40, marginBottom: 10 }}>📭</div>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><Inbox size={40} color="#d1d5db" /></div>
                   <p>No logs found{logDateFrom || logDateTo ? " in selected date range" : ""}.</p>
                 </div>
               ) : (
@@ -544,7 +550,9 @@ export default function PerformanceReviews() {
           {/* RIGHT — Totals + Info */}
           <div className="pr-logs-sidebar" style={{ flexDirection: "column", gap: 16 }}>
             <div style={{ background: "#fff", borderRadius: 14, padding: 20, border: "1px solid #e5e7eb" }}>
-              <p style={{ margin: "0 0 14px", fontWeight: 700, fontSize: 14, color: "#1a1a2e" }}>📊 Running Totals</p>
+              <p style={{ margin: "0 0 14px", fontWeight: 700, fontSize: 14, color: "#1a1a2e", display: "flex", alignItems: "center", gap: 7 }}>
+                <BarChart2 size={15} color="#374151" /> Running Totals
+              </p>
               {!selectedEmployeeLog ? (
                 <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "20px 0" }}>Select employee first</p>
               ) : Object.keys(logTotals).length === 0 ? (
@@ -572,13 +580,15 @@ export default function PerformanceReviews() {
 
             {selectedEmployeeLog && selectedAssignmentData && (
               <div style={{ background: "#fff", borderRadius: 14, padding: 16, border: "1px solid #e5e7eb" }}>
-                <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 13, color: "#1a1a2e" }}>Employee Info</p>
+                <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 13, color: "#1a1a2e", display: "flex", alignItems: "center", gap: 7 }}>
+                  <User size={13} color="#374151" /> Employee Info
+                </p>
                 {[
-                  { label: "Name", value: selectedAssignmentData.employee_id?.name },
+                  { label: "Name",        value: selectedAssignmentData.employee_id?.name },
                   { label: "Designation", value: selectedAssignmentData.employee_id?.designation || "—" },
-                  { label: "Department", value: selectedAssignmentData.employee_id?.department || "—" },
-                  { label: "Period", value: selectedAssignmentData.period },
-                  { label: "Total Logs", value: employeeLogs.length },
+                  { label: "Department",  value: selectedAssignmentData.employee_id?.department  || "—" },
+                  { label: "Period",      value: selectedAssignmentData.period },
+                  { label: "Total Logs",  value: employeeLogs.length },
                 ].map((d, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: i < 4 ? "1px solid #f3f4f6" : "none", fontSize: 13 }}>
                     <span style={{ color: "#6b7280" }}>{d.label}</span>
@@ -613,7 +623,7 @@ export default function PerformanceReviews() {
             <div style={{ padding: "20px 24px" }}>
               <h4 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1a1a2e" }}>KPI Actual Values</h4>
               {reviewForm.items.map((item, idx) => {
-                const selfPct = item.self_value ? Math.round((item.self_value / item.target) * 100) : 0;
+                const selfPct   = item.self_value   ? Math.round((item.self_value / item.target) * 100) : 0;
                 const actualPct = item.actual_value ? Math.min(Math.round((parseFloat(item.actual_value) / item.target) * 100), 150) : 0;
                 const actualColor = getProgressColor(actualPct);
                 return (
@@ -676,8 +686,9 @@ export default function PerformanceReviews() {
 
               <div className="pr-modal-footer" style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
                 <button onClick={() => setSelectedAssessment(null)} style={{ padding: "11px 24px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                <button onClick={handleSubmitReview} disabled={saving} style={{ padding: "11px 28px", border: "none", borderRadius: 8, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 14 }}>
-                  {saving ? "Finalizing..." : "✅ Finalize Review"}
+                <button onClick={handleSubmitReview} disabled={saving}
+                  style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 28px", border: "none", borderRadius: 8, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 14 }}>
+                  <CheckCheck size={15} />{saving ? "Finalizing..." : "Finalize Review"}
                 </button>
               </div>
             </div>

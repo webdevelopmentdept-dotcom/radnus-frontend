@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
-import { Download, Calculator, CheckCircle, DollarSign, Users } from "lucide-react";
+import {
+  Download, Calculator, CheckCircle, DollarSign, Users,
+  Trophy, AlertCircle, Banknote
+} from "lucide-react";
 import * as XLSX from "xlsx";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -33,14 +36,21 @@ const STYLES = `
   .vp-score-grid { grid-template-columns: 1fr 1fr; }
   .vp-table-wrap { display: block !important; }
   .vp-card-list { display: none !important; }
+  .vp-header { flex-direction: row; align-items: flex-start; }
+  .vp-header-actions { flex-wrap: nowrap; }
 
   @media (max-width: 768px) {
     .vp-page { padding: 16px; }
+    .vp-header { flex-direction: column !important; gap: 12px; }
+    .vp-header-actions { width: 100%; justify-content: stretch; }
+    .vp-header-actions button { flex: 1; justify-content: center; }
     .vp-stats { grid-template-columns: repeat(2, 1fr) !important; }
     .vp-form-grid { grid-template-columns: 1fr !important; }
     .vp-score-grid { grid-template-columns: 1fr !important; }
     .vp-table-wrap { display: none !important; }
     .vp-card-list { display: flex !important; flex-direction: column; gap: 12px; padding: 12px 16px; }
+    .vp-filter-row { flex-wrap: wrap; gap: 6px !important; }
+    .vp-filter-row button { flex: 1; min-width: 70px; text-align: center; }
   }
   @media (max-width: 480px) {
     .vp-stats { grid-template-columns: 1fr !important; }
@@ -104,11 +114,9 @@ export default function VariablePayDashboard() {
     try {
       const [recRes, empRes] = await Promise.all([
         axios.get(`${API_BASE}/api/variable-pay`),
-        axios.get(`${API_BASE}/api/hr/employees`),   // ✅ active employees API
+        axios.get(`${API_BASE}/api/hr/employees`),
       ]);
       if (recRes.data.success) setRecords(recRes.data.data);
-
-      // ✅ Only active employees in dropdown
       if (empRes.data) {
         const active = Array.isArray(empRes.data)
           ? empRes.data.filter(emp => emp.status === "active")
@@ -218,18 +226,19 @@ export default function VariablePayDashboard() {
       <style>{STYLES}</style>
 
       {toast && (
-        <div style={{ position:"fixed", top:20, right:16, zIndex:9999, background: toast.type==="error"?"#ff4d4f":"#52c41a", color:"#fff", padding:"12px 20px", borderRadius:8, fontWeight:500, fontSize:14 }}>
+        <div style={{ position:"fixed", top:20, right:16, zIndex:9999, background: toast.type==="error"?"#ff4d4f":"#52c41a", color:"#fff", padding:"12px 20px", borderRadius:8, fontWeight:500, fontSize:14, display:"flex", alignItems:"center", gap:8, maxWidth:"calc(100vw - 32px)" }}>
+          {toast.type === "error" ? <AlertCircle size={15}/> : <CheckCircle size={15}/>}
           {toast.msg}
         </div>
       )}
 
       {/* Header */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:24, gap:12, flexWrap:"wrap" }}>
+      <div className="vp-header" style={{ display:"flex", justifyContent:"space-between", marginBottom:24, gap:12 }}>
         <div>
           <h2 style={{ margin:0, fontSize:22, fontWeight:800, color:"#1a1a2e" }}>Variable Pay</h2>
           <p style={{ margin:"4px 0 0", color:"#6b7280", fontSize:14 }}>Performance-based variable pay calculation & management</p>
         </div>
-        <div style={{ display:"flex", gap:8 }}>
+        <div className="vp-header-actions" style={{ display:"flex", gap:8 }}>
           <button onClick={exportExcel} disabled={!filtered.length}
             style={{ display:"flex", alignItems:"center", gap:6, padding:"10px 16px", background:"#fff", border:"1px solid #e5e7eb", borderRadius:9, fontWeight:600, fontSize:13, cursor:"pointer", color:"#374151" }}>
             <Download size={15}/> Export
@@ -354,10 +363,11 @@ export default function VariablePayDashboard() {
               </div>
             </div>
 
-            {/* Recognition */}
+            {/* Recognition — emoji replaced with Trophy icon */}
             {perfScore >= 90 && (
-              <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:10, padding:"10px 16px", marginBottom:16, fontSize:13, color:"#16a34a", fontWeight:600 }}>
-                🏆 Score &gt;90% — Eligible for Radnus Excellence Certificate + HiPo Program (Ref: 3.23)
+              <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:10, padding:"10px 16px", marginBottom:16, fontSize:13, color:"#16a34a", fontWeight:600, display:"flex", alignItems:"center", gap:8 }}>
+                <Trophy size={16} color="#16a34a" style={{ flexShrink:0 }}/>
+                Score &gt;90% — Eligible for Radnus Excellence Certificate + HiPo Program (Ref: 3.23)
               </div>
             )}
 
@@ -368,7 +378,7 @@ export default function VariablePayDashboard() {
                 value={form.notes} onChange={e => setForm(f=>({...f, notes: e.target.value}))} />
             </div>
 
-            <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:20 }}>
+            <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:20, flexWrap:"wrap" }}>
               <button onClick={() => setShowCalc(false)}
                 style={{ padding:"10px 24px", border:"1px solid #e5e7eb", borderRadius:8, background:"#fff", color:"#374151", fontWeight:600, cursor:"pointer" }}>
                 Cancel
@@ -386,7 +396,7 @@ export default function VariablePayDashboard() {
       <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden" }}>
         <div style={{ padding:"16px 20px", borderBottom:"1px solid #f3f4f6", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:8 }}>
           <h3 style={{ margin:0, fontSize:15, fontWeight:700, color:"#1a1a2e" }}>All Records</h3>
-          <div style={{ display:"flex", gap:6 }}>
+          <div className="vp-filter-row" style={{ display:"flex", gap:6 }}>
             {["All","draft","approved","paid"].map(s => (
               <button key={s} onClick={() => setFilterStatus(s)}
                 style={{ padding:"5px 14px", border:"1px solid", borderColor: filterStatus===s?"#1a1a2e":"#e5e7eb", borderRadius:20, background: filterStatus===s?"#1a1a2e":"#fff", color: filterStatus===s?"#fff":"#6b7280", fontSize:12, fontWeight:600, cursor:"pointer", textTransform:"capitalize" }}>
@@ -396,9 +406,12 @@ export default function VariablePayDashboard() {
           </div>
         </div>
 
+        {/* Empty state — emoji replaced with Banknote icon */}
         {filtered.length === 0 ? (
           <div style={{ textAlign:"center", padding:"60px 0" }}>
-            <div style={{ fontSize:40, marginBottom:10 }}>💰</div>
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:10 }}>
+              <Banknote size={40} color="#d1d5db"/>
+            </div>
             <p style={{ color:"#6b7280", fontWeight:600 }}>No variable pay records yet</p>
             <p style={{ color:"#9ca3af", fontSize:13 }}>Click "Calculate Pay" to create the first record</p>
           </div>
@@ -482,22 +495,44 @@ export default function VariablePayDashboard() {
                 const ri = getRatingInfo(r.performance_score);
                 return (
                   <div key={r._id} style={{ border:"1px solid #e5e7eb", borderRadius:10, padding:"14px 16px", background:"#fff" }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-                      <div>
-                        <p style={{ margin:0, fontWeight:700, color:"#1a1a2e" }}>{r.employee_id?.name}</p>
-                        <p style={{ margin:0, fontSize:12, color:"#6b7280" }}>{r.employee_id?.department} · {r.period}</p>
+                    {/* Card header */}
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <div style={{ width:36, height:36, borderRadius:"50%", background:"#eff6ff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, color:"#2563eb", fontSize:14, flexShrink:0 }}>
+                          {r.employee_id?.name?.charAt(0)||"?"}
+                        </div>
+                        <div>
+                          <p style={{ margin:0, fontWeight:700, color:"#1a1a2e", fontSize:14 }}>{r.employee_id?.name}</p>
+                          <p style={{ margin:0, fontSize:12, color:"#6b7280" }}>{r.employee_id?.department} · {r.period}</p>
+                        </div>
                       </div>
-                      <span style={{ background:st.bg, color:st.color, fontWeight:700, padding:"4px 10px", borderRadius:20, fontSize:11 }}>{st.label}</span>
+                      <span style={{ background:st.bg, color:st.color, fontWeight:700, padding:"4px 10px", borderRadius:20, fontSize:11, flexShrink:0 }}>{st.label}</span>
                     </div>
+
+                    {/* Score + Pay row */}
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"6px 12px", fontSize:13, marginBottom:10 }}>
-                      <div><span style={{ color:"#9ca3af", fontSize:10 }}>PERF SCORE</span><p style={{ margin:"2px 0 0", fontWeight:900, color:ri.color, fontSize:18 }}>{r.performance_score}%</p></div>
-                      <div><span style={{ color:"#9ca3af", fontSize:10 }}>VARIABLE PAY</span><p style={{ margin:"2px 0 0", fontWeight:900, color:"#16a34a", fontSize:16 }}>₹{r.variable_pay_amount?.toLocaleString("en-IN")}</p></div>
+                      <div>
+                        <span style={{ color:"#9ca3af", fontSize:10, fontWeight:600, textTransform:"uppercase" }}>Perf Score</span>
+                        <p style={{ margin:"2px 0 0", fontWeight:900, color:ri.color, fontSize:18 }}>{r.performance_score}%</p>
+                        <span style={{ fontSize:10, color:ri.color, fontWeight:600 }}>{ri.label}</span>
+                      </div>
+                      <div>
+                        <span style={{ color:"#9ca3af", fontSize:10, fontWeight:600, textTransform:"uppercase" }}>Variable Pay</span>
+                        <p style={{ margin:"2px 0 0", fontWeight:900, color:"#16a34a", fontSize:16 }}>₹{r.variable_pay_amount?.toLocaleString("en-IN")}</p>
+                        <span style={{ fontSize:10, color:"#9ca3af" }}>CTC ₹{r.annual_ctc?.toLocaleString("en-IN")} · {r.variable_pct}%</span>
+                      </div>
                     </div>
+
+                    {/* Action buttons */}
                     {r.status === "draft" && (
-                      <button onClick={() => handleApprove(r._id)} style={{ width:"100%", padding:"8px", background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:7, color:"#2563eb", fontWeight:600, cursor:"pointer" }}>Approve</button>
+                      <button onClick={() => handleApprove(r._id)} style={{ width:"100%", padding:"9px", background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:7, color:"#2563eb", fontWeight:600, cursor:"pointer", fontSize:13 }}>
+                        Approve
+                      </button>
                     )}
                     {r.status === "approved" && (
-                      <button onClick={() => handlePaid(r._id)} style={{ width:"100%", padding:"8px", background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:7, color:"#16a34a", fontWeight:600, cursor:"pointer" }}>Mark Paid</button>
+                      <button onClick={() => handlePaid(r._id)} style={{ width:"100%", padding:"9px", background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:7, color:"#16a34a", fontWeight:600, cursor:"pointer", fontSize:13 }}>
+                        Mark Paid
+                      </button>
                     )}
                   </div>
                 );

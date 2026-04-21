@@ -1,12 +1,15 @@
 // pages/hr/dashboard/performance/OkrDashboard.jsx — FULL UPDATED VERSION
-// Key change: Added "Department OKRs" tab showing OKR objectives + KR progress
+// Changes: Replaced all emojis with Lucide icons; fixed mobile card layout
 
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import {
   Users, Award, BarChart2, Building2,
   ChevronDown, ChevronUp, CheckCircle,
-  Clock, AlertCircle, TrendingUp, Download
+  Clock, AlertCircle, TrendingUp, Download,
+  ClipboardList, MapPin, Target, Lightbulb,
+  ArrowRight, X, Square, Star, BookOpen,
+  FileCheck, Timer, Minus
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -28,11 +31,11 @@ const getProgressColor = (pct) => {
 };
 
 const STATUS_CONFIG = {
-  finalized     : { label: "Finalized",      color: "#16a34a", bg: "#f0fdf4", icon: "✅" },
-  self_submitted: { label: "Self Submitted", color: "#2563eb", bg: "#eff6ff", icon: "📋" },
-  in_progress   : { label: "In Progress",    color: "#d97706", bg: "#fffbeb", icon: "⏳" },
-  assigned      : { label: "Assigned",       color: "#6b7280", bg: "#f3f4f6", icon: "📌" },
-  not_started   : { label: "Not Started",    color: "#9ca3af", bg: "#f9fafb", icon: "⬜" },
+  finalized     : { label: "Finalized",      color: "#16a34a", bg: "#f0fdf4", Icon: FileCheck },
+  self_submitted: { label: "Self Submitted", color: "#2563eb", bg: "#eff6ff", Icon: ClipboardList },
+  in_progress   : { label: "In Progress",    color: "#d97706", bg: "#fffbeb", Icon: Timer },
+  assigned      : { label: "Assigned",       color: "#6b7280", bg: "#f3f4f6", Icon: MapPin },
+  not_started   : { label: "Not Started",    color: "#9ca3af", bg: "#f9fafb", Icon: Square },
 };
 
 const STYLES = `
@@ -60,6 +63,8 @@ const STYLES = `
     .okr-dept-grid  { grid-template-columns: 1fr 1fr !important; }
     .okr-obj-grid   { grid-template-columns: 1fr !important; }
     .okr-expand-grid { grid-template-columns: 1fr !important; }
+    .okr-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .okr-tab-btn { white-space: nowrap; flex-shrink: 0; }
   }
   @media (max-width: 480px) {
     .okr-stats { grid-template-columns: 1fr !important; }
@@ -165,7 +170,9 @@ function OkrObjectiveCard({ okr }) {
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
                 {kr.linked_kpi_name
-                  ? <span style={{ fontSize: 10, color: "#2563eb", fontWeight: 600 }}>↔ KPI: {kr.linked_kpi_name}</span>
+                  ? <span style={{ fontSize: 10, color: "#2563eb", fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
+                      <Minus size={10}/> KPI: {kr.linked_kpi_name}
+                    </span>
                   : <span style={{ fontSize: 10, color: "#9ca3af" }}>No KPI linked</span>}
                 <span style={{ fontSize: 10, fontWeight: 700, color: c }}>{pct}%</span>
               </div>
@@ -174,8 +181,8 @@ function OkrObjectiveCard({ okr }) {
         })}
         {krs.length > 2 && (
           <button onClick={() => setOpen(o => !o)}
-            style={{ background: "none", border: "none", color: "#2563eb", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0 }}>
-            {open ? "▲ Show less" : `▼ +${krs.length - 2} more KRs`}
+            style={{ background: "none", border: "none", color: "#2563eb", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 4 }}>
+            {open ? <><ChevronUp size={12}/> Show less</> : <><ChevronDown size={12}/> +{krs.length - 2} more KRs</>}
           </button>
         )}
         {krs.length === 0 && (
@@ -190,6 +197,7 @@ function OkrObjectiveCard({ okr }) {
 function EmployeeRow({ row, idx, expanded, onToggle }) {
   const { label, color, bg } = getRatingInfo(row.okr_score);
   const statusCfg = STATUS_CONFIG[row.okr_status] || STATUS_CONFIG.not_started;
+  const StatusIcon = statusCfg.Icon;
 
   return (
     <>
@@ -221,8 +229,8 @@ function EmployeeRow({ row, idx, expanded, onToggle }) {
           </div>
         </td>
         <td style={{ padding: "14px 16px" }}>
-          <span style={{ background: statusCfg.bg, color: statusCfg.color, fontWeight: 700, padding: "4px 12px", borderRadius: 20, fontSize: 12 }}>
-            {statusCfg.icon} {statusCfg.label}
+          <span style={{ background: statusCfg.bg, color: statusCfg.color, fontWeight: 700, padding: "4px 12px", borderRadius: 20, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <StatusIcon size={12}/> {statusCfg.label}
           </span>
         </td>
         <td style={{ padding: "14px 16px", color: "#374151", fontSize: 13 }}>{row.kpi_count} KPIs</td>
@@ -322,6 +330,7 @@ function EmployeeCard({ row }) {
   const [open, setOpen] = useState(false);
   const { label, color, bg } = getRatingInfo(row.okr_score);
   const statusCfg = STATUS_CONFIG[row.okr_status] || STATUS_CONFIG.not_started;
+  const StatusIcon = statusCfg.Icon;
 
   return (
     <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, background: "#fff", overflow: "hidden" }}>
@@ -336,8 +345,8 @@ function EmployeeCard({ row }) {
               <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{row.employee.designation} · {row.employee.department}</p>
             </div>
           </div>
-          <span style={{ background: statusCfg.bg, color: statusCfg.color, fontWeight: 700, padding: "4px 8px", borderRadius: 20, fontSize: 11 }}>
-            {statusCfg.icon} {statusCfg.label}
+          <span style={{ background: statusCfg.bg, color: statusCfg.color, fontWeight: 700, padding: "4px 8px", borderRadius: 20, fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+            <StatusIcon size={11}/> {statusCfg.label}
           </span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px 12px", fontSize: 12, marginBottom: 10 }}>
@@ -357,16 +366,28 @@ function EmployeeCard({ row }) {
         <div style={{ background: "#f3f4f6", borderRadius: 99, height: 6, overflow: "hidden" }}>
           <div style={{ width: `${row.okr_score}%`, height: "100%", background: color, borderRadius: 99 }}/>
         </div>
+        {/* Expand/collapse indicator */}
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}>
+          {open ? <ChevronUp size={16} color="#9ca3af"/> : <ChevronDown size={16} color="#9ca3af"/>}
+        </div>
       </div>
       {open && (
         <div style={{ borderTop: "1px solid #f3f4f6", padding: "14px 16px", background: "#f8fafc" }}>
           <p style={{ margin: "0 0 10px", fontWeight: 700, fontSize: 13, color: "#1a1a2e" }}>KPI Breakdown</p>
           {row.kpi_progress.map((kpi, i) => <KpiProgressBar key={i} kpi={kpi}/>)}
           {row.review && (
-            <div style={{ marginTop: 12, background: "#eff6ff", borderRadius: 8, padding: "10px 12px" }}>
+            <div style={{ marginTop: 12, background: "#eff6ff", borderRadius: 8, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
+              <Award size={14} color="#2563eb"/>
               <span style={{ fontSize: 12, fontWeight: 700, color: "#2563eb" }}>Final Review: {row.review.final_score}% — {row.review.rating}</span>
             </div>
           )}
+          {/* Self assessment status on mobile */}
+          <div style={{ marginTop: 10, background: row.self_assessment ? "#f0fdf4" : "#fffbeb", borderRadius: 8, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
+            {row.self_assessment
+              ? <><CheckCircle size={14} color="#16a34a"/><span style={{ fontSize: 12, fontWeight: 700, color: "#16a34a" }}>Self Assessment Submitted</span></>
+              : <><Clock size={14} color="#d97706"/><span style={{ fontSize: 12, fontWeight: 700, color: "#d97706" }}>Self Assessment Pending</span></>
+            }
+          </div>
         </div>
       )}
     </div>
@@ -378,11 +399,11 @@ export default function OkrDashboard() {
   const [data, setData]               = useState([]);
   const [summary, setSummary]         = useState(null);
   const [deptSummary, setDeptSummary] = useState([]);
-  const [objectives, setObjectives]   = useState([]); // ← Department OKRs
+  const [objectives, setObjectives]   = useState([]);
   const [loading, setLoading]         = useState(true);
   const [toast, setToast]             = useState(null);
   const [expandedRow, setExpandedRow] = useState(null);
-  const [activeTab, setActiveTab]     = useState("employees"); // ← Main tabs
+  const [activeTab, setActiveTab]     = useState("employees");
 
   const [searchName, setSearchName]     = useState("");
   const [filterDept, setFilterDept]     = useState("All");
@@ -451,7 +472,7 @@ export default function OkrDashboard() {
     ws["!cols"] = [4,22,20,16,14,14,22,16,12,14,40].map(wch => ({ wch }));
     XLSX.utils.book_append_sheet(wb, ws, "OKR Dashboard");
     XLSX.writeFile(wb, `OKR_Dashboard_${new Date().toLocaleDateString("en-IN").replace(/\//g, "-")}.xlsx`);
-    showToast("Excel exported! ✅");
+    showToast("Excel exported successfully");
   };
 
   if (loading) return (
@@ -470,7 +491,8 @@ export default function OkrDashboard() {
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       {toast && (
-        <div style={{ position: "fixed", top: 20, right: 16, zIndex: 9999, background: toast.type === "error" ? "#ff4d4f" : "#52c41a", color: "#fff", padding: "12px 20px", borderRadius: 8, boxShadow: "0 4px 16px rgba(0,0,0,.15)", fontWeight: 500, fontSize: 14, maxWidth: "calc(100vw - 32px)" }}>
+        <div style={{ position: "fixed", top: 20, right: 16, zIndex: 9999, background: toast.type === "error" ? "#ff4d4f" : "#52c41a", color: "#fff", padding: "12px 20px", borderRadius: 8, boxShadow: "0 4px 16px rgba(0,0,0,.15)", fontWeight: 500, fontSize: 14, maxWidth: "calc(100vw - 32px)", display: "flex", alignItems: "center", gap: 8 }}>
+          {toast.type === "error" ? <AlertCircle size={15}/> : <CheckCircle size={15}/>}
           {toast.msg}
         </div>
       )}
@@ -509,14 +531,18 @@ export default function OkrDashboard() {
       )}
 
       {/* ── Main Tabs ── */}
-      <div style={{ display: "flex", gap: 4, background: "#fff", borderRadius: 10, padding: 4, border: "1px solid #e5e7eb", marginBottom: 24, width: "fit-content" }}>
+      <div className="okr-tabs" style={{ display: "flex", gap: 4, background: "#fff", borderRadius: 10, padding: 4, border: "1px solid #e5e7eb", marginBottom: 24, width: "fit-content", maxWidth: "100%" }}>
         {[
-          { id: "employees",  label: `👥 Employee KPI Scores (${data.length})` },
-          { id: "objectives", label: `🎯 Department OKRs (${objectives.length})` },
+          { id: "employees",  label: "Employee KPI Scores", count: data.length,       Icon: Users },
+          { id: "objectives", label: "Department OKRs",     count: objectives.length, Icon: Target },
         ].map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            style={{ padding: "8px 20px", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13, background: activeTab === tab.id ? "#1a1a2e" : "transparent", color: activeTab === tab.id ? "#fff" : "#6b7280", transition: "all 0.2s", whiteSpace: "nowrap" }}>
+          <button key={tab.id} className="okr-tab-btn" onClick={() => setActiveTab(tab.id)}
+            style={{ padding: "8px 16px", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13, background: activeTab === tab.id ? "#1a1a2e" : "transparent", color: activeTab === tab.id ? "#fff" : "#6b7280", transition: "all 0.2s", display: "flex", alignItems: "center", gap: 6 }}>
+            <tab.Icon size={14}/>
             {tab.label}
+            <span style={{ background: activeTab === tab.id ? "rgba(255,255,255,0.2)" : "#f3f4f6", color: activeTab === tab.id ? "#fff" : "#6b7280", borderRadius: 20, padding: "1px 7px", fontSize: 11, fontWeight: 700 }}>
+              {tab.count}
+            </span>
           </button>
         ))}
       </div>
@@ -601,17 +627,19 @@ export default function OkrDashboard() {
               </div>
             </div>
             {hasFilters && (
-              <button onClick={clearFilters} style={{ marginTop: 10, background: "none", border: "none", color: "#2563eb", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-                ✕ Clear Filters ({filtered.length} showing)
+              <button onClick={clearFilters} style={{ marginTop: 10, background: "none", border: "none", color: "#2563eb", fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+                <X size={13}/> Clear Filters ({filtered.length} showing)
               </button>
             )}
           </div>
 
-          {/* Table */}
+          {/* Table / Cards */}
           <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", overflow: "hidden" }}>
             {filtered.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 0" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>🎯</div>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                  <Target size={40} color="#d1d5db"/>
+                </div>
                 <p style={{ color: "#6b7280", fontWeight: 600 }}>No employees found</p>
                 {hasFilters && <button onClick={clearFilters} style={{ marginTop: 8, background: "none", border: "1px solid #e5e7eb", borderRadius: 7, padding: "6px 16px", color: "#2563eb", fontWeight: 600, cursor: "pointer", fontSize: 13 }}>Clear Filters</button>}
               </div>
@@ -656,21 +684,23 @@ export default function OkrDashboard() {
         <>
           {objectives.length === 0 ? (
             <div style={{ background: "#fff", borderRadius: 14, padding: "60px 0", textAlign: "center", border: "1px solid #e5e7eb" }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🎯</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                <Target size={48} color="#d1d5db"/>
+              </div>
               <h3 style={{ color: "#1f2937", marginBottom: 8 }}>No Department OKRs set yet</h3>
               <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 16 }}>
                 Create OKRs in OKR Setup and link them to KPI items. When employees submit KPIs, OKR progress updates automatically.
               </p>
               <a href="/hr/dashboard/performance/okr-setup"
-                style={{ display: "inline-block", background: "#2563eb", color: "#fff", padding: "10px 24px", borderRadius: 8, fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
-                Go to OKR Setup →
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#2563eb", color: "#fff", padding: "10px 24px", borderRadius: 8, fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
+                Go to OKR Setup <ArrowRight size={15}/>
               </a>
             </div>
           ) : (
             <>
               {/* Info banner */}
               <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: "12px 18px", marginBottom: 20, display: "flex", gap: 10, alignItems: "center" }}>
-                <span style={{ fontSize: 16 }}>💡</span>
+                <Lightbulb size={16} color="#2563eb" style={{ flexShrink: 0 }}/>
                 <p style={{ margin: 0, fontSize: 13, color: "#1e40af" }}>
                   OKR progress updates automatically when employees submit KPI self assessments. KRs linked to KPI items show real-time progress.
                 </p>

@@ -50,6 +50,8 @@ import EmployeeLeadershipTrack from "./pages/employee/EmployeeLeadershipTrack";
 import EmployeeRetentionPlan from "./pages/employee/EmployeeRetentionPlan";
 import AlumniNetworkEmployee from "./pages/employee/Alumninetworkemployee";
 import TrainingRoadmapEmployee from "./pages/employee/Trainingroadmapemployee ";
+import EmployeeAppraisal from "./pages/employee/EmployeeAppraisal";
+import MyIncentive from "./pages/employee/MyIncentive";
 
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
@@ -92,6 +94,10 @@ import EngagementCalendar from "./pages/hr/EngagementCalender";
 import HrLeadershipTrack from "./pages/hr/HrLeadershipTrack";
 import AlumniNetwork from "./pages/hr/AlumniNetwork";
 import TrainingRoadmapHR from "./pages/hr/Trainingroadmaphr";
+import AppraisalHub from "./pages/hr/AppraisalHub";
+import IncentiveAssign from "./pages/hr/IncentiveAssign";
+import IncentivePlans from "./pages/hr/IncentivePlans";
+import IncentiveResults from "./pages/hr/IncentiveResults";
 
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
@@ -200,10 +206,12 @@ function App() {
         <Route path="/employee/dashboard/impact-bonus" element={<ImpactBonusEmployee />} />
         <Route path="/employee/wellness" element={<WellnessEmployee />} />
         <Route path="/employee/clubs" element={<Myclubs />} />
-       <Route path="/employee/leadership-track" element={<EmployeeLeadershipTrack />} />
+        <Route path="/employee/leadership-track" element={<EmployeeLeadershipTrack />} />
         <Route path="/employee/retention" element={<EmployeeRetentionPlan />} />
         <Route path="/employee/alumni-network" element={<AlumniNetworkEmployee />} />
         <Route path="/employee/training" element={<TrainingRoadmapEmployee />} />
+        <Route path="/employee/appraisal" element={<EmployeeAppraisal />} />
+        <Route path="/employee/my-incentive" element={<MyIncentive />} />
         {/* <Route path="/hr/dashboard" element={<HrDashboard />}>
           <Route index element={<HrDashboardHome />} />
           <Route path="applicants" element={<HrApplicants />} />
@@ -259,6 +267,12 @@ function App() {
           <Route path="performance/variable-pay" element={<VariablePayDashboard />} />
           <Route path="performance/esop" element={<EsopDashboard />} />
 
+          <Route path="incentives/plans" element={<IncentivePlans />} />
+          <Route path="incentives/assign" element={<IncentiveAssign />} />
+          <Route path="incentives/results" element={<IncentiveResults />} />
+
+          <Route path="/hr/dashboard/appraisal" element={<AppraisalHub />} />
+
           <Route path="grading/grade-master" element={<GradeMaster />} />
           <Route path="grading/assign-grade" element={<AssignGrade />} />
           <Route path="grading/grade-reports" element={<GradeReports />} />
@@ -271,10 +285,10 @@ function App() {
           <Route path="recognition/engagement-calendar" element={<EngagementCalendar />} />
 
           <Route path="leadership-track" element={<HrLeadershipTrack />} />
-          <Route path="alumni-network" element={<AlumniNetwork/>} />
+          <Route path="alumni-network" element={<AlumniNetwork />} />
 
           <Route path="/hr/dashboard/training" element={<TrainingRoadmapHR />} />
-          
+
 
           <Route path="performance/kpi-templates" element={<KpiTemplates />} />
           <Route path="performance/assign-kpi" element={<AssignKpi />} />
