@@ -29,8 +29,10 @@ const CareerDetail = () => {
   const [formData, setFormData] = useState({
     name: "", email: "", phone: "",
     address: "", location: "", resume: null, about: "",
+    aadhaarLast4: "",
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [aadhaarError, setAadhaarError] = useState("");
 
   useEffect(() => {
     if (showModal) {
@@ -45,15 +47,32 @@ const CareerDetail = () => {
     const { name, value, files } = e.target;
     if (files) {
       const file = files[0];
-      // Accept all file types — PDF, DOC, images, etc.
       setFormData({ ...formData, [name]: file });
     } else {
-      setFormData({ ...formData, [name]: value });
+      if (name === "aadhaarLast4") {
+        // Only allow numbers, max 4 digits
+        const numericVal = value.replace(/\D/g, "").slice(0, 4);
+        setFormData({ ...formData, [name]: numericVal });
+        if (numericVal.length > 0 && numericVal.length < 4) {
+          setAadhaarError("Aadhaar last 4 digits enter pannunga");
+        } else {
+          setAadhaarError("");
+        }
+      } else {
+        setFormData({ ...formData, [name]: value });
+      }
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Aadhaar validation
+    if (formData.aadhaarLast4.length !== 4) {
+      setAadhaarError("Aadhaar last 4 digits mandatory — exactly 4 digits enter pannunga");
+      return;
+    }
+
     const data = new FormData();
     data.append("name", formData.name);
     data.append("email", formData.email);
@@ -63,6 +82,8 @@ const CareerDetail = () => {
     data.append("about", formData.about);
     data.append("resume", formData.resume);
     data.append("jobTitle", job.title);
+    data.append("aadhaarLast4", formData.aadhaarLast4);
+
     try {
       const res = await fetch(`${API_BASE}/api/hr/apply`, { method: "POST", body: data });
       const result = await res.json();
@@ -456,6 +477,20 @@ const CareerDetail = () => {
           border-color: #dc2626; background: #fff;
           box-shadow: 0 0 0 3px rgba(220,38,38,0.07);
         }
+        .cd-input-error {
+          border-color: #dc2626 !important;
+          background: #fff8f8 !important;
+        }
+        .cd-error-text {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 11.5px;
+          color: #dc2626;
+          margin-top: 5px;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
         .cd-file-wrap {
           display: block; width: 100%;
           padding: 10px 14px;
@@ -488,6 +523,23 @@ const CareerDetail = () => {
         .cd-success-sub {
           font-family: 'DM Sans', sans-serif;
           font-size: 13px; color: #6b7280; line-height: 1.6;
+        }
+
+        /* Aadhaar field */
+        .cd-aadhaar-wrap {
+          margin-bottom: 16px;
+        }
+        .cd-aadhaar-header {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          margin-bottom: 7px;
+        }
+        .cd-verify-note {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 11px;
+          color: #9ca3af;
+          margin-top: 5px;
         }
 
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -656,31 +708,89 @@ const CareerDetail = () => {
                 <div className="cd-modal-divider" />
 
                 <form onSubmit={handleSubmit}>
+                  {/* Full Name */}
                   <div className="cd-field">
                     <label className="cd-label">Full Name</label>
-                    <input className="cd-input" type="text" name="name" placeholder="Your full name"
-                      value={formData.name} onChange={handleChange} required />
+                    <input
+                      className="cd-input"
+                      type="text"
+                      name="name"
+                      placeholder="Your full name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
 
+                  {/* Email + Phone */}
                   <div className="cd-field-row-2">
                     <div>
                       <label className="cd-label">Email</label>
-                      <input className="cd-input" type="email" name="email" placeholder="your@email.com"
-                        value={formData.email} onChange={handleChange} required />
+                      <input
+                        className="cd-input"
+                        type="email"
+                        name="email"
+                        placeholder="your@email.com"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                      />
                     </div>
                     <div>
                       <label className="cd-label">Phone</label>
-                      <input className="cd-input" type="tel" name="phone" placeholder="9XXXXXXXXX"
-                        value={formData.phone} onChange={handleChange} required />
+                      <input
+                        className="cd-input"
+                        type="tel"
+                        name="phone"
+                        placeholder="9XXXXXXXXX"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        required
+                      />
                     </div>
                   </div>
 
+                  {/* Location — now mandatory */}
                   <div className="cd-field">
-                    <label className="cd-label">Current Location <span style={{ color: "#9ca3af", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
-                    <input className="cd-input" type="text" name="location" placeholder="Enter your city (optional)"
-                      value={formData.location} onChange={handleChange} />
+                    <label className="cd-label">Current Location</label>
+                    <input
+                      className="cd-input"
+                      type="text"
+                      name="location"
+                      placeholder="Enter your city"
+                      value={formData.location}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
 
+                  {/* Aadhaar Last 4 Digits */}
+                  <div className="cd-aadhaar-wrap">
+                    <div className="cd-aadhaar-header">
+                      <label className="cd-label" style={{ margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+                        <FaCheckCircle size={11} color="#6b7280" /> Aadhaar Last 4 Digits
+                      </label>
+                    </div>
+                    <input
+                      className={`cd-input ${aadhaarError ? "cd-input-error" : ""}`}
+                      type="text"
+                      inputMode="numeric"
+                      name="aadhaarLast4"
+                      placeholder="XXXX"
+                      value={formData.aadhaarLast4}
+                      onChange={handleChange}
+                      maxLength={4}
+                      required
+                      style={{ letterSpacing: "6px", fontWeight: 700, fontSize: 16 }}
+                    />
+                    {aadhaarError ? (
+                      <p className="cd-error-text"><FaCheckCircle size={10} color="#dc2626" /> {aadhaarError}</p>
+                    ) : (
+                      <p className="cd-verify-note">For verification purposes only.</p>
+                    )}
+                  </div>
+
+                  {/* Resume */}
                   <div className="cd-field">
                     <label className="cd-label">
                       Resume / Document{" "}
@@ -688,8 +798,14 @@ const CareerDetail = () => {
                         (PDF, DOC, Image — any format)
                       </span>
                     </label>
-                    <input className="cd-file-wrap" type="file" name="resume"
-                      onChange={handleChange} accept="*/*" required />
+                    <input
+                      className="cd-file-wrap"
+                      type="file"
+                      name="resume"
+                      onChange={handleChange}
+                      accept="*/*"
+                      required
+                    />
                   </div>
 
                   <button type="submit" className="cd-submit-btn">

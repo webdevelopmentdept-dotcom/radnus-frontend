@@ -5,7 +5,7 @@ import {
   Briefcase, MapPin, Calendar, Hash,
   CheckCircle, Clock, User, Building,
   ShieldCheck, Pencil, Award, UserCircle,
-  KeyRound, ChevronRight, AlertTriangle
+  KeyRound, ChevronRight, AlertTriangle, Phone
 } from "lucide-react";
 import EmployeeLayout from "./EmployeeLayout";
 
@@ -29,7 +29,7 @@ export default function MyProfile() {
 
   const [resolvedEmpCode, setResolvedEmpCode] = useState("");
 
-  const [personalForm, setPersonalForm] = useState({ name:"", email:"", mobile:"", dob:"", address:"" });
+  const [personalForm, setPersonalForm] = useState({ name:"", email:"", mobile:"", altMobile:"", dob:"", address:"" });
   const [pwForm,   setPwForm]   = useState({ current:"", newPw:"", confirm:"" });
   const [showPw,   setShowPw]   = useState({ current:false, newPw:false, confirm:false });
   const [pwSaving, setPwSaving] = useState(false);
@@ -63,11 +63,12 @@ export default function MyProfile() {
       setEmployee(mergedEmp);
       setResolvedEmpCode(finalEmpCode);
       setPersonalForm({
-        name:    mergedEmp.name    || "",
-        email:   mergedEmp.email   || "",
-        mobile:  mergedEmp.mobile  || "",
-        dob:     mergedEmp.dob     || "",
-        address: mergedEmp.address || "",
+        name:      mergedEmp.name      || "",
+        email:     mergedEmp.email     || "",
+        mobile:    mergedEmp.mobile    || "",
+        altMobile: mergedEmp.altMobile || "",
+        dob:       mergedEmp.dob       || "",
+        address:   mergedEmp.address   || "",
       });
 
       try {
@@ -207,10 +208,7 @@ export default function MyProfile() {
     {icon:<CheckCircle size={14}/>, label:"Account Status",    value:isApproved?"Active":employee?.status||"—"},
   ];
 
-  const statusColor = isApproved ? "#16a34a" : isRejected ? "#dc2626" : "#d97706";
-  const statusBg    = isApproved ? "#f0fdf4" : isRejected ? "#fef2f2" : "#fffbeb";
-  const statusBorder= isApproved ? "#bbf7d0" : isRejected ? "#fecaca" : "#fde68a";
-  const statusLabel = isApproved ? "Active"  : isRejected ? "Rejected" : "Pending";
+  const statusLabel = isApproved ? "Active" : isRejected ? "Rejected" : "Pending";
 
   return (
     <EmployeeLayout employee={employee}>
@@ -219,18 +217,15 @@ export default function MyProfile() {
         .mp * { box-sizing: border-box; }
         .mp { font-family:'Inter',sans-serif; background:#f4f6fb; min-height:100vh; color:#1a1d2e; }
 
-        /* ── Topbar ── */
         .mp-top { background:#fff; border-bottom:1px solid #eaecf4; height:56px; padding:0 28px; display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:40; }
         .mp-top-title { font-size:14px; font-weight:700; color:#1a1d2e; flex:1; }
         .mp-top-av { width:32px; height:32px; border-radius:8px; overflow:hidden; border:1.5px solid #e4e6f0; }
         .mp-top-av img { width:100%; height:100%; object-fit:cover; }
 
-        /* ── Hero ── */
         .mp-hero { background:#1e2235; padding:28px 32px; display:flex; align-items:center; gap:24px; flex-wrap:wrap; position:relative; overflow:hidden; }
         .mp-hero-glow1 { position:absolute; top:-80px; right:-60px; width:280px; height:280px; border-radius:50%; background:rgba(99,102,241,.12); pointer-events:none; }
         .mp-hero-glow2 { position:absolute; bottom:-70px; left:25%; width:200px; height:200px; border-radius:50%; background:rgba(139,92,246,.08); pointer-events:none; }
 
-        /* ── Photo ── */
         .mp-photo-ring { position:relative; flex-shrink:0; z-index:1; width:84px; height:84px; }
         .mp-photo-ring-border { position:absolute; inset:0; border-radius:50%; border:2.5px solid #6366f1; z-index:0; }
         .mp-photo-img { position:relative; z-index:1; width:76px; height:76px; border-radius:50%; object-fit:cover; border:3px solid #1e2235; display:block; margin:4px; }
@@ -238,7 +233,6 @@ export default function MyProfile() {
         .mp-photo-ring:hover .mp-photo-overlay { opacity:1; }
         .mp-overlay-text { font-size:9px; font-weight:600; margin-top:3px; letter-spacing:0.2px; }
 
-        /* ── Hero Info ── */
         .mp-hero-info { flex:1; min-width:0; z-index:1; }
         .mp-hero-name { margin:0 0 5px; font-size:22px; font-weight:800; color:#fff; letter-spacing:-0.5px; line-height:1.1; }
         .mp-hero-meta { display:flex; align-items:center; gap:6px; font-size:12px; color:rgba(255,255,255,.5); font-weight:500; margin-bottom:3px; }
@@ -250,17 +244,14 @@ export default function MyProfile() {
         .mp-status-pill { display:inline-flex; align-items:center; gap:6px; border-radius:99px; padding:6px 14px; font-size:12px; font-weight:700; z-index:1; flex-shrink:0; border:1px solid; }
         .mp-status-dot { width:6px; height:6px; border-radius:50%; }
 
-        /* ── Content ── */
         .mp-content { padding:24px 28px; display:flex; flex-direction:column; gap:18px; align-items:stretch; max-width:920px; margin:0 auto; width:100%; }
 
-        /* ── Tabs ── */
         .mp-tabbar { display:inline-flex; gap:2px; background:#fff; border-radius:12px; border:1px solid #eaecf4; padding:4px; box-shadow:0 1px 4px rgba(0,0,0,.04); }
         .mp-tab-btn { display:flex; align-items:center; gap:7px; padding:9px 18px; border:none; border-radius:8px; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; transition:all .18s; white-space:nowrap; }
         .mp-tab-btn.on { background:#6366f1; color:#fff; box-shadow:0 3px 10px rgba(99,102,241,.3); }
         .mp-tab-btn:not(.on) { background:transparent; color:#6b7280; }
         .mp-tab-btn:not(.on):hover { background:#f4f6fb; color:#374151; }
 
-        /* ── Card ── */
         .mp-card { background:#fff; border-radius:14px; border:1px solid #eaecf4; overflow:hidden; box-shadow:0 1px 8px rgba(0,0,0,.04); width:100%; max-width:860px; }
         .mp-card-head { padding:16px 22px; border-bottom:1px solid #f3f4f9; display:flex; align-items:center; gap:12px; }
         .mp-card-icon { width:36px; height:36px; border-radius:9px; background:#6366f1; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -268,19 +259,19 @@ export default function MyProfile() {
         .mp-card-head h4 { margin:0 0 2px; font-size:14px; font-weight:700; color:#1a1d2e; }
         .mp-card-head p  { margin:0; font-size:12px; color:#9ca3af; }
 
-        /* ── Form ── */
         .mp-form-body  { padding:22px; }
         .mp-form-grid  { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
         .mp-field-label { display:block; font-size:11px; font-weight:700; color:#6b7280; margin-bottom:6px; letter-spacing:0.3px; text-transform:uppercase; }
         .mp-field-input { width:100%; padding:10px 13px; border:1.5px solid #e8eaf0; border-radius:9px; font-size:13px; color:#1a1d2e; background:#fafbfd; outline:none; font-family:'Inter',sans-serif; transition:border-color .15s,box-shadow .15s; }
         .mp-field-input:focus { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,.1); background:#fff; }
 
-        /* ── Emp ID badge in form ── */
+        .mp-alt-phone-wrap { position:relative; }
+        .mp-alt-phone-wrap .mp-field-input { padding-left:36px; }
+        .mp-alt-phone-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#9ca3af; pointer-events:none; display:flex; align-items:center; }
+
         .mp-empid-badge { display:flex; align-items:center; justify-content:space-between; background:#f5f5ff; border:1.5px solid #e0e0fe; border-radius:10px; padding:11px 15px; margin-bottom:18px; }
         .mp-empid-badge-label { font-size:11px; font-weight:700; color:#6366f1; text-transform:uppercase; letter-spacing:0.5px; }
-        .mp-empid-badge-val { background:#1a1a2e; color:#fff; padding:"3px 14px"; border-radius:7px; font-size:13px; font-weight:800; font-family:monospace; letter-spacing:0.4px; }
 
-        /* ── Employment rows ── */
         .mp-emp-row { display:flex; align-items:center; justify-content:space-between; padding:13px 22px; border-bottom:1px solid #f4f5fb; transition:background .15s; }
         .mp-emp-row:last-child { border-bottom:none; }
         .mp-emp-row:hover { background:#fafbfd; }
@@ -292,29 +283,23 @@ export default function MyProfile() {
         .mp-emp-lhs-icon { width:26px; height:26px; border-radius:7px; background:#f0f0fe; display:flex; align-items:center; justify-content:center; color:#6366f1; flex-shrink:0; }
         .mp-emp-val { font-size:13px; font-weight:600; color:#1a1d2e; }
 
-        /* ── Password ── */
         .mp-pw-wrap { position:relative; }
         .mp-pw-wrap .mp-field-input { padding-right:44px; }
         .mp-eye { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#9ca3af; padding:0; display:flex; align-items:center; }
         .mp-bars { display:flex; gap:4px; margin-bottom:5px; }
         .mp-bar  { flex:1; height:3.5px; border-radius:99px; transition:background .3s; }
 
-        /* ── Buttons ── */
         .mp-save-btn { display:inline-flex; align-items:center; gap:8px; padding:10px 22px; border:none; border-radius:9px; background:#6366f1; color:#fff; font-weight:700; font-size:13px; cursor:pointer; font-family:'Inter',sans-serif; box-shadow:0 3px 10px rgba(99,102,241,.3); transition:opacity .15s,transform .12s; }
         .mp-save-btn:hover   { opacity:.9; transform:translateY(-1px); }
         .mp-save-btn:active  { transform:translateY(0); }
         .mp-save-btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
         .mp-sec-btn { background:#1e2235; box-shadow:0 3px 10px rgba(0,0,0,.15); }
 
-        /* ── Toast ── */
         .mp-toast { position:fixed; top:16px; right:20px; z-index:9999; padding:12px 20px; border-radius:10px; color:#fff; font-weight:600; font-size:13px; box-shadow:0 6px 20px rgba(0,0,0,.15); animation:_tin .22s ease; display:flex; align-items:center; gap:8px; }
         @keyframes _tin { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes _spin { to{transform:rotate(360deg)} }
-
-        /* ── Spinner ── */
         .mp-spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:_spin .7s linear infinite; }
 
-        /* ── Media queries ── */
         @media (max-width:900px) {
           .mp-content { padding:18px 20px; max-width:100%; }
           .mp-hero    { padding:22px 20px; }
@@ -351,9 +336,7 @@ export default function MyProfile() {
       <div className="mp">
         {toast && (
           <div className="mp-toast" style={{background:toast.type==="error"?"#dc2626":"#16a34a"}}>
-            {toast.type==="error"
-              ? <AlertTriangle size={15}/>
-              : <CheckCircle size={15}/>}
+            {toast.type==="error" ? <AlertTriangle size={15}/> : <CheckCircle size={15}/>}
             {toast.msg}
           </div>
         )}
@@ -373,9 +356,7 @@ export default function MyProfile() {
             <div className="mp-photo-ring-border"/>
             <img className="mp-photo-img" src={avatarUrl(76)} alt="profile"/>
             <label className="mp-photo-overlay">
-              {uploadingPhoto
-                ? <div className="mp-spinner"/>
-                : <Camera size={17}/>}
+              {uploadingPhoto ? <div className="mp-spinner"/> : <Camera size={17}/>}
               <span className="mp-overlay-text">{uploadingPhoto ? "Uploading" : "Change"}</span>
               <input type="file" accept="image/*" style={{display:"none"}} onChange={handlePhotoUpload}/>
             </label>
@@ -394,7 +375,6 @@ export default function MyProfile() {
                   <span className="mp-chip-val">{resolvedEmpCode}</span>
                 </div>
               )}
-
               {gradeInfo && (() => {
                 const meta = BGR_META[gradeInfo.bgr_stage] || BGR_META.Build;
                 return (
@@ -424,8 +404,7 @@ export default function MyProfile() {
           <div className="mp-tabbar">
             {TABS.map(t => (
               <button key={t.id} className={`mp-tab-btn ${activeTab===t.id?"on":""}`} onClick={()=>setActiveTab(t.id)}>
-                {t.icon}
-                {t.label}
+                {t.icon}{t.label}
               </button>
             ))}
           </div>
@@ -461,11 +440,28 @@ export default function MyProfile() {
                     </div>
                   ))}
                 </div>
+
+                {/* ── Alternate Phone ── */}
+                <div style={{marginBottom:16}}>
+                  <label className="mp-field-label">Alternate Phone Number</label>
+                  <div className="mp-alt-phone-wrap">
+                    <span className="mp-alt-phone-icon"><Phone size={13}/></span>
+                    <input
+                      className="mp-field-input"
+                      type="text"
+                      value={personalForm.altMobile}
+                      placeholder="Alternate contact number (optional)"
+                      onChange={e=>setPersonalForm(p=>({...p,altMobile:e.target.value}))}
+                    />
+                  </div>
+                </div>
+
                 <div style={{marginBottom:20}}>
                   <label className="mp-field-label">Address</label>
                   <textarea className="mp-field-input" rows={3} value={personalForm.address} style={{resize:"vertical"}}
                     placeholder="Your full address" onChange={e=>setPersonalForm(p=>({...p,address:e.target.value}))}/>
                 </div>
+
                 <button className="mp-save-btn" onClick={handleSavePersonal} disabled={saving}>
                   {saving ? <div className="mp-spinner"/> : <Save size={14}/>}
                   {saving ? "Saving..." : "Save Changes"}
@@ -483,10 +479,7 @@ export default function MyProfile() {
               </div>
               <div style={{padding:"4px 0"}}>
                 {EMP_ROWS.map((r,i) => (
-                  <div
-                    key={i}
-                    className={`mp-emp-row${r.label==="Grade Level"?" is-grade":r.label==="Employee ID"?" is-empid":""}`}
-                  >
+                  <div key={i} className={`mp-emp-row${r.label==="Grade Level"?" is-grade":r.label==="Employee ID"?" is-empid":""}`}>
                     <span className="mp-emp-lhs">
                       <span className="mp-emp-lhs-icon">{r.icon}</span>
                       {r.label}
@@ -499,11 +492,8 @@ export default function MyProfile() {
                             background: r.value !== "—" ? "#1a1a2e" : "transparent",
                             color: r.value !== "—" ? "#fff" : "#d1d5db",
                             padding: r.value !== "—" ? "3px 12px" : "0",
-                            borderRadius: 7,
-                            fontSize: 13,
-                            fontWeight: 800,
-                            fontFamily: "monospace",
-                            letterSpacing: "0.4px",
+                            borderRadius: 7, fontSize: 13, fontWeight: 800,
+                            fontFamily: "monospace", letterSpacing: "0.4px",
                           }}>
                             {r.value}
                           </span>

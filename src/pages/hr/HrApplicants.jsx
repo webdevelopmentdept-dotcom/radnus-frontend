@@ -77,88 +77,29 @@ export default function HrApplicants() {
   return (
     <>
       <style>{`
-        .ha-wrap {
-          background: #f4f5f7;
-          min-height: 100vh;
-          padding: 32px 28px 60px;
-        }
-        .ha-header {
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          margin-bottom: 24px;
-          flex-wrap: wrap;
-          gap: 16px;
-        }
-        .ha-heading {
-          font-size: 22px;
-          font-weight: 800;
-          color: #0f172a;
-          margin: 0 0 2px;
-          letter-spacing: -0.3px;
-        }
-        .ha-subheading {
-          font-size: 13px;
-          color: #94a3b8;
-          margin: 0;
-        }
-        .ha-total-badge {
-          background: #0f172a;
-          color: #fff;
-          border-radius: 7px;
-          padding: 5px 13px;
-          font-size: 13px;
-          font-weight: 700;
-        }
-        .ha-summary {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-bottom: 20px;
-        }
-        .ha-stat-chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          background: #fff;
-          border: 1px solid #e2e8f0;
-          border-radius: 10px;
-          padding: 10px 16px;
-          cursor: pointer;
-          transition: border-color 0.15s, box-shadow 0.15s;
-          min-width: 100px;
-        }
+        .ha-wrap { background: #f4f5f7; min-height: 100vh; padding: 32px 28px 60px; }
+        .ha-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+        .ha-heading { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 2px; letter-spacing: -0.3px; }
+        .ha-subheading { font-size: 13px; color: #94a3b8; margin: 0; }
+        .ha-total-badge { background: #0f172a; color: #fff; border-radius: 7px; padding: 5px 13px; font-size: 13px; font-weight: 700; }
+        .ha-summary { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .ha-stat-chip { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 16px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; min-width: 100px; }
         .ha-stat-chip:hover { border-color: #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .ha-stat-chip.active { border-color: #0f172a; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .ha-stat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         .ha-stat-label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
         .ha-stat-count { font-size: 15px; font-weight: 800; color: #0f172a; margin-left: auto; padding-left: 8px; }
         .ha-toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-        .ha-search-wrap { position: relative; flex: 1; min-width: 220px; }
-        .ha-search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; pointer-events: none; }
-        .ha-search {
-          width: 100%; padding: 10px 14px 10px 38px;
-          border: 1.5px solid #e2e8f0; border-radius: 9px;
-          font-size: 13.5px; color: #0f172a; background: #fff;
-          outline: none; transition: border-color 0.15s, box-shadow 0.15s;
-        }
+        .ha-search-wrap { flex: 1; min-width: 220px; }
+        .ha-search { width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 9px; font-size: 13.5px; color: #0f172a; background: #fff; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
         .ha-search::placeholder { color: #cbd5e1; }
         .ha-search:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,0.06); }
-        .ha-filter-select {
-          padding: 10px 14px; border: 1.5px solid #e2e8f0;
-          border-radius: 9px; font-size: 13.5px; color: #0f172a;
-          background: #fff; outline: none; min-width: 150px;
-          cursor: pointer; transition: border-color 0.15s;
-        }
+        .ha-filter-select { padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 9px; font-size: 13.5px; color: #0f172a; background: #fff; outline: none; min-width: 150px; cursor: pointer; }
         .ha-filter-select:focus { border-color: #0f172a; }
         .ha-table-card { background: #fff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; }
         .ha-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
         .ha-table thead tr { border-bottom: 1px solid #f1f5f9; }
-        .ha-table thead th {
-          padding: 13px 16px; font-size: 11px; font-weight: 700;
-          color: #94a3b8; text-transform: uppercase; letter-spacing: 0.7px;
-          background: #fafbfc; white-space: nowrap; text-align: left;
-        }
+        .ha-table thead th { padding: 13px 16px; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.7px; background: #fafbfc; white-space: nowrap; text-align: left; }
         .ha-table thead th.center { text-align: center; }
         .ha-table tbody tr { border-bottom: 1px solid #f8fafc; transition: background 0.12s; }
         .ha-table tbody tr:last-child { border-bottom: none; }
@@ -171,82 +112,32 @@ export default function HrApplicants() {
         .ha-email { color: #64748b; font-size: 13px; }
         .ha-job-chip { display: inline-block; background: #f1f5f9; color: #334155; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; }
         .ha-date { color: #94a3b8; font-size: 12.5px; white-space: nowrap; }
+        .ha-location-text { font-size: 13px; color: #374151; }
+        .ha-aadhaar-text { font-size: 13px; color: #374151; font-weight: 600; font-family: monospace; letter-spacing: 1px; }
+        .ha-na { font-size: 12px; color: #cbd5e1; }
+        .ha-ai-badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 7px; padding: 4px 10px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .ha-ai-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .ha-ai-pending { background: #f1f5f9; color: #94a3b8; font-size: 11px; border-radius: 7px; padding: 4px 10px; font-weight: 600; }
         .ha-status-select { border: none; border-radius: 7px; padding: 5px 10px; font-size: 12px; font-weight: 700; cursor: pointer; outline: none; appearance: auto; }
-        .ha-preview-btn {
-          display: inline-flex; align-items: center; gap: 5px;
-          background: #f1f5f9; color: #334155; border: none;
-          border-radius: 7px; padding: 6px 12px; font-size: 12px;
-          font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s;
-        }
+        .ha-preview-btn { display: inline-flex; align-items: center; background: #f1f5f9; color: #334155; border: none; border-radius: 7px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
         .ha-preview-btn:hover { background: #e2e8f0; color: #0f172a; }
-        .ha-delete-btn {
-          display: inline-flex; align-items: center; gap: 5px;
-          background: transparent; color: #ef4444;
-          border: 1.5px solid #fecaca; border-radius: 7px;
-          padding: 5px 12px; font-size: 12px; font-weight: 600;
-          cursor: pointer; transition: background 0.15s, border-color 0.15s;
-        }
+        .ha-delete-btn { display: inline-flex; align-items: center; background: transparent; color: #ef4444; border: 1.5px solid #fecaca; border-radius: 7px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
         .ha-delete-btn:hover { background: #fff1f2; border-color: #ef4444; }
-        .ha-no-file { font-size: 12px; color: #cbd5e1; font-weight: 500; }
-
-        /* ✅ AI Score Badge */
-        .ha-ai-badge {
-          display: inline-flex; align-items: center; gap: 5px;
-          border-radius: 7px; padding: 4px 10px;
-          font-size: 12px; font-weight: 700; white-space: nowrap;
-          cursor: default;
-        }
-        .ha-ai-pending {
-          background: #f1f5f9; color: #94a3b8;
-          font-size: 11px; border-radius: 7px;
-          padding: 4px 10px; font-weight: 600;
-        }
-
+        .ha-no-file { font-size: 12px; color: #cbd5e1; }
         .ha-empty { text-align: center; padding: 56px 20px; }
-        .ha-empty-icon { font-size: 36px; margin-bottom: 12px; }
         .ha-empty-text { font-size: 14px; font-weight: 600; color: #94a3b8; }
-        .ha-overlay {
-          position: fixed; inset: 0; z-index: 9999;
-          background: rgba(2,6,23,0.7);
-          backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-          display: flex; align-items: center; justify-content: center;
-          padding: 24px; animation: haFadeIn 0.18s ease;
-        }
+        .ha-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(2,6,23,0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 24px; animation: haFadeIn 0.18s ease; }
         @keyframes haFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .ha-modal {
-          background: #fff; border-radius: 16px; overflow: hidden;
-          width: 100%; max-width: 880px; max-height: 90vh;
-          display: flex; flex-direction: column;
-          box-shadow: 0 32px 80px rgba(0,0,0,0.35);
-          animation: haSlideUp 0.2s cubic-bezier(0.34,1.56,0.64,1);
-        }
-        @keyframes haSlideUp {
-          from { opacity: 0; transform: translateY(20px) scale(0.97); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .ha-modal-header {
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 16px 22px; border-bottom: 1px solid #f1f5f9; background: #fafbfc;
-        }
+        .ha-modal { background: #fff; border-radius: 16px; overflow: hidden; width: 100%; max-width: 880px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 32px 80px rgba(0,0,0,0.35); animation: haSlideUp 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+        @keyframes haSlideUp { from { opacity: 0; transform: translateY(20px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .ha-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-bottom: 1px solid #f1f5f9; background: #fafbfc; }
         .ha-modal-title { font-size: 15px; font-weight: 800; color: #0f172a; }
         .ha-modal-actions { display: flex; gap: 8px; }
-        .ha-download-btn {
-          display: inline-flex; align-items: center; gap: 6px;
-          background: #f1f5f9; border: none; border-radius: 8px;
-          padding: 7px 14px; font-size: 13px; font-weight: 600;
-          color: #334155; text-decoration: none; cursor: pointer;
-          transition: background 0.15s;
-        }
+        .ha-download-btn { display: inline-flex; align-items: center; background: #f1f5f9; border: none; border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 600; color: #334155; text-decoration: none; cursor: pointer; transition: background 0.15s; }
         .ha-download-btn:hover { background: #e2e8f0; }
-        .ha-close-btn {
-          display: inline-flex; align-items: center; gap: 6px;
-          background: #fff1f2; border: none; border-radius: 8px;
-          padding: 7px 14px; font-size: 13px; font-weight: 600;
-          color: #ef4444; cursor: pointer; transition: background 0.15s;
-        }
+        .ha-close-btn { display: inline-flex; align-items: center; background: #fff1f2; border: none; border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 600; color: #ef4444; cursor: pointer; transition: background 0.15s; }
         .ha-close-btn:hover { background: #fee2e2; }
         .ha-modal-body { flex: 1; overflow: auto; background: #f8fafc; }
-
         @media (max-width: 768px) {
           .ha-wrap { padding: 20px 14px 48px; }
           .ha-table thead { display: none; }
@@ -262,10 +153,10 @@ export default function HrApplicants() {
           <div className="ha-overlay" onClick={() => setPreviewUrl(null)}>
             <div className="ha-modal" onClick={(e) => e.stopPropagation()}>
               <div className="ha-modal-header">
-                <span className="ha-modal-title">📄 Resume Preview</span>
+                <span className="ha-modal-title">Resume Preview</span>
                 <div className="ha-modal-actions">
-                  <a href={previewUrl} download className="ha-download-btn">⬇ Download</a>
-                  <button onClick={() => setPreviewUrl(null)} className="ha-close-btn">✕ Close</button>
+                  <a href={previewUrl} download className="ha-download-btn">Download</a>
+                  <button onClick={() => setPreviewUrl(null)} className="ha-close-btn">Close</button>
                 </div>
               </div>
               <div className="ha-modal-body">
@@ -313,7 +204,6 @@ export default function HrApplicants() {
         {/* Toolbar */}
         <div className="ha-toolbar">
           <div className="ha-search-wrap">
-            <span className="ha-search-icon">🔍</span>
             <input
               className="ha-search"
               placeholder="Search by name, email or job title..."
@@ -341,6 +231,8 @@ export default function HrApplicants() {
                   <th>Candidate</th>
                   <th>Email</th>
                   <th>Job Role</th>
+                  <th>Location</th>
+                  <th>Aadhaar (Last 4)</th>
                   <th>Applied</th>
                   <th>AI Score</th>
                   <th>Status</th>
@@ -351,9 +243,8 @@ export default function HrApplicants() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan="9">
+                    <td colSpan="11">
                       <div className="ha-empty">
-                        <div className="ha-empty-icon">🗂️</div>
                         <div className="ha-empty-text">No applicants found</div>
                       </div>
                     </td>
@@ -372,6 +263,20 @@ export default function HrApplicants() {
                     <td><span className="ha-job-chip">{a.jobTitle}</span></td>
 
                     <td>
+                      {a.location
+                        ? <span className="ha-location-text">{a.location}</span>
+                        : <span className="ha-na">—</span>
+                      }
+                    </td>
+
+                    <td>
+                      {a.aadhaarLast4
+                        ? <span className="ha-aadhaar-text">•••• {a.aadhaarLast4}</span>
+                        : <span className="ha-na">—</span>
+                      }
+                    </td>
+
+                    <td>
                       <span className="ha-date">
                         {a.createdAt
                           ? new Date(a.createdAt).toLocaleDateString("en-GB", {
@@ -381,7 +286,6 @@ export default function HrApplicants() {
                       </span>
                     </td>
 
-                    {/* ✅ AI Score */}
                     <td>
                       {a.aiScore != null ? (
                         <span
@@ -396,11 +300,15 @@ export default function HrApplicants() {
                               a.aiGrade === "B" ? "#a16207" : "#b91c1c",
                           }}
                         >
-                          {a.aiGrade === "A" ? "🟢" : a.aiGrade === "B" ? "🟡" : "🔴"}
+                          <span className="ha-ai-dot" style={{
+                            background:
+                              a.aiGrade === "A" ? "#22c55e" :
+                              a.aiGrade === "B" ? "#eab308" : "#ef4444",
+                          }} />
                           {a.aiScore}/100 · {a.aiGrade}
                         </span>
                       ) : (
-                        <span className="ha-ai-pending">⏳ Screening...</span>
+                        <span className="ha-ai-pending">Screening...</span>
                       )}
                     </td>
 
@@ -422,7 +330,7 @@ export default function HrApplicants() {
                           className="ha-preview-btn"
                           onClick={() => setPreviewUrl(toPreviewUrl(a.resumeUrl))}
                         >
-                          👁 Preview
+                          Preview
                         </button>
                       ) : (
                         <span className="ha-no-file">No file</span>
