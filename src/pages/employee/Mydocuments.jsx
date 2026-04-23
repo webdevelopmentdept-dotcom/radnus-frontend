@@ -20,63 +20,60 @@ const HR_DOC_TYPES = [
   { type: "HR Policy Document",        icon: <BookOpen      size={28} />, desc: "Company HR policies & guidelines" },
 ];
 
-// ─── PERSONAL DOCS — exact match from UploadDocuments.jsx ───────────────────
-
-// Mandatory docs
+// ─── MANDATORY DOCS ───────────────────────────────────────────────────────────
 const MANDATORY_PERSONAL_DOCS = [
-  { type: "Aadhaar",          category: "IDENTITY",     required: true  },
-  { type: "Ration Card",      category: "IDENTITY",     required: false },
-  { type: "PAN",              category: "IDENTITY",     required: true  },
-  { type: "Passport Photo",   category: "IDENTITY",     required: true  },
-  { type: "Resume",           category: "PROFESSIONAL", required: true  },
-  { type: "Bank Passbook",    category: "BANK",         required: true  },
-  { type: "Cancelled Cheque", category: "BANK",         required: false },
-  { type: "10th Marksheet",   category: "EDUCATION",    required: true  },
-  { type: "12th Marksheet",   category: "EDUCATION",    required: true  },
+  { type: "Aadhaar",           category: "IDENTITY",     required: true  },
+  { type: "Ration Card Front", category: "IDENTITY",     required: true  },
+  { type: "Ration Card Back",  category: "IDENTITY",     required: true  },
+  { type: "PAN",               category: "IDENTITY",     required: true  },
+  { type: "Passport Photo",    category: "IDENTITY",     required: true  },
+  { type: "Resume",            category: "PROFESSIONAL", required: true  },
+  { type: "Bank Passbook",     category: "BANK",         required: true  },
+  { type: "Cancelled Cheque",  category: "BANK",         required: false },
+  { type: "10th Marksheet",    category: "EDUCATION",    required: true  },
+  { type: "12th Marksheet",    category: "EDUCATION",    required: true  },
 ];
 
-// Optional text fields (PF / ESI — saved as text via save-link)
+// ─── TEXT FIELD DOCS (PF, ESI) ────────────────────────────────────────────────
 const TEXT_FIELD_DOCS = [
   { type: "PF Number",  category: "STATUTORY", required: false, isText: true },
   { type: "ESI Number", category: "STATUTORY", required: false, isText: true },
 ];
 
-// Optional file docs
+// ─── CGPA TEXT FIELDS ─────────────────────────────────────────────────────────
+const CGPA_TEXT_FIELDS = [
+  { type: "CGPA",    label: "UG CGPA",  category: "EDUCATION", required: false, isText: true },
+  { type: "PG CGPA", label: "PG CGPA",  category: "EDUCATION", required: false, isText: true },
+];
+
+// ─── OPTIONAL FILE DOCS ───────────────────────────────────────────────────────
 const OPTIONAL_FILE_DOCS = [
   { type: "Bank Statement", category: "BANK", required: false },
 ];
 
-// UG docs
+// ─── UG / PG DOCS ────────────────────────────────────────────────────────────
 const UG_DOCS = [
-  { type: "UG 1st Year",    category: "EDUCATION", required: true  },
-  { type: "UG 2nd Year",    category: "EDUCATION", required: true  },
-  { type: "UG 3rd Year",    category: "EDUCATION", required: true  },
-  { type: "UG Provisional", category: "EDUCATION", required: true  },
-  { type: "PG Certificate", category: "EDUCATION", required: false },
+  { type: "UG Consolidated", label: "UG Consolidated Marksheet", category: "EDUCATION", required: true  },
+  { type: "PG Consolidated", label: "PG Consolidated Marksheet", category: "EDUCATION", required: false },
 ];
 
-// Experience docs — shown generically (company-linked ones are dynamic)
-const EXPERIENCE_DOCS = [
-  { type: "offer",      label: "Offer Letter",      category: "EXPERIENCE", required: true  },
-  { type: "experience", label: "Experience Letter",  category: "EXPERIENCE", required: true  },
-];
-
-// Reference docs
+// ─── REFERENCE DOCS ───────────────────────────────────────────────────────────
 const REFERENCE_DOCS = [
   { type: "Reference 1", category: "REFERENCE", required: false },
   { type: "Reference 2", category: "REFERENCE", required: false },
 ];
 
-// ALL personal docs combined (for stats & display)
+// ─── ALL PERSONAL DOCS (for stats) ───────────────────────────────────────────
 const ALL_PERSONAL_DOCS = [
   ...MANDATORY_PERSONAL_DOCS,
   ...TEXT_FIELD_DOCS,
+  ...CGPA_TEXT_FIELDS,
   ...OPTIONAL_FILE_DOCS,
   ...UG_DOCS,
   ...REFERENCE_DOCS,
 ];
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
+// ─── helpers ──────────────────────────────────────────────────────────────────
 const handleDownload = async (url, filename) => {
   try {
     const response = await fetch(url);
@@ -101,7 +98,7 @@ const getFileLabel = (url) => {
   return "Document";
 };
 
-// ─── Section divider ─────────────────────────────────────────────────────────
+// ─── Section divider ──────────────────────────────────────────────────────────
 const SectionDivider = ({ title, icon, color = "#2563eb" }) => (
   <div className="col-12" style={{ marginTop: 8, marginBottom: 4 }}>
     <div className="d-flex align-items-center gap-2" style={{ borderBottom: `2px solid ${color}22`, paddingBottom: 8 }}>
@@ -121,7 +118,6 @@ export default function MyDocuments() {
   const [uploading, setUploading]       = useState({});
   const [uploadError, setUploadError]   = useState({});
 
-  // Text / link input state
   const [linkInputs,  setLinkInputs]  = useState({});
   const [savingLink,  setSavingLink]  = useState({});
   const [linkError,   setLinkError]   = useState({});
@@ -156,7 +152,7 @@ export default function MyDocuments() {
 
   const uploadedPersonalCount = ALL_PERSONAL_DOCS.filter(d => getUploadedDoc(d.type)).length;
 
-  // ── file upload ──────────────────────────────────────────────────────────
+  // ── file upload ────────────────────────────────────────────────────────────
   const handleUpload = async (docType, file) => {
     if (!file) return;
     const employeeId = localStorage.getItem("employeeId");
@@ -186,7 +182,7 @@ export default function MyDocuments() {
     }
   };
 
-  // ── text / link save ─────────────────────────────────────────────────────
+  // ── text / link save ───────────────────────────────────────────────────────
   const handleSaveLink = async (docType) => {
     const url = linkInputs[docType]?.trim();
     if (!url) { setLinkError(p => ({ ...p, [docType]: "Please enter a value" })); return; }
@@ -213,12 +209,12 @@ export default function MyDocuments() {
     setDownloading(p => ({ ...p, [name]: false }));
   };
 
-  // ── Reusable file card ───────────────────────────────────────────────────
+  // ── Reusable file card ─────────────────────────────────────────────────────
   const FileCard = ({ docType, label, category, required }) => {
-    const uploaded   = getUploadedDoc(docType);
-    const isUploaded = !!uploaded;
+    const uploaded    = getUploadedDoc(docType);
+    const isUploaded  = !!uploaded;
     const isUploading = uploading[docType];
-    const error      = uploadError[docType];
+    const error       = uploadError[docType];
 
     return (
       <div className="col-md-6">
@@ -287,8 +283,108 @@ export default function MyDocuments() {
     );
   };
 
-  // ── Reusable text/link card ──────────────────────────────────────────────
-  const TextCard = ({ docType, label, category, placeholder }) => {
+  // ── Ration Card block (front + back grouped) ───────────────────────────────
+  const RationCardBlock = () => {
+    const sides = [
+      { type: "Ration Card Front", label: "Ration Card — Front Side" },
+      { type: "Ration Card Back",  label: "Ration Card — Back Side"  },
+    ];
+    const bothDone = sides.every(s => !!getUploadedDoc(s.type));
+
+    return (
+      <div className="col-12">
+        <div style={{
+          border: `1.5px solid ${bothDone ? "#86efac" : "#bfdbfe"}`,
+          borderRadius: 12,
+          background: bothDone ? "#f0fdf4" : "#eff6ff",
+          padding: "14px 16px",
+        }}>
+          {/* Header */}
+          <div className="d-flex align-items-center gap-2 mb-3">
+            <div style={{ background: bothDone ? "#dcfce7" : "#dbeafe", padding: 8, borderRadius: 8, color: bothDone ? "#16a34a" : "#2563eb" }}>
+              <ShieldCheck size={18} />
+            </div>
+            <div>
+              <div className="d-flex align-items-center gap-2 flex-wrap">
+                <span style={{ fontWeight: 700, fontSize: 13 }}>Ration Card</span>
+                <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 99, background: "#fee2e2", color: "#dc2626" }}>Required</span>
+                <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600 }}>IDENTITY — Upload both sides</span>
+              </div>
+              {bothDone
+                ? <span style={{ fontSize: 12, color: "#16a34a", display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}><CheckCircle size={12} /> Both sides uploaded</span>
+                : <span style={{ fontSize: 12, color: "#9ca3af", display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}><Clock size={12} /> Upload front &amp; back separately</span>
+              }
+            </div>
+          </div>
+
+          {/* Two side cards */}
+          <div className="row g-3">
+            {sides.map(side => {
+              const uploaded    = getUploadedDoc(side.type);
+              const isUploaded  = !!uploaded;
+              const isUploading = uploading[side.type];
+              const error       = uploadError[side.type];
+              return (
+                <div key={side.type} className="col-md-6">
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png"
+                    style={{ display: "none" }}
+                    ref={el => (fileRefs.current[side.type] = el)}
+                    onChange={e => handleUpload(side.type, e.target.files[0])}
+                  />
+                  <div style={{
+                    border: `1px solid ${isUploaded ? "#86efac" : "#93c5fd"}`,
+                    borderRadius: 10,
+                    background: isUploaded ? "#dcfce7" : "#f8fafc",
+                    padding: "12px 14px",
+                  }}>
+                    <div className="d-flex align-items-center justify-content-between mb-2">
+                      <span style={{ fontWeight: 600, fontSize: 12, color: "#374151" }}>{side.label}</span>
+                      {isUploaded ? <CheckCircle size={14} color="#16a34a" /> : <Clock size={14} color="#9ca3af" />}
+                    </div>
+                    {isUploaded
+                      ? <span style={{ fontSize: 11, color: "#16a34a", display: "flex", alignItems: "center", gap: 3, marginBottom: 8 }}><CheckCircle size={11} /> Uploaded · {getFileLabel(uploaded.fileUrl)}</span>
+                      : <span style={{ fontSize: 11, color: "#9ca3af", display: "block", marginBottom: 8 }}>Not uploaded yet</span>
+                    }
+                    {error && <p style={{ fontSize: 11, color: "#dc2626", margin: "0 0 6px" }}>{error}</p>}
+                    <div className="d-flex gap-2 flex-wrap">
+                      {isUploaded ? (
+                        <>
+                          <a href={uploaded.fileUrl} target="_blank" rel="noopener noreferrer"
+                            className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
+                            <ExternalLink size={12} /> View
+                          </a>
+                          <button onClick={() => downloadFile(uploaded.fileUrl, side.type)} disabled={downloading[side.type]}
+                            className="btn btn-sm btn-primary d-flex align-items-center gap-1">
+                            <Download size={12} /> {downloading[side.type] ? "..." : "Download"}
+                          </button>
+                          <button onClick={() => fileRefs.current[side.type]?.click()} disabled={isUploading}
+                            className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
+                            <RefreshCw size={12} /> {isUploading ? "..." : "Replace"}
+                          </button>
+                        </>
+                      ) : (
+                        <button onClick={() => fileRefs.current[side.type]?.click()} disabled={isUploading}
+                          className="btn btn-sm btn-primary d-flex align-items-center gap-1">
+                          {isUploading
+                            ? <><span className="spinner-border spinner-border-sm me-1" />Uploading...</>
+                            : <><Upload size={12} /> Upload</>}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── Reusable text/link card ────────────────────────────────────────────────
+  const TextCard = ({ docType, label, category, placeholder, iconColor = "#7c3aed" }) => {
     const uploaded   = getUploadedDoc(docType);
     const isUploaded = !!uploaded;
     const isLoading  = savingLink[docType];
@@ -304,7 +400,7 @@ export default function MyDocuments() {
         }}>
           <div className="d-flex align-items-center gap-3 mb-3">
             <div style={{ background: isUploaded ? "#dcfce7" : "#eff6ff", padding: 10, borderRadius: 8, flexShrink: 0 }}>
-              <CreditCard size={20} color={isUploaded ? "#16a34a" : "#7c3aed"} />
+              <CreditCard size={20} color={isUploaded ? "#16a34a" : iconColor} />
             </div>
             <div style={{ flex: 1 }}>
               <div className="d-flex align-items-center gap-2 flex-wrap">
@@ -356,7 +452,6 @@ export default function MyDocuments() {
     </div>
   );
 
-  // ── Count experience docs uploaded (any docType starting with offer_ or experience_)
   const expDocsUploaded = uploadedDocs.filter(d =>
     d.docType?.startsWith("offer_") || d.docType?.startsWith("experience_")
   ).length;
@@ -478,23 +573,38 @@ export default function MyDocuments() {
 
                   {/* ── 1. MANDATORY DOCS ── */}
                   <SectionDivider title="Mandatory Documents" icon={<ShieldCheck size={16} />} color="#2563eb" />
-                  {MANDATORY_PERSONAL_DOCS.map((doc, i) => (
-                    <FileCard key={doc.type} docType={doc.type} label={doc.type} category={doc.category} required={doc.required} />
-                  ))}
+                  {MANDATORY_PERSONAL_DOCS
+                    .filter(d => d.type !== "Ration Card Front" && d.type !== "Ration Card Back")
+                    .map((doc) => (
+                      <FileCard key={doc.type} docType={doc.type} label={doc.type} category={doc.category} required={doc.required} />
+                    ))
+                  }
+                  {/* Ration Card — front & back grouped in one block */}
+                  <RationCardBlock />
 
-                  {/* ── 2. PF & ESI (text fields) ── */}
+                  {/* ── 2. PF & ESI ── */}
                   <SectionDivider title="PF & ESI Details" icon={<CreditCard size={16} />} color="#7c3aed" />
                   {TEXT_FIELD_DOCS.map((doc) => (
-                    <TextCard key={doc.type} docType={doc.type} label={doc.type} category={doc.category} placeholder={`Enter ${doc.type} (if available)`} />
+                    <TextCard key={doc.type} docType={doc.type} label={doc.type} category={doc.category} placeholder={`Enter ${doc.type} (if available)`} iconColor="#7c3aed" />
                   ))}
                   {OPTIONAL_FILE_DOCS.map((doc) => (
                     <FileCard key={doc.type} docType={doc.type} label={doc.type} category={doc.category} required={doc.required} />
                   ))}
 
-                  {/* ── 3. UG DOCS ── */}
-                  <SectionDivider title="Education — UG Degree" icon={<GraduationCap size={16} />} color="#059669" />
+                  {/* ── 3. EDUCATION (UG / PG + CGPA) ── */}
+                  <SectionDivider title="Education — UG / PG Degree" icon={<GraduationCap size={16} />} color="#059669" />
                   {UG_DOCS.map((doc) => (
-                    <FileCard key={doc.type} docType={doc.type} label={doc.type} category={doc.category} required={doc.required} />
+                    <FileCard key={doc.type} docType={doc.type} label={doc.label || doc.type} category={doc.category} required={doc.required} />
+                  ))}
+                  {CGPA_TEXT_FIELDS.map((doc) => (
+                    <TextCard
+                      key={doc.type}
+                      docType={doc.type}
+                      label={doc.label}
+                      category={doc.category}
+                      placeholder={`Enter ${doc.label} (e.g. 8.5)`}
+                      iconColor="#059669"
+                    />
                   ))}
 
                   {/* ── 4. EXPERIENCE DOCS ── */}

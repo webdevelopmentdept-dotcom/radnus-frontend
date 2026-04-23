@@ -11,9 +11,10 @@ import { motion, AnimatePresence } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 // ─── MANDATORY DOCS (always shown) ──────────────────────────────────────────
+// Order: Aadhaar, PAN, Passport Photo, Resume, Bank Passbook, Cancelled Cheque, 10th, 12th
+// Ration Card rendered separately at the END (full width, 2-image)
 const MANDATORY_DOCS = [
   { id: "Aadhaar",           label: "Aadhaar Card",      category: "Identity",     icon: <ShieldCheck size={18} />, required: true  },
-  { id: "Ration Card",       label: "Ration Card",       category: "Identity",     icon: <ShieldCheck size={18} />, required: false },
   { id: "PAN",               label: "PAN Card",          category: "Identity",     icon: <CreditCard  size={18} />, required: true  },
   { id: "Passport Photo",    label: "Passport Photo",    category: "Identity",     icon: <User        size={18} />, required: true  },
   { id: "Resume",            label: "Resume",            category: "Professional", icon: <FileText    size={18} />, required: true  },
@@ -21,6 +22,12 @@ const MANDATORY_DOCS = [
   { id: "Cancelled Cheque",  label: "Cancelled Cheque",  category: "Bank",         icon: <FileText    size={18} />, required: false },
   { id: "10th Marksheet",    label: "10th Marksheet",    category: "Education",    icon: <GraduationCap size={18} />, required: true },
   { id: "12th Marksheet",    label: "12th Marksheet",    category: "Education",    icon: <GraduationCap size={18} />, required: true },
+];
+
+// ─── RATION CARD SIDES ───────────────────────────────────────────────────────
+const RATION_CARD_SIDES = [
+  { id: "Ration Card Front", label: "Ration Card — Front Side" },
+  { id: "Ration Card Back",  label: "Ration Card — Back Side"  },
 ];
 
 // ─── OPTIONAL TEXT FIELDS ────────────────────────────────────────────────────
@@ -34,13 +41,9 @@ const OPTIONAL_FILE_DOCS = [
   { id: "Bank Statement",    label: "Bank Statement",    category: "Bank",         icon: <FileText    size={18} />, required: false },
 ];
 
-// ─── UG YEAR DOCS ────────────────────────────────────────────────────────────
+// ─── UG DOCS ─────────────────────────────────────────────────────────────────
 const UG_DOCS = [
-  { id: "UG 1st Year",       label: "1st Year Marksheet",   required: true  },
-  { id: "UG 2nd Year",       label: "2nd Year Marksheet",   required: true  },
-  { id: "UG 3rd Year",       label: "3rd Year Marksheet",   required: true  },
-  { id: "UG Provisional",    label: "Provisional Certificate", required: true },
-  { id: "PG Certificate",    label: "PG Certificate",       required: false },
+  { id: "UG Consolidated",   label: "UG Consolidated Marksheet", required: true },
 ];
 
 // ─── PER-COMPANY DOCS ────────────────────────────────────────────────────────
@@ -48,9 +51,6 @@ const COMPANY_DOCS = [
   { id: "offer",      label: "Offer Letter"      },
   { id: "experience", label: "Experience Letter" },
 ];
-
-// ─── REFERENCE DOCS ──────────────────────────────────────────────────────────
-const REFERENCE_COUNT = 2;
 
 export default function UploadDocuments() {
   // ── State ──────────────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ export default function UploadDocuments() {
   const [showAlert,    setShowAlert]    = useState(true);
 
   // Conditional toggles
-  const [hasUG,         setHasUG]         = useState(null); // null=not answered, true/false
+  const [hasUG,         setHasUG]         = useState(null);
   const [hasExperience, setHasExperience] = useState(null);
 
   // Work experience — array of companies
@@ -105,9 +105,9 @@ export default function UploadDocuments() {
   const handleFileChange = (docId, file) => {
     if (!file || statuses[docId] === "success") return;
     if (previews[docId] && !previews[docId].startsWith("http")) URL.revokeObjectURL(previews[docId]);
-    setFiles(p    => ({ ...p,    [docId]: file }));
-    setPreviews(p => ({ ...p,    [docId]: URL.createObjectURL(file) }));
-    setStatuses(p => ({ ...p,    [docId]: "idle" }));
+    setFiles(p    => ({ ...p, [docId]: file }));
+    setPreviews(p => ({ ...p, [docId]: URL.createObjectURL(file) }));
+    setStatuses(p => ({ ...p, [docId]: "idle" }));
   };
 
   const removeFile = (docId) => {
@@ -153,7 +153,7 @@ export default function UploadDocuments() {
   };
 
   // ── Company management ────────────────────────────────────────────────────
-  const addCompany = () => setCompanies(p => [...p, { id: Date.now(), name: "" }]);
+  const addCompany    = () => setCompanies(p => [...p, { id: Date.now(), name: "" }]);
   const removeCompany = (cid) => setCompanies(p => p.filter(c => c.id !== cid));
   const updateCompanyName = (cid, name) =>
     setCompanies(p => p.map(c => c.id === cid ? { ...c, name } : c));
@@ -168,11 +168,12 @@ export default function UploadDocuments() {
     setPreviewModal({ name: docId, url, type });
   };
 
-  // ── Submit ────────────────────────────────────────────────────────────────
-  // ✅ FIX: Only required:true docs check pannurom — Ration Card & Cancelled Cheque skip
-  const mandatoryAllDone = MANDATORY_DOCS.filter(d => d.required === true).every(d => statuses[d.id] === "success");
-  const ugAllDone = hasUG === false || (hasUG === true && UG_DOCS.filter(d => d.required).every(d => statuses[d.id] === "success"));
-  const expAllDone = hasExperience === false || hasExperience === null ||
+  // ── Submit logic ──────────────────────────────────────────────────────────
+  // Ration Card: both Front & Back must be "success"
+  const rationCardDone   = RATION_CARD_SIDES.every(s => statuses[s.id] === "success");
+  const mandatoryAllDone = MANDATORY_DOCS.filter(d => d.required === true).every(d => statuses[d.id] === "success") && rationCardDone;
+  const ugAllDone        = hasUG === false || (hasUG === true && UG_DOCS.filter(d => d.required).every(d => statuses[d.id] === "success") && statuses["CGPA"] === "success");
+  const expAllDone       = hasExperience === false || hasExperience === null ||
     (hasExperience === true && companies.every(c =>
       COMPANY_DOCS.every(cd => statuses[`${cd.id}_${c.id}`] === "success")
     ));
@@ -270,6 +271,119 @@ export default function UploadDocuments() {
     );
   };
 
+  // ── Ration Card 2-image block ─────────────────────────────────────────────
+  const RationCardBlock = () => {
+    const bothDone = RATION_CARD_SIDES.every(s => statuses[s.id] === "success");
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.04 }}
+        className="col-12"
+      >
+        <div
+          className="card p-3"
+          style={{
+            borderRadius: 12,
+            border: bothDone ? "1.5px solid #86efac" : "1.5px solid #bfdbfe",
+            background: bothDone ? "#f0fdf4" : "#eff6ff",
+          }}
+        >
+          {/* Title row */}
+          <div className="d-flex align-items-center gap-2 mb-3">
+            <div style={{ background: bothDone ? "#dcfce7" : "#dbeafe", padding: 8, borderRadius: 8, color: bothDone ? "#16a34a" : "#2563eb" }}>
+              <ShieldCheck size={18} />
+            </div>
+            <div>
+              <div className="d-flex align-items-center gap-2 flex-wrap">
+                <span className="fw-bold" style={{ fontSize: 13 }}>Ration Card</span>
+                <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 99, background: "#fee2e2", color: "#dc2626" }}>
+                  Required
+                </span>
+              </div>
+              <small className="text-uppercase text-muted fw-semibold" style={{ fontSize: 10 }}>IDENTITY — Upload both sides</small>
+            </div>
+            {bothDone && (
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-success ms-auto">
+                <CheckCircle2 size={18} />
+              </motion.div>
+            )}
+          </div>
+
+          {/* Two side-by-side upload cards */}
+          <div className="row g-3">
+            {RATION_CARD_SIDES.map((side, i) => {
+              const status = statuses[side.id];
+              const file   = files[side.id];
+              return (
+                <div key={side.id} className="col-12 col-md-6">
+                  <div
+                    className={`p-3 rounded ${dragActive === side.id ? "border border-primary" : ""}`}
+                    style={{
+                      border: status === "success" ? "1px solid #86efac" : "1px dashed #93c5fd",
+                      background: status === "success" ? "#dcfce7" : "#f8fafc",
+                      borderRadius: 10,
+                    }}
+                    onDragOver={e => { e.preventDefault(); setDragActive(side.id); }}
+                    onDragLeave={() => setDragActive(null)}
+                    onDrop={e => { e.preventDefault(); setDragActive(null); handleFileChange(side.id, e.dataTransfer.files?.[0]); }}
+                  >
+                    <div className="d-flex align-items-center justify-content-between mb-2">
+                      <span className="fw-semibold" style={{ fontSize: 12, color: "#374151" }}>{side.label}</span>
+                      {status === "success" && <CheckCircle2 size={15} color="#16a34a" />}
+                      {status === "error"   && <AlertCircle  size={15} color="#dc2626" />}
+                    </div>
+
+                    {status === "success" ? (
+                      <div className="d-flex align-items-center justify-content-between">
+                        <span className="small text-success fw-semibold" style={{ fontSize: 11 }}>✓ Uploaded</span>
+                        <button className="btn btn-sm btn-outline-secondary py-0" style={{ fontSize: 11 }} onClick={() => openPreview(side.id)}>View</button>
+                      </div>
+                    ) : !file ? (
+                      <div
+                        onClick={() => document.getElementById(`fi-${side.id}`)?.click()}
+                        style={{ textAlign: "center", cursor: "pointer", padding: "14px 0" }}
+                      >
+                        <Upload size={18} className="text-muted mb-1" />
+                        <p className="m-0 text-muted" style={{ fontSize: 11 }}><strong>Click</strong> or drag &amp; drop</p>
+                        <input
+                          id={`fi-${side.id}`}
+                          type="file"
+                          className="d-none"
+                          accept="image/*"
+                          onChange={e => handleFileChange(side.id, e.target.files?.[0])}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="d-flex justify-content-between align-items-center p-2 rounded border mb-2" style={{ background: "#fff" }}>
+                          <span className="small text-truncate me-2" style={{ fontSize: 11 }}>{file.name}</span>
+                          <button onClick={() => removeFile(side.id)} className="btn btn-sm btn-light p-1"><X size={11} /></button>
+                        </div>
+                        <button
+                          onClick={() => handleUpload(side.id)}
+                          disabled={status === "uploading"}
+                          className="btn btn-primary btn-sm w-100"
+                          style={{ fontSize: 12 }}
+                        >
+                          {status === "uploading"
+                            ? <><span className="spinner-border spinner-border-sm me-1" />Uploading...</>
+                            : "Upload"
+                          }
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
   // ── YES/NO Question ───────────────────────────────────────────────────────
   const YesNoQuestion = ({ question, value, onChange }) => (
     <div className="card p-4 mb-4" style={{ borderRadius: 14, border: "2px solid #e0e7ff", background: "linear-gradient(135deg,#f0f4ff,#fff)" }}>
@@ -319,9 +433,10 @@ export default function UploadDocuments() {
           <div style={{ background: "#fff", padding: 28, borderRadius: 14, maxWidth: 400, textAlign: "center", boxShadow: "0 10px 40px rgba(0,0,0,0.2)" }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
             <h5 className="fw-bold mb-2">Upload Notice</h5>
-            <p className="text-muted mb-1">Only <b>Images & Word Documents</b> are allowed.</p>
+            <p className="text-muted mb-1">Only <b>Images &amp; Word Documents</b> are allowed.</p>
             <p className="text-muted" style={{ fontSize: 13 }}>Supported: JPG, PNG, DOC, DOCX &nbsp;|&nbsp; Max 5MB</p>
             <p style={{ fontSize: 13, color: "#dc2626", fontWeight: 600, marginTop: 8 }}>❌ PDF files are not supported</p>
+            <p style={{ fontSize: 12, color: "#2563eb", fontWeight: 600, marginTop: 6 }}>📋 Ration Card: upload Front &amp; Back images separately</p>
             <button className="btn btn-primary mt-3 w-100 fw-bold" onClick={() => setShowAlert(false)}>Got it, Let's Start!</button>
           </div>
         </div>
@@ -351,9 +466,21 @@ export default function UploadDocuments() {
             color="#2563eb"
           />
           <div className="row g-3">
+            {/* All mandatory docs in order */}
             {MANDATORY_DOCS.map((doc, i) => (
-              <DocCard key={doc.id} docId={doc.id} label={doc.label} category={doc.category} icon={doc.icon} required={doc.required} index={i} />
+              <DocCard
+                key={doc.id}
+                docId={doc.id}
+                label={doc.label}
+                category={doc.category}
+                icon={doc.icon}
+                required={doc.required}
+                index={i}
+              />
             ))}
+
+            {/* ── Ration Card — 2-image (full width) LAST ── */}
+            <RationCardBlock />
           </div>
         </div>
 
@@ -420,6 +547,7 @@ export default function UploadDocuments() {
             {hasUG === true && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
                 <div className="row g-3">
+                  {/* UG Consolidated Marksheet */}
                   {UG_DOCS.map((doc, i) => (
                     <DocCard
                       key={doc.id}
@@ -431,6 +559,99 @@ export default function UploadDocuments() {
                       index={i}
                     />
                   ))}
+
+                  {/* UG CGPA Input — Required */}
+                  <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="col-12 col-md-6">
+                    <div className="card p-3 h-100" style={{ borderRadius: 12, border: statuses["CGPA"] === "success" ? "1.5px solid #86efac" : "1px solid #e5e7eb", background: statuses["CGPA"] === "success" ? "#f0fdf4" : "#fff" }}>
+                      <div className="d-flex align-items-center gap-2 mb-2">
+                        <div style={{ background: statuses["CGPA"] === "success" ? "#dcfce7" : "#eff6ff", padding: 8, borderRadius: 8, color: statuses["CGPA"] === "success" ? "#16a34a" : "#2563eb" }}>
+                          <GraduationCap size={18} />
+                        </div>
+                        <div>
+                          <div className="d-flex align-items-center gap-2">
+                            <span className="fw-bold" style={{ fontSize: 13 }}>UG CGPA</span>
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 99, background: "#fee2e2", color: "#dc2626" }}>Required</span>
+                          </div>
+                          <small className="text-uppercase text-muted fw-semibold" style={{ fontSize: 10 }}>Education</small>
+                        </div>
+                      </div>
+                      {statuses["CGPA"] === "success" ? (
+                        <div className="d-flex align-items-center gap-2 p-2 rounded" style={{ background: "#dcfce7", border: "1px solid #86efac" }}>
+                          <CheckCircle2 size={16} color="#16a34a" />
+                          <span className="text-success small fw-semibold">Saved: {textFields["CGPA"]}</span>
+                        </div>
+                      ) : (
+                        <div className="d-flex gap-2">
+                          <input
+                            type="number" step="0.01" min="0" max="10"
+                            className="form-control form-control-sm"
+                            placeholder="e.g. 8.5"
+                            value={textFields["CGPA"] || ""}
+                            onChange={e => setTextFields(p => ({ ...p, CGPA: e.target.value }))}
+                          />
+                          <button className="btn btn-sm btn-primary" disabled={!textFields["CGPA"]?.trim()} onClick={() => handleSaveText("CGPA")}>Save</button>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+
+                  {/* ── PG Optional Block ── */}
+                  <div className="col-12">
+                    <div className="p-3" style={{ border: "1.5px dashed #d1d5db", borderRadius: 12, background: "#fafafa" }}>
+                      <p className="fw-bold mb-3" style={{ fontSize: 13, color: "#374151" }}>
+                        PG (Post Graduate) — <span className="text-muted fw-normal">Optional</span>
+                      </p>
+                      <div className="row g-3">
+
+                        {/* PG Consolidated Marksheet — Optional file */}
+                        <DocCard
+                          docId="PG Consolidated"
+                          label="PG Consolidated Marksheet"
+                          category="Education"
+                          icon={<GraduationCap size={18} />}
+                          required={false}
+                          index={0}
+                        />
+
+                        {/* PG CGPA — Optional text */}
+                        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="col-12 col-md-6">
+                          <div className="card p-3 h-100" style={{ borderRadius: 12, border: statuses["PG CGPA"] === "success" ? "1.5px solid #86efac" : "1px solid #e5e7eb", background: statuses["PG CGPA"] === "success" ? "#f0fdf4" : "#fff" }}>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                              <div style={{ background: statuses["PG CGPA"] === "success" ? "#dcfce7" : "#eff6ff", padding: 8, borderRadius: 8, color: statuses["PG CGPA"] === "success" ? "#16a34a" : "#2563eb" }}>
+                                <GraduationCap size={18} />
+                              </div>
+                              <div>
+                                <div className="d-flex align-items-center gap-2">
+                                  <span className="fw-bold" style={{ fontSize: 13 }}>PG CGPA</span>
+                                  <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 99, background: "#f3f4f6", color: "#6b7280" }}>Optional</span>
+                                </div>
+                                <small className="text-uppercase text-muted fw-semibold" style={{ fontSize: 10 }}>Education</small>
+                              </div>
+                            </div>
+                            {statuses["PG CGPA"] === "success" ? (
+                              <div className="d-flex align-items-center gap-2 p-2 rounded" style={{ background: "#dcfce7", border: "1px solid #86efac" }}>
+                                <CheckCircle2 size={16} color="#16a34a" />
+                                <span className="text-success small fw-semibold">Saved: {textFields["PG CGPA"]}</span>
+                              </div>
+                            ) : (
+                              <div className="d-flex gap-2">
+                                <input
+                                  type="number" step="0.01" min="0" max="10"
+                                  className="form-control form-control-sm"
+                                  placeholder="e.g. 8.5"
+                                  value={textFields["PG CGPA"] || ""}
+                                  onChange={e => setTextFields(p => ({ ...p, "PG CGPA": e.target.value }))}
+                                />
+                                <button className="btn btn-sm btn-primary" disabled={!textFields["PG CGPA"]?.trim()} onClick={() => handleSaveText("PG CGPA")}>Save</button>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </motion.div>
             )}
@@ -551,7 +772,6 @@ export default function UploadDocuments() {
 
         {/* ══ SUBMIT ══════════════════════════════════════════════════════════ */}
         <div className="text-center mt-4 pt-4" style={{ borderTop: "1px solid #e5e7eb" }}>
-          {/* Progress hint */}
           {hasUG === null && (
             <p className="text-warning fw-semibold small mb-2">⚠️ Please answer the UG degree question above</p>
           )}
