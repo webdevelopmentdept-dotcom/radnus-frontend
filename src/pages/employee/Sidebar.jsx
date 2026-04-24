@@ -27,6 +27,7 @@ const NAV_ITEMS = [
   { href: "/employee/clubs",                  icon: Building2,       label: "My Clubs"         },
   { href: "/employee/leadership-track",       icon: TrendingUp,      label: "Leadership Track" },
   { href: "/employee/retention",              icon: User,            label: "Retention Plan"   },
+  { href: "/employee/policies",               icon: FileText,        label: "Policies"         },
   { href: "/employee/notifications",          icon: Bell,            label: "Notifications", badge: true },
   { href: "/employee/settings",              icon: Settings,        label: "Settings"         },
 ];

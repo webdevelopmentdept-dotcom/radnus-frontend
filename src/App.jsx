@@ -52,6 +52,7 @@ import AlumniNetworkEmployee from "./pages/employee/Alumninetworkemployee";
 import TrainingRoadmapEmployee from "./pages/employee/Trainingroadmapemployee ";
 import EmployeeAppraisal from "./pages/employee/EmployeeAppraisal";
 import MyIncentive from "./pages/employee/MyIncentive";
+import EmployeePolicies from "./pages/employee/EmployeePolicies";
 
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
@@ -98,6 +99,7 @@ import AppraisalHub from "./pages/hr/AppraisalHub";
 import IncentiveAssign from "./pages/hr/IncentiveAssign";
 import IncentivePlans from "./pages/hr/IncentivePlans";
 import IncentiveResults from "./pages/hr/IncentiveResults";
+import PolicyManagement from "./pages/hr/PolicyManagement";
 
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
@@ -212,6 +214,7 @@ function App() {
         <Route path="/employee/training" element={<TrainingRoadmapEmployee />} />
         <Route path="/employee/appraisal" element={<EmployeeAppraisal />} />
         <Route path="/employee/my-incentive" element={<MyIncentive />} />
+        <Route path="/employee/policies" element={<EmployeePolicies />} />
         {/* <Route path="/hr/dashboard" element={<HrDashboard />}>
           <Route index element={<HrDashboardHome />} />
           <Route path="applicants" element={<HrApplicants />} />
@@ -294,6 +297,8 @@ function App() {
           <Route path="performance/assign-kpi" element={<AssignKpi />} />
           <Route path="performance/reviews" element={<PerformanceReviews />} />
           <Route path="performance/reports" element={<PerformanceReports />} />
+
+          <Route path="policies" element={<PolicyManagement />} />
 
         </Route>
         {/* ADMIN */}
