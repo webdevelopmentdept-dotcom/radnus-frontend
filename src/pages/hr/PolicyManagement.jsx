@@ -3,6 +3,16 @@ import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+// Convert raw backend version number to display string
+// 1 → "1", 2 → "1.1", 3 → "1.2", ..., 11 → "1.10", 12 → "2", 13 → "2.1", ...
+function toDisplayVersion(rawVersion) {
+  if (!rawVersion || rawVersion <= 1) return "1";
+  const zeroBasedUpdates = rawVersion - 2;
+  const major = Math.floor(zeroBasedUpdates / 10) + 1;
+  const minor = (zeroBasedUpdates % 10) + 1;
+  return `${major}.${minor}`;
+}
+
 export default function PolicyManagement() {
   const [policies, setPolicies] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -91,7 +101,6 @@ export default function PolicyManagement() {
     setExpandedVersions((prev) => ({ ...prev, [policyId]: !prev[policyId] }));
   };
 
-  // ✅ KEY FIX: use version_history (backend field) not versions
   const getVersions = (policy) => {
     if (Array.isArray(policy.version_history) && policy.version_history.length > 0) {
       return [...policy.version_history].sort((a, b) => a.version_number - b.version_number);
@@ -146,7 +155,9 @@ export default function PolicyManagement() {
           borderRadius: 12, padding: 24, marginBottom: 24
         }}>
           <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 700 }}>
-            {editPolicy ? `Update Policy — v${editPolicy.version + 1}` : "Add New Policy — v1"}
+            {editPolicy
+              ? `Update Policy — v${toDisplayVersion(editPolicy.version + 1)}`
+              : "Add New Policy — v1"}
           </h3>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -281,7 +292,7 @@ export default function PolicyManagement() {
                       </td>
                       <td style={{ padding: "12px 16px" }}>
                         <span style={{ background: "#dcfce7", color: "#166534", borderRadius: 6, padding: "3px 10px", fontSize: 12, fontWeight: 700 }}>
-                          v{p.version}
+                          v{toDisplayVersion(p.version)}
                         </span>
                       </td>
                       <td style={{ padding: "12px 16px" }}>
@@ -315,7 +326,7 @@ export default function PolicyManagement() {
                       </td>
                     </tr>
 
-                    {/* ✅ Version History Expanded Row */}
+                    {/* Version History Expanded Row */}
                     {showVersions && (
                       <tr key={`${p._id}-versions`} style={{ borderBottom: "1px solid #e2e8f0" }}>
                         <td colSpan={7} style={{ padding: "0 16px 14px 48px", background: "#f8fafc" }}>
@@ -324,7 +335,6 @@ export default function PolicyManagement() {
                               Version History
                             </p>
                             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                              {/* Latest first */}
                               {[...versions].reverse().map((v, idx) => (
                                 <div key={v.version_number} style={{
                                   display: "flex", alignItems: "center", gap: 12,
@@ -333,14 +343,13 @@ export default function PolicyManagement() {
                                   borderRadius: 8, padding: "8px 14px",
                                   maxWidth: 700,
                                 }}>
-                                  {/* Version badge */}
                                   <span style={{
                                     background: idx === 0 ? "#dbeafe" : "#f1f5f9",
                                     color: idx === 0 ? "#1e40af" : "#64748b",
                                     borderRadius: 6, padding: "2px 10px",
                                     fontSize: 12, fontWeight: 700, minWidth: 36, textAlign: "center",
                                   }}>
-                                    v{v.version_number}
+                                    v{toDisplayVersion(v.version_number)}
                                   </span>
 
                                   {idx === 0 && (
@@ -349,17 +358,14 @@ export default function PolicyManagement() {
                                     </span>
                                   )}
 
-                                  {/* Date */}
                                   <span style={{ fontSize: 12, color: "#94a3b8", minWidth: 90 }}>
                                     {v.created_at ? new Date(v.created_at).toLocaleDateString("en-IN") : "—"}
                                   </span>
 
-                                  {/* Change note */}
                                   <span style={{ fontSize: 12, color: "#64748b", flex: 1 }}>
                                     {v.change_note || (v.version_number === 1 ? "Initial upload" : "—")}
                                   </span>
 
-                                  {/* Open link */}
                                   <a
                                     href={v.file_url}
                                     target="_blank"
