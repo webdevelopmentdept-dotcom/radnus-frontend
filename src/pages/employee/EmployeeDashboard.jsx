@@ -33,26 +33,26 @@ function ScoreArc({ score = 0 }) {
 }
 
 export default function EmployeeDashboard() {
-  const [employee, setEmployee] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({});
-  const [kpiScore, setKpiScore] = useState(null);
-  const [kpiPeriod, setKpiPeriod] = useState("");
-  const [announcements, setAnnouncements] = useState([]);
-  const [employeeGrade, setEmployeeGrade] = useState(null);
+  const [employee,            setEmployee]            = useState(null);
+  const [loading,             setLoading]             = useState(true);
+  const [isEditing,           setIsEditing]           = useState(false);
+  const [editData,            setEditData]            = useState({});
+  const [kpiScore,            setKpiScore]            = useState(null);
+  const [kpiPeriod,           setKpiPeriod]           = useState("");
+  const [announcements,       setAnnouncements]       = useState([]);
+  const [employeeGrade,       setEmployeeGrade]       = useState(null);
   const [impactAnnouncements, setImpactAnnouncements] = useState([]);
 
+  // ── NEW: dept + designation dropdown state ────────────────────────────────
+  const [departments, setDepartments] = useState([]);
+  const [deptDesigs,  setDeptDesigs]  = useState([]); // filtered by selected dept
+  // ─────────────────────────────────────────────────────────────────────────
+
   useEffect(() => {
-    const hideCrisp = () => {
-      if (window.$crisp) window.$crisp.push(["do", "chat:hide"]);
-    };
+    const hideCrisp = () => { if (window.$crisp) window.$crisp.push(["do", "chat:hide"]); };
     hideCrisp();
     const retry = setTimeout(hideCrisp, 1500);
-    return () => {
-      clearTimeout(retry);
-      if (window.$crisp) window.$crisp.push(["do", "chat:show"]);
-    };
+    return () => { clearTimeout(retry); if (window.$crisp) window.$crisp.push(["do", "chat:show"]); };
   }, []);
 
   useEffect(() => {
@@ -75,12 +75,25 @@ export default function EmployeeDashboard() {
         setEmployee(res.data); setEditData(res.data);
       }
 
+      // ── NEW: fetch active departments + pre-load designations ─────────────
+      try {
+        const deptRes = await axios.get(`${API_BASE}/api/departments`);
+        const activeDepts = (deptRes.data.data || deptRes.data || [])
+          .filter(d => !d.status || d.status === "active");
+        setDepartments(activeDepts);
+        // Pre-load designations for current employee dept
+        if (res.data?.department) {
+          const found = activeDepts.find(d => d.name === res.data.department);
+          if (found) setDeptDesigs((found.designations || []).filter(dg => dg.status === "active"));
+        }
+      } catch (_) {}
+      // ─────────────────────────────────────────────────────────────────────
+
       try {
         const kr = await axios.get(`${API_BASE}/api/kpi-assignments/${id}`);
         if (kr.data.success && kr.data.data) {
           const assign = kr.data.data;
           setKpiPeriod(assign.period || "");
-
           let scoreSet = false;
           try {
             const prRes = await axios.get(`${API_BASE}/api/performance-reviews/${id}`);
@@ -88,13 +101,9 @@ export default function EmployeeDashboard() {
               const sorted = prRes.data.data
                 .filter(r => r.status === "finalized" && r.final_score != null)
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-              if (sorted.length > 0) {
-                setKpiScore(sorted[0].final_score);
-                scoreSet = true;
-              }
+              if (sorted.length > 0) { setKpiScore(sorted[0].final_score); scoreSet = true; }
             }
           } catch (_) {}
-
           if (!scoreSet) {
             try {
               const saRes = await axios.get(`${API_BASE}/api/self-assessment/by-assignment/${assign._id}`);
@@ -121,25 +130,21 @@ export default function EmployeeDashboard() {
       try {
         const an = await axios.get(`${API_BASE}/api/announcements`);
         if (an.data.success) setAnnouncements(an.data.data?.slice(0, 3) || []);
-      } catch (_) { }
+      } catch (_) {}
       try {
         const gradeRes = await axios.get(`${API_BASE}/api/assign-grade/employee/${id}`);
-        if (gradeRes.data.success && gradeRes.data.data) {
-          setEmployeeGrade(gradeRes.data.data);
-        }
-      } catch (_) { }
+        if (gradeRes.data.success && gradeRes.data.data) setEmployeeGrade(gradeRes.data.data);
+      } catch (_) {}
       try {
         const ibRes = await axios.get(`${API_BASE}/api/impact-bonus/announcements`);
-        if (ibRes.data.success) {
-          setImpactAnnouncements(ibRes.data.data);
-        }
-      } catch (_) { }
+        if (ibRes.data.success) setImpactAnnouncements(ibRes.data.data);
+      } catch (_) {}
     } catch (err) { console.log(err); }
     finally { setLoading(false); }
   };
 
   const handleEditToggle = () => { if (!employee) return; setEditData(JSON.parse(JSON.stringify(employee))); setIsEditing(true); };
-  const handleCancel = () => setIsEditing(false);
+  const handleCancel     = () => setIsEditing(false);
 
   const handleDocReplace = async (index, file) => {
     const fd = new FormData(); fd.append("file", file); fd.append("docId", editData.documents[index]._id);
@@ -157,8 +162,18 @@ export default function EmployeeDashboard() {
   };
 
   const handleChange = (e) => { const { name, value } = e.target; setEditData(p => ({ ...p, [name]: value })); };
+
+  // ── NEW: dept change → reset designation + filter desig list ─────────────
+  const handleDeptChange = (e) => {
+    const deptName = e.target.value;
+    setEditData(p => ({ ...p, department: deptName, designation: "" }));
+    const found = departments.find(d => d.name === deptName);
+    setDeptDesigs(found ? (found.designations || []).filter(dg => dg.status === "active") : []);
+  };
+  // ─────────────────────────────────────────────────────────────────────────
+
   const handleDocChange = (i, f, v) => { const d = [...editData.documents]; d[i] = { ...d[i], [f]: v }; setEditData(p => ({ ...p, documents: d })); };
-  const handleAddDoc = () => setEditData(p => ({ ...p, documents: [...p.documents, { docType: "New Document", fileUrl: "" }] }));
+  const handleAddDoc    = () => setEditData(p => ({ ...p, documents: [...p.documents, { docType: "New Document", fileUrl: "" }] }));
 
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "#f7f8fc" }}>
@@ -178,17 +193,25 @@ export default function EmployeeDashboard() {
     fontFamily: "'Manrope',sans-serif", transition: "border-color .15s"
   };
 
-  const scoreColor = kpiScore === null ? "#c5cad8"
-    : kpiScore >= 75 ? "#00c896" : kpiScore >= 50 ? "#4f8ef7"
-      : kpiScore >= 30 ? "#f0a500" : "#f45b5b";
+  // hero dark-background select style
+  const heroSel = {
+    flex: 1, minWidth: 90,
+    background: "rgba(255,255,255,.1)",
+    border: "1.5px solid rgba(255,255,255,.18)",
+    color: "#fff", fontSize: 12,
+    padding: "9px 12px", borderRadius: 8,
+    outline: "none", fontFamily: "'Manrope',sans-serif",
+    cursor: "pointer",
+  };
 
+  const scoreColor  = kpiScore === null ? "#c5cad8" : kpiScore >= 75 ? "#00c896" : kpiScore >= 50 ? "#4f8ef7" : kpiScore >= 30 ? "#f0a500" : "#f45b5b";
   const statusColor = isApproved ? "#00a875" : isRejected ? "#f45b5b" : "#d97706";
-  const statusBg = isApproved ? "#f0fdf8" : isRejected ? "#fff1f2" : "#fffbeb";
-  const statusBorder = isApproved ? "#a7f3d0" : isRejected ? "#fecaca" : "#fde68a";
+  const statusBg    = isApproved ? "#f0fdf8" : isRejected ? "#fff1f2" : "#fffbeb";
+  const statusBorder= isApproved ? "#a7f3d0" : isRejected ? "#fecaca" : "#fde68a";
   const statusLabel = isApproved ? "Active" : isRejected ? "Rejected" : "Pending";
   const statusEmoji = isApproved ? "✅" : isRejected ? "❌" : "⏳";
 
-  const gradeStage = employeeGrade?.grade_id?.bgr_stage;
+  const gradeStage  = employeeGrade?.grade_id?.bgr_stage;
   const gradeColor  = gradeStage === "Build" ? "#059669" : gradeStage === "Grow" ? "#2563eb" : "#d97706";
   const gradeBg     = gradeStage === "Build" ? "#d1fae5" : gradeStage === "Grow" ? "#dbeafe" : "#fef3c7";
   const gradeBorder = gradeStage === "Build" ? "#6ee7b7" : gradeStage === "Grow" ? "#93c5fd" : "#fcd34d";
@@ -198,400 +221,106 @@ export default function EmployeeDashboard() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
-        /* ── Reset & base ── */
-        .emp-dash *, .emp-dash *::before, .emp-dash *::after {
-          box-sizing: border-box;
-        }
-        .emp-dash {
-          font-family: 'Manrope', sans-serif;
-          background: #f7f8fc;
-          min-height: 100vh;
-          color: #1a1d2e;
-          /* KEY FIX: prevent any child from causing horizontal scroll */
-          overflow-x: hidden;
-          width: 100%;
-          max-width: 100%;
-        }
+        .emp-dash *, .emp-dash *::before, .emp-dash *::after { box-sizing: border-box; }
+        .emp-dash { font-family: 'Manrope', sans-serif; background: #f7f8fc; min-height: 100vh; color: #1a1d2e; overflow-x: hidden; width: 100%; max-width: 100%; }
 
-        /* ── Topbar ── */
-        .ed-topbar {
-          background: #fff;
-          border-bottom: 1px solid #eef0f6;
-          height: 56px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          position: sticky;
-          top: 0;
-          z-index: 40;
-          /* KEY FIX: padding accounts for sidebar hamburger on left */
-          padding: 0 12px 0 60px;
-          width: 100%;
-          overflow: hidden;
-        }
-        .ed-topbar-left {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          flex: 1;
-          min-width: 0;
-          overflow: hidden;
-        }
-        .ed-topbar-right {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          flex-shrink: 0;
-          margin-left: 8px;
-        }
-        .ed-topbar-name {
-          font-size: 12px;
-          font-weight: 700;
-          color: #1a1d2e;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          margin: 0;
-          max-width: 90px;
-        }
-        .ed-topbar-sub {
-          font-size: 10px;
-          color: #9ca3af;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          margin: 0;
-        }
+        .ed-topbar { background: #fff; border-bottom: 1px solid #eef0f6; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; padding: 0 12px 0 60px; width: 100%; overflow: hidden; }
+        .ed-topbar-left  { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden; }
+        .ed-topbar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: 8px; }
+        .ed-topbar-name  { font-size: 12px; font-weight: 700; color: #1a1d2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; max-width: 90px; }
+        .ed-topbar-sub   { font-size: 10px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
 
-        .ed-status-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          padding: 4px 8px;
-          border-radius: 99px;
-          font-size: 10px;
-          font-weight: 700;
-          border: 1.5px solid;
-          white-space: nowrap;
-          flex-shrink: 0;
-        }
-        /* hide pill text on very small screens */
+        .ed-status-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 99px; font-size: 10px; font-weight: 700; border: 1.5px solid; white-space: nowrap; flex-shrink: 0; }
         .ed-pill-text { display: none; }
 
-        .ed-btn-primary {
-          display: inline-flex; align-items: center; gap: 5px;
-          padding: 7px 13px; border-radius: 8px;
-          background: #4f8ef7; border: none; color: #fff;
-          font-size: 12px; font-weight: 700; cursor: pointer;
-          font-family: 'Manrope', sans-serif; transition: background .15s;
-          white-space: nowrap; flex-shrink: 0;
-        }
+        .ed-btn-primary { display: inline-flex; align-items: center; gap: 5px; padding: 7px 13px; border-radius: 8px; background: #4f8ef7; border: none; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Manrope', sans-serif; transition: background .15s; white-space: nowrap; flex-shrink: 0; }
         .ed-btn-primary:hover { background: #3a7be8; }
-        .ed-btn-outline {
-          display: inline-flex; align-items: center; gap: 5px;
-          padding: 6px 12px; border-radius: 8px;
-          background: #fff; border: 1.5px solid #e8eaf0; color: #374151;
-          font-size: 12px; font-weight: 600; cursor: pointer;
-          font-family: 'Manrope', sans-serif; transition: all .15s;
-          white-space: nowrap; flex-shrink: 0;
-        }
+        .ed-btn-outline  { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 8px; background: #fff; border: 1.5px solid #e8eaf0; color: #374151; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Manrope', sans-serif; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
         .ed-btn-outline:hover { border-color: #4f8ef7; color: #4f8ef7; }
-
-        /* topbar actions hidden on mobile, shown on desktop */
         .ed-topbar-actions { display: none; }
 
-        /* ── Hero ── */
-        .ed-hero {
-          background: linear-gradient(120deg, #1a1d2e 0%, #252a45 60%, #1f2c4a 100%);
-          padding: 16px 14px;
-          position: relative;
-          overflow: hidden;
-          width: 100%;
-        }
-        .ed-hero::before {
-          content: '';
-          position: absolute; top: -80px; right: -80px;
-          width: 260px; height: 260px; border-radius: 50%;
-          background: radial-gradient(circle, rgba(79,142,247,.18) 0%, transparent 70%);
-          pointer-events: none;
-        }
+        .ed-hero { background: linear-gradient(120deg, #1a1d2e 0%, #252a45 60%, #1f2c4a 100%); padding: 16px 14px; position: relative; overflow: hidden; width: 100%; }
+        .ed-hero::before { content: ''; position: absolute; top: -80px; right: -80px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(79,142,247,.18) 0%, transparent 70%); pointer-events: none; }
 
-        .ed-hero-profile-row {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          position: relative;
-          z-index: 1;
-          margin-bottom: 14px;
-          width: 100%;
-          overflow: hidden;
-        }
+        .ed-hero-profile-row { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; margin-bottom: 14px; width: 100%; overflow: hidden; }
         .ed-avatar-wrap { position: relative; flex-shrink: 0; }
-        .ed-avatar {
-          width: 56px; height: 56px; border-radius: 50%;
-          object-fit: cover; border: 2.5px solid rgba(255,255,255,.2);
-          display: block;
-        }
-        .ed-avatar-overlay {
-          position: absolute; inset: 0; border-radius: 50%;
-          background: rgba(0,0,0,.5);
-          display: flex; align-items: center; justify-content: center;
-          opacity: 0; transition: opacity .2s; cursor: pointer;
-        }
+        .ed-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2.5px solid rgba(255,255,255,.2); display: block; }
+        .ed-avatar-overlay { position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; cursor: pointer; }
         .ed-avatar-wrap:hover .ed-avatar-overlay { opacity: 1; }
-        .ed-avatar-wrap input[type=file] {
-          position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 5; border-radius: 50%;
-        }
-        .ed-hero-name-block {
-          flex: 1;
-          min-width: 0;
-          overflow: hidden;
-        }
-        .ed-hero-name {
-          margin: 0 0 2px;
-          font-size: 16px;
-          font-weight: 800;
-          color: #fff;
-          letter-spacing: -0.3px;
-          line-height: 1.2;
-          /* KEY FIX: truncate long names */
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-        .ed-hero-role {
-          margin: 0;
-          font-size: 11px;
-          color: rgba(255,255,255,.5);
-          font-weight: 500;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
+        .ed-avatar-wrap input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 5; border-radius: 50%; }
+        .ed-hero-name-block { flex: 1; min-width: 0; overflow: hidden; }
+        .ed-hero-name { margin: 0 0 2px; font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -0.3px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ed-hero-role { margin: 0; font-size: 11px; color: rgba(255,255,255,.5); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* KEY FIX: chips — 2-column grid so they never overflow */
-        .ed-hero-chips {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 6px;
-          position: relative;
-          z-index: 1;
-          margin-bottom: 12px;
-          width: 100%;
-        }
-        /* 3rd chip (Mobile) spans full width so it's not orphaned */
-        .ed-hero-chips .ed-chip:nth-child(3) {
-          grid-column: 1 / -1;
-        }
-        .ed-chip {
-          background: rgba(255,255,255,.08);
-          border: 1px solid rgba(255,255,255,.12);
-          border-radius: 8px;
-          padding: 7px 10px;
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          min-width: 0;
-          overflow: hidden;
-        }
-        .ed-chip-label {
-          font-size: 9px;
-          color: rgba(255,255,255,.35);
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.6px;
-        }
-        .ed-chip-val {
-          font-size: 11px;
-          color: rgba(255,255,255,.85);
-          font-weight: 600;
-          /* KEY FIX: truncate long values like emails */
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
+        .ed-hero-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; position: relative; z-index: 1; margin-bottom: 12px; width: 100%; }
+        .ed-hero-chips .ed-chip:nth-child(3) { grid-column: 1 / -1; }
+        .ed-chip { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 7px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow: hidden; }
+        .ed-chip-label { font-size: 9px; color: rgba(255,255,255,.35); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
+        .ed-chip-val   { font-size: 11px; color: rgba(255,255,255,.85); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* KEY FIX: status bar — stacks vertically on mobile */
-        .ed-hero-status-bar {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          background: rgba(255,255,255,.07);
-          border: 1px solid rgba(255,255,255,.1);
-          border-radius: 10px;
-          padding: 12px 14px;
-          position: relative;
-          z-index: 1;
-          width: 100%;
-        }
-        .ed-hero-status-row {
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-        }
+        .ed-hero-status-bar  { display: flex; flex-direction: column; gap: 10px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 12px 14px; position: relative; z-index: 1; width: 100%; }
+        .ed-hero-status-row  { display: flex; align-items: flex-start; gap: 10px; }
         .ed-hero-status-text { flex: 1; min-width: 0; }
-        .ed-hero-edit-btn { width: 100%; }
-        .ed-hero-edit-btn > button,
-        .ed-hero-edit-btn > div {
-          width: 100%;
-          justify-content: center;
-        }
+        .ed-hero-edit-btn    { width: 100%; }
+        .ed-hero-edit-btn > button, .ed-hero-edit-btn > div { width: 100%; justify-content: center; }
 
-        /* ── Cards & layout ── */
-        .ed-card {
-          background: #fff;
-          border-radius: 14px;
-          border: 1px solid #eef0f6;
-          /* KEY FIX: never let card overflow its column */
-          min-width: 0;
-          overflow: hidden;
-        }
-        .ed-card-title {
-          font-size: 11px; font-weight: 700; color: #9ca3af;
-          text-transform: uppercase; letter-spacing: 1.2px;
-          padding: 14px 14px 0; margin-bottom: 10px;
-          display: flex; align-items: center; gap: 7px;
-        }
+        /* ── option color fix for dark hero selects ── */
+        .ed-hero-select option { color: #111827 !important; background: #fff !important; }
 
-        .ed-main {
-          padding: 12px 12px 100px;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          width: 100%;
-          overflow: hidden;
-        }
+        .ed-card       { background: #fff; border-radius: 14px; border: 1px solid #eef0f6; min-width: 0; overflow: hidden; }
+        .ed-card-title { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1.2px; padding: 14px 14px 0; margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
 
-        /* KEY FIX: single column on mobile */
-        .ed-grid-2 {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 10px;
-          width: 100%;
-        }
+        .ed-main   { padding: 12px 12px 100px; display: flex; flex-direction: column; gap: 10px; width: 100%; overflow: hidden; }
+        .ed-grid-2 { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; }
+        .ed-docs-grid { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 0 14px 14px; }
 
-        /* KEY FIX: single column docs on mobile */
-        .ed-docs-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 8px;
-          padding: 0 14px 14px;
-        }
-
-        .ed-doc-item {
-          display: flex; align-items: center; gap: 10px;
-          padding: 11px 12px; border-radius: 10px;
-          border: 1px solid #eef0f6; background: #fafbfd;
-          transition: border-color .15s, box-shadow .15s;
-          min-width: 0;
-          overflow: hidden;
-        }
+        .ed-doc-item { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 10px; border: 1px solid #eef0f6; background: #fafbfd; transition: border-color .15s, box-shadow .15s; min-width: 0; overflow: hidden; }
         .ed-doc-item:hover { border-color: #c7d2fe; box-shadow: 0 2px 8px rgba(79,142,247,.08); }
 
-        .ed-ann-row {
-          display: flex; gap: 10px; align-items: flex-start;
-          padding: 11px 14px; border-bottom: 1px solid #f4f5f8;
-          transition: background .15s;
-          min-width: 0;
-          overflow: hidden;
-        }
+        .ed-ann-row { display: flex; gap: 10px; align-items: flex-start; padding: 11px 14px; border-bottom: 1px solid #f4f5f8; transition: background .15s; min-width: 0; overflow: hidden; }
         .ed-ann-row:last-child { border-bottom: none; }
         .ed-ann-row:hover { background: #fafbfd; }
 
-        .ed-info-pair {
-          display: flex; flex-direction: column; gap: 2px;
-          padding: 11px 14px; border-bottom: 1px solid #f4f5f8;
-          min-width: 0;
-        }
+        .ed-info-pair  { display: flex; flex-direction: column; gap: 2px; padding: 11px 14px; border-bottom: 1px solid #f4f5f8; min-width: 0; }
         .ed-info-pair:last-child { border-bottom: none; }
-        .ed-info-label {
-          font-size: 10px; color: #b0b8c9; font-weight: 700;
-          text-transform: uppercase; letter-spacing: .5px;
-          display: flex; align-items: center; gap: 4px;
-        }
-        .ed-info-value {
-          font-size: 13px; color: #374151; font-weight: 600;
-          /* KEY FIX: truncate long email/phone */
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
+        .ed-info-label { font-size: 10px; color: #b0b8c9; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; display: flex; align-items: center; gap: 4px; }
+        .ed-info-value { font-size: 13px; color: #374151; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        .ed-view-btn {
-          display: flex; align-items: center; gap: 4px;
-          padding: 5px 9px; border-radius: 7px;
-          background: #f0f4ff; border: 1px solid #c7d2fe; color: #4f8ef7;
-          font-size: 11px; font-weight: 700; text-decoration: none;
-          flex-shrink: 0; transition: all .15s; white-space: nowrap;
-        }
+        .ed-view-btn { display: flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 7px; background: #f0f4ff; border: 1px solid #c7d2fe; color: #4f8ef7; font-size: 11px; font-weight: 700; text-decoration: none; flex-shrink: 0; transition: all .15s; white-space: nowrap; }
         .ed-view-btn:hover { background: #4f8ef7; color: #fff; }
 
-        /* KEY FIX: score wrap — flex row, arc shrinks on small screens */
-        .ed-score-wrap {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          flex-wrap: nowrap;
-          overflow: hidden;
-        }
-        .ed-score-arc-wrap {
-          flex-shrink: 0;
-          transform: scale(0.82);
-          transform-origin: left center;
-        }
-        .ed-score-num {
-          font-size: 26px;
-          font-weight: 800;
-          line-height: 1;
-          letter-spacing: -1px;
-          font-family: 'JetBrains Mono', monospace;
-        }
+        .ed-score-wrap    { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; overflow: hidden; }
+        .ed-score-arc-wrap{ flex-shrink: 0; transform: scale(0.82); transform-origin: left center; }
+        .ed-score-num     { font-size: 26px; font-weight: 800; line-height: 1; letter-spacing: -1px; font-family: 'JetBrains Mono', monospace; }
 
-        /* ── Desktop overrides ── */
         @media (min-width: 768px) {
-          .ed-topbar {
-            padding: 0 28px;
-            height: 60px;
-          }
+          .ed-topbar { padding: 0 28px; height: 60px; }
           .ed-topbar-name { font-size: 13px; max-width: none; }
-          .ed-topbar-sub { font-size: 11px; }
-          .ed-topbar-right { gap: 10px; }
+          .ed-topbar-sub  { font-size: 11px; }
+          .ed-topbar-right{ gap: 10px; }
           .ed-topbar-actions { display: flex; align-items: center; gap: 8px; }
           .ed-pill-text { display: inline; }
           .ed-status-pill { padding: 5px 10px; font-size: 11px; }
-
           .ed-hero { padding: 28px 32px; }
           .ed-hero-profile-row { margin-bottom: 20px; gap: 14px; }
           .ed-avatar { width: 68px; height: 68px; }
           .ed-hero-name { font-size: 22px; white-space: normal; }
           .ed-hero-role { font-size: 13px; white-space: normal; }
-
-          /* desktop chips: 3 columns side by side */
           .ed-hero-chips { grid-template-columns: 1fr 1fr 1fr; }
           .ed-hero-chips .ed-chip:nth-child(3) { grid-column: auto; }
           .ed-chip-val { font-size: 12px; white-space: nowrap; }
-
-          /* desktop status bar: horizontal */
           .ed-hero-status-bar { flex-direction: row; align-items: center; }
           .ed-hero-status-row { flex: 1; }
           .ed-hero-edit-btn { width: auto; }
-          .ed-hero-edit-btn > button,
-          .ed-hero-edit-btn > div { width: auto; }
-
+          .ed-hero-edit-btn > button, .ed-hero-edit-btn > div { width: auto; }
           .ed-card-title { padding: 18px 20px 0; margin-bottom: 14px; }
-          .ed-ann-row { padding: 12px 20px; gap: 11px; }
-          .ed-info-pair { padding: 11px 20px; }
+          .ed-ann-row  { padding: 12px 20px; gap: 11px; }
+          .ed-info-pair{ padding: 11px 20px; }
           .ed-info-value { white-space: normal; }
-
-          .ed-main { padding: 20px 28px 32px; gap: 16px; }
+          .ed-main   { padding: 20px 28px 32px; gap: 16px; }
           .ed-grid-2 { grid-template-columns: 1fr 1fr; gap: 16px; }
-          .ed-docs-grid {
-            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-            gap: 10px;
-            padding: 0 20px 20px;
-          }
-          .ed-doc-item { padding: 12px 14px; gap: 11px; }
-
+          .ed-docs-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; padding: 0 20px 20px; }
+          .ed-doc-item  { padding: 12px 14px; gap: 11px; }
           .ed-score-arc-wrap { transform: scale(1); }
           .ed-score-num { font-size: 30px; }
         }
@@ -603,10 +332,7 @@ export default function EmployeeDashboard() {
         <div className="ed-topbar">
           <div className="ed-topbar-left">
             <div style={{ width: 30, height: 30, borderRadius: "50%", overflow: "hidden", border: "2px solid #eef0f6", flexShrink: 0 }}>
-              <img
-                src={employee.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=e8f0fe&color=4f8ef7&size=36`}
-                alt="av" style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
+              <img src={employee.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=e8f0fe&color=4f8ef7&size=36`} alt="av" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <div style={{ minWidth: 0, overflow: "hidden" }}>
               <p className="ed-topbar-name">{employee.name}</p>
@@ -621,7 +347,7 @@ export default function EmployeeDashboard() {
             <span className="ed-topbar-actions">
               {isEditing ? (
                 <>
-                  <button onClick={handleSave} className="ed-btn-primary"><Save size={13} /> Save</button>
+                  <button onClick={handleSave}   className="ed-btn-primary"><Save size={13} /> Save</button>
                   <button onClick={handleCancel} className="ed-btn-outline"><X size={13} /> Cancel</button>
                 </>
               ) : (
@@ -637,10 +363,7 @@ export default function EmployeeDashboard() {
         <div className="ed-hero">
           <div className="ed-hero-profile-row">
             <div className="ed-avatar-wrap">
-              <img
-                src={employee.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=252a45&color=7fa8f7&size=72`}
-                alt="profile" className="ed-avatar"
-              />
+              <img src={employee.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=252a45&color=7fa8f7&size=72`} alt="profile" className="ed-avatar" />
               <div className="ed-avatar-overlay">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -661,19 +384,40 @@ export default function EmployeeDashboard() {
             <div className="ed-hero-name-block">
               {isEditing ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {/* Name */}
                   <input
                     style={{ ...inp, background: "rgba(255,255,255,.12)", border: "1.5px solid rgba(255,255,255,.22)", color: "#fff", fontSize: 14 }}
                     name="name" value={editData.name || ""} onChange={handleChange} placeholder="Full Name"
                   />
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    <input
-                      style={{ ...inp, flex: 1, minWidth: 90, background: "rgba(255,255,255,.1)", border: "1.5px solid rgba(255,255,255,.18)", color: "#fff", fontSize: 12 }}
-                      name="designation" value={editData.designation || ""} onChange={handleChange} placeholder="Designation"
-                    />
-                    <input
-                      style={{ ...inp, flex: 1, minWidth: 90, background: "rgba(255,255,255,.1)", border: "1.5px solid rgba(255,255,255,.18)", color: "#fff", fontSize: 12 }}
-                      name="department" value={editData.department || ""} onChange={handleChange} placeholder="Department"
-                    />
+
+                    {/* ── CHANGED: Department dropdown from API ── */}
+                    <select
+                      className="ed-hero-select"
+                      value={editData.department || ""}
+                      onChange={handleDeptChange}
+                      style={{ ...heroSel }}>
+                      <option value="">Select Department</option>
+                      {departments.map(d => (
+                        <option key={d._id} value={d.name}>{d.name}</option>
+                      ))}
+                    </select>
+
+                    {/* ── CHANGED: Designation dropdown filtered by dept ── */}
+                    <select
+                      className="ed-hero-select"
+                      value={editData.designation || ""}
+                      onChange={e => setEditData(p => ({ ...p, designation: e.target.value }))}
+                      disabled={!editData.department}
+                      style={{ ...heroSel, cursor: editData.department ? "pointer" : "not-allowed", opacity: editData.department ? 1 : 0.5 }}>
+                      <option value="">
+                        {editData.department ? "Select Designation" : "Select dept first"}
+                      </option>
+                      {deptDesigs.map(dg => (
+                        <option key={dg._id || dg.title} value={dg.title}>{dg.title}</option>
+                      ))}
+                    </select>
+
                   </div>
                 </div>
               ) : (
@@ -685,7 +429,7 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          {/* Chips — 2-col grid, 3rd chip spans full width */}
+          {/* Chips */}
           <div className="ed-hero-chips">
             {[
               { label: "Employee ID", value: employee.employeeId || "—" },
@@ -699,7 +443,7 @@ export default function EmployeeDashboard() {
             ))}
           </div>
 
-          {/* Status bar — vertical on mobile, horizontal on desktop */}
+          {/* Status bar */}
           <div className="ed-hero-status-bar">
             <div className="ed-hero-status-row">
               <span style={{ fontSize: 20, flexShrink: 0 }}>{statusEmoji}</span>
@@ -734,7 +478,6 @@ export default function EmployeeDashboard() {
 
         {/* ── Main ── */}
         <div className="ed-main">
-
           <div className="ed-grid-2">
 
             {/* Score Card */}
@@ -755,9 +498,7 @@ export default function EmployeeDashboard() {
                 </div>
               ) : (
                 <div className="ed-score-wrap">
-                  <div className="ed-score-arc-wrap">
-                    <ScoreArc score={kpiScore} />
-                  </div>
+                  <div className="ed-score-arc-wrap"><ScoreArc score={kpiScore} /></div>
                   <div style={{ minWidth: 0, overflow: "hidden" }}>
                     <p style={{ margin: "0 0 2px", fontSize: 10, color: "#b0b8c9", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.6px" }}>Overall Score</p>
                     <p className="ed-score-num" style={{ margin: "0 0 5px", color: scoreColor }}>
@@ -785,14 +526,8 @@ export default function EmployeeDashboard() {
                     <p style={{ margin: "0 0 1px", fontSize: 12, color: "#1a1d2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 700 }}>{ib.title}</p>
                     <p style={{ margin: "0 0 4px", fontSize: 11, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 500 }}>👤 {ib.employee_name || ib.message?.split('·')[0]?.trim() || ""}</p>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                      {ib.bonus_amount > 0 && (
-                        <span style={{ fontSize: 10, fontWeight: 700, color: "#059669", background: "#d1fae5", padding: "2px 8px", borderRadius: 99, border: "1px solid #6ee7b7" }}>
-                          ₹{ib.bonus_amount.toLocaleString("en-IN")} Bonus
-                        </span>
-                      )}
-                      {ib.total_score > 0 && (
-                        <span style={{ fontSize: 10, color: "#b0b8c9", fontWeight: 600 }}>Score: {ib.total_score}/100</span>
-                      )}
+                      {ib.bonus_amount > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#059669", background: "#d1fae5", padding: "2px 8px", borderRadius: 99, border: "1px solid #6ee7b7" }}>₹{ib.bonus_amount.toLocaleString("en-IN")} Bonus</span>}
+                      {ib.total_score  > 0 && <span style={{ fontSize: 10, color: "#b0b8c9", fontWeight: 600 }}>Score: {ib.total_score}/100</span>}
                     </div>
                   </div>
                 </div>
@@ -873,7 +608,7 @@ export default function EmployeeDashboard() {
                           <input type="file" accept=".doc,.docx,image/*" style={{ fontSize: 11, color: "#9ca3af" }}
                             onChange={e => {
                               const file = e.target.files[0]; if (!file) return;
-                              const ok = ["image/jpeg", "image/png", "image/jpg", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+                              const ok = ["image/jpeg","image/png","image/jpg","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
                               if (!ok.includes(file.type)) { alert("Only Image or DOC"); return; }
                               handleDocReplace(index, file);
                             }} />

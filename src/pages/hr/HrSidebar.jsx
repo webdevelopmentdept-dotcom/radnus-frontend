@@ -568,6 +568,13 @@ export default function HrSidebar() {
           </NavLink>
 
 
+          <NavLink to="/hr/dashboard/masters/sop"
+            className={({ isActive }) => isActive ? "active" : ""}
+            onClick={close}>
+            <HugeiconsIcon icon={TaskDone01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+            SOP Management
+          </NavLink>
+
           {/* ══════════════════════════════
               POLICIES  ← ADD THIS SECTION
              ══════════════════════════════ */}
@@ -578,6 +585,14 @@ export default function HrSidebar() {
             onClick={close}>
             <HugeiconsIcon icon={TaskDone01Icon} size={18} color="currentColor" strokeWidth={1.8} />
             Policy Management
+          </NavLink>
+
+          <NavLink to="/hr/dashboard/policies/quiz"
+            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+            onClick={close}>
+            <HugeiconsIcon icon={TaskDone01Icon} size={16} color="currentColor" strokeWidth={1.8} />
+            Quiz Management
+            <span className="hr-flow-label">2</span>
           </NavLink>
 
           {/* ══════════════════════════════

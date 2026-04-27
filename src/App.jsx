@@ -53,6 +53,7 @@ import TrainingRoadmapEmployee from "./pages/employee/Trainingroadmapemployee ";
 import EmployeeAppraisal from "./pages/employee/EmployeeAppraisal";
 import MyIncentive from "./pages/employee/MyIncentive";
 import EmployeePolicies from "./pages/employee/EmployeePolicies";
+import EmployeeSOPView from "./pages/employee/Employeesopview";
 
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
@@ -100,6 +101,10 @@ import IncentiveAssign from "./pages/hr/IncentiveAssign";
 import IncentivePlans from "./pages/hr/IncentivePlans";
 import IncentiveResults from "./pages/hr/IncentiveResults";
 import PolicyManagement from "./pages/hr/PolicyManagement";
+import SOPManagement from "./pages/hr/Sopmanagement";
+import PolicyQuizManagementPage from "./pages/hr/PolicyQuizManagementPage";
+
+
 
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
@@ -215,6 +220,8 @@ function App() {
         <Route path="/employee/appraisal" element={<EmployeeAppraisal />} />
         <Route path="/employee/my-incentive" element={<MyIncentive />} />
         <Route path="/employee/policies" element={<EmployeePolicies />} />
+        <Route path="/employee/sops" element={<EmployeeSOPView />} />
+ 
         {/* <Route path="/hr/dashboard" element={<HrDashboard />}>
           <Route index element={<HrDashboardHome />} />
           <Route path="applicants" element={<HrApplicants />} />
@@ -253,6 +260,9 @@ function App() {
           <Route path="/hr/dashboard/clubs" element={<Corporateclubshr />} />
 
           <Route path="retention-plan" element={<RetentionPlan role="hr" />} />
+
+          <Route path="masters/sop" element={<SOPManagement />} />
+          <Route path="policies/quiz" element={<PolicyQuizManagementPage />} />
 
 
           <Route path="feedback/setup" element={<FeedbackCycleSetup />} />
