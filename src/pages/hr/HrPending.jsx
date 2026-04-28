@@ -1,5 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 
+// ✅ Text-only doc types (not files — just plain values)
+const TEXT_DOCS = ["CGPA", "PF Number", "ESI Number", "PG CGPA"];
+
 export default function HrPending() {
   const [employees, setEmployees] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -41,9 +44,9 @@ export default function HrPending() {
     return `${API_BASE}/uploads/${fileUrl}`;
   };
 
-  const isPDF = (url) => url?.toLowerCase().endsWith(".pdf");
+  const isPDF   = (url) => url?.toLowerCase().endsWith(".pdf");
   const isImage = (url) => url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-  const isDoc = (url) => url?.match(/\.(doc|docx)$/i);
+  const isDoc   = (url) => url?.match(/\.(doc|docx)$/i);
 
   // Open preview with doc type label
   const openPreview = (fileUrl, docType = "") => {
@@ -88,8 +91,8 @@ export default function HrPending() {
 
   // =================== ZOOM CONTROLS ===================
   const ZOOM_STEP = 0.25;
-  const MIN_ZOOM = 0.5;
-  const MAX_ZOOM = 5;
+  const MIN_ZOOM  = 0.5;
+  const MAX_ZOOM  = 5;
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
 
@@ -122,7 +125,7 @@ export default function HrPending() {
     e.preventDefault();
     setIsDragging(true);
     dragStart.current = { x: e.clientX, y: e.clientY };
-    panStart.current = { ...pan };
+    panStart.current  = { ...pan };
   };
 
   const handleMouseMove = useCallback((e) => {
@@ -140,7 +143,7 @@ export default function HrPending() {
     const touch = e.touches[0];
     setIsDragging(true);
     dragStart.current = { x: touch.clientX, y: touch.clientY };
-    panStart.current = { ...pan };
+    panStart.current  = { ...pan };
   };
 
   const handleTouchMove = useCallback((e) => {
@@ -158,22 +161,21 @@ export default function HrPending() {
   const handleDownload = async (url, docType) => {
     try {
       const response = await fetch(url);
-      const blob = await response.blob();
-      const ext = url.split(".").pop().split("?")[0];
+      const blob     = await response.blob();
+      const ext      = url.split(".").pop().split("?")[0];
       const filename = `${docType || "document"}_${Date.now()}.${ext}`;
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
+      const link     = document.createElement("a");
+      link.href      = URL.createObjectURL(blob);
+      link.download  = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
     } catch {
-      // fallback: direct link download
-      const link = document.createElement("a");
-      link.href = url;
+      const link    = document.createElement("a");
+      link.href     = url;
       link.download = docType || "document";
-      link.target = "_blank";
+      link.target   = "_blank";
       link.click();
     }
   };
@@ -250,18 +252,40 @@ export default function HrPending() {
             <div className="row">
               {selected.documents?.map((doc, i) => {
                 const fileUrl = getFileUrl(doc.fileUrl);
+
                 return (
                   <div key={i} className="col-6 col-md-4 mb-3">
                     <div className="doc-card text-center">
                       <small className="text-uppercase fw-semibold">{doc.docType}</small>
                       <div className="mt-2">
-                        {isPDF(fileUrl) ? (
+
+                        {/* ✅ TEXT DOCS — CGPA / PF / ESI Number → plain value */}
+                        {TEXT_DOCS.includes(doc.docType) ? (
+                          <div
+                            style={{
+                              background: "#f0fdf4",
+                              border: "1.5px solid #86efac",
+                              borderRadius: 10,
+                              padding: "14px 10px",
+                              textAlign: "center",
+                            }}
+                          >
+                            <div style={{ fontSize: 22, fontWeight: 700, color: "#15803d" }}>
+                              {doc.fileUrl}
+                            </div>
+                            <small className="text-muted" style={{ fontSize: 11 }}>
+                              {doc.docType}
+                            </small>
+                          </div>
+
+                        ) : isPDF(fileUrl) ? (
                           <button
                             className="btn btn-outline-primary btn-sm w-100"
                             onClick={() => openPreview(fileUrl, doc.docType)}
                           >
                             📄 View PDF
                           </button>
+
                         ) : (
                           <img
                             src={fileUrl}
@@ -271,6 +295,7 @@ export default function HrPending() {
                             onClick={() => openPreview(fileUrl, doc.docType)}
                           />
                         )}
+
                       </div>
                     </div>
                   </div>
@@ -327,8 +352,6 @@ export default function HrPending() {
               </span>
 
               <div className="preview-actions">
-
-                {/* Download Button */}
                 <button
                   className="prev-action-btn"
                   title="Download"
@@ -343,7 +366,6 @@ export default function HrPending() {
                   <span>Download</span>
                 </button>
 
-                {/* Open in New Tab Button */}
                 <button
                   className="prev-action-btn"
                   title="Open in new tab"
@@ -358,7 +380,6 @@ export default function HrPending() {
                   <span>New Tab</span>
                 </button>
 
-                {/* Close Button */}
                 <button
                   className="prev-action-btn close-action-btn"
                   title="Close"
@@ -371,40 +392,18 @@ export default function HrPending() {
                   </svg>
                   <span>Close</span>
                 </button>
-
               </div>
             </div>
 
             {/* ── ZOOM CONTROLS (images only) ── */}
             {isImage(previewFile) && (
               <div className="zoom-controls">
-                <button
-                  className="zoom-btn"
-                  onClick={handleZoomOut}
-                  disabled={zoom <= MIN_ZOOM}
-                  title="Zoom Out"
-                >−</button>
-
-                <span
-                  className="zoom-label"
-                  onClick={handleZoomReset}
-                  title="Click to reset zoom"
-                >
+                <button className="zoom-btn" onClick={handleZoomOut} disabled={zoom <= MIN_ZOOM} title="Zoom Out">−</button>
+                <span className="zoom-label" onClick={handleZoomReset} title="Click to reset zoom">
                   {Math.round(zoom * 100)}%
                 </span>
-
-                <button
-                  className="zoom-btn"
-                  onClick={handleZoomIn}
-                  disabled={zoom >= MAX_ZOOM}
-                  title="Zoom In"
-                >+</button>
-
-                <button
-                  className="zoom-btn reset-btn"
-                  onClick={handleZoomReset}
-                  title="Reset Zoom"
-                >↺</button>
+                <button className="zoom-btn" onClick={handleZoomIn} disabled={zoom >= MAX_ZOOM} title="Zoom In">+</button>
+                <button className="zoom-btn reset-btn" onClick={handleZoomReset} title="Reset Zoom">↺</button>
               </div>
             )}
 
@@ -433,27 +432,20 @@ export default function HrPending() {
                 onTouchEnd={handleTouchEnd}
                 style={{ cursor: zoom > 1 ? (isDragging ? "grabbing" : "grab") : "default" }}
               >
-                {/* Loading Spinner */}
                 {imgLoading && !imgError && (
                   <div className="img-loading">
                     <div className="spinner" />
                     <p>Loading image...</p>
                   </div>
                 )}
-
-                {/* Error State */}
                 {imgError && (
                   <div className="img-error">
                     <p>⚠️ Failed to load image</p>
-                    <button
-                      className="prev-action-btn"
-                      onClick={() => handleOpenNewTab(previewFile)}
-                    >
+                    <button className="prev-action-btn" onClick={() => handleOpenNewTab(previewFile)}>
                       Open in New Tab
                     </button>
                   </div>
                 )}
-
                 <img
                   src={previewFile}
                   alt="preview"
@@ -478,16 +470,10 @@ export default function HrPending() {
               <div className="text-center p-4" style={{ color: "#aaa" }}>
                 <p>⚠️ Preview not supported for this file type.</p>
                 <div className="d-flex gap-2 justify-content-center mt-2">
-                  <button
-                    className="prev-action-btn"
-                    onClick={() => handleDownload(previewFile, previewDocType)}
-                  >
+                  <button className="prev-action-btn" onClick={() => handleDownload(previewFile, previewDocType)}>
                     ⬇️ Download
                   </button>
-                  <button
-                    className="prev-action-btn"
-                    onClick={() => handleOpenNewTab(previewFile)}
-                  >
+                  <button className="prev-action-btn" onClick={() => handleOpenNewTab(previewFile)}>
                     🔗 Open in New Tab
                   </button>
                 </div>
@@ -509,7 +495,6 @@ export default function HrPending() {
 
       {/* ===== STYLES ===== */}
       <style>{`
-        /* ---- MAIN MODAL ---- */
         .custom-modal {
           position: fixed;
           top: 0; left: 0;
@@ -520,7 +505,6 @@ export default function HrPending() {
           justify-content: center;
           z-index: 2000;
         }
-
         .modal-box {
           background: #fff;
           padding: 20px;
@@ -530,14 +514,11 @@ export default function HrPending() {
           max-height: 90vh;
           overflow-y: auto;
         }
-
         .doc-card {
           border: 1px solid #eee;
           padding: 10px;
           border-radius: 10px;
         }
-
-        /* ---- PREVIEW MODAL ---- */
         .preview-modal {
           position: fixed;
           top: 0; left: 0;
@@ -549,12 +530,10 @@ export default function HrPending() {
           z-index: 3000;
           animation: fadeInBackdrop 0.2s ease;
         }
-
         @keyframes fadeInBackdrop {
           from { opacity: 0; }
-          to { opacity: 1; }
+          to   { opacity: 1; }
         }
-
         .preview-box {
           position: relative;
           width: 90%;
@@ -565,13 +544,10 @@ export default function HrPending() {
           overflow: hidden;
           animation: slideUp 0.22s ease;
         }
-
         @keyframes slideUp {
           from { transform: translateY(28px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
+          to   { transform: translateY(0);    opacity: 1; }
         }
-
-        /* ---- TOP BAR ---- */
         .preview-topbar {
           display: flex;
           align-items: center;
@@ -582,7 +558,6 @@ export default function HrPending() {
           gap: 10px;
           flex-wrap: wrap;
         }
-
         .preview-doc-label {
           color: #e0e0e0;
           font-size: 13px;
@@ -591,14 +566,12 @@ export default function HrPending() {
           letter-spacing: 0.5px;
           white-space: nowrap;
         }
-
         .preview-actions {
           display: flex;
           gap: 6px;
           align-items: center;
           flex-wrap: wrap;
         }
-
         .prev-action-btn {
           display: inline-flex;
           align-items: center;
@@ -614,20 +587,16 @@ export default function HrPending() {
           transition: background 0.15s, border-color 0.15s, color 0.15s;
           white-space: nowrap;
         }
-
         .prev-action-btn:hover {
           background: #505055;
           border-color: #707075;
           color: #fff;
         }
-
         .prev-action-btn.close-action-btn:hover {
           background: #b91c1c;
           border-color: #ef4444;
           color: #fff;
         }
-
-        /* ---- ZOOM CONTROLS ---- */
         .zoom-controls {
           display: flex;
           align-items: center;
@@ -637,7 +606,6 @@ export default function HrPending() {
           background: #242426;
           border-bottom: 1px solid #2e2e32;
         }
-
         .zoom-btn {
           background: #3a3a3e;
           color: #fff;
@@ -653,21 +621,9 @@ export default function HrPending() {
           transition: background 0.15s;
           flex-shrink: 0;
         }
-
-        .zoom-btn:hover:not(:disabled) {
-          background: #555;
-        }
-
-        .zoom-btn:disabled {
-          opacity: 0.3;
-          cursor: not-allowed;
-        }
-
-        .zoom-btn.reset-btn {
-          font-size: 15px;
-          background: #444;
-        }
-
+        .zoom-btn:hover:not(:disabled) { background: #555; }
+        .zoom-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .zoom-btn.reset-btn { font-size: 15px; background: #444; }
         .zoom-label {
           color: #ccc;
           font-size: 13px;
@@ -682,13 +638,7 @@ export default function HrPending() {
           border: 1px solid #444;
           transition: background 0.15s;
         }
-
-        .zoom-label:hover {
-          background: #3a3a3a;
-          color: #fff;
-        }
-
-        /* ---- IMAGE ZOOM CONTAINER ---- */
+        .zoom-label:hover { background: #3a3a3a; color: #fff; }
         .img-zoom-container {
           width: 100%;
           height: 68vh;
@@ -699,7 +649,6 @@ export default function HrPending() {
           background: #111;
           position: relative;
         }
-
         .preview-img {
           max-width: 100%;
           max-height: 100%;
@@ -707,8 +656,6 @@ export default function HrPending() {
           display: block;
           pointer-events: none;
         }
-
-        /* ---- IMAGE LOADING / ERROR STATES ---- */
         .img-loading,
         .img-error {
           position: absolute;
@@ -720,7 +667,6 @@ export default function HrPending() {
           color: #888;
           font-size: 13px;
         }
-
         .spinner {
           width: 36px;
           height: 36px;
@@ -729,12 +675,7 @@ export default function HrPending() {
           border-radius: 50%;
           animation: spin 0.75s linear infinite;
         }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        /* ---- BOTTOM HINT ---- */
+        @keyframes spin { to { transform: rotate(360deg); } }
         .zoom-hint {
           text-align: center;
           color: #555;
@@ -745,8 +686,6 @@ export default function HrPending() {
           border-top: 1px solid #2a2a2e;
           letter-spacing: 0.2px;
         }
-
-        /* ---- RESPONSIVE ---- */
         @media (max-width: 768px) {
           .btn { width: 100%; }
           .img-zoom-container { height: 52vw; min-height: 220px; }

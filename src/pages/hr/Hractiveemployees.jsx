@@ -2,6 +2,9 @@ import { useEffect, useState, useRef } from "react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+// ✅ Text-only doc types — plain value காட்டு, image மாதிரி render பண்ணாதே
+const TEXT_DOCS = ["CGPA", "PF Number", "ESI Number", "PG CGPA"];
+
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const TrashIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -175,7 +178,7 @@ const PreviewModal = ({ url, name, onClose }) => (
 );
 
 // ─── Document Row Card ────────────────────────────────────────────────────────
-const DocRow = ({ docType, label, fileUrl, category, required, employeeId, onRefresh, isHrDoc }) => {
+const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHrDoc }) => {
   const fileRef    = useRef(null);
   const [uploading,   setUploading]   = useState(false);
   const [deleting,    setDeleting]    = useState(false);
@@ -183,7 +186,9 @@ const DocRow = ({ docType, label, fileUrl, category, required, employeeId, onRef
   const [confirmDel,  setConfirmDel]  = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  const hasFile = !!fileUrl;
+  const hasFile  = !!fileUrl;
+  // ✅ Check if this is a text-only doc (CGPA / PF / ESI)
+  const isTextDoc = TEXT_DOCS.includes(docType);
 
   const handleReplace = async (file) => {
     if (!file) return;
@@ -193,18 +198,11 @@ const DocRow = ({ docType, label, fileUrl, category, required, employeeId, onRef
       formData.append("file", file);
       formData.append("employeeId", employeeId);
       formData.append("docType", docType);
-
       if (isHrDoc) {
-        await fetch(`${API_BASE}/api/hr/activation/upload-doc`, {
-          method: "POST",
-          body: formData,
-        });
+        await fetch(`${API_BASE}/api/hr/activation/upload-doc`, { method: "POST", body: formData });
       } else {
         formData.append("docId", "replace");
-        await fetch(`${API_BASE}/api/employee/replace-doc`, {
-          method: "POST",
-          body: formData,
-        });
+        await fetch(`${API_BASE}/api/employee/replace-doc`, { method: "POST", body: formData });
       }
       onRefresh();
     } catch (err) {
@@ -241,8 +239,12 @@ const DocRow = ({ docType, label, fileUrl, category, required, employeeId, onRef
 
   return (
     <>
-      {preview && <PreviewModal url={fileUrl} name={label || docType} onClose={() => setPreview(false)} />}
+      {/* Preview modal — only for file docs */}
+      {preview && !isTextDoc && (
+        <PreviewModal url={fileUrl} name={label || docType} onClose={() => setPreview(false)} />
+      )}
 
+      {/* Delete confirm */}
       {confirmDel && (
         <div style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
@@ -282,6 +284,7 @@ const DocRow = ({ docType, label, fileUrl, category, required, employeeId, onRef
         borderRadius: 10,
         transition: "all 0.15s",
       }}>
+
         {/* Icon */}
         <div style={{
           width: 36, height: 36, borderRadius: 8, flexShrink: 0,
@@ -309,24 +312,44 @@ const DocRow = ({ docType, label, fileUrl, category, required, employeeId, onRef
               <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 99, background: "#eff6ff", color: "#2563eb" }}>HR</span>
             )}
           </div>
-          <div style={{ fontSize: 11, color: hasFile ? "#16a34a" : "#9ca3af", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
-            {hasFile ? (
-              <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Uploaded · {getFileLabel(fileUrl)}</>
-            ) : "Not uploaded yet"}
-          </div>
+
+          {/* ✅ Text doc → value காட்டு; File doc → status காட்டு */}
+          {isTextDoc && hasFile ? (
+            <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{
+                background: "#f0fdf4", border: "1px solid #86efac",
+                borderRadius: 6, padding: "2px 10px",
+                fontSize: 13, fontWeight: 700, color: "#15803d",
+              }}>
+                {fileUrl}
+              </span>
+              <span style={{ fontSize: 11, color: "#16a34a" }}>✓ Saved</span>
+            </div>
+          ) : (
+            <div style={{ fontSize: 11, color: hasFile ? "#16a34a" : "#9ca3af", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+              {hasFile ? (
+                <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Uploaded · {getFileLabel(fileUrl)}</>
+              ) : "Not uploaded yet"}
+            </div>
+          )}
         </div>
 
         {/* ── Actions ── */}
         <div style={{ display: "flex", gap: 5, flexShrink: 0, flexWrap: "wrap" }}>
           {hasFile ? (
             <>
-              <button onClick={() => setPreview(true)} title="Preview" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "1px solid #e5e7eb", borderRadius: 7, background: "#fff", color: "#374151", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
-                <EyeIcon /> View
-              </button>
-              <button onClick={handleDownload} disabled={downloading} title="Download" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "none", borderRadius: 7, background: "#2563eb", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
-                <DownloadIcon /> {downloading ? "..." : "Download"}
-              </button>
-              {isHrDoc && (
+              {/* Text docs-க்கு View/Download வேண்டாம் */}
+              {!isTextDoc && (
+                <>
+                  <button onClick={() => setPreview(true)} title="Preview" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "1px solid #e5e7eb", borderRadius: 7, background: "#fff", color: "#374151", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                    <EyeIcon /> View
+                  </button>
+                  <button onClick={handleDownload} disabled={downloading} title="Download" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "none", borderRadius: 7, background: "#2563eb", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                    <DownloadIcon /> {downloading ? "..." : "Download"}
+                  </button>
+                </>
+              )}
+              {isHrDoc && !isTextDoc && (
                 <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Replace" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "1px solid #d97706", borderRadius: 7, background: "#fffbeb", color: "#d97706", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                   <RefreshIcon /> {uploading ? "..." : "Replace"}
                 </button>
@@ -336,9 +359,12 @@ const DocRow = ({ docType, label, fileUrl, category, required, employeeId, onRef
               </button>
             </>
           ) : (
-            <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "none", borderRadius: 7, background: "#2563eb", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
-              <UploadIcon /> {uploading ? "Uploading..." : "Upload"}
-            </button>
+            // Text docs-க்கு Upload button வேண்டாம்
+            !isTextDoc && (
+              <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "none", borderRadius: 7, background: "#2563eb", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                <UploadIcon /> {uploading ? "Uploading..." : "Upload"}
+              </button>
+            )
           )}
         </div>
       </div>
@@ -380,6 +406,7 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
   const getHrDoc = (type) =>
     hrDocs.find(d => d.docType === type) || null;
 
+  // ✅ allPersonalTypes-ல TEXT_DOCS-யும் சேர்த்தேன்
   const allPersonalTypes = [
     { type: "Aadhaar",          required: true  },
     { type: "Ration Card",      required: false },
@@ -398,6 +425,11 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
     { type: "Bank Statement",   required: false },
     { type: "Reference 1",      required: false },
     { type: "Reference 2",      required: false },
+    // ✅ Text docs
+    { type: "CGPA",             required: false },
+    { type: "PG CGPA",          required: false },
+    { type: "PF Number",        required: false },
+    { type: "ESI Number",       required: false },
   ];
 
   const experienceDocs = personalDocs.filter(d =>
@@ -407,11 +439,9 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
   const personalUploaded = allPersonalTypes.filter(d => getPersonalDoc(d.type)).length + experienceDocs.length;
   const hrUploaded = HR_DOC_TYPES.filter(t => getHrDoc(t)).length;
 
-  // Derive employment info from activation data
   const emp = activation?.employment || {};
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN") : "—";
 
-  // Status badge
   const isActive   = employee?.status === "active" || employee?.status === "approved";
   const isRejected = employee?.status === "rejected";
   const statusLabel = isActive ? "Active" : isRejected ? "Rejected" : employee?.status || "Pending";
@@ -463,7 +493,7 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
           </button>
         </div>
 
-        {/* ── Employee Details Section (like Pending page) ── */}
+        {/* ── Employee Details ── */}
         <div style={{
           padding: "14px 22px",
           borderBottom: "1px solid #e5e7eb",
@@ -474,7 +504,6 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
             <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
               Employee Details
             </p>
-            {/* Status Badge */}
             <span style={{
               display: "inline-flex", alignItems: "center", gap: 5,
               background: statusBg, color: statusColor,
@@ -488,43 +517,18 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "8px 20px" }}>
-            {/* Name */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>Name</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>{employee.name || "—"}</span>
-            </div>
-
-            {/* Department */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>Department</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>{employee.department || emp.department || "—"}</span>
-            </div>
-
-            {/* Email */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>Email</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e", wordBreak: "break-all" }}>{employee.email || "—"}</span>
-            </div>
-
-            {/* Mobile */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>Mobile</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>{employee.mobile || "—"}</span>
-            </div>
-
-            {/* Date of Joining */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>Date of Joining</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>
-                {fmtDate(emp.date_of_joining || employee.date_of_joining)}
-              </span>
-            </div>
-
-            {/* Today's Date */}
-            {/* <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>Date</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>{new Date().toLocaleDateString()}</span>
-            </div> */}
+            {[
+              { label: "Name",            value: employee.name },
+              { label: "Department",      value: employee.department || emp.department },
+              { label: "Email",           value: employee.email },
+              { label: "Mobile",          value: employee.mobile },
+              { label: "Date of Joining", value: fmtDate(emp.date_of_joining || employee.date_of_joining) },
+            ].map((item, i) => (
+              <div key={i} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>{item.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e", wordBreak: "break-all" }}>{item.value || "—"}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -889,7 +893,6 @@ export default function HrActiveEmployees() {
                   <button
                     onClick={() => setConfirmId(emp._id)}
                     style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 7, padding: "8px", cursor: "pointer" }}
-                    title="Remove"
                   >
                     <TrashIcon />
                   </button>

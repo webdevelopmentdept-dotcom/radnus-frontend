@@ -97,7 +97,6 @@ const blankKr = () => ({
   linked_kpi_item_id: "", current_value: 0, progress_pct: 0,
 });
 
-// Auto equal weight distribute
 const distributeWeights = (krs) => {
   if (!krs.length) return krs;
   const equal = Math.floor(100 / krs.length);
@@ -123,7 +122,6 @@ function Toast({ toast }) {
   );
 }
 
-// ── Mini progress bar ────────────────────────────────────────────────────────
 function MiniBar({ pct, color }) {
   return (
     <div style={{ background: "#e5e7eb", borderRadius: 99, height: 5, overflow: "hidden", marginTop: 4 }}>
@@ -132,7 +130,6 @@ function MiniBar({ pct, color }) {
   );
 }
 
-// ── Weight indicator ─────────────────────────────────────────────────────────
 function WeightBar({ krs }) {
   const total = totalWeight(krs);
   const isOk  = Math.round(total) === 100;
@@ -148,16 +145,11 @@ function WeightBar({ krs }) {
           <div className="okrs-weight-fill" style={{ width: `${Math.min(total, 100)}%`, background: color }} />
         </div>
       </div>
-      <button
-        onClick={() => {/* handled by parent via prop */}}
-        style={{ display: "none" }}
-      />
     </div>
   );
 }
 
-// ── KR Row in form ───────────────────────────────────────────────────────────
-function KrRow({ kr, idx, total, kpiItems, templates, onChange, onRemove }) {
+function KrRow({ kr, idx, total, templates, onChange, onRemove }) {
   return (
     <div className="okrs-kr-row">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -167,7 +159,6 @@ function KrRow({ kr, idx, total, kpiItems, templates, onChange, onRemove }) {
         </button>
       </div>
 
-      {/* Title */}
       <div style={{ marginBottom: 10 }}>
         <label style={labelStyle}>KR Title *</label>
         <input className="okrs-inp" style={inputStyle}
@@ -175,7 +166,6 @@ function KrRow({ kr, idx, total, kpiItems, templates, onChange, onRemove }) {
           value={kr.title} onChange={e => onChange(idx, "title", e.target.value)} />
       </div>
 
-      {/* Target / Unit / Weight / Link */}
       <div className="okrs-kr-grid" style={{ display: "grid", gap: 10 }}>
         <div>
           <label style={labelStyle}>Target *</label>
@@ -226,20 +216,17 @@ function KrRow({ kr, idx, total, kpiItems, templates, onChange, onRemove }) {
   );
 }
 
-// ── OKR Card (list view) ─────────────────────────────────────────────────────
 function ObjCard({ obj, templates, onEdit, onDelete, saving }) {
   const [open, setOpen] = useState(false);
   const krs = obj.key_results || [];
   const score = obj.objective_score || 0;
   const color = score >= 75 ? "#16a34a" : score >= 50 ? "#2563eb" : score >= 25 ? "#d97706" : "#dc2626";
 
-  // Flatten for lookup
   const allItems = [];
   templates.forEach(t => (t.kpi_items || []).forEach(i => allItems.push({ ...i, template_name: t.template_name })));
 
   return (
     <div className="okrs-obj-card" style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", overflow: "hidden" }}>
-      {/* Dark header */}
       <div style={{ background: "#1a1a2e", padding: "16px 20px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -267,7 +254,6 @@ function ObjCard({ obj, templates, onEdit, onDelete, saving }) {
         {obj.description && <p style={{ margin: "8px 0 0", color: "#9ca3af", fontSize: 12, lineHeight: 1.5 }}>{obj.description}</p>}
       </div>
 
-      {/* KRs */}
       <div style={{ padding: "14px 20px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px" }}>
@@ -310,7 +296,6 @@ function ObjCard({ obj, templates, onEdit, onDelete, saving }) {
   );
 }
 
-// ── Empty State ───────────────────────────────────────────────────────────────
 function EmptyState({ onNew }) {
   return (
     <div style={{ background: "#fff", borderRadius: 14, padding: "60px 24px", textAlign: "center", border: "1px solid #e5e7eb" }}>
@@ -329,8 +314,8 @@ function EmptyState({ onNew }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function OkrSetup() {
   const [objectives,   setObjectives]   = useState([]);
-  const [templates,    setTemplates]    = useState([]); // KPI templates from /api/okr/templates/all
-  const [departments,  setDepartments]  = useState([]);
+  const [templates,    setTemplates]    = useState([]);
+  const [departments,  setDepartments]  = useState([]); // ✅ from /api/departments
   const [loading,      setLoading]      = useState(true);
   const [saving,       setSaving]       = useState(false);
   const [toast,        setToast]        = useState(null);
@@ -345,20 +330,24 @@ export default function OkrSetup() {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [okrRes, tplRes] = await Promise.all([
+      const [okrRes, tplRes, deptRes] = await Promise.all([
         axios.get(`${API_BASE}/api/okr`),
-        axios.get(`${API_BASE}/api/okr/templates/all`), // ✅ correct endpoint
+        axios.get(`${API_BASE}/api/okr/templates/all`),
+        axios.get(`${API_BASE}/api/departments`), // ✅ Department Master
       ]);
 
       if (okrRes.data.success) setObjectives(okrRes.data.data || []);
+      if (tplRes.data.success) setTemplates(tplRes.data.data || []);
 
-      if (tplRes.data.success) {
-        const tpls = tplRes.data.data || [];
-        setTemplates(tpls);
-        // Extract unique departments from templates
-        const depts = [...new Set(tpls.map(t => t.department).filter(Boolean))].sort();
-        setDepartments(depts);
-      }
+      // ✅ Only active departments, sorted A-Z
+      const deptList = deptRes.data.data || deptRes.data || [];
+      const activeDepts = deptList
+        .filter(d => d.status === "active")
+        .map(d => d.name)
+        .filter(Boolean)
+        .sort();
+      setDepartments(activeDepts);
+
     } catch { showToast("Failed to load data", "error"); }
     finally { setLoading(false); }
   };
@@ -368,7 +357,6 @@ export default function OkrSetup() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  // ── Form helpers ─────────────────────────────────────────────────────────────
   const openCreate = () => {
     setForm(blankOkr()); setEditId(null); setShowForm(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -418,10 +406,9 @@ export default function OkrSetup() {
 
   const autoBalance = () => setForm(f => ({ ...f, key_results: distributeWeights(f.key_results) }));
 
-  // ── Save ─────────────────────────────────────────────────────────────────────
   const handleSave = async () => {
-    if (!form.title.trim())      return showToast("Objective title is required", "error");
-    if (!form.department.trim()) return showToast("Department is required", "error");
+    if (!form.title.trim())       return showToast("Objective title is required", "error");
+    if (!form.department.trim())  return showToast("Department is required", "error");
     if (!form.key_results.length) return showToast("Add at least one Key Result", "error");
     for (const kr of form.key_results) {
       if (!kr.title.trim()) return showToast("All KR titles are required", "error");
@@ -446,7 +433,6 @@ export default function OkrSetup() {
     } finally { setSaving(false); }
   };
 
-  // ── Delete ────────────────────────────────────────────────────────────────────
   const handleDelete = async (id) => {
     if (!window.confirm("Archive this OKR? It won't be visible in the dashboard.")) return;
     setSaving(true);
@@ -480,7 +466,7 @@ export default function OkrSetup() {
       <style>{STYLES}</style>
       <Toast toast={toast} />
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="okrs-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, gap: 12 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#1a1a2e" }}>OKR Setup</h2>
@@ -500,7 +486,7 @@ export default function OkrSetup() {
         </div>
       </div>
 
-      {/* ── Info Banner ── */}
+      {/* Info Banner */}
       <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: "12px 18px", marginBottom: 20, display: "flex", gap: 10, alignItems: "flex-start" }}>
         <span style={{ fontSize: 16, flexShrink: 0 }}>💡</span>
         <p style={{ margin: 0, fontSize: 13, color: "#1e40af", lineHeight: 1.5 }}>
@@ -509,12 +495,9 @@ export default function OkrSetup() {
         </p>
       </div>
 
-      {/* ══════════════════════
-          CREATE / EDIT FORM
-      ══════════════════════ */}
+      {/* CREATE / EDIT FORM */}
       {showForm && (
         <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", marginBottom: 24, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,.07)" }}>
-          {/* Form header */}
           <div style={{ background: "#1a1a2e", padding: "16px 22px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Target size={18} color="#93c5fd" />
@@ -528,7 +511,6 @@ export default function OkrSetup() {
           </div>
 
           <div style={{ padding: "22px" }}>
-            {/* Objective title */}
             <div style={{ marginBottom: 16 }}>
               <label style={labelStyle}>Objective Title *</label>
               <input className="okrs-inp" style={{ ...inputStyle, fontSize: 14, fontWeight: 600 }}
@@ -536,7 +518,6 @@ export default function OkrSetup() {
                 value={form.title} onChange={e => setField("title", e.target.value)} />
             </div>
 
-            {/* Description */}
             <div style={{ marginBottom: 16 }}>
               <label style={labelStyle}>Description <span style={{ color: "#9ca3af", fontWeight: 400 }}>(optional)</span></label>
               <textarea className="okrs-inp" style={{ ...inputStyle, minHeight: 68, resize: "vertical", lineHeight: 1.5 }}
@@ -544,20 +525,19 @@ export default function OkrSetup() {
                 value={form.description} onChange={e => setField("description", e.target.value)} />
             </div>
 
-            {/* Dept / Status / Quarter / Year */}
             <div className="okrs-form-grid" style={{ display: "grid", gap: 14, marginBottom: 16 }}>
               <div>
                 <label style={labelStyle}>Department *</label>
-                {departments.length > 0 ? (
-                  <select className="okrs-inp" style={selectStyle}
-                    value={form.department} onChange={e => setField("department", e.target.value)}>
-                    <option value="">— Select Department —</option>
-                    {departments.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                ) : (
-                  <input className="okrs-inp" style={inputStyle}
-                    placeholder="e.g. Sales"
-                    value={form.department} onChange={e => setField("department", e.target.value)} />
+                {/* ✅ Sourced from Department Master — only active departments */}
+                <select className="okrs-inp" style={selectStyle}
+                  value={form.department} onChange={e => setField("department", e.target.value)}>
+                  <option value="">— Select Department —</option>
+                  {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+                {departments.length === 0 && (
+                  <p style={{ margin: "4px 0 0", fontSize: 11, color: "#f59e0b" }}>
+                    ⚠️ No active departments found. Add departments in Department Master first.
+                  </p>
                 )}
               </div>
               <div>
@@ -585,10 +565,8 @@ export default function OkrSetup() {
               </div>
             </div>
 
-            {/* Divider */}
             <div style={{ borderTop: "2px dashed #e5e7eb", margin: "20px 0" }} />
 
-            {/* Key Results header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
               <div>
                 <p style={{ margin: 0, fontWeight: 800, fontSize: 14, color: "#1a1a2e" }}>Key Results</p>
@@ -608,10 +586,8 @@ export default function OkrSetup() {
               </div>
             </div>
 
-            {/* Weight bar */}
             {form.key_results.length > 0 && <WeightBar krs={form.key_results} />}
 
-            {/* KR rows */}
             {form.key_results.length === 0 ? (
               <div style={{ textAlign: "center", padding: "28px 0", border: "2px dashed #e5e7eb", borderRadius: 10, marginBottom: 14 }}>
                 <Layers size={28} color="#d1d5db" style={{ display: "block", margin: "0 auto 8px" }} />
@@ -620,12 +596,11 @@ export default function OkrSetup() {
             ) : (
               form.key_results.map((kr, i) => (
                 <KrRow key={i} kr={kr} idx={i} total={wt}
-                  kpiItems={[]} templates={templates}
+                  templates={templates}
                   onChange={updateKr} onRemove={removeKr} />
               ))
             )}
 
-            {/* Actions */}
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20, paddingTop: 20, borderTop: "1px solid #f3f4f6" }}>
               <button className="okrs-btn-ghost" onClick={closeForm}>Cancel</button>
               <button className="okrs-btn-blue" onClick={handleSave} disabled={saving} style={{ minWidth: 140 }}>
@@ -638,14 +613,11 @@ export default function OkrSetup() {
         </div>
       )}
 
-      {/* ══════════════════════
-          STATS + FILTERS + LIST
-      ══════════════════════ */}
-      {/* Stats pills */}
+      {/* STATS + FILTERS + LIST */}
       {objectives.length > 0 && (
         <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
           {[
-            { label: "Total",    value: objectives.length,                                    color: "#2563eb", bg: "#eff6ff" },
+            { label: "Total",    value: objectives.length,                                     color: "#2563eb", bg: "#eff6ff" },
             { label: "Active",   value: objectives.filter(o => o.status === "active").length,  color: "#16a34a", bg: "#f0fdf4" },
             { label: "Draft",    value: objectives.filter(o => o.status === "draft").length,   color: "#d97706", bg: "#fffbeb" },
             { label: "Archived", value: objectives.filter(o => o.status === "archived").length,color: "#6b7280", bg: "#f3f4f6" },
@@ -658,14 +630,13 @@ export default function OkrSetup() {
         </div>
       )}
 
-      {/* Filters */}
       {objectives.length > 0 && (
         <div style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", border: "1px solid #e5e7eb", marginBottom: 18, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
           <div style={{ flex: 1, minWidth: 140 }}>
             <label style={labelStyle}>Department</label>
             <select style={selectStyle} value={filterDept} onChange={e => setFilterDept(e.target.value)}>
               <option value="All">All Departments</option>
-              {[...new Set(objectives.map(o => o.department))].sort().map(d => <option key={d} value={d}>{d}</option>)}
+            {departments.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
           <div style={{ flex: 1, minWidth: 120 }}>
@@ -683,7 +654,6 @@ export default function OkrSetup() {
         </div>
       )}
 
-      {/* OKR List */}
       {objectives.length === 0 ? (
         <EmptyState onNew={openCreate} />
       ) : filtered.length === 0 ? (
@@ -700,7 +670,6 @@ export default function OkrSetup() {
         </div>
       )}
 
-      {/* Bottom CTA */}
       {objectives.length > 0 && !showForm && (
         <div style={{ textAlign: "center", marginTop: 24 }}>
           <button className="okrs-btn-primary" onClick={openCreate} style={{ fontSize: 14, padding: "11px 28px" }}>

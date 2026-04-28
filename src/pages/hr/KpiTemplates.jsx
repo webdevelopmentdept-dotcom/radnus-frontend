@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 
-const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/kpi-templates`;
+const API_BASE       = import.meta.env.VITE_API_BASE_URL;
+const KPI_API        = `${API_BASE}/api/kpi-templates`;
+const DEPT_API       = `${API_BASE}/api/departments`;
 
-const DEPARTMENTS = ["IT", "Sales", "HR", "Marketing", "Finance", "Support"];
-const ROLES = ["Developer", "Sales Executive", "HR Manager", "Marketing Executive", "Accountant", "Support Agent"];
-const UNITS = ["tasks", "₹", "%", "hours", "tickets", "calls", "deals", "score"];
+const UNITS       = ["tasks", "₹", "%", "hours", "tickets", "calls", "deals", "score"];
 const FREQUENCIES = ["daily", "weekly", "monthly", "quarterly"];
 
 const defaultItem = { kpi_name: "", target: "", unit: "tasks", weight: "", frequency: "monthly" };
@@ -47,21 +47,70 @@ const STYLES = `
 `;
 
 export default function KpiTemplates() {
-    const [templates, setTemplates] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
-    const [editingId, setEditingId] = useState(null);
-    const [form, setForm] = useState(defaultForm);
+    const [templates,    setTemplates]    = useState([]);
+    const [loading,      setLoading]      = useState(true);
+    const [showModal,    setShowModal]    = useState(false);
+    const [editingId,    setEditingId]    = useState(null);
+    const [form,         setForm]         = useState(defaultForm);
     const [viewTemplate, setViewTemplate] = useState(null);
-    const [deleteConfirm, setDeleteConfirm] = useState(null);
-    const [toast, setToast] = useState(null);
-    const [saving, setSaving] = useState(false);
+    const [deleteConfirm,setDeleteConfirm]= useState(null);
+    const [toast,        setToast]        = useState(null);
+    const [saving,       setSaving]       = useState(false);
 
+    // ✅ Dynamic dept + role state
+    const [departments,  setDepartments]  = useState([]); // full dept objects
+    const [roles,        setRoles]        = useState([]); // designations for selected dept
+
+    // Fetch templates
     useEffect(() => { fetchTemplates(); }, []);
+
+    // ✅ Fetch active departments from Department Master API
+    useEffect(() => {
+        const fetchDepts = async () => {
+            try {
+                const res  = await fetch(DEPT_API);
+                const data = await res.json();
+                const all  = data.data || data || [];
+                // Only active departments
+                setDepartments(all.filter(d => d.status === "active"));
+            } catch {
+                setDepartments([]);
+            }
+        };
+        fetchDepts();
+    }, []);
+
+    // ✅ When department changes in form → filter active roles for that dept
+    const handleDeptChange = (deptName) => {
+        handleFormChange("department", deptName);
+        handleFormChange("role", ""); // reset role
+
+        if (!deptName) { setRoles([]); return; }
+
+        const found = departments.find(d => d.name === deptName);
+        if (found) {
+            const activeDesig = (found.designations || []).filter(dg => dg.status === "active");
+            setRoles(activeDesig);
+        } else {
+            setRoles([]);
+        }
+    };
+
+    // When editing an existing template, pre-load roles for its department
+    const preloadRoles = (deptName) => {
+        if (!deptName) { setRoles([]); return; }
+        const found = departments.find(d => d.name === deptName);
+        if (found) {
+            const activeDesig = (found.designations || []).filter(dg => dg.status === "active");
+            setRoles(activeDesig);
+        } else {
+            setRoles([]);
+        }
+    };
 
     const fetchTemplates = async () => {
         try {
-            const res = await fetch(API_BASE);
+            const res  = await fetch(KPI_API);
             const data = await res.json();
             if (data.success) setTemplates(data.data);
         } catch {
@@ -76,47 +125,86 @@ export default function KpiTemplates() {
         setTimeout(() => setToast(null), 3000);
     };
 
-    const openCreate = () => { setForm(defaultForm); setEditingId(null); setShowModal(true); };
-    const openEdit = (t) => {
-        setForm({ template_name: t.template_name, role: t.role, department: t.department, description: t.description || "", kpi_items: t.kpi_items.map(i => ({ ...i })) });
-        setEditingId(t._id);
+    const openCreate = () => {
+        setForm(defaultForm);
+        setRoles([]);
+        setEditingId(null);
         setShowModal(true);
     };
-    const closeModal = () => { setShowModal(false); setEditingId(null); setForm(defaultForm); };
-    const handleFormChange = (field, value) => setForm(f => ({ ...f, [field]: value }));
-    const handleItemChange = (idx, field, value) => {
+
+    const openEdit = (t) => {
+        setForm({
+            template_name: t.template_name,
+            role:          t.role,
+            department:    t.department,
+            description:   t.description || "",
+            kpi_items:     t.kpi_items.map(i => ({ ...i }))
+        });
+        setEditingId(t._id);
+        // Pre-load roles for this dept (departments may already be loaded)
+        preloadRoles(t.department);
+        setShowModal(true);
+    };
+
+    const closeModal = () => {
+        setShowModal(false);
+        setEditingId(null);
+        setForm(defaultForm);
+        setRoles([]);
+    };
+
+    const handleFormChange   = (field, value) => setForm(f => ({ ...f, [field]: value }));
+    const handleItemChange   = (idx, field, value) => {
         setForm(f => {
             const items = [...f.kpi_items];
             items[idx] = { ...items[idx], [field]: value };
             return { ...f, kpi_items: items };
         });
     };
-    const addItem = () => setForm(f => ({ ...f, kpi_items: [...f.kpi_items, { ...defaultItem }] }));
+    const addItem    = () => setForm(f => ({ ...f, kpi_items: [...f.kpi_items, { ...defaultItem }] }));
     const removeItem = (idx) => setForm(f => ({ ...f, kpi_items: f.kpi_items.filter((_, i) => i !== idx) }));
     const totalWeight = form.kpi_items.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0);
 
     const handleSubmit = async () => {
-        if (!form.template_name || !form.role || !form.department) return showToast("Fill all required fields", "error");
-        if (form.kpi_items.length === 0) return showToast("Add at least one KPI", "error");
-        if (totalWeight !== 100) return showToast(`Total weight must be 100%. Currently: ${totalWeight}%`, "error");
+        if (!form.template_name || !form.role || !form.department)
+            return showToast("Fill all required fields", "error");
+        if (form.kpi_items.length === 0)
+            return showToast("Add at least one KPI", "error");
+        if (totalWeight !== 100)
+            return showToast(`Total weight must be 100%. Currently: ${totalWeight}%`, "error");
+
         setSaving(true);
         try {
-            const url = editingId ? `${API_BASE}/${editingId}` : API_BASE;
+            const url    = editingId ? `${KPI_API}/${editingId}` : KPI_API;
             const method = editingId ? "PUT" : "POST";
-            const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+            const res    = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(form)
+            });
             const data = await res.json();
-            if (data.success) { showToast(editingId ? "Template updated!" : "Template created!"); fetchTemplates(); closeModal(); }
-            else showToast(data.message || "Error", "error");
-        } catch { showToast("Server error", "error"); }
-        finally { setSaving(false); }
+            if (data.success) {
+                showToast(editingId ? "Template updated!" : "Template created!");
+                fetchTemplates();
+                closeModal();
+            } else {
+                showToast(data.message || "Error", "error");
+            }
+        } catch {
+            showToast("Server error", "error");
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleDelete = async (id) => {
         try {
-            const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
+            const res  = await fetch(`${KPI_API}/${id}`, { method: "DELETE" });
             const data = await res.json();
             if (data.success) { showToast("Template deleted"); fetchTemplates(); }
-        } catch { showToast("Delete failed", "error"); }
+        } catch {
+            showToast("Delete failed", "error");
+        }
         setDeleteConfirm(null);
     };
 
@@ -196,10 +284,11 @@ export default function KpiTemplates() {
                 </div>
             )}
 
-            {/* Create/Edit Modal */}
+            {/* ===== Create/Edit Modal ===== */}
             {showModal && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
                     <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 680, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+
                         {/* Modal Header */}
                         <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", zIndex: 1 }}>
                             <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>
@@ -211,27 +300,83 @@ export default function KpiTemplates() {
                         <div className="modal-inner" style={{ padding: "24px" }}>
                             {/* Basic Info */}
                             <div className="modal-grid" style={{ display: "grid", gap: 16, marginBottom: 16 }}>
+
+                                {/* Template Name */}
                                 <div>
                                     <label style={labelStyle}>Template Name *</label>
-                                    <input value={form.template_name} onChange={e => handleFormChange("template_name", e.target.value)} placeholder="e.g. Developer KPI Template" style={inputStyle} />
+                                    <input
+                                        value={form.template_name}
+                                        onChange={e => handleFormChange("template_name", e.target.value)}
+                                        placeholder="e.g. Developer KPI Template"
+                                        style={inputStyle}
+                                    />
                                 </div>
-                                <div>
-                                    <label style={labelStyle}>Role *</label>
-                                    <select value={form.role} onChange={e => handleFormChange("role", e.target.value)} style={inputStyle}>
-                                        <option value="">Select Role</option>
-                                        {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                                    </select>
-                                </div>
+
+                                {/* ✅ Department — dynamic from API */}
                                 <div>
                                     <label style={labelStyle}>Department *</label>
-                                    <select value={form.department} onChange={e => handleFormChange("department", e.target.value)} style={inputStyle}>
-                                        <option value="">Select Department</option>
-                                        {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                                    <select
+                                        value={form.department}
+                                        onChange={e => handleDeptChange(e.target.value)}
+                                        style={inputStyle}
+                                    >
+                                        <option value="">
+                                            {departments.length === 0 ? "Loading departments…" : "Select Department"}
+                                        </option>
+                                        {departments.map(d => (
+                                            <option key={d._id} value={d.name}>{d.name}</option>
+                                        ))}
                                     </select>
                                 </div>
+
+                                {/* ✅ Role — filtered based on selected department */}
+                                <div>
+                                    <label style={labelStyle}>Role *</label>
+                                    {roles.length > 0 ? (
+                                        <select
+                                            value={form.role}
+                                            onChange={e => handleFormChange("role", e.target.value)}
+                                            style={inputStyle}
+                                            disabled={!form.department}
+                                        >
+                                            <option value="">Select Role</option>
+                                            {roles.map(r => (
+                                                <option key={r._id || r.title} value={r.title}>{r.title}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            value={form.role}
+                                            onChange={e => handleFormChange("role", e.target.value)}
+                                            placeholder={
+                                                !form.department
+                                                    ? "Select a department first"
+                                                    : "No roles found — type manually"
+                                            }
+                                            style={{
+                                                ...inputStyle,
+                                                background: !form.department ? "#f9fafb" : "#fff",
+                                                color: !form.department ? "#9ca3af" : "#1a1a2e",
+                                            }}
+                                            disabled={!form.department}
+                                        />
+                                    )}
+                                    {form.department && roles.length === 0 && (
+                                        <p style={{ margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }}>
+                                            No active roles for this department — type manually
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Description */}
                                 <div>
                                     <label style={labelStyle}>Description</label>
-                                    <input value={form.description} onChange={e => handleFormChange("description", e.target.value)} placeholder="Optional description" style={inputStyle} />
+                                    <input
+                                        value={form.description}
+                                        onChange={e => handleFormChange("description", e.target.value)}
+                                        placeholder="Optional description"
+                                        style={inputStyle}
+                                    />
                                 </div>
                             </div>
 
@@ -298,7 +443,7 @@ export default function KpiTemplates() {
                 </div>
             )}
 
-            {/* View Modal */}
+            {/* ===== View Modal ===== */}
             {viewTemplate && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
                     <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
@@ -340,7 +485,7 @@ export default function KpiTemplates() {
                                 </table>
                             </div>
 
-                            {/* Mobile Cards (replaces table on small screens) */}
+                            {/* Mobile Cards */}
                             <div className="view-table-mobile">
                                 {viewTemplate.kpi_items.map((item, i) => (
                                     <div key={i} style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: "12px 14px", marginBottom: 10 }}>
@@ -365,7 +510,7 @@ export default function KpiTemplates() {
                 </div>
             )}
 
-            {/* Delete Confirm */}
+            {/* ===== Delete Confirm ===== */}
             {deleteConfirm && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
                     <div style={{ background: "#fff", borderRadius: 12, padding: 28, maxWidth: 360, width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
