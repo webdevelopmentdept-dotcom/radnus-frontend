@@ -23,8 +23,8 @@ const HR_DOC_TYPES = [
 // ─── MANDATORY DOCS ───────────────────────────────────────────────────────────
 const MANDATORY_PERSONAL_DOCS = [
   { type: "Aadhaar",           category: "IDENTITY",     required: true  },
-  { type: "Ration Card Front", category: "IDENTITY",     required: true  },
-  { type: "Ration Card Back",  category: "IDENTITY",     required: true  },
+ { type: "Ration Card Front", category: "IDENTITY", required: false },
+{ type: "Ration Card Back",  category: "IDENTITY", required: false },
   { type: "PAN",               category: "IDENTITY",     required: true  },
   { type: "Passport Photo",    category: "IDENTITY",     required: true  },
   { type: "Resume",            category: "PROFESSIONAL", required: true  },
@@ -307,7 +307,7 @@ export default function MyDocuments() {
             <div>
               <div className="d-flex align-items-center gap-2 flex-wrap">
                 <span style={{ fontWeight: 700, fontSize: 13 }}>Ration Card</span>
-                <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 99, background: "#fee2e2", color: "#dc2626" }}>Required</span>
+                <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 99, background: "#fee2e2", color: "#dc2626" }}>Optional</span>
                 <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600 }}>IDENTITY — Upload both sides</span>
               </div>
               {bothDone

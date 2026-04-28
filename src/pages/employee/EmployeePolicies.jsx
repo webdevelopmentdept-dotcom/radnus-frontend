@@ -1,13 +1,20 @@
-// EmployeePolicies.jsx — Updated with PolicyQuizModal integration
-// Replace your existing EmployeePolicies.jsx with this file.
-// Make sure PolicyQuizModal.jsx is in the same folder.
-
+// EmployeePolicies.jsx — Updated with toDisplayVersion fix
 import { useState, useEffect } from "react";
 import axios from "axios";
 import EmployeeLayout from "./EmployeeLayout";
 import PolicyQuizModal from "./PolicyQuizModal";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+// ✅ Same version display logic as HR side
+// 1 → "1", 2 → "1.1", 3 → "1.2", ..., 11 → "1.10", 12 → "2", 13 → "2.1", ...
+function toDisplayVersion(rawVersion) {
+  if (!rawVersion || rawVersion <= 1) return "1";
+  const zeroBasedUpdates = rawVersion - 2;
+  const major = Math.floor(zeroBasedUpdates / 10) + 1;
+  const minor = (zeroBasedUpdates % 10) + 1;
+  return `${major}.${minor}`;
+}
 
 const getFileType = (url) => {
   if (!url) return "unknown";
@@ -35,7 +42,7 @@ export default function EmployeePolicies() {
   const [employee, setEmployee] = useState(null);
 
   // Quiz state
-  const [quizPolicy, setQuizPolicy] = useState(null); // policy for which quiz modal is open
+  const [quizPolicy, setQuizPolicy] = useState(null);
 
   const employeeId = localStorage.getItem("employeeId");
 
@@ -43,7 +50,6 @@ export default function EmployeePolicies() {
     if (!employeeId) { window.location.href = "/login"; return; }
     fetchEmployee();
     fetchPolicies();
-    fetchAcknowledgements();
   }, []);
 
   const fetchEmployee = async () => {
@@ -68,16 +74,6 @@ export default function EmployeePolicies() {
     }
   };
 
-  // Fetch which policies this employee has already acknowledged (current version)
-  const fetchAcknowledgements = async () => {
-    try {
-      // We derive from quiz-check or direct acknowledgement endpoint.
-      // Simple approach: check per policy on mount would be O(n) calls.
-      // Better: backend endpoint "my acknowledgements" — fallback: local state only.
-      // We'll rely on local state + quiz submit callback for now.
-    } catch (err) { console.log(err); }
-  };
-
   const markAcknowledged = (policyId) => {
     setAcknowledgedIds((prev) =>
       prev.includes(policyId) ? prev : [...prev, policyId]
@@ -86,11 +82,9 @@ export default function EmployeePolicies() {
 
   const isAcknowledged = (policyId) => acknowledgedIds.includes(policyId);
 
-  // "Acknowledge" button click → open quiz modal (quiz modal handles no-quiz case too)
   const handleAcknowledgeClick = (policy) => {
     if (isAcknowledged(policy._id)) return;
     setQuizPolicy(policy);
-    // Close document viewer if open
     setSelectedPDF(null);
     setSelectedPolicy(null);
   };
@@ -101,14 +95,10 @@ export default function EmployeePolicies() {
 
   const getVersions = (policy) => {
     if (Array.isArray(policy.version_history) && policy.version_history.length > 0) {
-      const sorted = [...policy.version_history].sort((a, b) => a.version_number - b.version_number);
-      const allSame = sorted.every(v => v.version_number === sorted[0].version_number);
-      if (allSame) return sorted.map((v, i) => ({ ...v, display_version: i + 1 }));
-      return sorted.map(v => ({ ...v, display_version: v.version_number }));
+      return [...policy.version_history].sort((a, b) => a.version_number - b.version_number);
     }
     return [{
       version_number: policy.version,
-      display_version: policy.version,
       file_url: policy.file_url,
       change_note: "Initial upload",
       created_at: policy.createdAt,
@@ -169,8 +159,8 @@ export default function EmployeePolicies() {
           <div className="row g-3 mb-4">
             {[
               { label: "Total Policies", value: policies.length, bg: "linear-gradient(135deg,#2563eb,#1e40af)" },
-              { label: "Acknowledged", value: acknowledgedIds.length, bg: "linear-gradient(135deg,#059669,#065f46)" },
-              { label: "Pending", value: policies.length - acknowledgedIds.length, bg: "linear-gradient(135deg,#d97706,#92400e)" },
+              { label: "Acknowledged",   value: acknowledgedIds.length, bg: "linear-gradient(135deg,#059669,#065f46)" },
+              { label: "Pending",        value: policies.length - acknowledgedIds.length, bg: "linear-gradient(135deg,#d97706,#92400e)" },
             ].map((s, i) => (
               <div key={i} className="col-md-4">
                 <div className="card border-0 text-white" style={{ background: s.bg }}>
@@ -247,7 +237,7 @@ export default function EmployeePolicies() {
                   )}
                 </div>
 
-                {/* Acknowledge Footer — triggers quiz */}
+                {/* Acknowledge Footer */}
                 <div style={{
                   padding: "14px 20px", borderTop: "1px solid #e2e8f0",
                   textAlign: "center", background: "#f8fafc",
@@ -356,8 +346,9 @@ export default function EmployeePolicies() {
                                 <span style={{ background: c.bg, color: c.color, borderRadius: 6, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>
                                   {p.category}
                                 </span>
+                                {/* ✅ Fixed: use toDisplayVersion instead of raw p.version */}
                                 <span style={{ background: "#f1f5f9", color: "#475569", borderRadius: 6, padding: "2px 10px", fontSize: 11, fontWeight: 600 }}>
-                                  Latest: v{p.version}
+                                  Latest: v{toDisplayVersion(p.version)}
                                 </span>
                               </div>
 
@@ -372,7 +363,11 @@ export default function EmployeePolicies() {
                                 </span>
                                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                                   <button
-                                    onClick={() => openViewer(p, latestVersion.file_url, `Version v${latestVersion.display_version} (Latest)`)}
+                                    onClick={() => openViewer(
+                                      p,
+                                      latestVersion.file_url,
+                                      `Version v${toDisplayVersion(latestVersion.version_number)} (Latest)` // ✅ Fixed
+                                    )}
                                     style={{
                                       background: "#1d4ed8", color: "#fff", border: "none",
                                       borderRadius: 8, padding: "6px 14px", cursor: "pointer",
@@ -424,8 +419,9 @@ export default function EmployeePolicies() {
                                       borderRadius: 8, padding: "8px 12px",
                                     }}>
                                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                        {/* ✅ Fixed: use toDisplayVersion */}
                                         <span style={{ background: idx === 0 ? "#dbeafe" : "#f1f5f9", color: idx === 0 ? "#1e40af" : "#64748b", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>
-                                          v{v.display_version}
+                                          v{toDisplayVersion(v.version_number)}
                                         </span>
                                         {idx === 0 && (
                                           <span style={{ background: "#dcfce7", color: "#16a34a", borderRadius: 4, padding: "1px 6px", fontSize: 10, fontWeight: 700 }}>Latest</span>
@@ -435,7 +431,11 @@ export default function EmployeePolicies() {
                                         </span>
                                       </div>
                                       <button
-                                        onClick={() => openViewer(p, v.file_url, `Version v${v.display_version}${idx === 0 ? " (Latest)" : ""}`)}
+                                        onClick={() => openViewer(
+                                          p,
+                                          v.file_url,
+                                          `Version v${toDisplayVersion(v.version_number)}${idx === 0 ? " (Latest)" : ""}` // ✅ Fixed
+                                        )}
                                         style={{ background: "#e0e7ff", color: "#4338ca", border: "none", borderRadius: 6, padding: "4px 12px", cursor: "pointer", fontSize: 11, fontWeight: 600 }}
                                       >
                                         View

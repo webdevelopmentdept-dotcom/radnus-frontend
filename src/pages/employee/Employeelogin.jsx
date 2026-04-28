@@ -30,9 +30,9 @@ export default function EmployeeLogin() {
   const [isRegister, setIsRegister]     = useState(true);
 
   // ── Department / Designation state ──────────────────────────────────────────
-  const [departments, setDepartments]         = useState([]);  // full list from API
+  const [departments, setDepartments]         = useState([]);
   const [deptLoading, setDeptLoading]         = useState(false);
-  const [designations, setDesignations]       = useState([]);  // filtered for selected dept
+  const [designations, setDesignations]       = useState([]);
   const [selectedDeptId, setSelectedDeptId]   = useState("");
 
   const form = useForm({
@@ -90,7 +90,6 @@ export default function EmployeeLogin() {
       try {
         const res = await axios.get(`${API_BASE}/api/departments`);
         const all = res.data.data || res.data || [];
-        // Only active departments
         setDepartments(all.filter((d) => d.status === "active"));
       } catch {
         setDepartments([]);
@@ -105,7 +104,7 @@ export default function EmployeeLogin() {
   const handleDeptChange = (e) => {
     const deptName = e.target.value;
     form.setValue("department", deptName, { shouldValidate: true });
-    form.setValue("designation", "", { shouldValidate: false }); // reset designation
+    form.setValue("designation", "", { shouldValidate: false });
 
     if (!deptName) {
       setSelectedDeptId("");
@@ -113,11 +112,9 @@ export default function EmployeeLogin() {
       return;
     }
 
-    // Find the matching dept object
     const found = departments.find((d) => d.name === deptName);
     if (found) {
       setSelectedDeptId(found._id);
-      // Filter only active designations
       const activeDesig = (found.designations || []).filter(
         (dg) => dg.status === "active"
       );
@@ -319,7 +316,14 @@ export default function EmployeeLogin() {
                       />
                       <span
                         onClick={() => setShowPassword(!showPassword)}
-                        style={{ position: "absolute", right: "15px", top: "50%", transform: "translateY(-50%)", cursor: "pointer", fontSize: "18px" }}
+                        style={{
+                          position: "absolute",
+                          right: "15px",
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          cursor: "pointer",
+                          fontSize: "18px",
+                        }}
                       >
                         {showPassword ? "🙈" : "👁️"}
                       </span>
@@ -342,6 +346,20 @@ export default function EmployeeLogin() {
                             }}
                           />
                         </div>
+                      </div>
+                    )}
+
+                    {/* ✅ FORGOT PASSWORD LINK — Login mode la மட்டும் காட்டும் */}
+                    {!isRegister && (
+                      <div className="text-end mt-1">
+                        <Button
+                          variant="link"
+                          className="p-0 small text-primary"
+                          style={{ fontSize: "13px", textDecoration: "none" }}
+                          onClick={() => navigate("/employee/forgot-password")}
+                        >
+                          Forgot Password?
+                        </Button>
                       </div>
                     )}
                   </Col>
@@ -388,7 +406,7 @@ export default function EmployeeLogin() {
                         </p>
                       </Col>
 
-                      {/* ── Department Dropdown (from API) ── */}
+                      {/* ── Department Dropdown ── */}
                       <Col md={12}>
                         <Form.Select
                           value={form.watch("department")}
@@ -412,7 +430,7 @@ export default function EmployeeLogin() {
                         </p>
                       </Col>
 
-                      {/* ── Designation Dropdown (filtered by selected dept) ── */}
+                      {/* ── Designation Dropdown ── */}
                       <Col md={12}>
                         {designations.length > 0 ? (
                           <>
@@ -435,7 +453,6 @@ export default function EmployeeLogin() {
                           </>
                         ) : (
                           <>
-                            {/* If no dept selected or dept has no designations → plain text input */}
                             <Form.Control
                               {...form.register("designation", {
                                 required: "Designation required",

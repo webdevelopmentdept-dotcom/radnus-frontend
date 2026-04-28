@@ -54,7 +54,8 @@ import EmployeeAppraisal from "./pages/employee/EmployeeAppraisal";
 import MyIncentive from "./pages/employee/MyIncentive";
 import EmployeePolicies from "./pages/employee/EmployeePolicies";
 import EmployeeSOPView from "./pages/employee/Employeesopview";
-
+import ForgotPassword from "./pages/employee/Forgotpassword";
+import ResetPassword from "./pages/employee/Resetpassword";
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
@@ -221,6 +222,8 @@ function App() {
         <Route path="/employee/my-incentive" element={<MyIncentive />} />
         <Route path="/employee/policies" element={<EmployeePolicies />} />
         <Route path="/employee/sops" element={<EmployeeSOPView />} />
+        <Route path="/employee/forgot-password"        element={<ForgotPassword />} />
+<Route path="/employee/reset-password/:token"  element={<ResetPassword />} />
  
         {/* <Route path="/hr/dashboard" element={<HrDashboard />}>
           <Route index element={<HrDashboardHome />} />

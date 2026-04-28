@@ -171,7 +171,7 @@ export default function UploadDocuments() {
   // ── Submit logic ──────────────────────────────────────────────────────────
   // Ration Card: both Front & Back must be "success"
   const rationCardDone   = RATION_CARD_SIDES.every(s => statuses[s.id] === "success");
-  const mandatoryAllDone = MANDATORY_DOCS.filter(d => d.required === true).every(d => statuses[d.id] === "success") && rationCardDone;
+  const mandatoryAllDone = MANDATORY_DOCS.filter(d => d.required === true).every(d => statuses[d.id] === "success");
   const ugAllDone        = hasUG === false || (hasUG === true && UG_DOCS.filter(d => d.required).every(d => statuses[d.id] === "success") && statuses["CGPA"] === "success");
   const expAllDone       = hasExperience === false || hasExperience === null ||
     (hasExperience === true && companies.every(c =>
@@ -299,7 +299,7 @@ export default function UploadDocuments() {
               <div className="d-flex align-items-center gap-2 flex-wrap">
                 <span className="fw-bold" style={{ fontSize: 13 }}>Ration Card</span>
                 <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 99, background: "#fee2e2", color: "#dc2626" }}>
-                  Required
+                  Optional
                 </span>
               </div>
               <small className="text-uppercase text-muted fw-semibold" style={{ fontSize: 10 }}>IDENTITY — Upload both sides</small>
