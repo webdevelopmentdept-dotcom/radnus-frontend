@@ -36,7 +36,7 @@ export default function HrSidebar() {
   useEffect(() => {
     const fetchUnread = async () => {
       try {
-        const id = localStorage.getItem("hrId");
+        const token = localStorage.getItem("authToken");
         if (!id) return;
         const res = await axios.get(`${API_BASE}/api/notifications/hr/${id}`);
         const all = res.data?.data || res.data || [];
@@ -241,14 +241,14 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
             <HugeiconsIcon icon={MailSend01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Applicants
+            Applicants ✅
           </NavLink>
 
           <NavLink to="/hr/dashboard/job-postings"
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
             <HugeiconsIcon icon={TaskDone01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Job Postings
+            Job Postings ✅
           </NavLink>
 
           {/* ══════════════════════════════
@@ -260,28 +260,28 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
             <HugeiconsIcon icon={UserMultiple02Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            All Employees
+            All Employees ✅
           </NavLink>
 
           <NavLink to="/hr/dashboard/hr-pending"
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
             <HugeiconsIcon icon={Clock01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Pending Approvals
+            Pending Approvals ✅
           </NavLink>
 
           <NavLink to="/hr/dashboard/hr-approved"
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
             <HugeiconsIcon icon={CheckmarkCircle01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Approved
+            Approved ✅
           </NavLink>
 
           <NavLink to="/hr/dashboard/hr-reject"
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
             <HugeiconsIcon icon={CancelCircleIcon} size={18} color="currentColor" strokeWidth={1.8} />
-            Rejected
+            Rejected ✅
           </NavLink>
 
           {/* ══════════════════════════════
@@ -293,7 +293,7 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
             <HugeiconsIcon icon={BarChartIcon} size={18} color="currentColor" strokeWidth={1.8} />
-            Activated Employees
+            Activated Employees ✅
           </NavLink>
 
           {/* ══════════════════════════════
@@ -319,7 +319,7 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
             onClick={close}>
             <HugeiconsIcon icon={Target01Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            KPI Templates
+            KPI Templates ✅
             <span className="hr-flow-label">1</span>
           </NavLink>
 
@@ -328,7 +328,7 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
             onClick={close}>
             <HugeiconsIcon icon={Task01Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            Assign KPIs
+            Assign KPIs ✅
             <span className="hr-flow-label">2</span>
           </NavLink>
 
@@ -337,7 +337,7 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
             onClick={close}>
             <HugeiconsIcon icon={StarIcon} size={16} color="currentColor" strokeWidth={1.8} />
-            Reviews
+            Reviews ✅
             <span className="hr-flow-label">3</span>
           </NavLink>
 
@@ -346,7 +346,7 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
             onClick={close}>
             <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
-            Performance Reports
+            Performance Reports ✅
             <span className="hr-flow-label">4</span>
           </NavLink>
 
@@ -361,7 +361,7 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
             onClick={close}>
             <HugeiconsIcon icon={Setting07Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            OKR Setup
+            OKR Setup ✅
             <span className="hr-flow-label">1</span>
           </NavLink>
 
@@ -370,7 +370,7 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
             onClick={close}>
             <HugeiconsIcon icon={Target01Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            OKR Dashboard
+            OKR Dashboard ✅
             <span className="hr-flow-label">2</span>
           </NavLink>
 
@@ -448,7 +448,7 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
             onClick={close}>
             <HugeiconsIcon icon={Medal01Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            Grade Master
+            Grade Master ✅
             <span className="hr-flow-label">1</span>
           </NavLink>
 
@@ -456,7 +456,7 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
             onClick={close}>
             <HugeiconsIcon icon={UserMultiple02Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            Assign Grade
+            Assign Grade ✅
             <span className="hr-flow-label">2</span>
           </NavLink>
 
@@ -464,7 +464,7 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
             onClick={close}>
             <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
-            Grade Reports
+            Grade Reports ✅
             <span className="hr-flow-label">3</span>
           </NavLink>
 
@@ -564,7 +564,7 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
             <HugeiconsIcon icon={Building04Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Departments
+            Departments ✅
           </NavLink>
 
 
@@ -572,7 +572,7 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
             <HugeiconsIcon icon={TaskDone01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            SOP Management
+            SOP Management ✅
           </NavLink>
 
           {/* ══════════════════════════════
@@ -584,14 +584,14 @@ export default function HrSidebar() {
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
             <HugeiconsIcon icon={TaskDone01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Policy Management
+            Policy Management ✅
           </NavLink>
 
           <NavLink to="/hr/dashboard/policies/quiz"
             className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
             onClick={close}>
             <HugeiconsIcon icon={TaskDone01Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            Quiz Management
+            Quiz Management ✅
             <span className="hr-flow-label">2</span>
           </NavLink>
 
@@ -621,8 +621,8 @@ export default function HrSidebar() {
           </NavLink>
 
           {/* ══════════════════════════════
-    RETENTION (HR ONLY)
-══════════════════════════════ */}
+                    RETENTION (HR ONLY)
+              ══════════════════════════════ */}
           <div className="hr-section">Retention</div>
 
           <NavLink to="/hr/dashboard/retention-plan"
@@ -631,7 +631,6 @@ export default function HrSidebar() {
             <HugeiconsIcon icon={StarIcon} size={18} />
             Retention Plan
           </NavLink>
-
 
           <NavLink to="/hr/dashboard/leadership-track"
             className={({ isActive }) => isActive ? "active" : ""}
