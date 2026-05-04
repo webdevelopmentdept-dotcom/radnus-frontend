@@ -1,6 +1,3 @@
-// pages/hr/dashboard/performance/OkrDashboard.jsx — FULL UPDATED VERSION
-// Changes: Replaced all emojis with Lucide icons; fixed mobile card layout
-
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import {
@@ -9,33 +6,33 @@ import {
   Clock, AlertCircle, TrendingUp, Download,
   ClipboardList, MapPin, Target, Lightbulb,
   ArrowRight, X, Square, Star, BookOpen,
-  FileCheck, Timer, Minus
+  FileCheck, Timer, Minus, Trash2
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const getRatingInfo = (score) => {
-  if (score >= 90) return { label: "Outstanding",          color: "#16a34a", bg: "#f0fdf4" };
+  if (score >= 90) return { label: "Outstanding", color: "#16a34a", bg: "#f0fdf4" };
   if (score >= 75) return { label: "Exceeds Expectations", color: "#2563eb", bg: "#eff6ff" };
-  if (score >= 60) return { label: "Meets Expectations",   color: "#d97706", bg: "#fffbeb" };
-  if (score >= 45) return { label: "Needs Improvement",    color: "#ea580c", bg: "#fff7ed" };
-  return              { label: "Unsatisfactory",           color: "#dc2626", bg: "#fef2f2" };
+  if (score >= 60) return { label: "Meets Expectations", color: "#d97706", bg: "#fffbeb" };
+  if (score >= 45) return { label: "Needs Improvement", color: "#ea580c", bg: "#fff7ed" };
+  return { label: "Unsatisfactory", color: "#dc2626", bg: "#fef2f2" };
 };
 
 const getProgressColor = (pct) => {
   if (pct >= 100) return "#16a34a";
-  if (pct >= 75)  return "#2563eb";
-  if (pct >= 50)  return "#d97706";
+  if (pct >= 75) return "#2563eb";
+  if (pct >= 50) return "#d97706";
   return "#dc2626";
 };
 
 const STATUS_CONFIG = {
-  finalized     : { label: "Finalized",      color: "#16a34a", bg: "#f0fdf4", Icon: FileCheck },
+  finalized: { label: "Finalized", color: "#16a34a", bg: "#f0fdf4", Icon: FileCheck },
   self_submitted: { label: "Self Submitted", color: "#2563eb", bg: "#eff6ff", Icon: ClipboardList },
-  in_progress   : { label: "In Progress",    color: "#d97706", bg: "#fffbeb", Icon: Timer },
-  assigned      : { label: "Assigned",       color: "#6b7280", bg: "#f3f4f6", Icon: MapPin },
-  not_started   : { label: "Not Started",    color: "#9ca3af", bg: "#f9fafb", Icon: Square },
+  in_progress: { label: "In Progress", color: "#d97706", bg: "#fffbeb", Icon: Timer },
+  assigned: { label: "Assigned", color: "#6b7280", bg: "#f3f4f6", Icon: MapPin },
+  not_started: { label: "Not Started", color: "#9ca3af", bg: "#f9fafb", Icon: Square },
 };
 
 const STYLES = `
@@ -89,10 +86,10 @@ function ScoreRing({ score, size = 80 }) {
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e5e7eb" strokeWidth={strokeW}/>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={strokeW}
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e5e7eb" strokeWidth={strokeW} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={strokeW}
           strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-          style={{ transition: "stroke-dashoffset 1s ease" }}/>
+          style={{ transition: "stroke-dashoffset 1s ease" }} />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <span style={{ fontSize: size * 0.22, fontWeight: 900, color }}>{score}%</span>
@@ -113,7 +110,7 @@ function KpiProgressBar({ kpi }) {
         </span>
       </div>
       <div style={{ background: "#f3f4f6", borderRadius: 99, height: 7, overflow: "hidden" }}>
-        <div style={{ width: `${kpi.pct}%`, height: "100%", background: color, borderRadius: 99, transition: "width 0.8s ease" }}/>
+        <div style={{ width: `${kpi.pct}%`, height: "100%", background: color, borderRadius: 99, transition: "width 0.8s ease" }} />
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
         <span style={{ fontSize: 10, color: "#9ca3af" }}>{kpi.weight}% weight · {kpi.frequency}</span>
@@ -132,7 +129,6 @@ function OkrObjectiveCard({ okr }) {
 
   return (
     <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", overflow: "hidden" }}>
-      {/* Header */}
       <div style={{ background: "#1a1a2e", padding: "14px 18px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -146,17 +142,15 @@ function OkrObjectiveCard({ okr }) {
             <span style={{ background: bg, color, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>{label}</span>
           </div>
         </div>
-        {/* Objective progress bar */}
         <div style={{ marginTop: 10, background: "rgba(255,255,255,0.1)", borderRadius: 99, height: 6, overflow: "hidden" }}>
-          <div style={{ width: `${score}%`, height: "100%", background: color, borderRadius: 99 }}/>
+          <div style={{ width: `${score}%`, height: "100%", background: color, borderRadius: 99 }} />
         </div>
       </div>
 
-      {/* Key Results */}
       <div style={{ padding: "12px 18px" }}>
         {(open ? krs : krs.slice(0, 2)).map((kr, i) => {
           const pct = kr.progress_pct || 0;
-          const c   = getProgressColor(pct);
+          const c = getProgressColor(pct);
           return (
             <div key={i} style={{ marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, gap: 8 }}>
@@ -166,13 +160,13 @@ function OkrObjectiveCard({ okr }) {
                 </span>
               </div>
               <div style={{ background: "#f3f4f6", borderRadius: 99, height: 6, overflow: "hidden" }}>
-                <div style={{ width: `${pct}%`, height: "100%", background: c, borderRadius: 99 }}/>
+                <div style={{ width: `${pct}%`, height: "100%", background: c, borderRadius: 99 }} />
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
                 {kr.linked_kpi_name
                   ? <span style={{ fontSize: 10, color: "#2563eb", fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
-                      <Minus size={10}/> KPI: {kr.linked_kpi_name}
-                    </span>
+                    <Minus size={10} /> KPI: {kr.linked_kpi_name}
+                  </span>
                   : <span style={{ fontSize: 10, color: "#9ca3af" }}>No KPI linked</span>}
                 <span style={{ fontSize: 10, fontWeight: 700, color: c }}>{pct}%</span>
               </div>
@@ -182,7 +176,7 @@ function OkrObjectiveCard({ okr }) {
         {krs.length > 2 && (
           <button onClick={() => setOpen(o => !o)}
             style={{ background: "none", border: "none", color: "#2563eb", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 4 }}>
-            {open ? <><ChevronUp size={12}/> Show less</> : <><ChevronDown size={12}/> +{krs.length - 2} more KRs</>}
+            {open ? <><ChevronUp size={12} /> Show less</> : <><ChevronDown size={12} /> +{krs.length - 2} more KRs</>}
           </button>
         )}
         {krs.length === 0 && (
@@ -192,9 +186,55 @@ function OkrObjectiveCard({ okr }) {
     </div>
   );
 }
+// ── Delete Confirm Modal ──────────────────────────────────────────────────────
+function DeleteModal({ row, onConfirm, onCancel, loading }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 9999,
+      background: "rgba(0,0,0,0.45)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 16,
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 16, padding: 28,
+        maxWidth: 420, width: "100%",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+      }}>
+        {/* Icon */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+          <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Trash2 size={26} color="#dc2626" />
+          </div>
+        </div>
 
+        <h3 style={{ margin: "0 0 8px", textAlign: "center", fontSize: 18, fontWeight: 800, color: "#1a1a2e" }}>
+          Delete KPI Assignment?
+        </h3>
+        <p style={{ margin: "0 0 20px", textAlign: "center", fontSize: 13, color: "#6b7280", lineHeight: 1.6 }}>
+          <strong style={{ color: "#1a1a2e" }}>{row.employee.name}</strong> — {row.period}<br />
+          This will permanently remove the assignment from the database.<br />
+          <span style={{ color: "#dc2626", fontWeight: 600 }}>This action cannot be undone!</span>
+        </p>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onCancel} disabled={loading}
+            style={{ flex: 1, padding: "10px 0", border: "1px solid #e5e7eb", borderRadius: 9, background: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", color: "#374151" }}>
+            Cancel
+          </button>
+          <button onClick={onConfirm} disabled={loading}
+            style={{ flex: 1, padding: "10px 0", border: "none", borderRadius: 9, background: loading ? "#fca5a5" : "#dc2626", color: "#fff", fontWeight: 700, fontSize: 14, cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            {loading ? (
+              <><div style={{ width: 14, height: 14, border: "2px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> Deleting...</>
+            ) : (
+              <><Trash2 size={14} /> Yes, Delete</>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 // ── Employee Row (expandable) ─────────────────────────────────────────────────
-function EmployeeRow({ row, idx, expanded, onToggle }) {
+function EmployeeRow({ row, idx, expanded, onToggle, onDelete }) {
   const { label, color, bg } = getRatingInfo(row.okr_score);
   const statusCfg = STATUS_CONFIG[row.okr_status] || STATUS_CONFIG.not_started;
   const StatusIcon = statusCfg.Icon;
@@ -221,7 +261,7 @@ function EmployeeRow({ row, idx, expanded, onToggle }) {
         </td>
         <td style={{ padding: "14px 16px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <ScoreRing score={row.okr_score} size={52}/>
+            <ScoreRing score={row.okr_score} size={52} />
             <div>
               <span style={{ display: "block", fontWeight: 700, fontSize: 11, color, lineHeight: 1.2 }}>{label}</span>
               <span style={{ fontSize: 11, color: "#9ca3af" }}>{row.targets_met}/{row.kpi_count} targets</span>
@@ -230,15 +270,26 @@ function EmployeeRow({ row, idx, expanded, onToggle }) {
         </td>
         <td style={{ padding: "14px 16px" }}>
           <span style={{ background: statusCfg.bg, color: statusCfg.color, fontWeight: 700, padding: "4px 12px", borderRadius: 20, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <StatusIcon size={12}/> {statusCfg.label}
+            <StatusIcon size={12} /> {statusCfg.label}
           </span>
         </td>
         <td style={{ padding: "14px 16px", color: "#374151", fontSize: 13 }}>{row.kpi_count} KPIs</td>
         <td style={{ padding: "14px 16px" }}>
-          <button style={{ background: expanded ? "#f3f4f6" : "#eff6ff", border: "none", borderRadius: 7, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", color: expanded ? "#374151" : "#2563eb", display: "flex", alignItems: "center", gap: 4 }}>
-            {expanded ? <ChevronUp size={13}/> : <ChevronDown size={13}/>}
-            {expanded ? "Hide" : "Details"}
-          </button>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }} onClick={e => e.stopPropagation()}>
+            <button
+              onClick={onToggle}
+              style={{ background: expanded ? "#f3f4f6" : "#eff6ff", border: "none", borderRadius: 7, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", color: expanded ? "#374151" : "#2563eb", display: "flex", alignItems: "center", gap: 4 }}>
+              {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              {expanded ? "Hide" : "Details"}
+            </button>
+            {/* DELETE BUTTON */}
+            <button
+              onClick={() => onDelete(row)}
+              title="Delete this assignment"
+              style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 7, padding: "6px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#dc2626", display: "flex", alignItems: "center", gap: 4 }}>
+              <Trash2 size={13} />
+            </button>
+          </div>
         </td>
       </tr>
 
@@ -250,7 +301,7 @@ function EmployeeRow({ row, idx, expanded, onToggle }) {
               <div>
                 <p style={{ margin: "0 0 6px", fontWeight: 700, fontSize: 14, color: "#1a1a2e" }}>KPI Progress — {row.template.name}</p>
                 <p style={{ margin: "0 0 14px", fontSize: 12, color: "#6b7280" }}>{row.template.role} · {row.template.department}</p>
-                {row.kpi_progress.map((kpi, i) => <KpiProgressBar key={i} kpi={kpi}/>)}
+                {row.kpi_progress.map((kpi, i) => <KpiProgressBar key={i} kpi={kpi} />)}
                 <div style={{ background: "#f8fafc", borderRadius: 8, padding: "10px 14px", display: "flex", justifyContent: "space-between", marginTop: 8 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Overall KPI Score</span>
                   <span style={{ fontSize: 16, fontWeight: 900, color: getRatingInfo(row.okr_score).color }}>{row.okr_score}%</span>
@@ -261,15 +312,15 @@ function EmployeeRow({ row, idx, expanded, onToggle }) {
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ background: row.self_assessment ? "#f0fdf4" : "#fffbeb", border: `1px solid ${row.self_assessment ? "#bbf7d0" : "#fde68a"}`, borderRadius: 10, padding: 14 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                    {row.self_assessment ? <CheckCircle size={16} color="#16a34a"/> : <Clock size={16} color="#d97706"/>}
+                    {row.self_assessment ? <CheckCircle size={16} color="#16a34a" /> : <Clock size={16} color="#d97706" />}
                     <span style={{ fontWeight: 700, fontSize: 13, color: row.self_assessment ? "#16a34a" : "#d97706" }}>
                       Self Assessment {row.self_assessment ? "Submitted" : "Pending"}
                     </span>
                   </div>
                   {row.self_assessment
                     ? <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>
-                        Submitted: {new Date(row.self_assessment.submitted_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                      </p>
+                      Submitted: {new Date(row.self_assessment.submitted_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
                     : <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>Employee hasn't submitted yet.</p>
                   }
                 </div>
@@ -277,7 +328,7 @@ function EmployeeRow({ row, idx, expanded, onToggle }) {
                 {row.review ? (
                   <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                      <Award size={16} color="#2563eb"/>
+                      <Award size={16} color="#2563eb" />
                       <span style={{ fontWeight: 700, fontSize: 13, color: "#2563eb" }}>Review Finalized</span>
                     </div>
                     <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color: getRatingInfo(row.review.final_score).color }}>{row.review.final_score}%</p>
@@ -292,7 +343,7 @@ function EmployeeRow({ row, idx, expanded, onToggle }) {
                 ) : (
                   <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 10, padding: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                      <AlertCircle size={16} color="#9ca3af"/>
+                      <AlertCircle size={16} color="#9ca3af" />
                       <span style={{ fontWeight: 700, fontSize: 13, color: "#9ca3af" }}>Review Pending</span>
                     </div>
                     <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>
@@ -304,10 +355,10 @@ function EmployeeRow({ row, idx, expanded, onToggle }) {
                 <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e7eb", padding: 14 }}>
                   <p style={{ margin: "0 0 10px", fontWeight: 700, fontSize: 13, color: "#1a1a2e" }}>Assignment Details</p>
                   {[
-                    { label: "Period",      value: row.period },
+                    { label: "Period", value: row.period },
                     { label: "Assigned On", value: new Date(row.assigned_on).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) },
-                    { label: "Template",    value: row.template.name },
-                    { label: "KPI Count",   value: `${row.kpi_count} KPIs` },
+                    { label: "Template", value: row.template.name },
+                    { label: "KPI Count", value: `${row.kpi_count} KPIs` },
                     { label: "Targets Met", value: `${row.targets_met} / ${row.kpi_count}` },
                   ].map((d, i) => (
                     <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: i < 4 ? "1px solid #f3f4f6" : "none", fontSize: 12 }}>
@@ -326,7 +377,7 @@ function EmployeeRow({ row, idx, expanded, onToggle }) {
 }
 
 // ── Employee Card (mobile) ────────────────────────────────────────────────────
-function EmployeeCard({ row }) {
+function EmployeeCard({ row, onDelete }) {
   const [open, setOpen] = useState(false);
   const { label, color, bg } = getRatingInfo(row.okr_score);
   const statusCfg = STATUS_CONFIG[row.okr_status] || STATUS_CONFIG.not_started;
@@ -345,9 +396,17 @@ function EmployeeCard({ row }) {
               <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{row.employee.designation} · {row.employee.department}</p>
             </div>
           </div>
-          <span style={{ background: statusCfg.bg, color: statusCfg.color, fontWeight: 700, padding: "4px 8px", borderRadius: 20, fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-            <StatusIcon size={11}/> {statusCfg.label}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            <span style={{ background: statusCfg.bg, color: statusCfg.color, fontWeight: 700, padding: "4px 8px", borderRadius: 20, fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <StatusIcon size={11} /> {statusCfg.label}
+            </span>
+            {/* Mobile Delete Button */}
+            <button
+              onClick={e => { e.stopPropagation(); onDelete(row); }}
+              style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 7, padding: "5px 8px", cursor: "pointer", color: "#dc2626", display: "flex", alignItems: "center" }}>
+              <Trash2 size={13} />
+            </button>
+          </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px 12px", fontSize: 12, marginBottom: 10 }}>
           <div>
@@ -364,28 +423,26 @@ function EmployeeCard({ row }) {
           </div>
         </div>
         <div style={{ background: "#f3f4f6", borderRadius: 99, height: 6, overflow: "hidden" }}>
-          <div style={{ width: `${row.okr_score}%`, height: "100%", background: color, borderRadius: 99 }}/>
+          <div style={{ width: `${row.okr_score}%`, height: "100%", background: color, borderRadius: 99 }} />
         </div>
-        {/* Expand/collapse indicator */}
         <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}>
-          {open ? <ChevronUp size={16} color="#9ca3af"/> : <ChevronDown size={16} color="#9ca3af"/>}
+          {open ? <ChevronUp size={16} color="#9ca3af" /> : <ChevronDown size={16} color="#9ca3af" />}
         </div>
       </div>
       {open && (
         <div style={{ borderTop: "1px solid #f3f4f6", padding: "14px 16px", background: "#f8fafc" }}>
           <p style={{ margin: "0 0 10px", fontWeight: 700, fontSize: 13, color: "#1a1a2e" }}>KPI Breakdown</p>
-          {row.kpi_progress.map((kpi, i) => <KpiProgressBar key={i} kpi={kpi}/>)}
+          {row.kpi_progress.map((kpi, i) => <KpiProgressBar key={i} kpi={kpi} />)}
           {row.review && (
             <div style={{ marginTop: 12, background: "#eff6ff", borderRadius: 8, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
-              <Award size={14} color="#2563eb"/>
+              <Award size={14} color="#2563eb" />
               <span style={{ fontSize: 12, fontWeight: 700, color: "#2563eb" }}>Final Review: {row.review.final_score}% — {row.review.rating}</span>
             </div>
           )}
-          {/* Self assessment status on mobile */}
           <div style={{ marginTop: 10, background: row.self_assessment ? "#f0fdf4" : "#fffbeb", borderRadius: 8, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
             {row.self_assessment
-              ? <><CheckCircle size={14} color="#16a34a"/><span style={{ fontSize: 12, fontWeight: 700, color: "#16a34a" }}>Self Assessment Submitted</span></>
-              : <><Clock size={14} color="#d97706"/><span style={{ fontSize: 12, fontWeight: 700, color: "#d97706" }}>Self Assessment Pending</span></>
+              ? <><CheckCircle size={14} color="#16a34a" /><span style={{ fontSize: 12, fontWeight: 700, color: "#16a34a" }}>Self Assessment Submitted</span></>
+              : <><Clock size={14} color="#d97706" /><span style={{ fontSize: 12, fontWeight: 700, color: "#d97706" }}>Self Assessment Pending</span></>
             }
           </div>
         </div>
@@ -396,20 +453,24 @@ function EmployeeCard({ row }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function OkrDashboard() {
-  const [data, setData]               = useState([]);
-  const [summary, setSummary]         = useState(null);
+  const [data, setData] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [deptSummary, setDeptSummary] = useState([]);
-  const [objectives, setObjectives]   = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [toast, setToast]             = useState(null);
+  const [objectives, setObjectives] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
   const [expandedRow, setExpandedRow] = useState(null);
-  const [activeTab, setActiveTab]     = useState("employees");
+  const [activeTab, setActiveTab] = useState("employees");
 
-  const [searchName, setSearchName]     = useState("");
-  const [filterDept, setFilterDept]     = useState("All");
+  // ── Delete state ──
+  const [deleteTarget, setDeleteTarget] = useState(null); // row to delete
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const [searchName, setSearchName] = useState("");
+  const [filterDept, setFilterDept] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterPeriod, setFilterPeriod] = useState("All");
-  const [sortBy, setSortBy]             = useState("score_desc");
+  const [sortBy, setSortBy] = useState("score_desc");
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -434,21 +495,43 @@ export default function OkrDashboard() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  // ── Delete handler ──
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      const res = await axios.delete(`${API_BASE}/api/kpi-assignments/${deleteTarget.assignment_id}`);
+      if (res.data.success) {
+        setData(prev => prev.filter(r => r.assignment_id !== deleteTarget.assignment_id));
+        showToast(`${deleteTarget.employee.name} assignment deleted successfully`);
+        setDeleteTarget(null);
+        // Refresh summary counts
+        fetchAll();
+      } else {
+        showToast(res.data.message || "Delete failed", "error");
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || "Delete failed", "error");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const departments = useMemo(() => ["All", ...[...new Set(data.map(r => r.employee.department))].sort()], [data]);
-  const periods     = useMemo(() => ["All", ...[...new Set(data.map(r => r.period))].sort((a, b) => b.localeCompare(a))], [data]);
-  const statuses    = ["All", "finalized", "self_submitted", "in_progress", "assigned"];
+  const periods = useMemo(() => ["All", ...[...new Set(data.map(r => r.period))].sort((a, b) => b.localeCompare(a))], [data]);
+  const statuses = ["All", "finalized", "self_submitted", "in_progress", "assigned"];
 
   const filtered = useMemo(() => {
     let d = [...data];
-    if (filterDept   !== "All") d = d.filter(r => r.employee.department === filterDept);
+    if (filterDept !== "All") d = d.filter(r => r.employee.department === filterDept);
     if (filterStatus !== "All") d = d.filter(r => r.okr_status === filterStatus);
     if (filterPeriod !== "All") d = d.filter(r => r.period === filterPeriod);
-    if (searchName.trim())      d = d.filter(r => r.employee.name.toLowerCase().includes(searchName.toLowerCase()));
+    if (searchName.trim()) d = d.filter(r => r.employee.name.toLowerCase().includes(searchName.toLowerCase()));
     d.sort((a, b) => {
       if (sortBy === "score_desc") return b.okr_score - a.okr_score;
-      if (sortBy === "score_asc")  return a.okr_score - b.okr_score;
-      if (sortBy === "name")       return a.employee.name.localeCompare(b.employee.name);
-      if (sortBy === "dept")       return a.employee.department.localeCompare(b.employee.department);
+      if (sortBy === "score_asc") return a.okr_score - b.okr_score;
+      if (sortBy === "name") return a.employee.name.localeCompare(b.employee.name);
+      if (sortBy === "dept") return a.employee.department.localeCompare(b.employee.department);
       return 0;
     });
     return d;
@@ -469,7 +552,7 @@ export default function OkrDashboard() {
     }));
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [4,22,20,16,14,14,22,16,12,14,40].map(wch => ({ wch }));
+    ws["!cols"] = [4, 22, 20, 16, 14, 14, 22, 16, 12, 14, 40].map(wch => ({ wch }));
     XLSX.utils.book_append_sheet(wb, ws, "OKR Dashboard");
     XLSX.writeFile(wb, `OKR_Dashboard_${new Date().toLocaleDateString("en-IN").replace(/\//g, "-")}.xlsx`);
     showToast("Excel exported successfully");
@@ -478,7 +561,7 @@ export default function OkrDashboard() {
   if (loading) return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
       <div style={{ textAlign: "center" }}>
-        <div style={{ width: 40, height: 40, border: "4px solid #e5e7eb", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }}/>
+        <div style={{ width: 40, height: 40, border: "4px solid #e5e7eb", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
         <p style={{ color: "#6b7280", fontSize: 14 }}>Loading OKR Dashboard...</p>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -490,9 +573,19 @@ export default function OkrDashboard() {
       <style>{STYLES}</style>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
+      {/* Delete Confirm Modal */}
+      {deleteTarget && (
+        <DeleteModal
+          row={deleteTarget}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => !deleteLoading && setDeleteTarget(null)}
+          loading={deleteLoading}
+        />
+      )}
+
       {toast && (
         <div style={{ position: "fixed", top: 20, right: 16, zIndex: 9999, background: toast.type === "error" ? "#ff4d4f" : "#52c41a", color: "#fff", padding: "12px 20px", borderRadius: 8, boxShadow: "0 4px 16px rgba(0,0,0,.15)", fontWeight: 500, fontSize: 14, maxWidth: "calc(100vw - 32px)", display: "flex", alignItems: "center", gap: 8 }}>
-          {toast.type === "error" ? <AlertCircle size={15}/> : <CheckCircle size={15}/>}
+          {toast.type === "error" ? <AlertCircle size={15} /> : <CheckCircle size={15} />}
           {toast.msg}
         </div>
       )}
@@ -505,7 +598,7 @@ export default function OkrDashboard() {
         </div>
         <button className="okr-header-btn" onClick={exportExcel} disabled={!filtered.length}
           style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", background: filtered.length ? "#16a34a" : "#d1fae5", color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 14, cursor: filtered.length ? "pointer" : "not-allowed" }}>
-          <Download size={16}/> Export ({filtered.length})
+          <Download size={16} /> Export ({filtered.length})
         </button>
       </div>
 
@@ -513,11 +606,11 @@ export default function OkrDashboard() {
       {summary && (
         <div className="okr-stats" style={{ display: "grid", gap: 14, marginBottom: 24 }}>
           {[
-            { label: "Total Employees", value: summary.total,        color: "#2563eb", bg: "#eff6ff", icon: <Users size={20} color="#2563eb"/> },
-            { label: "Finalized",       value: summary.finalized,    color: "#16a34a", bg: "#f0fdf4", icon: <CheckCircle size={20} color="#16a34a"/> },
-            { label: "Self Submitted",  value: summary.submitted,    color: "#2563eb", bg: "#eff6ff", icon: <BarChart2 size={20} color="#2563eb"/> },
-            { label: "In Progress",     value: summary.in_progress,  color: "#d97706", bg: "#fffbeb", icon: <TrendingUp size={20} color="#d97706"/> },
-            { label: "Avg KPI Score",   value: `${summary.avg_score}%`, color: getRatingInfo(summary.avg_score).color, bg: getRatingInfo(summary.avg_score).bg, icon: <Award size={20} color={getRatingInfo(summary.avg_score).color}/> },
+            { label: "Total Employees", value: summary.total, color: "#2563eb", bg: "#eff6ff", icon: <Users size={20} color="#2563eb" /> },
+            { label: "Finalized", value: summary.finalized, color: "#16a34a", bg: "#f0fdf4", icon: <CheckCircle size={20} color="#16a34a" /> },
+            { label: "Self Submitted", value: summary.submitted, color: "#2563eb", bg: "#eff6ff", icon: <BarChart2 size={20} color="#2563eb" /> },
+            { label: "In Progress", value: summary.in_progress, color: "#d97706", bg: "#fffbeb", icon: <TrendingUp size={20} color="#d97706" /> },
+            { label: "Avg KPI Score", value: `${summary.avg_score}%`, color: getRatingInfo(summary.avg_score).color, bg: getRatingInfo(summary.avg_score).bg, icon: <Award size={20} color={getRatingInfo(summary.avg_score).color} /> },
           ].map((s, i) => (
             <div key={i} style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", border: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
@@ -533,12 +626,12 @@ export default function OkrDashboard() {
       {/* ── Main Tabs ── */}
       <div className="okr-tabs" style={{ display: "flex", gap: 4, background: "#fff", borderRadius: 10, padding: 4, border: "1px solid #e5e7eb", marginBottom: 24, width: "fit-content", maxWidth: "100%" }}>
         {[
-          { id: "employees",  label: "Employee KPI Scores", count: data.length,       Icon: Users },
-          { id: "objectives", label: "Department OKRs",     count: objectives.length, Icon: Target },
+          { id: "employees", label: "Employee KPI Scores", count: data.length, Icon: Users },
+          { id: "objectives", label: "Department OKRs", count: objectives.length, Icon: Target },
         ].map(tab => (
           <button key={tab.id} className="okr-tab-btn" onClick={() => setActiveTab(tab.id)}
             style={{ padding: "8px 16px", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13, background: activeTab === tab.id ? "#1a1a2e" : "transparent", color: activeTab === tab.id ? "#fff" : "#6b7280", transition: "all 0.2s", display: "flex", alignItems: "center", gap: 6 }}>
-            <tab.Icon size={14}/>
+            <tab.Icon size={14} />
             {tab.label}
             <span style={{ background: activeTab === tab.id ? "rgba(255,255,255,0.2)" : "#f3f4f6", color: activeTab === tab.id ? "#fff" : "#6b7280", borderRadius: 20, padding: "1px 7px", fontSize: 11, fontWeight: 700 }}>
               {tab.count}
@@ -547,12 +640,9 @@ export default function OkrDashboard() {
         ))}
       </div>
 
-      {/* ══════════════════════════
-          TAB 1 — Employee KPI Scores
-      ══════════════════════════ */}
+      {/* TAB 1 — Employee KPI Scores */}
       {activeTab === "employees" && (
         <>
-          {/* Dept Summary */}
           {deptSummary.length > 0 && (
             <div style={{ background: "#fff", borderRadius: 14, padding: "18px 24px", border: "1px solid #e5e7eb", marginBottom: 20 }}>
               <p style={{ margin: "0 0 14px", fontWeight: 700, fontSize: 14, color: "#1a1a2e" }}>Department Overview</p>
@@ -565,7 +655,7 @@ export default function OkrDashboard() {
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <div style={{ width: 28, height: 28, borderRadius: 7, background: bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <Building2 size={14} color={color}/>
+                            <Building2 size={14} color={color} />
                           </div>
                           <span style={{ fontWeight: 700, fontSize: 13, color: "#1a1a2e" }}>{d.department}</span>
                         </div>
@@ -578,7 +668,7 @@ export default function OkrDashboard() {
                             <span style={{ fontSize: 13, fontWeight: 800, color }}>{d.avg_score}%</span>
                           </div>
                           <div style={{ background: "#e5e7eb", borderRadius: 99, height: 6, overflow: "hidden" }}>
-                            <div style={{ width: `${d.avg_score}%`, height: "100%", background: color, borderRadius: 99 }}/>
+                            <div style={{ width: `${d.avg_score}%`, height: "100%", background: color, borderRadius: 99 }} />
                           </div>
                         </>
                       ) : (
@@ -596,7 +686,7 @@ export default function OkrDashboard() {
             <div className="okr-filter-grid" style={{ display: "grid", gap: 14, alignItems: "end" }}>
               <div>
                 <label style={labelStyle}>Search Employee</label>
-                <input type="text" value={searchName} onChange={e => setSearchName(e.target.value)} placeholder="Search by name..." style={inputStyle}/>
+                <input type="text" value={searchName} onChange={e => setSearchName(e.target.value)} placeholder="Search by name..." style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Department</label>
@@ -628,7 +718,7 @@ export default function OkrDashboard() {
             </div>
             {hasFilters && (
               <button onClick={clearFilters} style={{ marginTop: 10, background: "none", border: "none", color: "#2563eb", fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
-                <X size={13}/> Clear Filters ({filtered.length} showing)
+                <X size={13} /> Clear Filters ({filtered.length} showing)
               </button>
             )}
           </div>
@@ -638,7 +728,7 @@ export default function OkrDashboard() {
             {filtered.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 0" }}>
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-                  <Target size={40} color="#d1d5db"/>
+                  <Target size={40} color="#d1d5db" />
                 </div>
                 <p style={{ color: "#6b7280", fontWeight: 600 }}>No employees found</p>
                 {hasFilters && <button onClick={clearFilters} style={{ marginTop: 8, background: "none", border: "1px solid #e5e7eb", borderRadius: 7, padding: "6px 16px", color: "#2563eb", fontWeight: 600, cursor: "pointer", fontSize: 13 }}>Clear Filters</button>}
@@ -649,22 +739,29 @@ export default function OkrDashboard() {
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                     <thead>
                       <tr style={{ background: "#f8fafc" }}>
-                        {["#", "Employee", "Department", "Period", "KPI Score", "Status", "KPIs", ""].map(h => (
+                        {["#", "Employee", "Department", "Period", "KPI Score", "Status", "KPIs", "Actions"].map(h => (
                           <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontWeight: 700, color: "#374151", borderBottom: "2px solid #e5e7eb", whiteSpace: "nowrap" }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {filtered.map((row, i) => (
-                        <EmployeeRow key={row.assignment_id} row={row} idx={i}
+                        <EmployeeRow
+                          key={row.assignment_id}
+                          row={row}
+                          idx={i}
                           expanded={expandedRow === row.assignment_id}
-                          onToggle={() => setExpandedRow(expandedRow === row.assignment_id ? null : row.assignment_id)}/>
+                          onToggle={() => setExpandedRow(expandedRow === row.assignment_id ? null : row.assignment_id)}
+                          onDelete={setDeleteTarget}
+                        />
                       ))}
                     </tbody>
                   </table>
                 </div>
                 <div className="okr-card-list">
-                  {filtered.map(row => <EmployeeCard key={row.assignment_id} row={row}/>)}
+                  {filtered.map(row => (
+                    <EmployeeCard key={row.assignment_id} row={row} onDelete={setDeleteTarget} />
+                  ))}
                 </div>
               </>
             )}
@@ -677,15 +774,13 @@ export default function OkrDashboard() {
         </>
       )}
 
-      {/* ══════════════════════════
-          TAB 2 — Department OKRs
-      ══════════════════════════ */}
+      {/* TAB 2 — Department OKRs */}
       {activeTab === "objectives" && (
         <>
           {objectives.length === 0 ? (
             <div style={{ background: "#fff", borderRadius: 14, padding: "60px 0", textAlign: "center", border: "1px solid #e5e7eb" }}>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-                <Target size={48} color="#d1d5db"/>
+                <Target size={48} color="#d1d5db" />
               </div>
               <h3 style={{ color: "#1f2937", marginBottom: 8 }}>No Department OKRs set yet</h3>
               <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 16 }}>
@@ -693,20 +788,19 @@ export default function OkrDashboard() {
               </p>
               <a href="/hr/dashboard/performance/okr-setup"
                 style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#2563eb", color: "#fff", padding: "10px 24px", borderRadius: 8, fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
-                Go to OKR Setup <ArrowRight size={15}/>
+                Go to OKR Setup <ArrowRight size={15} />
               </a>
             </div>
           ) : (
             <>
-              {/* Info banner */}
               <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: "12px 18px", marginBottom: 20, display: "flex", gap: 10, alignItems: "center" }}>
-                <Lightbulb size={16} color="#2563eb" style={{ flexShrink: 0 }}/>
+                <Lightbulb size={16} color="#2563eb" style={{ flexShrink: 0 }} />
                 <p style={{ margin: 0, fontSize: 13, color: "#1e40af" }}>
                   OKR progress updates automatically when employees submit KPI self assessments. KRs linked to KPI items show real-time progress.
                 </p>
               </div>
               <div className="okr-obj-grid" style={{ display: "grid", gap: 20 }}>
-                {objectives.map(okr => <OkrObjectiveCard key={okr._id} okr={okr}/>)}
+                {objectives.map(okr => <OkrObjectiveCard key={okr._id} okr={okr} />)}
               </div>
             </>
           )}

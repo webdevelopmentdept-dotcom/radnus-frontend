@@ -979,7 +979,11 @@ export default function UploadDocuments() {
             <p style={styles.noticeText}>Only <strong>Images and Word Documents</strong> are accepted.</p>
             <p style={styles.noticeText}>Supported formats: JPG, PNG, DOC, DOCX — Max 5MB per file.</p>
             <p style={{ ...styles.noticeText, color: "#cf1322", fontWeight: 600 }}>PDF files are not supported.</p>
-            {/* <p style={{ ...styles.noticeText, color: "#0958d9" }}>For Ration Card: upload Front and Back sides separately.</p> */}
+
+          
+
+            <p style={{ ...styles.noticeText, color: "#0958d9" }}>For Ration Card: upload Front and Back sides separately.</p>
+
             <button style={{ ...styles.btnPrimary, marginTop: 16, borderRadius: 8, padding: "10px 0" }} onClick={() => setShowAlert(false)}>
               Got it, Let's Start
             </button>
