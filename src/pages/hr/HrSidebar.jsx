@@ -36,9 +36,28 @@ export default function HrSidebar() {
   useEffect(() => {
     const fetchUnread = async () => {
       try {
+        // const token = localStorage.getItem("authToken");
+        // if (!id) return;
+        // const res = await axios.get(`${API_BASE}/api/notifications/hr/${id}`);
+
         const token = localStorage.getItem("authToken");
-        if (!id) return;
-        const res = await axios.get(`${API_BASE}/api/notifications/hr/${id}`);
+if (!token) return;
+
+// ✅ get HR id from token
+const payload = JSON.parse(atob(token.split(".")[1]));
+const hrId = payload?.id;
+
+if (!hrId) return;
+
+const res = await axios.get(
+  `${API_BASE}/api/notifications/hr/${hrId}`,
+  {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }
+);
+
         const all = res.data?.data || res.data || [];
         setUnreadCount(all.filter(n => !n.isRead).length);
       } catch (e) { console.log(e); }

@@ -152,7 +152,15 @@ export default function AssignKpi() {
       year = period.replace("Annual ", "") || "2026";
     }
     const tplId = a.template_id?._id || "";
-    setForm({ employee_id: a.employee_id?._id || "", template_id: tplId, period_type, month, year, quarter, notes: a.notes || "" });
+    setForm({
+      employee_id: a.employee_id?._id || "",
+      template_id: tplId,
+      period_type,
+      month,
+      year,
+      quarter,
+      notes: a.notes || ""
+    });
     setSelectedTemplate(templates.find(t => t._id === tplId) || null);
     setShowModal(true);
   };
@@ -160,18 +168,41 @@ export default function AssignKpi() {
   const handleSubmit = async () => {
     if (!form.employee_id || !form.template_id)
       return showToast("Please select employee and template", "error");
+
+    // ✅ Notes is now mandatory
+    if (!form.notes?.trim())
+      return showToast("Notes / Instructions are required", "error");
+
     setSaving(true);
+
+    // ✅ Capture ID before any async operation to prevent stale closure bug
+    const assignId = editingAssignment?._id;
+
     try {
-      const payload = { employee_id: form.employee_id, template_id: form.template_id, period: getPeriodLabel(), period_type: form.period_type, notes: form.notes };
-      const res = editingAssignment
-        ? await axios.put(`${API_BASE}/api/kpi-assignments/${editingAssignment._id}`, payload)
+      const payload = {
+        employee_id: form.employee_id,
+        template_id: form.template_id,
+        period: getPeriodLabel(),
+        period_type: form.period_type,
+        notes: form.notes.trim()
+      };
+
+      const res = assignId
+        ? await axios.put(`${API_BASE}/api/kpi-assignments/${assignId}`, payload)
         : await axios.post(`${API_BASE}/api/kpi-assignments`, payload);
+
       if (res.data.success) {
-        showToast(editingAssignment ? "Assignment updated!" : "KPI assigned successfully!");
-        closeModal(); fetchAll();
-      } else showToast(res.data.message || "Error", "error");
-    } catch (err) { showToast(err.response?.data?.message || "Server error", "error"); }
-    finally { setSaving(false); }
+        showToast(assignId ? "Assignment updated!" : "KPI assigned successfully!");
+        closeModal();
+        fetchAll();
+      } else {
+        showToast(res.data.message || "Error", "error");
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || "Server error", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = async (id) => {
@@ -201,7 +232,10 @@ export default function AssignKpi() {
     setShowModal(false);
     setSelectedTemplate(null);
     setEditingAssignment(null);
-    setForm({ employee_id: "", template_id: "", period_type: "monthly", month: "March", year: "2026", quarter: "Q1", notes: "" });
+    setForm({
+      employee_id: "", template_id: "", period_type: "monthly",
+      month: "March", year: "2026", quarter: "Q1", notes: ""
+    });
   };
 
   const STATS = [
@@ -209,6 +243,22 @@ export default function AssignKpi() {
     { label: "Active",            value: assignments.filter(a => a.status === "active").length,    color: "#16a34a", bg: "#f0fdf4", Icon: CheckCircle2  },
     { label: "Completed",         value: assignments.filter(a => a.status === "completed").length, color: "#d97706", bg: "#fffbeb", Icon: Flag          },
   ];
+
+  // Owner role badge
+  const ownerBadge = (role) => {
+    const map = {
+      self:    { label: "Self",    color: "#16a34a", bg: "#f0fdf4" },
+      manager: { label: "Manager", color: "#2563eb", bg: "#eff6ff" },
+      md:      { label: "MD",      color: "#7c3aed", bg: "#f5f3ff" },
+      hr:      { label: "HR",      color: "#d97706", bg: "#fffbeb" },
+    };
+    const s = map[role] || map.self;
+    return (
+      <span style={{ background: s.bg, color: s.color, fontWeight: 700, padding: "2px 7px", borderRadius: 4, fontSize: 10 }}>
+        {s.label}
+      </span>
+    );
+  };
 
   return (
     <div className="ak-page" style={{ fontFamily: "'Segoe UI', sans-serif", minHeight: "100vh", background: "#f4f6fb" }}>
@@ -433,9 +483,17 @@ export default function AssignKpi() {
                     Template Preview — {selectedTemplate.kpi_items?.length} KPIs
                   </p>
                   {selectedTemplate.kpi_items?.map((item, i) => (
-                    <div key={i} className="ak-tpl-row" style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #e0f2fe", fontSize: 13, gap: 8 }}>
-                      <span style={{ color: "#1e40af", fontWeight: 500, flex: 1, minWidth: 0, wordBreak: "break-word" }}>{item.kpi_name}</span>
-                      <div className="ak-tpl-row-right" style={{ display: "flex", gap: 12, flexShrink: 0 }}>
+                    <div key={i} className="ak-tpl-row" style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #e0f2fe", fontSize: 13, gap: 8 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ color: "#1e40af", fontWeight: 500, display: "block", wordBreak: "break-word" }}>{item.kpi_name}</span>
+                        {/* ✅ Show owner_role badge */}
+                        {item.owner_role && item.owner_role !== "self" && (
+                          <span style={{ marginTop: 2, display: "inline-block" }}>
+                            {ownerBadge(item.owner_role)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="ak-tpl-row-right" style={{ display: "flex", gap: 12, flexShrink: 0, alignItems: "center" }}>
                         <span style={{ color: "#6b7280" }}>Target: {item.target} {item.unit}</span>
                         <span style={{ fontWeight: 700, color: "#0369a1" }}>{item.weight}%</span>
                       </div>
@@ -483,12 +541,28 @@ export default function AssignKpi() {
                 </div>
               </div>
 
-              {/* Step 4 */}
+              {/* Step 4 — Notes MANDATORY */}
               <div style={{ marginBottom: 24 }}>
-                <label style={labelStyle}>4. Notes (Optional)</label>
-                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                  placeholder="Any special instructions or targets for this employee..."
-                  rows={3} style={{ ...inputStyle, resize: "vertical" }} />
+                <label style={labelStyle}>
+                  4. Notes / Instructions *
+                  <span style={{ color: "#ef4444", marginLeft: 4 }}>Required</span>
+                </label>
+                <textarea
+                  value={form.notes}
+                  onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                  placeholder="Special instructions or targets for this employee (required)..."
+                  rows={3}
+                  style={{
+                    ...inputStyle,
+                    resize: "vertical",
+                    borderColor: !form.notes?.trim() && form.notes !== undefined ? "#fca5a5" : "#d1d5db"
+                  }}
+                />
+                {!form.notes?.trim() && (
+                  <p style={{ margin: "4px 0 0", fontSize: 12, color: "#f59e0b" }}>
+                    ⚠ Instructions are required before saving
+                  </p>
+                )}
               </div>
 
               {/* Footer */}

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import {
   Calendar, ClipboardList, Clock, CheckCircle2, PartyPopper,
-  Inbox, BarChart2, MousePointerClick, Filter, User, CheckCheck
+  Inbox, BarChart2, MousePointerClick, Filter, User, CheckCheck,
+  Zap  // ← incentive trigger icon
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -53,7 +54,6 @@ const STYLES = `
     .pr-modal-footer button { width: 100% !important; }
     .pr-log-entry { flex-direction: column !important; align-items: flex-start !important; gap: 6px !important; }
   }
-
   @media (max-width: 480px) {
     .pr-stats { grid-template-columns: 1fr !important; }
     .pr-tab-btn { font-size: 11px !important; padding: 6px 10px !important; }
@@ -62,48 +62,55 @@ const STYLES = `
 `;
 
 export default function PerformanceReviews() {
-  const [assessments, setAssessments]               = useState([]);
-  const [completedReviews, setCompletedReviews]     = useState([]);
-  const [loading, setLoading]                       = useState(true);
-  const [selectedAssessment, setSelectedAssessment] = useState(null);
-  const [reviewForm, setReviewForm]                 = useState({ items: [], hr_comment: "" });
-  const [saving, setSaving]                         = useState(false);
-  const [toast, setToast]                           = useState(null);
-  const [activeTab, setActiveTab]                   = useState("pending");
+  const [assessments,       setAssessments]       = useState([]);
+  const [completedReviews,  setCompletedReviews]  = useState([]);
+  const [incentivePlans,    setIncentivePlans]     = useState([]); // ← NEW
+  const [loading,           setLoading]            = useState(true);
+  const [selectedAssessment,setSelectedAssessment] = useState(null);
+  const [reviewForm,        setReviewForm]         = useState({ items: [], hr_comment: "" });
+  const [saving,            setSaving]             = useState(false);
+  const [toast,             setToast]              = useState(null);
+  const [activeTab,         setActiveTab]          = useState("pending");
 
-  const [allAssignments, setAllAssignments]             = useState([]);
-  const [selectedEmployeeLog, setSelectedEmployeeLog]   = useState("");
-  const [logDateFrom, setLogDateFrom]                   = useState("");
-  const [logDateTo, setLogDateTo]                       = useState("");
-  const [employeeLogs, setEmployeeLogs]                 = useState([]);
-  const [logTotals, setLogTotals]                       = useState({});
-  const [logsLoading, setLogsLoading]                   = useState(false);
+  const [allAssignments,       setAllAssignments]       = useState([]);
+  const [selectedEmployeeLog,  setSelectedEmployeeLog]  = useState("");
+  const [logDateFrom,          setLogDateFrom]          = useState("");
+  const [logDateTo,            setLogDateTo]            = useState("");
+  const [employeeLogs,         setEmployeeLogs]         = useState([]);
+  const [logTotals,            setLogTotals]            = useState({});
+  const [logsLoading,          setLogsLoading]          = useState(false);
+
+  // ── NEW: incentive trigger state ─────────────────────────────────────────
+  const [incentiveResult, setIncentiveResult] = useState(null); // after finalize
 
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      const [assessRes, reviewRes, assignRes] = await Promise.all([
+      const [assessRes, reviewRes, assignRes, planRes] = await Promise.all([
         axios.get(`${API_BASE}/api/self-assessment/all`),
         axios.get(`${API_BASE}/api/performance-reviews/all`),
-        axios.get(`${API_BASE}/api/kpi-assignments`)
+        axios.get(`${API_BASE}/api/kpi-assignments`),
+        axios.get(`${API_BASE}/api/incentive-plans`),   // ← NEW
       ]);
       if (assessRes.data.success) setAssessments(assessRes.data.data);
       if (reviewRes.data.success) setCompletedReviews(reviewRes.data.data);
       if (assignRes.data.success) setAllAssignments(assignRes.data.data.filter(a => a.status === "active"));
+      setIncentivePlans(planRes.data?.data || planRes.data || []);
     } catch { showToast("Failed to load data", "error"); }
     finally { setLoading(false); }
   };
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 4000);
   };
 
   const isReviewed = (id) => completedReviews.some(r => r.self_assessment_id === id);
 
   const openReview = (assessment) => {
     setSelectedAssessment(assessment);
+    setIncentiveResult(null);
     const items = assessment.items.map(item => ({
       kpi_item_id: item.kpi_item_id, kpi_name: item.kpi_name,
       target: item.target, unit: item.unit, weight: item.weight || 0,
@@ -129,9 +136,9 @@ export default function PerformanceReviews() {
     reviewForm.items.forEach(item => {
       const val = parseFloat(item.actual_value) || 0;
       const pct = Math.min((val / item.target) * 100, 100);
-      const w = totalWeight === 0 ? equalWeight : (item.weight || 0);
-      const divisor = totalWeight === 0 ? 100 : totalWeight;
-      total += pct * (w / divisor);
+      const w   = totalWeight === 0 ? equalWeight : (item.weight || 0);
+      const div = totalWeight === 0 ? 100 : totalWeight;
+      total += pct * (w / div);
     });
     return Math.round(total);
   };
@@ -143,35 +150,129 @@ export default function PerformanceReviews() {
     let s = 0;
     a.items.forEach(item => {
       const pct = Math.min((item.self_value / item.target) * 100, 100);
-      const w = totalWeight === 0 ? equalWeight : (item.weight || 0);
-      const divisor = totalWeight === 0 ? 100 : totalWeight;
-      s += pct * (w / divisor);
+      const w   = totalWeight === 0 ? equalWeight : (item.weight || 0);
+      const div = totalWeight === 0 ? 100 : totalWeight;
+      s += pct * (w / div);
     });
     return Math.round(s);
   };
 
+  // ── NEW: Find matching incentive plan for this employee ──────────────────
+  const findMatchingPlan = (assessment) => {
+    const dept   = assessment.employee_id?.department;
+    const period = assessment.period;
+
+    // 1. Try KPI-Linked plan for this dept first
+    const kpiPlan = incentivePlans.find(
+      p => p.plan_type === "kpi_linked" && p.department === dept
+    );
+    if (kpiPlan) return kpiPlan;
+
+    // 2. Fallback to standalone plan for same dept
+    const standalonePlan = incentivePlans.find(
+      p => p.plan_type === "standalone" && p.department === dept
+    );
+    return standalonePlan || null;
+  };
+
+  // ── NEW: Calculate incentive amount from plan slabs + score ──────────────
+  const calcIncentiveAmount = (plan, finalScore, salary = 0) => {
+    if (!plan) return { amount: 0, slabLabel: "No plan found for dept" };
+    const score = Math.round(finalScore || 0);
+    const slab  = (plan.slabs || []).find(s => score >= s.min_score && score <= s.max_score);
+    if (!slab || slab.type === "none") return { amount: 0, slabLabel: `${score}% → No Bonus` };
+    const amount = slab.type === "percentage"
+      ? Math.round((slab.value / 100) * (salary || 0))
+      : slab.value;
+    return {
+      amount,
+      slabLabel: `${score}% → ${slab.type === "percentage" ? `${slab.value}% of salary` : `₹${Number(slab.value).toLocaleString("en-IN")}`}`,
+    };
+  };
+
+  // ── MAIN: Submit review + auto-create incentive result ───────────────────
   const handleSubmitReview = async () => {
-    if (!reviewForm.hr_comment.trim()) return showToast("Please add HR feedback comment", "error");
+    if (!reviewForm.hr_comment.trim())
+      return showToast("Please add HR feedback comment", "error");
     if (reviewForm.items.some(i => i.actual_value === "" || i.actual_value === null || i.actual_value === undefined))
       return showToast("Please fill all actual values", "error");
+
     setSaving(true);
     try {
-      const payload = {
-        employee_id: selectedAssessment.employee_id._id || selectedAssessment.employee_id,
-        assignment_id: selectedAssessment.assignment_id?._id || selectedAssessment.assignment_id,
+      const finalScore = calcLiveScore();
+
+      // Step 1 — Submit performance review
+      const reviewPayload = {
+        employee_id:        selectedAssessment.employee_id._id || selectedAssessment.employee_id,
+        assignment_id:      selectedAssessment.assignment_id?._id || selectedAssessment.assignment_id,
         self_assessment_id: selectedAssessment._id,
-        period: selectedAssessment.period,
-        kpi_breakdown: reviewForm.items.map(i => ({ ...i, actual_value: parseFloat(i.actual_value) })),
-        hr_comment: reviewForm.hr_comment
+        period:             selectedAssessment.period,
+        kpi_breakdown:      reviewForm.items.map(i => ({ ...i, actual_value: parseFloat(i.actual_value) })),
+        hr_comment:         reviewForm.hr_comment,
       };
-      const res = await axios.post(`${API_BASE}/api/performance-reviews`, payload);
-      if (res.data.success) {
-        showToast("Review finalized successfully!");
-        setSelectedAssessment(null);
-        fetchData();
-      } else showToast(res.data.message || "Error", "error");
-    } catch (err) { showToast(err.response?.data?.message || "Server error", "error"); }
-    finally { setSaving(false); }
+      const reviewRes = await axios.post(`${API_BASE}/api/performance-reviews`, reviewPayload);
+      if (!reviewRes.data.success) {
+        showToast(reviewRes.data.message || "Review submit failed", "error");
+        setSaving(false);
+        return;
+      }
+
+      // Step 2 — Find matching incentive plan
+      const matchedPlan = findMatchingPlan(selectedAssessment);
+      const empSalary   = selectedAssessment.employee_id?.salary || 0;
+      const { amount, slabLabel } = calcIncentiveAmount(matchedPlan, finalScore, empSalary);
+
+      // Step 3 — Check if incentive-result already exists for this review
+      let incentiveCreated = false;
+      let incentiveData    = null;
+      try {
+        const resultPayload = {
+          employee_id:       selectedAssessment.employee_id._id || selectedAssessment.employee_id,
+          review_id:         reviewRes.data.data?._id,
+          plan_id:           matchedPlan?._id || null,
+          performance_score: finalScore,
+          calculated_amount: amount,
+          cycle_period:      selectedAssessment.period,
+          status:            "pending",
+        };
+        const incentiveRes = await axios.post(`${API_BASE}/api/incentive-results`, resultPayload);
+        if (incentiveRes.data?.success || incentiveRes.status === 201) {
+          incentiveCreated = true;
+          incentiveData    = incentiveRes.data?.data;
+        }
+      } catch (incentiveErr) {
+        // If already exists (409) or plan missing, don't fail the whole flow
+        const status = incentiveErr.response?.status;
+        if (status === 409) {
+          incentiveCreated = false; // already exists — fine
+        } else {
+          console.warn("Incentive result creation failed:", incentiveErr.message);
+        }
+      }
+
+      // Step 4 — Show success with incentive info
+      setIncentiveResult({
+        finalScore,
+        amount,
+        slabLabel,
+        planName:  matchedPlan?.name || null,
+        created:   incentiveCreated,
+      });
+
+      showToast(
+        incentiveCreated
+          ? `Review finalized! Incentive ₹${amount.toLocaleString("en-IN")} auto-created ✅`
+          : "Review finalized! (No incentive plan matched for this dept)",
+        incentiveCreated ? "success" : "warning"
+      );
+
+      fetchData();
+
+    } catch (err) {
+      showToast(err.response?.data?.message || "Server error", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const fetchEmployeeLogs = async (employeeId, assignmentId) => {
@@ -182,7 +283,7 @@ export default function PerformanceReviews() {
         axios.get(`${API_BASE}/api/daily-logs/${employeeId}/${assignmentId}`),
         axios.get(`${API_BASE}/api/daily-logs/totals/${employeeId}/${assignmentId}`)
       ]);
-      if (logsRes.data.success) setEmployeeLogs(logsRes.data.data);
+      if (logsRes.data.success)   setEmployeeLogs(logsRes.data.data);
       if (totalsRes.data.success) setLogTotals(totalsRes.data.data);
     } catch { showToast("Failed to load logs", "error"); }
     finally { setLogsLoading(false); }
@@ -210,20 +311,20 @@ export default function PerformanceReviews() {
   }, {});
 
   const selectedAssignmentData = allAssignments.find(a => a._id === selectedEmployeeLog);
-  const liveScore = calcLiveScore();
+  const liveScore              = calcLiveScore();
   const { label: liveLabel, color: liveColor } = getRatingInfo(liveScore);
-  const pendingAssessments = assessments.filter(a => !isReviewed(a._id));
+  const pendingAssessments     = assessments.filter(a => !isReviewed(a._id));
 
   const STATS = [
-    { label: "Total Submitted", value: assessments.length,         color: "#2563eb", bg: "#eff6ff", Icon: ClipboardList },
-    { label: "Pending Review",  value: pendingAssessments.length,  color: "#d97706", bg: "#fffbeb", Icon: Clock         },
-    { label: "Completed",       value: completedReviews.length,    color: "#16a34a", bg: "#f0fdf4", Icon: CheckCircle2  },
+    { label: "Total Submitted", value: assessments.length,        color: "#2563eb", bg: "#eff6ff", Icon: ClipboardList },
+    { label: "Pending Review",  value: pendingAssessments.length, color: "#d97706", bg: "#fffbeb", Icon: Clock         },
+    { label: "Completed",       value: completedReviews.length,   color: "#16a34a", bg: "#f0fdf4", Icon: CheckCircle2  },
   ];
 
   const TABS = [
-    { id: "pending",   Icon: Clock,         label: `Pending (${pendingAssessments.length})` },
-    { id: "completed", Icon: CheckCircle2,  label: `Completed (${completedReviews.length})` },
-    { id: "dailylogs", Icon: Calendar,      label: "Daily Logs" },
+    { id: "pending",   Icon: Clock,        label: `Pending (${pendingAssessments.length})` },
+    { id: "completed", Icon: CheckCircle2, label: `Completed (${completedReviews.length})` },
+    { id: "dailylogs", Icon: Calendar,     label: "Daily Logs" },
   ];
 
   return (
@@ -232,7 +333,7 @@ export default function PerformanceReviews() {
 
       {/* Toast */}
       {toast && (
-        <div style={{ position: "fixed", top: 16, right: 16, left: 16, zIndex: 9999, background: toast.type === "error" ? "#ff4d4f" : "#52c41a", color: "#fff", padding: "12px 16px", borderRadius: 8, fontWeight: 600, fontSize: 13, textAlign: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.15)", maxWidth: "calc(100vw - 32px)" }}>
+        <div style={{ position: "fixed", top: 16, right: 16, left: 16, zIndex: 9999, background: toast.type === "error" ? "#ff4d4f" : toast.type === "warning" ? "#f59e0b" : "#52c41a", color: "#fff", padding: "12px 16px", borderRadius: 8, fontWeight: 600, fontSize: 13, textAlign: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.15)", maxWidth: "calc(100vw - 32px)" }}>
           {toast.msg}
         </div>
       )}
@@ -291,15 +392,16 @@ export default function PerformanceReviews() {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc" }}>
-                      {["Employee","Department","Period","KPIs","Self Score","Submitted On","Action"].map(h => (
+                      {["Employee","Department","Period","KPIs","Self Score","Submitted On","Incentive Plan","Action"].map(h => (
                         <th key={h} style={{ padding: "12px 20px", textAlign: "left", fontWeight: 700, color: "#374151", borderBottom: "2px solid #e5e7eb", whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {pendingAssessments.map((a, i) => {
-                      const selfScore = calcSelfScore(a);
-                      const { color } = getRatingInfo(selfScore);
+                      const selfScore   = calcSelfScore(a);
+                      const { color }   = getRatingInfo(selfScore);
+                      const matchedPlan = findMatchingPlan(a);
                       return (
                         <tr key={a._id} style={{ borderBottom: "1px solid #f3f4f6", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
                           <td style={{ padding: "14px 20px" }}>
@@ -318,6 +420,18 @@ export default function PerformanceReviews() {
                           <td style={{ padding: "14px 20px", color: "#374151" }}>{a.items.length} KPIs</td>
                           <td style={{ padding: "14px 20px" }}><span style={{ fontWeight: 800, fontSize: 16, color }}>{selfScore}%</span></td>
                           <td style={{ padding: "14px 20px", color: "#6b7280", fontSize: 13 }}>{new Date(a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</td>
+                          {/* ← NEW: Incentive Plan preview */}
+                          <td style={{ padding: "14px 20px" }}>
+                            {matchedPlan ? (
+                              <span style={{ fontSize:12, fontWeight:700, padding:"3px 8px", borderRadius:5,
+                                background: matchedPlan.plan_type==="kpi_linked" ? "#ede9fe" : "#fef9c3",
+                                color:      matchedPlan.plan_type==="kpi_linked" ? "#7c3aed"  : "#a16207" }}>
+                                {matchedPlan.plan_type==="kpi_linked" ? "🔗" : "📋"} {matchedPlan.name}
+                              </span>
+                            ) : (
+                              <span style={{ fontSize:12, color:"#9ca3af" }}>No plan</span>
+                            )}
+                          </td>
                           <td style={{ padding: "14px 20px" }}>
                             <button onClick={() => openReview(a)} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 7, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Review →</button>
                           </td>
@@ -331,8 +445,9 @@ export default function PerformanceReviews() {
               {/* Mobile Cards */}
               <div className="pr-card-list">
                 {pendingAssessments.map(a => {
-                  const selfScore = calcSelfScore(a);
-                  const { color } = getRatingInfo(selfScore);
+                  const selfScore   = calcSelfScore(a);
+                  const { color }   = getRatingInfo(selfScore);
+                  const matchedPlan = findMatchingPlan(a);
                   return (
                     <div key={a._id} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px", background: "#fff" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
@@ -347,24 +462,15 @@ export default function PerformanceReviews() {
                         </div>
                         <span style={{ fontWeight: 800, fontSize: 16, color, flexShrink: 0 }}>{selfScore}%</span>
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px", fontSize: 13, marginBottom: 10 }}>
-                        <div>
-                          <span style={{ color: "#9ca3af", fontSize: 11, fontWeight: 600, textTransform: "uppercase" }}>Period</span>
-                          <p style={{ margin: "2px 0 0" }}><span style={{ background: "#f3f4f6", padding: "2px 8px", borderRadius: 5, fontWeight: 600, fontSize: 12 }}>{a.period}</span></p>
+                      {matchedPlan && (
+                        <div style={{ marginBottom: 8 }}>
+                          <span style={{ fontSize:12, fontWeight:700, padding:"3px 8px", borderRadius:5,
+                            background: matchedPlan.plan_type==="kpi_linked" ? "#ede9fe" : "#fef9c3",
+                            color:      matchedPlan.plan_type==="kpi_linked" ? "#7c3aed"  : "#a16207" }}>
+                            {matchedPlan.plan_type==="kpi_linked" ? "🔗" : "📋"} {matchedPlan.name}
+                          </span>
                         </div>
-                        <div>
-                          <span style={{ color: "#9ca3af", fontSize: 11, fontWeight: 600, textTransform: "uppercase" }}>KPIs</span>
-                          <p style={{ margin: "2px 0 0", color: "#374151", fontWeight: 500 }}>{a.items.length} KPIs</p>
-                        </div>
-                        <div>
-                          <span style={{ color: "#9ca3af", fontSize: 11, fontWeight: 600, textTransform: "uppercase" }}>Submitted</span>
-                          <p style={{ margin: "2px 0 0", color: "#6b7280", fontSize: 12 }}>{new Date(a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
-                        </div>
-                        <div>
-                          <span style={{ color: "#9ca3af", fontSize: 11, fontWeight: 600, textTransform: "uppercase" }}>Self Score</span>
-                          <p style={{ margin: "2px 0 0", fontWeight: 800, color }}>{selfScore}%</p>
-                        </div>
-                      </div>
+                      )}
                       <button onClick={() => openReview(a)} style={{ width: "100%", padding: "9px 0", background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Review →</button>
                     </div>
                   );
@@ -385,7 +491,6 @@ export default function PerformanceReviews() {
             </div>
           ) : (
             <>
-              {/* Desktop Table */}
               <div className="pr-table-wrap" style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                   <thead>
@@ -423,7 +528,6 @@ export default function PerformanceReviews() {
                 </table>
               </div>
 
-              {/* Mobile Cards */}
               <div className="pr-card-list">
                 {completedReviews.map(r => {
                   const { label, color, bg } = getRatingInfo(r.final_score);
@@ -468,7 +572,6 @@ export default function PerformanceReviews() {
       {activeTab === "dailylogs" && (
         <div className="pr-logs-layout" style={{ display: "grid", gap: 20 }}>
           <div>
-            {/* Filter Bar */}
             <div style={{ background: "#fff", borderRadius: 14, padding: 20, border: "1px solid #e5e7eb", marginBottom: 20 }}>
               <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1a1a2e", display: "flex", alignItems: "center", gap: 8 }}>
                 <Filter size={15} color="#374151" /> Filter Logs
@@ -494,7 +597,6 @@ export default function PerformanceReviews() {
               </div>
             </div>
 
-            {/* Log List */}
             <div style={{ background: "#fff", borderRadius: 14, padding: 24, border: "1px solid #e5e7eb" }}>
               {!selectedEmployeeLog ? (
                 <div style={{ textAlign: "center", padding: "48px 0", color: "#9ca3af" }}>
@@ -547,7 +649,6 @@ export default function PerformanceReviews() {
             </div>
           </div>
 
-          {/* RIGHT — Totals + Info */}
           <div className="pr-logs-sidebar" style={{ flexDirection: "column", gap: 16 }}>
             <div style={{ background: "#fff", borderRadius: 14, padding: 20, border: "1px solid #e5e7eb" }}>
               <p style={{ margin: "0 0 14px", fontWeight: 700, fontSize: 14, color: "#1a1a2e", display: "flex", alignItems: "center", gap: 7 }}>
@@ -560,7 +661,7 @@ export default function PerformanceReviews() {
               ) : (
                 selectedAssignmentData?.template_id?.kpi_items?.map((item, i) => {
                   const total = logTotals[item._id] || 0;
-                  const pct = Math.min(Math.round((total / item.target) * 100), 100);
+                  const pct   = Math.min(Math.round((total / item.target) * 100), 100);
                   const color = pct >= 100 ? "#16a34a" : pct >= 75 ? "#2563eb" : pct >= 50 ? "#d97706" : "#dc2626";
                   return (
                     <div key={i} style={{ marginBottom: 16 }}>
@@ -607,7 +708,7 @@ export default function PerformanceReviews() {
           <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 780, maxHeight: "92vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
             <div style={{ padding: "16px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", zIndex: 10, gap: 12 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1a1a2e", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Review — {selectedAssessment.employee_id?.name}</h3>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1a1a2e" }}>Review — {selectedAssessment.employee_id?.name}</h3>
                 <p style={{ margin: "3px 0 0", fontSize: 12, color: "#6b7280" }}>{selectedAssessment.period} · {selectedAssessment.employee_id?.designation} · {selectedAssessment.employee_id?.department}</p>
               </div>
               <div className="pr-modal-header-right" style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
@@ -621,6 +722,60 @@ export default function PerformanceReviews() {
             </div>
 
             <div style={{ padding: "20px 24px" }}>
+
+              {/* ── NEW: Incentive Plan Preview inside modal ── */}
+              {(() => {
+                const plan = findMatchingPlan(selectedAssessment);
+                if (!plan) return (
+                  <div style={{ background:"#fff7ed", border:"1px solid #fed7aa", borderRadius:10, padding:"10px 14px", marginBottom:16, fontSize:13, color:"#92400e" }}>
+                    ⚠️ No incentive plan found for <strong>{selectedAssessment.employee_id?.department}</strong> dept. Incentive won't auto-create.
+                  </div>
+                );
+                const { amount } = calcIncentiveAmount(plan, liveScore, selectedAssessment.employee_id?.salary || 0);
+                return (
+                  <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:10, padding:"12px 16px", marginBottom:16, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                      <Zap size={16} color="#16a34a" />
+                      <div>
+                        <p style={{ margin:0, fontSize:13, fontWeight:700, color:"#166534" }}>
+                          {plan.plan_type==="kpi_linked" ? "🔗 KPI-Linked" : "📋 Standalone"} — {plan.name}
+                        </p>
+                        <p style={{ margin:0, fontSize:12, color:"#16a34a" }}>Incentive auto-creates on finalize</p>
+                      </div>
+                    </div>
+                    <div style={{ textAlign:"right" }}>
+                      <p style={{ margin:0, fontSize:11, color:"#6b7280" }}>Estimated (live score)</p>
+                      <p style={{ margin:0, fontSize:18, fontWeight:800, color:"#16a34a" }}>
+                        {amount > 0 ? `₹${amount.toLocaleString("en-IN")}` : "No Bonus"}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── Incentive Result (after submit) ── */}
+              {incentiveResult && (
+                <div style={{ background:"#eff6ff", border:"2px solid #2563eb", borderRadius:12, padding:"16px 20px", marginBottom:20, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
+                  <div>
+                    <p style={{ margin:"0 0 4px", fontWeight:800, fontSize:15, color:"#1d4ed8" }}>
+                      ✅ Review Finalized!
+                    </p>
+                    <p style={{ margin:0, fontSize:13, color:"#374151" }}>
+                      Final Score: <strong>{incentiveResult.finalScore}%</strong> · {incentiveResult.slabLabel}
+                    </p>
+                    {incentiveResult.planName && (
+                      <p style={{ margin:"4px 0 0", fontSize:12, color:"#6b7280" }}>Plan: {incentiveResult.planName}</p>
+                    )}
+                  </div>
+                  <div style={{ textAlign:"right" }}>
+                    <p style={{ margin:0, fontSize:11, color:"#6b7280" }}>Incentive Created</p>
+                    <p style={{ margin:0, fontSize:24, fontWeight:900, color:"#16a34a" }}>
+                      {incentiveResult.amount > 0 ? `₹${incentiveResult.amount.toLocaleString("en-IN")}` : "No Bonus"}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <h4 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1a1a2e" }}>KPI Actual Values</h4>
               {reviewForm.items.map((item, idx) => {
                 const selfPct   = item.self_value   ? Math.round((item.self_value / item.target) * 100) : 0;
@@ -686,9 +841,10 @@ export default function PerformanceReviews() {
 
               <div className="pr-modal-footer" style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
                 <button onClick={() => setSelectedAssessment(null)} style={{ padding: "11px 24px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                <button onClick={handleSubmitReview} disabled={saving}
-                  style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 28px", border: "none", borderRadius: 8, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 14 }}>
-                  <CheckCheck size={15} />{saving ? "Finalizing..." : "Finalize Review"}
+                <button onClick={handleSubmitReview} disabled={saving || !!incentiveResult}
+                  style={{ display: "flex", alignItems: "center", gap: 7, padding: "11px 28px", border: "none", borderRadius: 8, background: saving ? "#93c5fd" : incentiveResult ? "#16a34a" : "#2563eb", color: "#fff", fontWeight: 700, cursor: (saving || incentiveResult) ? "not-allowed" : "pointer", fontSize: 14 }}>
+                  <CheckCheck size={15} />
+                  {saving ? "Finalizing..." : incentiveResult ? "Done ✅" : "Finalize & Auto-Create Incentive"}
                 </button>
               </div>
             </div>
@@ -700,4 +856,4 @@ export default function PerformanceReviews() {
 }
 
 const labelStyle = { display: "block", fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 6 };
-const inputStyle = { width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, color: "#1a1a2e", background: "#fff", boxSizing: "border-box", outline: "none" };
+const inputStyle  = { width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, color: "#1a1a2e", background: "#fff", boxSizing: "border-box", outline: "none" };
