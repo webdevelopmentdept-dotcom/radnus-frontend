@@ -203,7 +203,7 @@ export default function MyProfile() {
     {icon:<MapPin size={14}/>,      label:"Work Location",     value:emp.work_location||"—"},
     {icon:<Clock size={14}/>,       label:"Work Shift",        value:emp.work_shift||"—"},
     {icon:<Calendar size={14}/>,    label:"Date of Joining",   value:fmtDate(emp.date_of_joining)},
-    {icon:<Calendar size={14}/>,    label:"Confirmation Date", value:fmtDate(emp.confirmation_date)},
+    // {icon:<Calendar size={14}/>,    label:"Confirmation Date", value:fmtDate(emp.confirmation_date)},
     {icon:<User size={14}/>,        label:"Reporting Manager", value:emp.reporting_manager||"—"},
     {icon:<CheckCircle size={14}/>, label:"Account Status",    value:isApproved?"Active":employee?.status||"—"},
   ];
