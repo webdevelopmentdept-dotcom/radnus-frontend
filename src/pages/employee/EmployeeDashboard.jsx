@@ -334,28 +334,9 @@ export default function EmployeeDashboard() {
             <div style={{ width: 30, height: 30, borderRadius: "50%", overflow: "hidden", border: "2px solid #eef0f6", flexShrink: 0 }}>
               <img src={employee.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=e8f0fe&color=4f8ef7&size=36`} alt="av" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
-            <div style={{ minWidth: 0, overflow: "hidden" }}>
-              <p className="ed-topbar-name">{employee.name}</p>
-              <p className="ed-topbar-sub">{employee.designation} · {employee.department}</p>
-            </div>
-          </div>
-          <div className="ed-topbar-right">
-            <span className="ed-status-pill" style={{ background: statusBg, color: statusColor, borderColor: statusBorder }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: statusColor, flexShrink: 0 }} />
-              <span className="ed-pill-text">{statusLabel}</span>
-            </span>
-            <span className="ed-topbar-actions">
-              {isEditing ? (
-                <>
-                  <button onClick={handleSave}   className="ed-btn-primary"><Save size={13} /> Save</button>
-                  <button onClick={handleCancel} className="ed-btn-outline"><X size={13} /> Cancel</button>
-                </>
-              ) : (
-                <button onClick={e => { e.preventDefault(); handleEditToggle(); }} className="ed-btn-outline">
-                  <Edit3 size={13} /> Edit Profile
-                </button>
-              )}
-            </span>
+            
+           
+           
           </div>
         </div>
 
@@ -456,23 +437,8 @@ export default function EmployeeDashboard() {
                 </p>
               </div>
             </div>
-            <span className="ed-hero-edit-btn">
-              {isEditing ? (
-                <div style={{ display: "flex", gap: 6, width: "100%" }}>
-                  <button onClick={handleSave} className="ed-btn-primary" style={{ flex: 1, justifyContent: "center", padding: "8px 12px", fontSize: 12 }}>
-                    <Save size={12} /> Save
-                  </button>
-                  <button onClick={handleCancel} className="ed-btn-outline" style={{ flex: 1, justifyContent: "center", padding: "8px 10px", fontSize: 12, background: "rgba(255,255,255,.1)", borderColor: "rgba(255,255,255,.2)", color: "#fff" }}>
-                    <X size={12} /> Cancel
-                  </button>
-                </div>
-              ) : (
-                <button onClick={e => { e.preventDefault(); handleEditToggle(); }}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, width: "100%", padding: "8px 13px", borderRadius: 8, background: "rgba(255,255,255,.12)", border: "1.5px solid rgba(255,255,255,.22)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Manrope',sans-serif" }}>
-                  <Edit3 size={12} /> Edit Profile
-                </button>
-              )}
-            </span>
+           
+              
           </div>
         </div>
 
@@ -579,82 +545,8 @@ export default function EmployeeDashboard() {
             </div>
           )}
 
-          {/* Documents */}
-          <div className="ed-card">
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 14px 0", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
-              <p className="ed-card-title" style={{ padding: 0, margin: 0 }}><FileText size={12} /> Uploaded Documents</p>
-              {isEditing && (
-                <button onClick={handleAddDoc} className="ed-btn-outline" style={{ fontSize: 11, padding: "5px 10px" }}>
-                  <Plus size={12} /> Add Doc
-                </button>
-              )}
-            </div>
-            {docs.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "24px 14px", color: "#d1d5db" }}>
-                <FileText size={28} style={{ display: "block", margin: "0 auto 8px", opacity: .4 }} />
-                <p style={{ fontSize: 12, margin: 0 }}>No documents uploaded yet</p>
-              </div>
-            ) : (
-              <div className="ed-docs-grid">
-                {docs.map((doc, index) => (
-                  <div key={index} className="ed-doc-item">
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: "#f0f4ff", border: "1px solid #c7d2fe", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <FileText size={13} color="#4f8ef7" />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-                      {isEditing ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                          <input style={{ ...inp, fontSize: 12, padding: "6px 9px" }} value={doc.docType} onChange={e => handleDocChange(index, 'docType', e.target.value)} placeholder="Document Type" />
-                          <input type="file" accept=".doc,.docx,image/*" style={{ fontSize: 11, color: "#9ca3af" }}
-                            onChange={e => {
-                              const file = e.target.files[0]; if (!file) return;
-                              const ok = ["image/jpeg","image/png","image/jpg","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
-                              if (!ok.includes(file.type)) { alert("Only Image or DOC"); return; }
-                              handleDocReplace(index, file);
-                            }} />
-                        </div>
-                      ) : (
-                        <>
-                          <p style={{ margin: "0 0 2px", fontSize: 12, fontWeight: 700, color: "#1a1d2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.docType}</p>
-                          <p style={{ margin: 0, fontSize: 10, color: "#9ca3af", fontWeight: 500 }}>
-                            {!doc.fileUrl ? "No File" : doc.fileUrl.endsWith(".pdf") ? "PDF" : /\.(jpg|jpeg|png)/i.test(doc.fileUrl) ? "Image" : "Document"}
-                          </p>
-                        </>
-                      )}
-                    </div>
-                    {!isEditing && doc.fileUrl && (
-                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="ed-view-btn">
-                        <ExternalLink size={10} /> View
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+      
 
-          {/* Contact + Onboarding */}
-          <div className="ed-grid-2">
-            <div className="ed-card" style={{ overflow: "hidden" }}>
-              <p className="ed-card-title"><User size={12} /> Contact Information</p>
-              <div className="ed-info-pair">
-                <span className="ed-info-label"><Mail size={10} /> Email Address</span>
-                {isEditing ? <input style={inp} name="email" type="email" value={editData.email || ""} onChange={handleChange} /> : <span className="ed-info-value">{employee.email}</span>}
-              </div>
-              <div className="ed-info-pair">
-                <span className="ed-info-label"><Phone size={10} /> Mobile Number</span>
-                {isEditing ? <input style={inp} name="mobile" value={editData.mobile || ""} onChange={handleChange} /> : <span className="ed-info-value">{employee.mobile || "—"}</span>}
-              </div>
-            </div>
-            <div className="ed-card" style={{ padding: "14px", display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0, background: statusBg, border: `1px solid ${statusBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{statusEmoji}</div>
-              <div style={{ minWidth: 0, overflow: "hidden" }}>
-                <p style={{ margin: "0 0 2px", fontSize: 10, fontWeight: 700, color: "#b0b8c9", textTransform: "uppercase", letterSpacing: "0.6px" }}>Onboarding Status</p>
-                <p style={{ margin: "0 0 3px", fontSize: 14, fontWeight: 800, color: statusColor }}>{isApproved ? "Approved" : isRejected ? "Rejected" : "Pending Review"}</p>
-                <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", lineHeight: 1.5 }}>{isApproved ? "HR has verified your documents" : isRejected ? (employee.remarks || "Documents rejected by HR") : "HR is reviewing your documents"}</p>
-              </div>
-            </div>
-          </div>
 
         </div>
       </div>
