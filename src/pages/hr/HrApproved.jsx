@@ -67,7 +67,6 @@ const initialEmployment = {
   work_location: "",
   date_of_joining: "",
   probation_period: "3 months",
-  confirmation_date: "",
   work_shift: "General Shift",
   reporting_manager: "",
 };
@@ -308,20 +307,6 @@ export default function HrApproved() {
   const handleEmploymentChange = (field, value) => {
     setEmployment(prev => {
       const updated = { ...prev, [field]: value };
-      if (field === "date_of_joining" || field === "probation_period") {
-        const doj  = field === "date_of_joining"  ? value : prev.date_of_joining;
-        const prob = field === "probation_period" ? value : prev.probation_period;
-        if (doj && prob) {
-          if (prob === "no probation") {
-            updated.confirmation_date = doj;
-          } else {
-            const months = parseInt(prob);
-            const d = new Date(doj);
-            d.setMonth(d.getMonth() + months);
-            updated.confirmation_date = d.toISOString().split("T")[0];
-          }
-        }
-      }
       return updated;
     });
   };
@@ -627,10 +612,6 @@ export default function HrApproved() {
                       <select value={employment.probation_period} onChange={e => handleEmploymentChange("probation_period", e.target.value)} style={inputStyle}>
                         {PROBATION_OPTIONS.map(p => <option key={p}>{p}</option>)}
                       </select>
-                    </div>
-                    <div>
-                      <label style={labelStyle}>Confirmation Date (auto)</label>
-                      <input type="date" value={employment.confirmation_date} readOnly style={{ ...inputStyle, background: "#f8fafc", color: "#6b7280" }} />
                     </div>
                     <div>
                       <label style={labelStyle}>Reporting Manager</label>

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-// ✅ Text-only doc types — plain value காட்டு, image மாதிரி render பண்ணாதே
+// ✅ Text-only doc types
 const TEXT_DOCS = ["CGPA", "PF Number", "ESI Number", "PG CGPA"];
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -102,6 +102,23 @@ const UserIcon = () => (
   </svg>
 );
 
+// ✅ NEW: Edit Icon
+const EditIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+);
+
+// ✅ NEW: Save Icon
+const SaveIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+    <polyline points="17 21 17 13 7 13 7 21"/>
+    <polyline points="7 3 7 8 15 8"/>
+  </svg>
+);
+
 // ─── HR doc types ─────────────────────────────────────────────────────────────
 const HR_DOC_TYPES = [
   "Offer Letter",
@@ -187,7 +204,6 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
   const [downloading, setDownloading] = useState(false);
 
   const hasFile  = !!fileUrl;
-  // ✅ Check if this is a text-only doc (CGPA / PF / ESI)
   const isTextDoc = TEXT_DOCS.includes(docType);
 
   const handleReplace = async (file) => {
@@ -239,12 +255,10 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
 
   return (
     <>
-      {/* Preview modal — only for file docs */}
       {preview && !isTextDoc && (
         <PreviewModal url={fileUrl} name={label || docType} onClose={() => setPreview(false)} />
       )}
 
-      {/* Delete confirm */}
       {confirmDel && (
         <div style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
@@ -284,8 +298,6 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
         borderRadius: 10,
         transition: "all 0.15s",
       }}>
-
-        {/* Icon */}
         <div style={{
           width: 36, height: 36, borderRadius: 8, flexShrink: 0,
           background: hasFile ? "#dcfce7" : "#eff6ff",
@@ -297,7 +309,6 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
           </svg>
         </div>
 
-        {/* Info */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e" }}>{label || docType}</span>
@@ -313,7 +324,6 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
             )}
           </div>
 
-          {/* ✅ Text doc → value காட்டு; File doc → status காட்டு */}
           {isTextDoc && hasFile ? (
             <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{
@@ -334,11 +344,9 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
           )}
         </div>
 
-        {/* ── Actions ── */}
         <div style={{ display: "flex", gap: 5, flexShrink: 0, flexWrap: "wrap" }}>
           {hasFile ? (
             <>
-              {/* Text docs-க்கு View/Download வேண்டாம் */}
               {!isTextDoc && (
                 <>
                   <button onClick={() => setPreview(true)} title="Preview" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "1px solid #e5e7eb", borderRadius: 7, background: "#fff", color: "#374151", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
@@ -359,7 +367,6 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
               </button>
             </>
           ) : (
-            // Text docs-க்கு Upload button வேண்டாம்
             !isTextDoc && (
               <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "none", borderRadius: 7, background: "#2563eb", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                 <UploadIcon /> {uploading ? "Uploading..." : "Upload"}
@@ -372,21 +379,282 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
   );
 };
 
+// ─── ✅ NEW: Edit Info Tab Component ──────────────────────────────────────────
+const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
+  const emp = activation?.employment || {};
+
+  const [form, setForm] = useState({
+    name:            employee.name            || "",
+    email:           employee.email           || "",
+    mobile:          employee.mobile          || "",
+    employeeId:      employee.employeeId      || "",
+    department:      employee.department      || emp.department    || "",
+    designation:     employee.designation     || emp.designation   || "",
+    date_of_joining: emp.date_of_joining
+      ? new Date(emp.date_of_joining).toISOString().split("T")[0]
+      : employee.date_of_joining
+        ? new Date(employee.date_of_joining).toISOString().split("T")[0]
+        : "",
+    // Salary fields
+    basic:           activation?.salary?.basic           || "",
+    hra:             activation?.salary?.hra             || "",
+    da:              activation?.salary?.da              || "",
+    ta:              activation?.salary?.ta              || "",
+    other_allowance: activation?.salary?.other_allowance || "",
+    pf_deduction:    activation?.salary?.pf_deduction    || "",
+    esi_deduction:   activation?.salary?.esi_deduction   || "",
+    pt:              activation?.salary?.pt              || "",
+  });
+
+  const [saving,   setSaving]   = useState(false);
+  const [toast,    setToast]    = useState(null);
+  const [changed,  setChanged]  = useState(false);
+
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+    setChanged(true);
+  };
+
+  // Compute gross & net
+  const gross = ["basic", "hra", "da", "ta", "other_allowance"]
+    .reduce((sum, k) => sum + (parseFloat(form[k]) || 0), 0);
+  const deductions = ["pf_deduction", "esi_deduction", "pt"]
+    .reduce((sum, k) => sum + (parseFloat(form[k]) || 0), 0);
+  const net = gross - deductions;
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        name:            form.name,
+        email:           form.email,
+        mobile:          form.mobile,
+        employeeId:      form.employeeId,
+        department:      form.department,
+        designation:     form.designation,
+        date_of_joining: form.date_of_joining,
+        salary: {
+          basic:           parseFloat(form.basic)           || 0,
+          hra:             parseFloat(form.hra)             || 0,
+          da:              parseFloat(form.da)              || 0,
+          ta:              parseFloat(form.ta)              || 0,
+          other_allowance: parseFloat(form.other_allowance) || 0,
+          pf_deduction:    parseFloat(form.pf_deduction)    || 0,
+          esi_deduction:   parseFloat(form.esi_deduction)   || 0,
+          pt:              parseFloat(form.pt)              || 0,
+          gross,
+          net,
+        },
+      };
+
+      const res = await fetch(`${API_BASE}/api/hr/activation/update/${employee._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast("Employee info saved successfully ✓");
+        setChanged(false);
+        if (onSaveSuccess) onSaveSuccess(data.data);
+      } else {
+        showToast(data.message || "Save failed", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Something went wrong", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Field styles ──
+  const inputStyle = {
+    width: "100%", padding: "9px 12px",
+    border: "1.5px solid #e5e7eb", borderRadius: 8,
+    fontSize: 13, outline: "none", background: "#fff",
+    boxSizing: "border-box", color: "#1a1a2e",
+    transition: "border-color 0.15s",
+  };
+
+  const labelStyle = {
+    fontSize: 11, fontWeight: 700, color: "#6b7280",
+    textTransform: "uppercase", letterSpacing: "0.05em",
+    marginBottom: 4, display: "block",
+  };
+
+  const sectionTitle = (title, color = "#1a1a2e") => (
+    <p style={{
+      margin: "0 0 10px", fontSize: 12, fontWeight: 700,
+      color: "#6b7280", textTransform: "uppercase",
+      letterSpacing: "0.05em", paddingBottom: 6,
+      borderBottom: "1.5px solid #f0f0f0",
+    }}>{title}</p>
+  );
+
+  const Field = ({ label, field, type = "text", placeholder = "" }) => (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <input
+        type={type}
+        value={form[field]}
+        placeholder={placeholder}
+        onChange={e => handleChange(field, e.target.value)}
+        onFocus={e => e.target.style.borderColor = "#2563eb"}
+        onBlur={e => e.target.style.borderColor = "#e5e7eb"}
+        style={inputStyle}
+      />
+    </div>
+  );
+
+  const AmountField = ({ label, field }) => (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <div style={{ position: "relative" }}>
+        <span style={{
+          position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
+          fontSize: 13, color: "#9ca3af", fontWeight: 600,
+        }}>₹</span>
+        <input
+          type="number"
+          value={form[field]}
+          placeholder="0"
+          onChange={e => handleChange(field, e.target.value)}
+          onFocus={e => e.target.style.borderColor = "#2563eb"}
+          onBlur={e => e.target.style.borderColor = "#e5e7eb"}
+          style={{ ...inputStyle, paddingLeft: 24 }}
+        />
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 8 }}>
+
+      {/* Toast inside edit tab */}
+      {toast && (
+        <div style={{
+          background: toast.type === "error" ? "#fef2f2" : "#f0fdf4",
+          border: `1px solid ${toast.type === "error" ? "#fecaca" : "#86efac"}`,
+          color: toast.type === "error" ? "#dc2626" : "#16a34a",
+          padding: "10px 14px", borderRadius: 8,
+          fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6,
+        }}>
+          {toast.type === "error" ? "✕" : "✓"} {toast.msg}
+        </div>
+      )}
+
+      {/* ── Section 1: Basic Info ── */}
+      <div>
+        {sectionTitle("Basic Information")}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+          <Field label="Full Name"    field="name"       placeholder="Employee name" />
+          <Field label="Email"        field="email"      type="email" placeholder="email@company.com" />
+          <Field label="Mobile"       field="mobile"     type="tel"  placeholder="+91 XXXXX XXXXX" />
+          <Field label="Employee ID"  field="employeeId" placeholder="EMP001" />
+        </div>
+      </div>
+
+      {/* ── Section 2: Employment ── */}
+      <div>
+        {sectionTitle("Employment Details")}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+          <Field label="Department"     field="department"      placeholder="e.g. Engineering" />
+          <Field label="Designation"    field="designation"     placeholder="e.g. Software Engineer" />
+          <Field label="Date of Joining" field="date_of_joining" type="date" />
+        </div>
+      </div>
+
+      {/* ── Section 3: Salary ── */}
+      <div>
+        {sectionTitle("Salary Structure")}
+        <p style={{ margin: "0 0 10px", fontSize: 12, color: "#6b7280" }}>Earnings</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 14 }}>
+          <AmountField label="Basic"           field="basic" />
+          <AmountField label="HRA"             field="hra" />
+          <AmountField label="DA"              field="da" />
+          <AmountField label="TA"              field="ta" />
+          <AmountField label="Other Allowance" field="other_allowance" />
+        </div>
+
+        <p style={{ margin: "0 0 10px", fontSize: 12, color: "#6b7280" }}>Deductions</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 14 }}>
+          <AmountField label="PF Deduction"  field="pf_deduction" />
+          <AmountField label="ESI Deduction" field="esi_deduction" />
+          <AmountField label="Professional Tax" field="pt" />
+        </div>
+
+        {/* Gross / Net summary */}
+        <div style={{
+          display: "flex", gap: 10, flexWrap: "wrap",
+          background: "#f8fafc", border: "1px solid #e5e7eb",
+          borderRadius: 10, padding: "12px 16px",
+        }}>
+          {[
+            { label: "Gross Salary", value: gross, color: "#16a34a", bg: "#f0fdf4", border: "#86efac" },
+            { label: "Total Deductions", value: deductions, color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
+            { label: "Net Salary", value: net, color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
+          ].map((s, i) => (
+            <div key={i} style={{
+              flex: 1, minWidth: 120, textAlign: "center",
+              background: s.bg, border: `1px solid ${s.border}`,
+              borderRadius: 8, padding: "8px 12px",
+            }}>
+              <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: s.color, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</p>
+              <p style={{ margin: "2px 0 0", fontSize: 16, fontWeight: 800, color: s.color }}>
+                ₹{s.value.toLocaleString("en-IN")}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Save Button ── */}
+      <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: 4 }}>
+        <button
+          onClick={handleSave}
+          disabled={saving || !changed}
+          style={{
+            display: "flex", alignItems: "center", gap: 7,
+            padding: "10px 22px", border: "none", borderRadius: 9,
+            background: saving || !changed ? "#9ca3af" : "#2563eb",
+            color: "#fff", fontWeight: 700, fontSize: 14,
+            cursor: saving || !changed ? "not-allowed" : "pointer",
+            boxShadow: saving || !changed ? "none" : "0 4px 12px rgba(37,99,235,0.35)",
+            transition: "all 0.2s",
+          }}
+        >
+          <SaveIcon />
+          {saving ? "Saving..." : "Save Changes"}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // ─── Employee Documents Modal ─────────────────────────────────────────────────
-const EmployeeDocsModal = ({ employee, onClose }) => {
+const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
   const [personalDocs, setPersonalDocs] = useState([]);
   const [hrDocs,       setHrDocs]       = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [activeTab,    setActiveTab]    = useState("personal");
   const [activation,   setActivation]   = useState(null);
+  // ✅ local employee state so edits reflect immediately in the header
+  const [empData,      setEmpData]      = useState(employee);
 
   const fetchDocs = async () => {
     setLoading(true);
     try {
       const [empRes, hrRes, actRes] = await Promise.all([
-        fetch(`${API_BASE}/api/employee/me/${employee._id}`).then(r => r.json()),
-        fetch(`${API_BASE}/api/hr/activation/docs/${employee._id}`).then(r => r.json()),
-        fetch(`${API_BASE}/api/hr/activation/${employee._id}`).then(r => r.json()).catch(() => null),
+        fetch(`${API_BASE}/api/employee/me/${empData._id}`).then(r => r.json()),
+        fetch(`${API_BASE}/api/hr/activation/docs/${empData._id}`).then(r => r.json()),
+        fetch(`${API_BASE}/api/hr/activation/${empData._id}`).then(r => r.json()).catch(() => null),
       ]);
       setPersonalDocs(empRes.documents || []);
       setHrDocs(hrRes.success ? (hrRes.data || []) : []);
@@ -398,7 +666,15 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
     }
   };
 
-  useEffect(() => { fetchDocs(); }, [employee._id]);
+  useEffect(() => { fetchDocs(); }, [empData._id]);
+
+  // ✅ When edit saves successfully, update local + parent list
+  const handleSaveSuccess = (updatedEmp) => {
+    if (updatedEmp) {
+      setEmpData(prev => ({ ...prev, ...updatedEmp }));
+      if (onEmployeeUpdate) onEmployeeUpdate(updatedEmp);
+    }
+  };
 
   const getPersonalDoc = (type) =>
     personalDocs.find(d => d.docType?.trim().toLowerCase() === type?.trim().toLowerCase()) || null;
@@ -406,7 +682,6 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
   const getHrDoc = (type) =>
     hrDocs.find(d => d.docType === type) || null;
 
-  // ✅ allPersonalTypes-ல TEXT_DOCS-யும் சேர்த்தேன்
   const allPersonalTypes = [
     { type: "Aadhaar",          required: true  },
     { type: "Ration Card",      required: false },
@@ -425,7 +700,6 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
     { type: "Bank Statement",   required: false },
     { type: "Reference 1",      required: false },
     { type: "Reference 2",      required: false },
-    // ✅ Text docs
     { type: "CGPA",             required: false },
     { type: "PG CGPA",          required: false },
     { type: "PF Number",        required: false },
@@ -442,12 +716,19 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
   const emp = activation?.employment || {};
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN") : "—";
 
-  const isActive   = employee?.status === "active" || employee?.status === "approved";
-  const isRejected = employee?.status === "rejected";
-  const statusLabel = isActive ? "Active" : isRejected ? "Rejected" : employee?.status || "Pending";
+  const isActive   = empData?.status === "active" || empData?.status === "approved";
+  const isRejected = empData?.status === "rejected";
+  const statusLabel = isActive ? "Active" : isRejected ? "Rejected" : empData?.status || "Pending";
   const statusColor = isActive ? "#16a34a" : isRejected ? "#dc2626" : "#d97706";
   const statusBg    = isActive ? "#f0fdf4" : isRejected ? "#fef2f2" : "#fffbeb";
   const statusBorder= isActive ? "#bbf7d0" : isRejected ? "#fecaca" : "#fde68a";
+
+  // ✅ 3 tabs now
+  const tabs = [
+    { key: "personal", label: "Personal Docs",  icon: <UserIcon />,   count: `${personalUploaded}/${allPersonalTypes.length + experienceDocs.length}` },
+    { key: "hr",       label: "HR Docs",         icon: <ShieldIcon />, count: `${hrUploaded}/${HR_DOC_TYPES.length}` },
+    { key: "edit",     label: "Edit Info",        icon: <EditIcon />,   count: null },
+  ];
 
   return (
     <div onClick={onClose} style={{
@@ -474,17 +755,17 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
               display: "flex", alignItems: "center", justifyContent: "center",
               color: "#fff", fontWeight: 800, fontSize: 16, flexShrink: 0,
             }}>
-              {employee.name?.charAt(0)?.toUpperCase()}
+              {empData.name?.charAt(0)?.toUpperCase()}
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#1a1a2e" }}>{employee.name}</h3>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#1a1a2e" }}>{empData.name}</h3>
               <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>
-                {employee.employeeId && (
+                {empData.employeeId && (
                   <span style={{ background: "#eff6ff", color: "#2563eb", padding: "1px 7px", borderRadius: 5, fontFamily: "monospace", fontWeight: 700, fontSize: 11, marginRight: 6 }}>
-                    {employee.employeeId}
+                    {empData.employeeId}
                   </span>
                 )}
-                {employee.department || "—"}
+                {empData.department || "—"}
               </p>
             </div>
           </div>
@@ -493,7 +774,7 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
           </button>
         </div>
 
-        {/* ── Employee Details ── */}
+        {/* ── Employee Details Strip ── */}
         <div style={{
           padding: "14px 22px",
           borderBottom: "1px solid #e5e7eb",
@@ -518,11 +799,11 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "8px 20px" }}>
             {[
-              { label: "Name",            value: employee.name },
-              { label: "Department",      value: employee.department || emp.department },
-              { label: "Email",           value: employee.email },
-              { label: "Mobile",          value: employee.mobile },
-              { label: "Date of Joining", value: fmtDate(emp.date_of_joining || employee.date_of_joining) },
+              { label: "Name",            value: empData.name },
+              { label: "Department",      value: empData.department || emp.department },
+              { label: "Email",           value: empData.email },
+              { label: "Mobile",          value: empData.mobile },
+              { label: "Date of Joining", value: fmtDate(emp.date_of_joining || empData.date_of_joining) },
             ].map((item, i) => (
               <div key={i} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>{item.label}</span>
@@ -533,24 +814,24 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
         </div>
 
         {/* ── Tabs ── */}
-        <div style={{ display: "flex", gap: 0, borderBottom: "2px solid #e5e7eb", padding: "0 22px", flexShrink: 0 }}>
-          {[
-            { key: "personal", label: "Personal Documents", icon: <UserIcon />,   count: `${personalUploaded}/${allPersonalTypes.length + experienceDocs.length}` },
-            { key: "hr",       label: "HR Documents",       icon: <ShieldIcon />, count: `${hrUploaded}/${HR_DOC_TYPES.length}` },
-          ].map(tab => (
+        <div style={{ display: "flex", gap: 0, borderBottom: "2px solid #e5e7eb", padding: "0 22px", flexShrink: 0, overflowX: "auto" }}>
+          {tabs.map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
               display: "flex", alignItems: "center", gap: 6,
-              border: "none", background: "none", padding: "12px 16px",
+              border: "none", background: "none", padding: "12px 14px",
               fontWeight: 700, fontSize: 13, cursor: "pointer", marginBottom: -2,
               borderBottom: activeTab === tab.key ? "3px solid #2563eb" : "3px solid transparent",
               color: activeTab === tab.key ? "#2563eb" : "#6b7280",
+              whiteSpace: "nowrap", flexShrink: 0,
             }}>
               {tab.icon} {tab.label}
-              <span style={{
-                background: activeTab === tab.key ? "#2563eb" : "#e5e7eb",
-                color: activeTab === tab.key ? "#fff" : "#374151",
-                borderRadius: 99, padding: "2px 7px", fontSize: 11, fontWeight: 700,
-              }}>{tab.count}</span>
+              {tab.count !== null && (
+                <span style={{
+                  background: activeTab === tab.key ? "#2563eb" : "#e5e7eb",
+                  color: activeTab === tab.key ? "#fff" : "#374151",
+                  borderRadius: 99, padding: "2px 7px", fontSize: 11, fontWeight: 700,
+                }}>{tab.count}</span>
+              )}
             </button>
           ))}
         </div>
@@ -560,7 +841,7 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
           {loading ? (
             <div style={{ textAlign: "center", padding: "40px 0" }}>
               <div style={{ width: 30, height: 30, border: "3px solid #e5e7eb", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 10px" }} />
-              <p style={{ color: "#9ca3af", fontSize: 13 }}>Loading documents...</p>
+              <p style={{ color: "#9ca3af", fontSize: 13 }}>Loading...</p>
             </div>
           ) : (
             <>
@@ -577,7 +858,7 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
                         label={doc.type}
                         fileUrl={uploaded?.fileUrl || null}
                         required={doc.required}
-                        employeeId={employee._id}
+                        employeeId={empData._id}
                         onRefresh={fetchDocs}
                         isHrDoc={false}
                       />
@@ -594,7 +875,7 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
                           label={doc.docType.startsWith("offer_") ? "Offer Letter" : "Experience Letter"}
                           fileUrl={doc.fileUrl}
                           required={false}
-                          employeeId={employee._id}
+                          employeeId={empData._id}
                           onRefresh={fetchDocs}
                           isHrDoc={false}
                         />
@@ -617,13 +898,22 @@ const EmployeeDocsModal = ({ employee, onClose }) => {
                         label={type}
                         fileUrl={doc?.fileUrl || null}
                         required={false}
-                        employeeId={employee._id}
+                        employeeId={empData._id}
                         onRefresh={fetchDocs}
                         isHrDoc={true}
                       />
                     );
                   })}
                 </div>
+              )}
+
+              {/* ── ✅ Edit Info Tab ── */}
+              {activeTab === "edit" && (
+                <EditInfoTab
+                  employee={empData}
+                  activation={activation}
+                  onSaveSuccess={handleSaveSuccess}
+                />
               )}
             </>
           )}
@@ -680,6 +970,17 @@ export default function HrActiveEmployees() {
     } finally {
       setDeleting(false);
       setConfirmId(null);
+    }
+  };
+
+  // ✅ Update employee in the list when edit saves
+  const handleEmployeeUpdate = (updatedEmp) => {
+    setEmployees(prev => prev.map(e =>
+      e._id === updatedEmp._id ? { ...e, ...updatedEmp } : e
+    ));
+    // Also update the modal's employee object
+    if (docsModal && docsModal._id === updatedEmp._id) {
+      setDocsModal(prev => ({ ...prev, ...updatedEmp }));
     }
   };
 
@@ -750,6 +1051,7 @@ export default function HrActiveEmployees() {
         <EmployeeDocsModal
           employee={docsModal}
           onClose={() => setDocsModal(null)}
+          onEmployeeUpdate={handleEmployeeUpdate}
         />
       )}
 
