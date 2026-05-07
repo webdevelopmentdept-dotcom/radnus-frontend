@@ -41,22 +41,22 @@ export default function HrSidebar() {
         // const res = await axios.get(`${API_BASE}/api/notifications/hr/${id}`);
 
         const token = localStorage.getItem("authToken");
-if (!token) return;
+        if (!token) return;
 
-// ✅ get HR id from token
-const payload = JSON.parse(atob(token.split(".")[1]));
-const hrId = payload?.id;
+        // ✅ get HR id from token
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        const hrId = payload?.id;
 
-if (!hrId) return;
+        if (!hrId) return;
 
-const res = await axios.get(
-  `${API_BASE}/api/notifications/hr/${hrId}`,
-  {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  }
-);
+        const res = await axios.get(
+          `${API_BASE}/api/notifications/hr/${hrId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
 
         const all = res.data?.data || res.data || [];
         setUnreadCount(all.filter(n => !n.isRead).length);
@@ -470,6 +470,16 @@ const res = await axios.get(
             Grade Master ✅
             <span className="hr-flow-label">1</span>
           </NavLink>
+
+          {/* Step 2: Set dept-specific salary bands ← NEW */}
+          <NavLink to="/hr/dashboard/grading/dept-salary"
+            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+            onClick={close}>
+            <HugeiconsIcon icon={BarChartIcon} size={16} color="currentColor" strokeWidth={1.8} />
+            Dept Salary Bands ✅
+            <span className="hr-flow-label">2</span>
+          </NavLink>
+ 
 
           <NavLink to="/hr/dashboard/grading/assign-grade"
             className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}

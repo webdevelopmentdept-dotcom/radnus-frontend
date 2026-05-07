@@ -1,19 +1,18 @@
 import { useState, useEffect } from "react";
 
-const API_BASE       = `${import.meta.env.VITE_API_BASE_URL}/api/grade-master`;
-const DEPT_API_BASE  = `${import.meta.env.VITE_API_BASE_URL}/api/departments`;
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/grade-master`;
 
 const DEFAULT_GRADES = [
-  { level: "L1",  designation: "Executive",                      experience_range: "0–2 Years",   core_responsibility: "Execute assigned operational tasks with accuracy",         performance_expectation: "Complete task ownership & learning agility",       bgr_stage: "Build",  salary_band_min: 200000,  salary_band_mid: 280000,  salary_band_max: 360000  },
-  { level: "L2",  designation: "Senior Executive",               experience_range: "2–4 Years",   core_responsibility: "Support team leaders; handle independent tasks",          performance_expectation: "Quality performance with minimal supervision",      bgr_stage: "Build",  salary_band_min: 350000,  salary_band_mid: 450000,  salary_band_max: 550000  },
-  { level: "L3",  designation: "Assistant Manager (AM)",         experience_range: "3–6 Years",   core_responsibility: "Manage small teams; assist in process improvement",       performance_expectation: "Consistent delivery & basic leadership",            bgr_stage: "Build",  salary_band_min: 500000,  salary_band_mid: 650000,  salary_band_max: 800000  },
-  { level: "L4",  designation: "Manager (M)",                    experience_range: "5–8 Years",   core_responsibility: "Lead department/team; drive KPIs",                        performance_expectation: "Achieve departmental goals & mentor juniors",       bgr_stage: "Grow",   salary_band_min: 750000,  salary_band_mid: 950000,  salary_band_max: 1150000 },
-  { level: "L5",  designation: "Senior Manager (Sr. M)",         experience_range: "7–10 Years",  core_responsibility: "Manage multiple teams; oversee strategy execution",        performance_expectation: "Strategic alignment & operational efficiency",      bgr_stage: "Grow",   salary_band_min: 1000000, salary_band_mid: 1300000, salary_band_max: 1600000 },
-  { level: "L6",  designation: "General Manager (GM)",           experience_range: "10–13 Years", core_responsibility: "Oversee business units; cross-functional collaboration",   performance_expectation: "Business growth & cross-department synergy",        bgr_stage: "Grow",   salary_band_min: 1500000, salary_band_mid: 1900000, salary_band_max: 2300000 },
-  { level: "L7",  designation: "Associate Vice President (AVP)", experience_range: "12–15 Years", core_responsibility: "Lead multiple functions; strategic initiatives",           performance_expectation: "Innovation & leadership excellence",                bgr_stage: "Grow",   salary_band_min: 2000000, salary_band_mid: 2600000, salary_band_max: 3200000 },
-  { level: "L8",  designation: "Vice President (VP)",            experience_range: "14–18 Years", core_responsibility: "Define business strategies; lead key verticals",           performance_expectation: "Long-term value creation & transformation",         bgr_stage: "Retain", salary_band_min: 3000000, salary_band_mid: 3800000, salary_band_max: 4600000 },
-  { level: "L9",  designation: "Director",                       experience_range: "18–22 Years", core_responsibility: "Drive company-wide policies and major decisions",          performance_expectation: "Organizational leadership & governance",            bgr_stage: "Retain", salary_band_min: 4500000, salary_band_mid: 5700000, salary_band_max: 6900000 },
-  { level: "L10", designation: "CXO (C-Level Executives)",       experience_range: "20+ Years",   core_responsibility: "Shape corporate vision, strategy, and culture",            performance_expectation: "Visionary leadership & sustainable growth",         bgr_stage: "Retain", salary_band_min: 6000000, salary_band_mid: 8000000, salary_band_max: 10000000 },
+  { level: "L1",  designation: "Executive",                      experience_range: "0–2 Years",   core_responsibility: "Execute assigned operational tasks with accuracy",         performance_expectation: "Complete task ownership & learning agility",       bgr_stage: "Build"  },
+  { level: "L2",  designation: "Senior Executive",               experience_range: "2–4 Years",   core_responsibility: "Support team leaders; handle independent tasks",          performance_expectation: "Quality performance with minimal supervision",      bgr_stage: "Build"  },
+  { level: "L3",  designation: "Assistant Manager (AM)",         experience_range: "3–6 Years",   core_responsibility: "Manage small teams; assist in process improvement",       performance_expectation: "Consistent delivery & basic leadership",            bgr_stage: "Build"  },
+  { level: "L4",  designation: "Manager (M)",                    experience_range: "5–8 Years",   core_responsibility: "Lead department/team; drive KPIs",                        performance_expectation: "Achieve departmental goals & mentor juniors",       bgr_stage: "Grow"   },
+  { level: "L5",  designation: "Senior Manager (Sr. M)",         experience_range: "7–10 Years",  core_responsibility: "Manage multiple teams; oversee strategy execution",        performance_expectation: "Strategic alignment & operational efficiency",      bgr_stage: "Grow"   },
+  { level: "L6",  designation: "General Manager (GM)",           experience_range: "10–13 Years", core_responsibility: "Oversee business units; cross-functional collaboration",   performance_expectation: "Business growth & cross-department synergy",        bgr_stage: "Grow"   },
+  { level: "L7",  designation: "Associate Vice President (AVP)", experience_range: "12–15 Years", core_responsibility: "Lead multiple functions; strategic initiatives",           performance_expectation: "Innovation & leadership excellence",                bgr_stage: "Grow"   },
+  { level: "L8",  designation: "Vice President (VP)",            experience_range: "14–18 Years", core_responsibility: "Define business strategies; lead key verticals",           performance_expectation: "Long-term value creation & transformation",         bgr_stage: "Retain" },
+  { level: "L9",  designation: "Director",                       experience_range: "18–22 Years", core_responsibility: "Drive company-wide policies and major decisions",          performance_expectation: "Organizational leadership & governance",            bgr_stage: "Retain" },
+  { level: "L10", designation: "CXO (C-Level Executives)",       experience_range: "20+ Years",   core_responsibility: "Shape corporate vision, strategy, and culture",            performance_expectation: "Visionary leadership & sustainable growth",         bgr_stage: "Retain" },
 ];
 
 const BGR_OPTIONS = ["Build", "Grow", "Retain"];
@@ -21,9 +20,7 @@ const BGR_OPTIONS = ["Build", "Grow", "Retain"];
 const defaultForm = {
   level: "", designation: "", experience_range: "",
   core_responsibility: "", performance_expectation: "",
-  bgr_stage: "Build",
-  salary_band_min: "", salary_band_mid: "", salary_band_max: "",
-  notes: "", department_id: "", department_name: "",
+  bgr_stage: "Build", notes: "",
 };
 
 const BGR_META = {
@@ -32,8 +29,6 @@ const BGR_META = {
   Retain: { color: "#d97706", bg: "#fef3c7", border: "#fcd34d", desc: "L8–L10 · Recognition, stability & corporate mentorship" },
 };
 
-const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : null;
-
 const STYLES = `
   .gm-page { padding: 28px 32px; }
   .gm-header { flex-direction: row; align-items: center; }
@@ -41,7 +36,6 @@ const STYLES = `
   .gm-table-wrap { display: block; }
   .gm-cards-wrap { display: none; }
   .modal-grid-2 { grid-template-columns: 1fr 1fr; }
-  .modal-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
 
   @media (max-width: 900px) {
     .gm-table-wrap { display: none !important; }
@@ -53,7 +47,6 @@ const STYLES = `
     .gm-header-actions { flex-direction: column !important; width: 100%; }
     .gm-header-actions button { width: 100%; justify-content: center; }
     .modal-grid-2 { grid-template-columns: 1fr !important; }
-    .modal-grid-3 { grid-template-columns: 1fr !important; }
     .modal-footer { flex-direction: column !important; }
     .modal-footer button { width: 100%; }
     .modal-inner { padding: 16px !important; }
@@ -67,86 +60,10 @@ const STYLES = `
     background-position: right 10px center;
     padding-right: 30px !important;
   }
-  select.gm-select:disabled {
-    background-color: #f3f4f6;
-    color: #9ca3af;
-    cursor: not-allowed;
-  }
-
-  .dept-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: #eff6ff;
-    color: #2563eb;
-    border: 1px solid #bfdbfe;
-    border-radius: 6px;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-weight: 600;
-  }
-
-  /* ✅ FIXED: Salary scale bar — Mid border overlap fix */
-  .salary-scale-bar {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    border-radius: 8px;
-    overflow: hidden;
-    height: 28px;
-    font-size: 11px;
-    font-weight: 700;
-    min-width: 240px;
-  }
-  .salary-scale-bar .seg {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    white-space: nowrap;
-    padding: 0 6px;
-  }
-  .salary-scale-bar .seg-min {
-    background: #ecfdf5;
-    color: #059669;
-    border: 1px solid #6ee7b7;
-    border-right: none;
-    border-radius: 8px 0 0 8px;
-  }
-  .salary-scale-bar .seg-mid {
-    background: #eff6ff;
-    color: #2563eb;
-    border-top: 1px solid #93c5fd;
-    border-bottom: 1px solid #93c5fd;
-    border-left: none;
-    border-right: none;
-  }
-  .salary-scale-bar .seg-max {
-    background: #fff7ed;
-    color: #d97706;
-    border: 1px solid #fcd34d;
-    border-left: none;
-    border-radius: 0 8px 8px 0;
-  }
-  .salary-scale-bar .seg-label {
-    font-size: 9px;
-    font-weight: 600;
-    opacity: 0.65;
-    margin-right: 3px;
-    text-transform: uppercase;
-  }
-
-  /* Scale indicator in view modal */
-  .scale-track { position: relative; height: 6px; background: #e5e7eb; border-radius: 99px; margin: 10px 0 4px; }
-  .scale-track .scale-fill { position: absolute; left: 0; top: 0; height: 6px; border-radius: 99px;
-    background: linear-gradient(90deg, #059669 0%, #2563eb 50%, #d97706 100%); width: 100%; }
-  .scale-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 2px currentColor; }
 `;
 
 export default function GradeMaster() {
   const [grades,        setGrades]        = useState([]);
-  const [departments,   setDepartments]   = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [showModal,     setShowModal]     = useState(false);
   const [editingId,     setEditingId]     = useState(null);
@@ -158,23 +75,7 @@ export default function GradeMaster() {
   const [filterBGR,     setFilterBGR]     = useState("All");
   const [seeding,       setSeeding]       = useState(false);
 
-  const availableDesignations = (() => {
-    if (!form.department_id) return [];
-    const dept = departments.find(d => d._id === form.department_id);
-    if (!dept) return [];
-    return (dept.designations || []).filter(dg => dg.status === "active");
-  })();
-
-  useEffect(() => { fetchGrades(); fetchDepartments(); }, []);
-
-  const fetchDepartments = async () => {
-    try {
-      const res  = await fetch(`${DEPT_API_BASE}?status=active`);
-      const data = await res.json();
-      const list = data.data || data || [];
-      setDepartments(list.filter(d => d.status === "active"));
-    } catch {}
-  };
+  useEffect(() => { fetchGrades(); }, []);
 
   const fetchGrades = async () => {
     try {
@@ -242,28 +143,13 @@ export default function GradeMaster() {
       core_responsibility: g.core_responsibility || "",
       performance_expectation: g.performance_expectation || "",
       bgr_stage: g.bgr_stage,
-      salary_band_min: g.salary_band_min || "",
-      salary_band_mid: g.salary_band_mid || "",
-      salary_band_max: g.salary_band_max || "",
       notes: g.notes || "",
-      department_id:   g.department_id   || "",
-      department_name: g.department_name || "",
     });
     setEditingId(g._id);
     setShowModal(true);
   };
   const closeModal = () => { setShowModal(false); setEditingId(null); setForm(defaultForm); };
   const handleFormChange = (field, value) => setForm(f => ({ ...f, [field]: value }));
-
-  const handleDepartmentChange = (deptId) => {
-    const dept = departments.find(d => d._id === deptId);
-    setForm(f => ({
-      ...f,
-      department_id:   deptId,
-      department_name: dept?.name || "",
-      designation:     "",
-    }));
-  };
 
   const filtered = (filterBGR === "All" ? grades : grades.filter(g => g.bgr_stage === filterBGR))
     .sort((a, b) => parseInt(a.level.replace("L", "")) - parseInt(b.level.replace("L", "")));
@@ -277,69 +163,8 @@ export default function GradeMaster() {
     boxSizing: "border-box", outline: "none", fontFamily: "inherit",
   };
 
-  // ── Salary Scale Bar ───────────────────────────────────────────────────────
-  const SalaryScaleBar = ({ min, mid, max }) => {
-    if (!min && !mid && !max) return <span style={{ color: "#d1d5db" }}>—</span>;
-    return (
-      <div className="salary-scale-bar">
-        {min && (
-          <div className="seg seg-min">
-            <span className="seg-label">Min</span>
-            {fmt(min)}
-          </div>
-        )}
-        {mid && (
-          <div className="seg seg-mid">
-            <span className="seg-label">Mid</span>
-            {fmt(mid)}
-          </div>
-        )}
-        {max && (
-          <div className="seg seg-max">
-            <span className="seg-label">Max</span>
-            {fmt(max)}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // ── Salary Scale Detail (View Modal) ───────────────────────────────────────
-  const SalaryScaleDetail = ({ min, mid, max }) => {
-    if (!min && !mid && !max) return null;
-    return (
-      <div style={{ padding: "16px 18px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 16 }}>
-        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 12 }}>
-          Salary Band (3-Point Scale)
-        </label>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
-          {[
-            { label: "Minimum",  value: min,  color: "#059669", bg: "#ecfdf5", border: "#6ee7b7" },
-            { label: "Midpoint", value: mid,  color: "#2563eb", bg: "#eff6ff", border: "#93c5fd" },
-            { label: "Maximum",  value: max,  color: "#d97706", bg: "#fff7ed", border: "#fcd34d" },
-          ].map(({ label, value, color, bg, border }) => value ? (
-            <div key={label} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color, textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 14, fontWeight: 800, color }}>{fmt(value)}</div>
-            </div>
-          ) : null)}
-        </div>
-        <div className="scale-track">
-          <div className="scale-fill" />
-          {min  && <div className="scale-dot" style={{ left: "0%",   color: "#059669", background: "#059669" }} />}
-          {mid  && <div className="scale-dot" style={{ left: "50%",  color: "#2563eb", background: "#2563eb" }} />}
-          {max  && <div className="scale-dot" style={{ left: "100%", color: "#d97706", background: "#d97706" }} />}
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#9ca3af", marginTop: 2 }}>
-          <span>Min</span><span>Mid</span><span>Max</span>
-        </div>
-        {min && max && (
-          <div style={{ marginTop: 10, fontSize: 12, color: "#6b7280", textAlign: "center" }}>
-            Band spread: <strong style={{ color: "#374151" }}>{fmt(Number(max) - Number(min))}</strong>
-          </div>
-        )}
-      </div>
-    );
+  const labelStyle = {
+    display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 5,
   };
 
   return (
@@ -436,7 +261,7 @@ export default function GradeMaster() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
               <thead>
                 <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e5e7eb" }}>
-                  {["Level", "Designation", "Department", "Experience", "BGR Stage", "Salary Scale (Min · Mid · Max)", "Actions"].map(h => (
+                  {["Level", "Designation", "Experience", "BGR Stage", "Core Responsibility", "Actions"].map(h => (
                     <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontWeight: 700, color: "#374151", whiteSpace: "nowrap", fontSize: 13 }}>{h}</th>
                   ))}
                 </tr>
@@ -455,17 +280,14 @@ export default function GradeMaster() {
                       <td style={{ padding: "14px 16px" }}>
                         <span style={{ fontWeight: 600, color: "#1a1a2e", fontSize: 14 }}>{g.designation}</span>
                       </td>
-                      <td style={{ padding: "14px 16px" }}>
-                        {g.department_name
-                          ? <span className="dept-badge">{g.department_name}</span>
-                          : <span style={{ color: "#d1d5db", fontSize: 12 }}>—</span>}
-                      </td>
                       <td style={{ padding: "14px 16px", color: "#6b7280", fontSize: 13 }}>{g.experience_range}</td>
                       <td style={{ padding: "14px 16px" }}>
                         <span style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`, borderRadius: 20, padding: "3px 12px", fontSize: 12, fontWeight: 700 }}>{g.bgr_stage}</span>
                       </td>
-                      <td style={{ padding: "10px 16px" }}>
-                        <SalaryScaleBar min={g.salary_band_min} mid={g.salary_band_mid} max={g.salary_band_max} />
+                      <td style={{ padding: "14px 16px", color: "#6b7280", fontSize: 13, maxWidth: 260 }}>
+                        <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                          {g.core_responsibility || <span style={{ color: "#d1d5db" }}>—</span>}
+                        </span>
                       </td>
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ display: "flex", gap: 8 }}>
@@ -495,21 +317,19 @@ export default function GradeMaster() {
                     <span style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`, borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{g.bgr_stage}</span>
                   </div>
                   <div style={{ padding: "14px 18px" }}>
-                    <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 10 }}>
+                    <div style={{ marginBottom: 10 }}>
                       <span style={{ fontSize: 12, color: "#6b7280" }}>Experience: <strong style={{ color: "#374151" }}>{g.experience_range}</strong></span>
-                      {g.department_name && <span style={{ fontSize: 12, color: "#6b7280" }}>Dept: <strong style={{ color: "#2563eb" }}>{g.department_name}</strong></span>}
                     </div>
-                    {(g.salary_band_min || g.salary_band_mid || g.salary_band_max) && (
-                      <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>Salary Scale</div>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                          {g.salary_band_min && <span style={{ background: "#ecfdf5", color: "#059669", border: "1px solid #6ee7b7", borderRadius: 6, padding: "3px 8px", fontSize: 11, fontWeight: 700 }}>Min: {fmt(g.salary_band_min)}</span>}
-                          {g.salary_band_mid && <span style={{ background: "#eff6ff", color: "#2563eb", border: "1px solid #93c5fd", borderRadius: 6, padding: "3px 8px", fontSize: 11, fontWeight: 700 }}>Mid: {fmt(g.salary_band_mid)}</span>}
-                          {g.salary_band_max && <span style={{ background: "#fff7ed", color: "#d97706", border: "1px solid #fcd34d", borderRadius: 6, padding: "3px 8px", fontSize: 11, fontWeight: 700 }}>Max: {fmt(g.salary_band_max)}</span>}
-                        </div>
-                      </div>
+                    {g.core_responsibility && (
+                      <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 4px" }}>
+                        <strong style={{ color: "#374151" }}>Role:</strong> {g.core_responsibility}
+                      </p>
                     )}
-                    {g.core_responsibility && <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 4px" }}><strong style={{ color: "#374151" }}>Role:</strong> {g.core_responsibility}</p>}
+                    {g.performance_expectation && (
+                      <p style={{ fontSize: 12, color: "#6b7280", margin: "4px 0 0" }}>
+                        <strong style={{ color: "#374151" }}>Expectation:</strong> {g.performance_expectation}
+                      </p>
+                    )}
                     <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                       <button onClick={() => setViewGrade(g)} style={{ flex: 1, padding: "9px 0", border: "1px solid #e5e7eb", borderRadius: 7, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>View</button>
                       <button onClick={() => openEdit(g)}     style={{ flex: 1, padding: "9px 0", border: "1px solid #2563eb", borderRadius: 7, background: "#eff6ff", color: "#2563eb", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>Edit</button>
@@ -526,7 +346,7 @@ export default function GradeMaster() {
       {/* Create / Edit Modal */}
       {showModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 660, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+          <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
             <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", zIndex: 1 }}>
               <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>
                 {editingId ? "Edit Grade Level" : "Add New Grade Level"}
@@ -535,6 +355,8 @@ export default function GradeMaster() {
             </div>
 
             <div className="modal-inner" style={{ padding: "24px" }}>
+
+              {/* Level + BGR Stage */}
               <div className="modal-grid-2" style={{ display: "grid", gap: 16, marginBottom: 16 }}>
                 <div>
                   <label style={labelStyle}>Grade Level * <span style={{ color: "#9ca3af", fontWeight: 400 }}>(e.g. L1, L2)</span></label>
@@ -548,133 +370,50 @@ export default function GradeMaster() {
                 </div>
               </div>
 
-              <div className="modal-grid-2" style={{ display: "grid", gap: 16, marginBottom: 16 }}>
-                <div>
-                  <label style={labelStyle}>Department</label>
-                  <select value={form.department_id} onChange={e => handleDepartmentChange(e.target.value)} style={inputStyle} className="gm-select">
-                    <option value="">-- Select Department --</option>
-                    {departments.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>
-                    Designation *
-                    {form.department_id && availableDesignations.length > 0 && (
-                      <span style={{ color: "#059669", fontWeight: 500, marginLeft: 6, fontSize: 10 }}>({availableDesignations.length} from dept)</span>
-                    )}
-                  </label>
-                  {form.department_id && availableDesignations.length > 0 ? (
-                    <select value={form.designation} onChange={e => handleFormChange("designation", e.target.value)} style={inputStyle} className="gm-select">
-                      <option value="">-- Select Designation --</option>
-                      {availableDesignations.map((dg, idx) => (
-                        <option key={idx} value={dg.title}>{dg.title}{dg.level ? ` (${dg.level})` : ""}</option>
-                      ))}
-                    </select>
-                  ) : form.department_id && availableDesignations.length === 0 ? (
-                    <div>
-                      <input value={form.designation} onChange={e => handleFormChange("designation", e.target.value)}
-                        placeholder="No roles in this dept — type manually"
-                        style={{ ...inputStyle, borderColor: "#fcd34d", background: "#fffbeb" }} />
-                      <p style={{ margin: "4px 0 0", fontSize: 11, color: "#d97706" }}>Add roles in Department Master first.</p>
-                    </div>
-                  ) : (
-                    <input value={form.designation} onChange={e => handleFormChange("designation", e.target.value)}
-                      placeholder="Select a department above, or type manually" style={inputStyle} />
-                  )}
-                </div>
+              {/* Designation */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>Designation *</label>
+                <input value={form.designation} onChange={e => handleFormChange("designation", e.target.value)}
+                  placeholder="e.g. Senior Manager" style={inputStyle} />
               </div>
 
+              {/* Experience Range */}
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>Experience Range *</label>
                 <input value={form.experience_range} onChange={e => handleFormChange("experience_range", e.target.value)} placeholder="e.g. 5–8 Years" style={inputStyle} />
               </div>
 
+              {/* Core Responsibility */}
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>Core Responsibility</label>
                 <textarea value={form.core_responsibility} onChange={e => handleFormChange("core_responsibility", e.target.value)}
                   placeholder="Describe the main responsibilities for this level..." rows={2} style={{ ...inputStyle, resize: "vertical" }} />
               </div>
 
+              {/* Performance Expectation */}
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>Performance Expectation</label>
                 <textarea value={form.performance_expectation} onChange={e => handleFormChange("performance_expectation", e.target.value)}
                   placeholder="What is expected from employees at this grade?" rows={2} style={{ ...inputStyle, resize: "vertical" }} />
               </div>
 
-              {/* Salary Band */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={labelStyle}>
-                  Salary Band — 3-Point Scale (₹)
-                  <span style={{ color: "#9ca3af", fontWeight: 400, marginLeft: 4 }}>— Optional</span>
-                </label>
-                <div style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", marginBottom: 10, fontSize: 12, color: "#6b7280", display: "flex", gap: 16, flexWrap: "wrap" }}>
-                  <span>🟢 <strong style={{ color: "#059669" }}>Min</strong> — Entry of band</span>
-                  <span>🔵 <strong style={{ color: "#2563eb" }}>Mid</strong> — Market reference / target</span>
-                  <span>🟠 <strong style={{ color: "#d97706" }}>Max</strong> — Ceiling of band</span>
-                </div>
-                <div className="modal-grid-3" style={{ display: "grid", gap: 12 }}>
-                  <div>
-                    <label style={{ ...labelStyle, color: "#059669" }}>Minimum (₹)</label>
-                    <input type="number" value={form.salary_band_min} onChange={e => handleFormChange("salary_band_min", e.target.value)} placeholder="e.g. 300000"
-                      style={{ ...inputStyle, borderColor: form.salary_band_min ? "#6ee7b7" : "#d1d5db", background: form.salary_band_min ? "#f0fdf4" : "#fff" }} />
-                  </div>
-                  <div>
-                    <label style={{ ...labelStyle, color: "#2563eb" }}>Midpoint (₹)</label>
-                    <input type="number" value={form.salary_band_mid} onChange={e => handleFormChange("salary_band_mid", e.target.value)} placeholder="e.g. 450000"
-                      style={{ ...inputStyle, borderColor: form.salary_band_mid ? "#93c5fd" : "#d1d5db", background: form.salary_band_mid ? "#eff6ff" : "#fff" }} />
-                    {form.salary_band_min && form.salary_band_max && !form.salary_band_mid && (
-                      <button type="button"
-                        onClick={() => handleFormChange("salary_band_mid", Math.round((Number(form.salary_band_min) + Number(form.salary_band_max)) / 2))}
-                        style={{ marginTop: 4, fontSize: 11, color: "#2563eb", background: "none", border: "none", cursor: "pointer", padding: 0, textDecoration: "underline" }}>
-                        Auto-fill midpoint ({fmt(Math.round((Number(form.salary_band_min) + Number(form.salary_band_max)) / 2))})
-                      </button>
-                    )}
-                  </div>
-                  <div>
-                    <label style={{ ...labelStyle, color: "#d97706" }}>Maximum (₹)</label>
-                    <input type="number" value={form.salary_band_max} onChange={e => handleFormChange("salary_band_max", e.target.value)} placeholder="e.g. 600000"
-                      style={{ ...inputStyle, borderColor: form.salary_band_max ? "#fcd34d" : "#d1d5db", background: form.salary_band_max ? "#fff7ed" : "#fff" }} />
-                  </div>
-                </div>
-                {(form.salary_band_min || form.salary_band_mid || form.salary_band_max) && (
-                  <div style={{ marginTop: 10 }}>
-                    <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, marginBottom: 6, textTransform: "uppercase" }}>Preview</div>
-                    <SalaryScaleBar min={form.salary_band_min} mid={form.salary_band_mid} max={form.salary_band_max} />
-                    {form.salary_band_min && form.salary_band_max && (
-                      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>
-                        Spread: <strong>{fmt(Number(form.salary_band_max) - Number(form.salary_band_min))}</strong>
-                        {form.salary_band_mid && (
-                          <> · Compa-ratio at mid: <strong>{((Number(form.salary_band_mid) / ((Number(form.salary_band_min) + Number(form.salary_band_max)) / 2)) * 100).toFixed(1)}%</strong></>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
+              {/* Notes */}
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>Notes <span style={{ color: "#9ca3af", fontWeight: 400 }}>— Optional</span></label>
                 <textarea value={form.notes} onChange={e => handleFormChange("notes", e.target.value)}
                   placeholder="Any additional notes about this grade..." rows={2} style={{ ...inputStyle, resize: "vertical" }} />
               </div>
 
+              {/* BGR Stage Banner */}
               {form.bgr_stage && (
-                <div style={{ background: BGR_META[form.bgr_stage]?.bg, border: `1px solid ${BGR_META[form.bgr_stage]?.border}`, borderRadius: 8, padding: "10px 14px", marginBottom: 12 }}>
+                <div style={{ background: BGR_META[form.bgr_stage]?.bg, border: `1px solid ${BGR_META[form.bgr_stage]?.border}`, borderRadius: 8, padding: "10px 14px", marginBottom: 16 }}>
                   <span style={{ fontSize: 13, color: BGR_META[form.bgr_stage]?.color, fontWeight: 600 }}>
                     {form.bgr_stage} Stage — {BGR_META[form.bgr_stage]?.desc}
                   </span>
                 </div>
               )}
 
-              {form.department_id && form.department_name && (
-                <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "10px 14px", marginBottom: 16 }}>
-                  <span style={{ fontSize: 12, color: "#2563eb" }}>
-                    Department: <strong>{form.department_name}</strong>
-                    {availableDesignations.length > 0 ? ` — ${availableDesignations.length} designation${availableDesignations.length > 1 ? "s" : ""} available` : " — No designations added yet"}
-                  </span>
-                </div>
-              )}
-
+              {/* Footer */}
               <div className="modal-footer" style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
                 <button onClick={closeModal} style={{ padding: "10px 24px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
                 <button onClick={handleSubmit} disabled={saving}
@@ -692,7 +431,7 @@ export default function GradeMaster() {
         const meta = BGR_META[viewGrade.bgr_stage] || BGR_META.Build;
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-            <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 540, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 500, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
               <div style={{ background: "#1a1a2e", padding: "20px 24px", borderRadius: "14px 14px 0 0" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -709,9 +448,7 @@ export default function GradeMaster() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
                   <span style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`, borderRadius: 20, padding: "4px 14px", fontSize: 13, fontWeight: 700 }}>{viewGrade.bgr_stage} Stage</span>
                   <span style={{ fontSize: 13, color: "#6b7280" }}>{meta.desc}</span>
-                  {viewGrade.department_name && <span className="dept-badge">{viewGrade.department_name}</span>}
                 </div>
-                <SalaryScaleDetail min={viewGrade.salary_band_min} mid={viewGrade.salary_band_mid} max={viewGrade.salary_band_max} />
                 {[
                   { label: "Core Responsibility",    value: viewGrade.core_responsibility    },
                   { label: "Performance Expectation", value: viewGrade.performance_expectation },
@@ -754,7 +491,3 @@ export default function GradeMaster() {
     </div>
   );
 }
-
-const labelStyle = {
-  display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 5,
-};

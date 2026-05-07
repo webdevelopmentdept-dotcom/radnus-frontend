@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -9,7 +9,7 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-// ── Styles ───────────────────────────────────────────────────────────────────
+// ── Styles ────────────────────────────────────────────────────────────────────
 const inp = {
   width: "100%", padding: "9px 12px", border: "1.5px solid #e2e8f0",
   borderRadius: 8, fontSize: 13, color: "#1e293b", background: "#fff",
@@ -22,63 +22,59 @@ const lbl = {
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1];
 
 const VALUE_TYPES = [
-  { value: "count", label: "Count" },
+  { value: "count",      label: "Count" },
   { value: "percentage", label: "Percentage %" },
-  { value: "amount", label: "Amount ₹" },
-  { value: "rating", label: "Rating" },
+  { value: "amount",     label: "Amount ₹" },
+  { value: "rating",     label: "Rating" },
 ];
 const OPERATORS = [
   { value: ">=", label: "≥ (At least)" },
-  { value: ">", label: "> (More than)" },
-  { value: "=", label: "= (Exactly)" },
+  { value: ">",  label: "> (More than)" },
+  { value: "=",  label: "= (Exactly)" },
   { value: "<=", label: "≤ (At most)" },
-  { value: "<", label: "< (Less than)" },
+  { value: "<",  label: "< (Less than)" },
 ];
 
-const EMPTY_KPI_CONFIG = (kpi_name, weight) => ({
-  kpi_name,
-  weight,
-  target: "",
-  value_type: "count",
-  operator: ">=",
-  rule_label: "",
+// ── Build empty KPI config from template item ─────────────────────────────────
+const EMPTY_KPI_CONFIG = (kpiItem) => ({
+  kpi_name:         kpiItem.kpi_name,
+  weight:           kpiItem.weight,
+  target:           kpiItem.target || "",
+  value_type:       "count",
+  operator:         ">=",
+  rule_label:       "",
+  is_admission_kpi: kpiItem.is_admission_kpi || false,
+  program_targets:  kpiItem.program_targets  || [],
+  program_slabs:    (kpiItem.program_targets || []).map(pt => ({
+    program_id:   pt.program_id,
+    program_name: pt.program_name,
+    slabs:        [],
+  })),
   slabs: [],
 });
 
 const EMPTY_FORM = {
-  name: "",
-  department: "",
-  plan_type: "kpi_linked",
-  period_type: "Monthly",
-  period_month: new Date().getMonth() + 1,
-  period_quarter: "Q1",
-  period_half: "H1",
-  period_year: CURRENT_YEAR,
-  kpi_template_id: "",
-  selected_kpis: [],
-  kpi_configs: [],
-  completion_reward_type: "none",
-  completion_reward_value: 0,
-  completion_reward_label: "",
-  standalone_payout_type: "fixed",
-  standalone_payout_value: 0,
-  standalone_metric: "manual",
-  standalone_metric_label: "",
-  slabs: [],
+  name: "", department: "", plan_type: "kpi_linked",
+  period_type: "Monthly", period_month: new Date().getMonth() + 1,
+  period_quarter: "Q1", period_half: "H1", period_year: CURRENT_YEAR,
+  kpi_template_id: "", selected_kpis: [], kpi_configs: [],
+  completion_reward_type: "none", completion_reward_value: 0, completion_reward_label: "",
+  standalone_payout_type: "fixed", standalone_payout_value: 0,
+  standalone_metric: "manual", standalone_metric_label: "", slabs: [],
 };
 
 const DEPT_COLORS = {
-  Sales: { color: "#2563eb", bg: "#eff6ff" },
+  Sales:       { color: "#2563eb", bg: "#eff6ff" },
   Engineering: { color: "#7c3aed", bg: "#f5f3ff" },
-  Marketing: { color: "#d97706", bg: "#fffbeb" },
-  HR: { color: "#16a34a", bg: "#f0fdf4" },
-  Finance: { color: "#ea580c", bg: "#fff7ed" },
-  Operations: { color: "#0891b2", bg: "#ecfeff" },
+  Marketing:   { color: "#d97706", bg: "#fffbeb" },
+  HR:          { color: "#16a34a", bg: "#f0fdf4" },
+  Finance:     { color: "#ea580c", bg: "#fff7ed" },
+  Operations:  { color: "#0891b2", bg: "#ecfeff" },
 };
 const getColor = (d) => DEPT_COLORS[d] || { color: "#6b7280", bg: "#f3f4f6" };
 
@@ -93,11 +89,11 @@ function buildRuleLabel(cfg) {
 function periodLabel(f) {
   const y = f.period_year;
   switch (f.period_type) {
-    case "Monthly": return `${MONTHS[(f.period_month || 1) - 1].slice(0, 3)} ${y}`;
-    case "Quarterly": return `${f.period_quarter} ${y}`;
+    case "Monthly":     return `${MONTHS[(f.period_month || 1) - 1].slice(0, 3)} ${y}`;
+    case "Quarterly":   return `${f.period_quarter} ${y}`;
     case "Half-Yearly": return `${f.period_half} ${y}`;
-    case "Yearly": return `FY ${y}`;
-    default: return `${y}`;
+    case "Yearly":      return `FY ${y}`;
+    default:            return `${y}`;
   }
 }
 
@@ -114,17 +110,186 @@ function validateSlabs(slabs) {
   return errors;
 }
 
+// ── SlabEditor sub-component ──────────────────────────────────────────────────
+function SlabEditor({ slabs, onAdd, onUpdate, onRemove, cfg }) {
+  const errors = validateSlabs(slabs);
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <label style={{ ...lbl, margin: 0 }}>Score → Payout Slabs</label>
+        <button onClick={onAdd}
+          style={{ background: "#eef2ff", border: "none", borderRadius: 7, padding: "5px 12px", fontSize: 11, fontWeight: 700, color: "#4f46e5", cursor: "pointer" }}>
+          + Add Slab
+        </button>
+      </div>
+      {errors.length > 0 && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 7, padding: "7px 12px", marginBottom: 8 }}>
+          {errors.map((e, i) => <p key={i} style={{ margin: "2px 0", fontSize: 11, color: "#dc2626", fontWeight: 600 }}>⚠ {e}</p>)}
+        </div>
+      )}
+      {slabs.length === 0 ? (
+        <p style={{ fontSize: 12, color: "#94a3b8", fontStyle: "italic", margin: 0 }}>No slabs yet — click "+ Add Slab"</p>
+      ) : (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "65px 65px 130px 1fr 32px", gap: 8, marginBottom: 6 }}>
+            {["Min %", "Max %", "Type", "Amount / %", ""].map(h => (
+              <span key={h} style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" }}>{h}</span>
+            ))}
+          </div>
+          {slabs.map((slab, si) => (
+            <div key={si} style={{ display: "grid", gridTemplateColumns: "65px 65px 130px 1fr 32px", gap: 8, marginBottom: 7, alignItems: "center" }}>
+              <input type="number" min="0" max="100" value={slab.min_score}
+                onChange={e => onUpdate(si, "min_score", e.target.value)}
+                style={{ ...inp, padding: "7px 8px", fontSize: 12 }} />
+              <input type="number" min="0" max="100" value={slab.max_score}
+                onChange={e => onUpdate(si, "max_score", e.target.value)}
+                style={{ ...inp, padding: "7px 8px", fontSize: 12 }} />
+              <select value={slab.type} onChange={e => onUpdate(si, "type", e.target.value)}
+                style={{ ...inp, padding: "7px 8px", fontSize: 12 }}>
+                <option value="none">No Bonus</option>
+                <option value="fixed">Fixed ₹</option>
+                <option value="target_percentage">% of Target</option>
+              </select>
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <input type="number" min="0" step="0.1" value={slab.value}
+                  disabled={slab.type === "none"}
+                  onChange={e => onUpdate(si, "value", e.target.value)}
+                  placeholder={slab.type === "target_percentage" ? "e.g. 3.2" : "e.g. 3000"}
+                  style={{ ...inp, padding: "7px 8px", fontSize: 12, background: slab.type === "none" ? "#f8fafc" : "#fff", color: slab.type === "none" ? "#94a3b8" : "#1e293b" }} />
+                {slab.type === "target_percentage" && slab.value > 0 && cfg?.target && (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#4f46e5", background: "#eef2ff", borderRadius: 4, padding: "2px 6px", textAlign: "center" }}>
+                    = ₹{((Number(slab.value) / 100) * Number(cfg.target)).toLocaleString("en-IN")}
+                  </span>
+                )}
+              </div>
+              <button onClick={() => onRemove(si)}
+                style={{ background: "#fef2f2", border: "none", borderRadius: 7, padding: "7px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <HugeiconsIcon icon={Delete02Icon} size={13} color="#dc2626" strokeWidth={2} />
+              </button>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── AdmissionKpiConfig: per-program tabs ─────────────────────────────────────
+// FIX: Use a stable key-based re-mount strategy + correct useEffect dependency
+function AdmissionKpiConfig({ cfg, onAddProgSlab, onUpdateProgSlab, onRemoveProgSlab }) {
+  // FIX 1: Lazy initializer so it correctly picks first program on mount
+  const [activeProgram, setActiveProgram] = useState(
+    () => cfg.program_targets?.[0]?.program_id || null
+  );
+
+  // FIX 2: Correct dependency — react to program_targets changing (e.g. on edit load)
+  // Using a ref to track the previous program_targets length to avoid stale closures
+  const prevProgramTargetsRef = useRef(null);
+
+  useEffect(() => {
+    if (!cfg.program_targets?.length) return;
+
+    // Stringify to detect real changes (program_targets is an array of objects)
+    const currentKey = cfg.program_targets.map(pt => pt.program_id).join(",");
+    const prevKey    = prevProgramTargetsRef.current;
+
+    if (currentKey !== prevKey) {
+      prevProgramTargetsRef.current = currentKey;
+      setActiveProgram(prev => {
+        const stillExists = cfg.program_targets.some(pt => pt.program_id === prev);
+        return stillExists ? prev : cfg.program_targets[0].program_id;
+      });
+    }
+  }, [cfg.program_targets]);
+
+  if (!cfg.program_targets?.length) {
+    return (
+      <p style={{ fontSize: 12, color: "#f59e0b", fontStyle: "italic" }}>
+        ⚠ No programs found for this KPI.
+      </p>
+    );
+  }
+
+  const activePt      = cfg.program_targets.find(pt => pt.program_id === activeProgram);
+  const progSlabEntry = (cfg.program_slabs || []).find(ps => ps.program_id === activeProgram);
+  const progSlabs     = progSlabEntry?.slabs || [];
+
+  const totalTarget = cfg.program_targets.reduce((s, pt) => s + (Number(pt.target) || 0), 0);
+
+  return (
+    <div>
+      {/* Program targets overview cards */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+        {cfg.program_targets.map((pt) => {
+          const pSlabs = (cfg.program_slabs || []).find(ps => ps.program_id === pt.program_id)?.slabs || [];
+          const isActive = activeProgram === pt.program_id;
+          return (
+            <div key={pt.program_id} style={{
+              background: isActive ? "#0369a1" : "#f0f9ff",
+              border: `1px solid ${isActive ? "#0369a1" : "#bae6fd"}`,
+              borderRadius: 8, padding: "8px 12px", textAlign: "center", minWidth: 80,
+              cursor: "pointer", transition: "all 0.15s",
+            }} onClick={() => setActiveProgram(pt.program_id)}>
+              <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: isActive ? "rgba(255,255,255,0.8)" : "#6b7280" }}>
+                {pt.program_name}
+              </p>
+              <p style={{ margin: "2px 0 0", fontSize: 18, fontWeight: 800, fontFamily: "monospace", color: isActive ? "#fff" : "#0369a1" }}>
+                {pt.target}
+              </p>
+              <p style={{ margin: 0, fontSize: 9, color: isActive ? "rgba(255,255,255,0.6)" : "#9ca3af" }}>
+                {pSlabs.length} slab{pSlabs.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+          );
+        })}
+        {/* Total card */}
+        <div style={{ background: "#1e293b", border: "1px solid #1e293b", borderRadius: 8, padding: "8px 12px", textAlign: "center", minWidth: 80 }}>
+          <p style={{ margin: 0, fontSize: 10, color: "rgba(255,255,255,0.6)", fontWeight: 600 }}>Total</p>
+          <p style={{ margin: "2px 0 0", fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "monospace" }}>{totalTarget}</p>
+          <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,0.5)" }}>admissions</p>
+        </div>
+      </div>
+
+      {/* Active program slab editor */}
+      {activePt && (
+        <div style={{ border: "1.5px solid #bae6fd", borderRadius: 10, overflow: "hidden" }}>
+          <div style={{ background: "#f0f9ff", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #bae6fd" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#0369a1" }}>📚 {activePt.program_name}</span>
+              <span style={{ fontSize: 11, color: "#6b7280", background: "#e0f2fe", padding: "2px 8px", borderRadius: 99, fontWeight: 600 }}>
+                Target: {activePt.target} admissions
+              </span>
+            </div>
+            <span style={{ fontSize: 11, color: "#0369a1", fontWeight: 700 }}>
+              {progSlabs.length} slab{progSlabs.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <div style={{ padding: "14px" }}>
+            <SlabEditor
+              slabs={progSlabs}
+              cfg={{ ...cfg, target: activePt.target }}
+              onAdd={() => onAddProgSlab(cfg.kpi_name, activeProgram)}
+              onUpdate={(si, field, val) => onUpdateProgSlab(cfg.kpi_name, activeProgram, si, field, val)}
+              onRemove={(si) => onRemoveProgSlab(cfg.kpi_name, activeProgram, si)}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 export default function IncentivePlans() {
-  const [plans, setPlans] = useState([]);
-  const [depts, setDepts] = useState([]);
+  const [plans,        setPlans]        = useState([]);
+  const [depts,        setDepts]        = useState([]);
   const [kpiTemplates, setKpiTemplates] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [loading,      setLoading]      = useState(true);
+  const [showForm,     setShowForm]     = useState(false);
+  const [editId,       setEditId]       = useState(null);
+  const [form,         setForm]         = useState(EMPTY_FORM);
+  const [saving,       setSaving]       = useState(false);
+  const [toast,        setToast]        = useState(null);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -150,23 +315,23 @@ export default function IncentivePlans() {
   };
 
   const filteredTemplates = kpiTemplates.filter(t => !form.department || t.department === form.department);
-  const selectedTemplate = kpiTemplates.find(t => t._id === form.kpi_template_id);
+  const selectedTemplate  = kpiTemplates.find(t => t._id === form.kpi_template_id);
 
-  // ── KPI checkbox toggle ───────────────────────────────────────────────────
+  // ── KPI toggle ────────────────────────────────────────────────────────────
   const toggleKpi = (kpiItem) => {
-    const name = kpiItem.kpi_name;
+    const name       = kpiItem.kpi_name;
     const isSelected = form.selected_kpis.includes(name);
     if (isSelected) {
       setForm(f => ({
         ...f,
         selected_kpis: f.selected_kpis.filter(k => k !== name),
-        kpi_configs: f.kpi_configs.filter(c => c.kpi_name !== name),
+        kpi_configs:   f.kpi_configs.filter(c => c.kpi_name !== name),
       }));
     } else {
       setForm(f => ({
         ...f,
         selected_kpis: [...f.selected_kpis, name],
-        kpi_configs: [...f.kpi_configs, EMPTY_KPI_CONFIG(name, kpiItem.weight)],
+        kpi_configs:   [...f.kpi_configs, EMPTY_KPI_CONFIG(kpiItem)],
       }));
     }
   };
@@ -183,12 +348,13 @@ export default function IncentivePlans() {
     }));
   };
 
+  // ── Normal KPI slab handlers ──────────────────────────────────────────────
   const addSlabToKpi = (kpiName) => {
     setForm(f => ({
       ...f,
       kpi_configs: f.kpi_configs.map(c => {
         if (c.kpi_name !== kpiName) return c;
-        const last = c.slabs[c.slabs.length - 1];
+        const last   = c.slabs[c.slabs.length - 1];
         const newMin = last ? last.max_score + 1 : 0;
         return { ...c, slabs: [...c.slabs, { min_score: newMin, max_score: Math.min(newMin + 10, 100), type: "fixed", value: 0 }] };
       }),
@@ -217,32 +383,124 @@ export default function IncentivePlans() {
     }));
   };
 
+  // ── Per-program slab handlers (Admission KPI) ─────────────────────────────
+  const addProgSlab = (kpiName, progId) => {
+    setForm(f => ({
+      ...f,
+      kpi_configs: f.kpi_configs.map(c => {
+        if (c.kpi_name !== kpiName) return c;
+        const ps      = [...(c.program_slabs || [])];
+        const progIdx = ps.findIndex(p => p.program_id === progId);
+        const mkNew   = () => ({ min_score: 0, max_score: 10, type: "fixed", value: 0 });
+        if (progIdx >= 0) {
+          ps[progIdx] = { ...ps[progIdx], slabs: [...ps[progIdx].slabs, mkNew()] };
+        } else {
+          const ptEntry = c.program_targets.find(p => p.program_id === progId);
+          ps.push({ program_id: progId, program_name: ptEntry?.program_name || progId, slabs: [mkNew()] });
+        }
+        return { ...c, program_slabs: ps };
+      }),
+    }));
+  };
+
+  const updateProgSlab = (kpiName, progId, slabIdx, field, val) => {
+    setForm(f => ({
+      ...f,
+      kpi_configs: f.kpi_configs.map(c => {
+        if (c.kpi_name !== kpiName) return c;
+        const ps      = [...(c.program_slabs || [])];
+        const progIdx = ps.findIndex(p => p.program_id === progId);
+        if (progIdx < 0) return c;
+        const slabs = [...ps[progIdx].slabs];
+        slabs[slabIdx] = { ...slabs[slabIdx], [field]: field === "type" ? val : Number(val) };
+        ps[progIdx] = { ...ps[progIdx], slabs };
+        return { ...c, program_slabs: ps };
+      }),
+    }));
+  };
+
+  const removeProgSlab = (kpiName, progId, slabIdx) => {
+    setForm(f => ({
+      ...f,
+      kpi_configs: f.kpi_configs.map(c => {
+        if (c.kpi_name !== kpiName) return c;
+        const ps      = [...(c.program_slabs || [])];
+        const progIdx = ps.findIndex(p => p.program_id === progId);
+        if (progIdx < 0) return c;
+        ps[progIdx] = { ...ps[progIdx], slabs: ps[progIdx].slabs.filter((_, i) => i !== slabIdx) };
+        return { ...c, program_slabs: ps };
+      }),
+    }));
+  };
+
   const handleTemplateChange = (templateId) => {
     setForm(f => ({ ...f, kpi_template_id: templateId, selected_kpis: [], kpi_configs: [] }));
   };
 
   const openCreate = () => { setForm(EMPTY_FORM); setEditId(null); setShowForm(true); };
 
+  // FIX 3: openEdit — correctly rebuild kpi_configs with program_targets preserved
+  // and also re-hydrate program_targets from the kpi_template if they're missing
   const openEdit = (p) => {
-    const configs = p.kpi_configs || [];
+    const templateKpiItems = (() => {
+      // Try to find the template from loaded kpiTemplates for re-hydration
+      const templateId = p.kpi_template_id?._id || p.kpi_template_id;
+      const tpl = kpiTemplates.find(t => t._id === templateId);
+      return tpl?.kpi_items || [];
+    })();
+
+    const configs = (p.kpi_configs || []).map(c => {
+      // FIX: Re-hydrate program_targets from the KPI template if saved data is empty
+      // This handles edge cases where program_targets wasn't saved correctly
+      let program_targets = Array.isArray(c.program_targets) && c.program_targets.length > 0
+        ? c.program_targets
+        : [];
+
+      if (program_targets.length === 0 && c.is_admission_kpi) {
+        // Fallback: get program_targets from the template kpi_items
+        const templateKpi = templateKpiItems.find(k => k.kpi_name === c.kpi_name);
+        if (templateKpi?.program_targets?.length > 0) {
+          program_targets = templateKpi.program_targets;
+        }
+      }
+
+      // FIX: Ensure program_slabs has an entry for every program_target
+      // so the UI always has a slot to add slabs into
+      const existing_program_slabs = c.program_slabs || [];
+      const program_slabs = program_targets.map(pt => {
+        const existing = existing_program_slabs.find(ps => ps.program_id === pt.program_id);
+        return existing
+          ? existing
+          : { program_id: pt.program_id, program_name: pt.program_name, slabs: [] };
+      });
+
+      return {
+        ...c,
+        is_admission_kpi: c.is_admission_kpi || false,
+        program_targets,
+        program_slabs,
+        slabs: c.slabs || [],
+      };
+    });
+
     setForm({
-      name: p.name,
-      department: p.department,
-      plan_type: p.plan_type ?? "kpi_linked",
-      period_type: p.period_type || "Monthly",
-      period_month: p.period_month || new Date().getMonth() + 1,
+      name:           p.name,
+      department:     p.department,
+      plan_type:      p.plan_type      ?? "kpi_linked",
+      period_type:    p.period_type    || "Monthly",
+      period_month:   p.period_month   || new Date().getMonth() + 1,
       period_quarter: p.period_quarter || "Q1",
-      period_half: p.period_half || "H1",
-      period_year: p.period_year || CURRENT_YEAR,
-      kpi_template_id: p.kpi_template_id?._id || p.kpi_template_id || "",
-      selected_kpis: configs.map(c => c.kpi_name),
-      kpi_configs: configs,
-      completion_reward_type: p.completion_reward_type || "none",
+      period_half:    p.period_half    || "H1",
+      period_year:    p.period_year    || CURRENT_YEAR,
+      kpi_template_id:         p.kpi_template_id?._id || p.kpi_template_id || "",
+      selected_kpis:           configs.map(c => c.kpi_name),
+      kpi_configs:             configs,
+      completion_reward_type:  p.completion_reward_type  || "none",
       completion_reward_value: p.completion_reward_value || 0,
       completion_reward_label: p.completion_reward_label || "",
-      standalone_payout_type: p.standalone_payout_type || "fixed",
+      standalone_payout_type:  p.standalone_payout_type  || "fixed",
       standalone_payout_value: p.standalone_payout_value || 0,
-      standalone_metric: p.standalone_metric || "manual",
+      standalone_metric:       p.standalone_metric       || "manual",
       standalone_metric_label: p.standalone_metric_label || "",
       slabs: p.slabs || [],
     });
@@ -255,43 +513,53 @@ export default function IncentivePlans() {
       showToast("Plan name & department are required", "error"); return;
     }
     if (form.plan_type === "kpi_linked") {
-      if (!form.kpi_template_id) { showToast("Please select a KPI template", "error"); return; }
+      if (!form.kpi_template_id)         { showToast("Please select a KPI template", "error"); return; }
       if (form.kpi_configs.length === 0) { showToast("Select at least one KPI", "error"); return; }
       for (const cfg of form.kpi_configs) {
-        const errs = validateSlabs(cfg.slabs);
-        if (errs.length) { showToast(`${cfg.kpi_name}: ${errs[0]}`, "error"); return; }
+        if (!cfg.is_admission_kpi) {
+          const errs = validateSlabs(cfg.slabs);
+          if (errs.length) { showToast(`${cfg.kpi_name}: ${errs[0]}`, "error"); return; }
+        } else {
+          for (const ps of cfg.program_slabs || []) {
+            const errs = validateSlabs(ps.slabs);
+            if (errs.length) { showToast(`${cfg.kpi_name} / ${ps.program_name}: ${errs[0]}`, "error"); return; }
+          }
+        }
       }
     }
     setSaving(true);
     try {
       const payload = {
         name: form.name, department: form.department, plan_type: form.plan_type,
-        period_type: form.period_type,
-        period_month: form.period_type === "Monthly" ? form.period_month : null,
-        period_quarter: form.period_type === "Quarterly" ? form.period_quarter : null,
-        period_half: form.period_type === "Half-Yearly" ? form.period_half : null,
-        period_year: form.period_year,
+        period_type:    form.period_type,
+        period_month:   form.period_type === "Monthly"     ? form.period_month   : null,
+        period_quarter: form.period_type === "Quarterly"   ? form.period_quarter : null,
+        period_half:    form.period_type === "Half-Yearly" ? form.period_half    : null,
+        period_year:    form.period_year,
         ...(form.plan_type === "kpi_linked" ? {
-          kpi_template_id: form.kpi_template_id,
-          kpi_configs: form.kpi_configs,
-          completion_reward_type: form.completion_reward_type,
+          kpi_template_id:         form.kpi_template_id,
+          kpi_configs:             form.kpi_configs,
+          completion_reward_type:  form.completion_reward_type,
           completion_reward_value: form.completion_reward_value,
           completion_reward_label: form.completion_reward_label,
         } : {
-          standalone_metric: form.standalone_metric,
+          standalone_metric:       form.standalone_metric,
           standalone_metric_label: form.standalone_metric_label,
-          standalone_payout_type: form.standalone_payout_type,
+          standalone_payout_type:  form.standalone_payout_type,
           standalone_payout_value: form.standalone_payout_value,
-          slabs: form.slabs,
+          slabs:                   form.slabs,
         }),
       };
+
       if (editId) await axios.put(`${API_BASE}/api/incentive-plans/${editId}`, payload);
-      else await axios.post(`${API_BASE}/api/incentive-plans`, payload);
+      else        await axios.post(`${API_BASE}/api/incentive-plans`, payload);
+
       showToast(editId ? "Plan updated ✅" : "Plan created ✅");
       setShowForm(false);
       fetchAll();
-    } catch { showToast("Save failed", "error"); }
-    finally { setSaving(false); }
+    } catch (err) {
+      showToast(err.response?.data?.message || "Save failed", "error");
+    } finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
@@ -302,9 +570,7 @@ export default function IncentivePlans() {
     } catch { showToast("Delete failed", "error"); }
   };
 
-  const totalWeight = form.kpi_configs.reduce((s, c) => s + (c.weight || 0), 0);
-
-  // ── How many total KPIs exist in the selected template ────────────────────
+  const totalWeight       = form.kpi_configs.reduce((s, c) => s + (c.weight || 0), 0);
   const totalTemplateKpis = selectedTemplate?.kpi_items?.length || 0;
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -314,13 +580,11 @@ export default function IncentivePlans() {
         @keyframes spin    { to { transform: rotate(360deg); } }
         @keyframes fadeIn  { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
         @keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
-        .plan-card { transition: all 0.15s; }
         .plan-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); transform: translateY(-1px); }
-        .kpi-card  { transition: all 0.15s; }
         input:focus, select:focus { border-color: #6366f1 !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
-        .checkbox-kpi { cursor:pointer; user-select:none; }
         .checkbox-kpi:hover { background: #f8fafc; }
-        .slab-row { animation: slideIn 0.15s ease; }
+        .prog-tab { cursor:pointer; padding:7px 14px; border-radius:8px; font-size:12px; font-weight:700; transition:all 0.15s; border:none; }
+        .prog-tab:hover { opacity:0.85; }
       `}</style>
 
       {/* Toast */}
@@ -345,10 +609,10 @@ export default function IncentivePlans() {
       {/* Summary Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 14, marginBottom: 24 }}>
         {[
-          { label: "Total Plans", value: plans.length, color: "#4f46e5" },
-          { label: "KPI-Linked", value: plans.filter(p => p.plan_type === "kpi_linked").length, color: "#7c3aed" },
-          { label: "Standalone", value: plans.filter(p => p.plan_type === "standalone").length, color: "#d97706" },
-          { label: "Departments", value: [...new Set(plans.map(p => p.department))].length, color: "#16a34a" },
+          { label: "Total Plans",  value: plans.length,                                           color: "#4f46e5" },
+          { label: "KPI-Linked",   value: plans.filter(p => p.plan_type === "kpi_linked").length, color: "#7c3aed" },
+          { label: "Standalone",   value: plans.filter(p => p.plan_type === "standalone").length, color: "#d97706" },
+          { label: "Departments",  value: [...new Set(plans.map(p => p.department))].length,      color: "#16a34a" },
         ].map(s => (
           <div key={s.label} style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", border: "1px solid #e2e8f0" }}>
             <p style={{ margin: "0 0 4px", fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</p>
@@ -373,10 +637,10 @@ export default function IncentivePlans() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(340px,1fr))", gap: 16 }}>
           {plans.map(plan => {
             const { color, bg } = getColor(plan.department);
-            const isKpi = plan.plan_type === "kpi_linked";
+            const isKpi  = plan.plan_type === "kpi_linked";
             const period = periodLabel(plan);
             return (
-              <div key={plan._id} className="plan-card" style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+              <div key={plan._id} className="plan-card" style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", transition: "all 0.15s" }}>
                 <div style={{ padding: "16px 20px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 40, height: 40, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -416,18 +680,41 @@ export default function IncentivePlans() {
                       </p>
                     )}
                     {(plan.kpi_configs || []).slice(0, 3).map((cfg, i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px dashed #f1f5f9", fontSize: 12 }}>
-                        <span style={{ color: "#475569", fontWeight: 500 }}>{cfg.kpi_name}</span>
-                        <span style={{ color: "#64748b" }}>{cfg.rule_label || "—"}</span>
+                      <div key={i} style={{ padding: "4px 0", borderBottom: "1px dashed #f1f5f9", fontSize: 12 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <span style={{ color: "#475569", fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
+                            {cfg.kpi_name}
+                            {cfg.is_admission_kpi && (
+                              <span style={{ fontSize: 10, background: "#f0f9ff", color: "#0369a1", padding: "1px 6px", borderRadius: 99, border: "1px solid #bae6fd", fontWeight: 700 }}>🎓 Admission</span>
+                            )}
+                          </span>
+                          <span style={{ color: "#64748b" }}>
+                            {cfg.is_admission_kpi
+                              ? `${cfg.program_slabs?.filter(ps => ps.slabs?.length > 0).length || 0}/${cfg.program_targets?.length || 0} programs configured`
+                              : cfg.rule_label || "—"}
+                          </span>
+                        </div>
+                        {cfg.is_admission_kpi && cfg.program_targets?.length > 0 && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                            {cfg.program_targets.map((pt, pi) => {
+                              const hasSlabs = cfg.program_slabs?.find(ps => ps.program_id === pt.program_id)?.slabs?.length > 0;
+                              return (
+                                <span key={pi} style={{ fontSize: 10, background: hasSlabs ? "#f0fdf4" : "#f0f9ff", color: hasSlabs ? "#15803d" : "#0369a1", padding: "1px 7px", borderRadius: 99, border: `1px solid ${hasSlabs ? "#86efac" : "#bae6fd"}`, fontWeight: 600 }}>
+                                  {pt.program_name}: {pt.target} {hasSlabs ? "✓" : ""}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     ))}
                     {plan.kpi_configs?.length > 3 && (
                       <p style={{ margin: "6px 0 0", fontSize: 11, color: "#94a3b8" }}>+{plan.kpi_configs.length - 3} more KPIs</p>
                     )}
-                    {/* ── UPDATED card badge: shows ALL KPIs wording ── */}
                     {plan.completion_reward_type !== "none" && (
                       <div style={{ marginTop: 8, background: "#fef9c3", borderRadius: 7, padding: "6px 10px", fontSize: 12, fontWeight: 700, color: "#92400e" }}>
-                        🏆 All-KPI Bonus: {plan.completion_reward_type === "fixed"
+                        🏆 All-KPI Bonus:{" "}
+                        {plan.completion_reward_type === "fixed"
                           ? `₹${Number(plan.completion_reward_value).toLocaleString("en-IN")}`
                           : `${plan.completion_reward_value}% of Salary`}
                         {plan.completion_reward_label ? ` · ${plan.completion_reward_label}` : ""}
@@ -453,7 +740,7 @@ export default function IncentivePlans() {
 
       {/* ══════════════════════════════════════════════════════════════════════
           MODAL
-          ══════════════════════════════════════════════════════════════════════ */}
+      ══════════════════════════════════════════════════════════════════════ */}
       {showForm && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 700, maxHeight: "93vh", overflowY: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.22)", animation: "fadeIn 0.2s ease" }}>
@@ -493,12 +780,7 @@ export default function IncentivePlans() {
                     <div style={{ display: "flex", gap: 8 }}>
                       {[{ val: "kpi_linked", label: "🔗 KPI-Linked" }, { val: "standalone", label: "📋 Standalone" }].map(opt => (
                         <div key={opt.val} onClick={() => setForm(f => ({ ...f, plan_type: opt.val }))}
-                          style={{
-                            flex: 1, padding: "9px 12px", borderRadius: 9, cursor: "pointer", textAlign: "center", fontSize: 13, fontWeight: 700, transition: "all 0.15s",
-                            border: form.plan_type === opt.val ? "2px solid #4f46e5" : "2px solid #e2e8f0",
-                            background: form.plan_type === opt.val ? "#eef2ff" : "#fafafa",
-                            color: form.plan_type === opt.val ? "#4f46e5" : "#64748b"
-                          }}>
+                          style={{ flex: 1, padding: "9px 12px", borderRadius: 9, cursor: "pointer", textAlign: "center", fontSize: 13, fontWeight: 700, transition: "all 0.15s", border: form.plan_type === opt.val ? "2px solid #4f46e5" : "2px solid #e2e8f0", background: form.plan_type === opt.val ? "#eef2ff" : "#fafafa", color: form.plan_type === opt.val ? "#4f46e5" : "#64748b" }}>
                           {opt.label}
                         </div>
                       ))}
@@ -528,7 +810,7 @@ export default function IncentivePlans() {
                     <div>
                       <label style={lbl}>Quarter</label>
                       <select value={form.period_quarter} onChange={e => setForm({ ...form, period_quarter: e.target.value })} style={inp}>
-                        {["Q1", "Q2", "Q3", "Q4"].map(q => <option key={q}>{q}</option>)}
+                        {["Q1","Q2","Q3","Q4"].map(q => <option key={q}>{q}</option>)}
                       </select>
                     </div>
                   )}
@@ -567,32 +849,25 @@ export default function IncentivePlans() {
                   </div>
 
                   {selectedTemplate && (<>
-                    <p style={{ margin: "0 0 10px", fontSize: 12, color: "#64748b" }}>
-                      Check the KPIs you want to include in this incentive plan:
-                    </p>
+                    <p style={{ margin: "0 0 10px", fontSize: 12, color: "#64748b" }}>Check the KPIs you want to include:</p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       {selectedTemplate.kpi_items?.map(item => {
                         const isChecked = form.selected_kpis.includes(item.kpi_name);
                         return (
                           <div key={item.kpi_name} className="checkbox-kpi" onClick={() => toggleKpi(item)}
-                            style={{
-                              display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, transition: "all 0.15s",
-                              border: isChecked ? "2px solid #4f46e5" : "2px solid #e2e8f0",
-                              background: isChecked ? "#eef2ff" : "#fafafa"
-                            }}>
-                            <div style={{
-                              width: 20, height: 20, borderRadius: 5, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s",
-                              border: isChecked ? "2px solid #4f46e5" : "2px solid #cbd5e1",
-                              background: isChecked ? "#4f46e5" : "#fff"
-                            }}>
+                            style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, transition: "all 0.15s", border: isChecked ? "2px solid #4f46e5" : "2px solid #e2e8f0", background: isChecked ? "#eef2ff" : "#fafafa", cursor: "pointer", userSelect: "none" }}>
+                            <div style={{ width: 20, height: 20, borderRadius: 5, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: isChecked ? "2px solid #4f46e5" : "2px solid #cbd5e1", background: isChecked ? "#4f46e5" : "#fff" }}>
                               {isChecked && <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>✓</span>}
                             </div>
                             <span style={{ flex: 1, fontSize: 13, fontWeight: isChecked ? 700 : 500, color: isChecked ? "#3730a3" : "#475569" }}>
                               {item.kpi_name}
+                              {item.is_admission_kpi && (
+                                <span style={{ marginLeft: 8, fontSize: 10, background: "#f0f9ff", color: "#0369a1", padding: "1px 7px", borderRadius: 99, border: "1px solid #bae6fd", fontWeight: 700 }}>🎓 Admission</span>
+                              )}
                             </span>
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <div style={{ width: 60, height: 5, background: "#e2e8f0", borderRadius: 99, overflow: "hidden" }}>
-                                <div style={{ width: `${item.weight}%`, height: "100%", borderRadius: 99, background: isChecked ? "#4f46e5" : "#94a3b8", transition: "background 0.15s" }} />
+                                <div style={{ width: `${item.weight}%`, height: "100%", borderRadius: 99, background: isChecked ? "#4f46e5" : "#94a3b8" }} />
                               </div>
                               <span style={{ fontSize: 12, fontWeight: 700, minWidth: 32, color: isChecked ? "#4f46e5" : "#94a3b8" }}>{item.weight}%</span>
                             </div>
@@ -600,19 +875,12 @@ export default function IncentivePlans() {
                         );
                       })}
                     </div>
-
                     {form.selected_kpis.length > 0 && (
-                      <div style={{
-                        marginTop: 12, padding: "10px 14px", borderRadius: 9, display: "flex", justifyContent: "space-between", alignItems: "center",
-                        background: totalWeight === 100 ? "#f0fdf4" : "#fff7ed",
-                        border: `1px solid ${totalWeight === 100 ? "#86efac" : "#fed7aa"}`
-                      }}>
+                      <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 9, display: "flex", justifyContent: "space-between", alignItems: "center", background: totalWeight === 100 ? "#f0fdf4" : "#fff7ed", border: `1px solid ${totalWeight === 100 ? "#86efac" : "#fed7aa"}` }}>
                         <span style={{ fontSize: 12, fontWeight: 600, color: totalWeight === 100 ? "#15803d" : "#c2410c" }}>
                           {totalWeight === 100 ? "✅ Weight total is 100%" : `⚠ Selected weight total: ${totalWeight}%`}
                         </span>
-                        <span style={{ fontSize: 12, color: "#64748b" }}>
-                          {form.selected_kpis.length} / {totalTemplateKpis} KPIs selected
-                        </span>
+                        <span style={{ fontSize: 12, color: "#64748b" }}>{form.selected_kpis.length} / {totalTemplateKpis} KPIs selected</span>
                       </div>
                     )}
                   </>)}
@@ -623,111 +891,64 @@ export default function IncentivePlans() {
                   <Section step={4} title="Configure Each KPI" icon="⚙️">
                     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                       {form.kpi_configs.map(cfg => {
-                        const slabErrors = validateSlabs(cfg.slabs);
+                        const isAdm = cfg.is_admission_kpi;
                         return (
-                          <div key={cfg.kpi_name} className="kpi-card" style={{ border: "1.5px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
-                            <div style={{ padding: "12px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 8 }}>
-                              <HugeiconsIcon icon={Target01Icon} size={16} color="#4f46e5" strokeWidth={2} />
+                          // FIX 4: Use kpi_name as key so React fully re-mounts
+                          // AdmissionKpiConfig when switching between edit sessions
+                          <div key={cfg.kpi_name} style={{ border: `1.5px solid ${isAdm ? "#bae6fd" : "#e2e8f0"}`, borderRadius: 12, overflow: "hidden" }}>
+                            {/* KPI Header */}
+                            <div style={{ padding: "12px 16px", background: isAdm ? "#f0f9ff" : "#f8fafc", borderBottom: `1px solid ${isAdm ? "#bae6fd" : "#e2e8f0"}`, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              <HugeiconsIcon icon={Target01Icon} size={16} color={isAdm ? "#0369a1" : "#4f46e5"} strokeWidth={2} />
                               <span style={{ fontWeight: 800, fontSize: 14, color: "#1e293b" }}>{cfg.kpi_name}</span>
-                              <span style={{ fontSize: 11, padding: "2px 8px", background: "#eef2ff", color: "#4f46e5", borderRadius: 20, fontWeight: 700 }}>Weight: {cfg.weight}%</span>
+                              <span style={{ fontSize: 11, padding: "2px 8px", background: isAdm ? "#e0f2fe" : "#eef2ff", color: isAdm ? "#0369a1" : "#4f46e5", borderRadius: 20, fontWeight: 700 }}>Weight: {cfg.weight}%</span>
+                              {isAdm && <span style={{ fontSize: 10, padding: "2px 8px", background: "#f0f9ff", color: "#0369a1", borderRadius: 99, border: "1px solid #bae6fd", fontWeight: 700 }}>🎓 Admission KPI</span>}
                             </div>
+
                             <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 150px", gap: 10 }}>
-                                <div>
-                                  <label style={lbl}>Target Value *</label>
-                                  <input value={cfg.target} onChange={e => updateKpiConfig(cfg.kpi_name, "target", e.target.value)} placeholder="e.g. 120" style={inp} />
-                                </div>
-                                <div>
-                                  <label style={lbl}>Value Type</label>
-                                  <select value={cfg.value_type} onChange={e => updateKpiConfig(cfg.kpi_name, "value_type", e.target.value)} style={inp}>
-                                    {VALUE_TYPES.map(vt => <option key={vt.value} value={vt.value}>{vt.label}</option>)}
-                                  </select>
-                                </div>
-                                <div>
-                                  <label style={lbl}>Operator</label>
-                                  <select value={cfg.operator} onChange={e => updateKpiConfig(cfg.kpi_name, "operator", e.target.value)} style={inp}>
-                                    {OPERATORS.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}
-                                  </select>
-                                </div>
-                              </div>
-                              {cfg.rule_label && (
-                                <div style={{ padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#15803d" }}>
-                                  📌 Rule: Achieve <strong>{cfg.kpi_name}</strong> {cfg.rule_label}
-                                </div>
-                              )}
-                              <div>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                                  <label style={{ ...lbl, margin: 0 }}>Score → Payout Slabs</label>
-                                  <button onClick={() => addSlabToKpi(cfg.kpi_name)}
-                                    style={{ background: "#eef2ff", border: "none", borderRadius: 7, padding: "5px 12px", fontSize: 11, fontWeight: 700, color: "#4f46e5", cursor: "pointer" }}>
-                                    + Add Slab
-                                  </button>
-                                </div>
-                                {slabErrors.length > 0 && (
-                                  <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 7, padding: "7px 12px", marginBottom: 8 }}>
-                                    {slabErrors.map((e, i) => <p key={i} style={{ margin: "2px 0", fontSize: 11, color: "#dc2626", fontWeight: 600 }}>⚠ {e}</p>)}
-                                  </div>
-                                )}
-                                {cfg.slabs.length === 0 ? (
-                                  <p style={{ fontSize: 12, color: "#94a3b8", fontStyle: "italic", margin: 0 }}>No slabs yet — click "+ Add Slab" to define score ranges and payouts</p>
-                                ) : (
-                                  <>
-                                    <div style={{ display: "grid", gridTemplateColumns: "65px 65px 110px 1fr 32px", gap: 8, marginBottom: 6 }}>
-                                      {["Min %", "Max %", "Type", "Amount / %", ""].map(h => (
-                                        <span key={h} style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" }}>{h}</span>
-                                      ))}
+                              {isAdm ? (
+                                // FIX 5: Pass a stable key based on program_targets IDs
+                                // so AdmissionKpiConfig re-mounts fresh when edit data changes
+                                <AdmissionKpiConfig
+                                  key={`${cfg.kpi_name}-${(cfg.program_targets || []).map(pt => pt.program_id).join("-")}`}
+                                  cfg={cfg}
+                                  onAddProgSlab={addProgSlab}
+                                  onUpdateProgSlab={updateProgSlab}
+                                  onRemoveProgSlab={removeProgSlab}
+                                />
+                              ) : (
+                                <>
+                                  <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 150px", gap: 10 }}>
+                                    <div>
+                                      <label style={lbl}>Target Value *</label>
+                                      <input value={cfg.target} onChange={e => updateKpiConfig(cfg.kpi_name, "target", e.target.value)} placeholder="e.g. 120" style={inp} />
                                     </div>
-                                    {cfg.slabs.map((slab, si) => (
-                                      <div key={si} className="slab-row" style={{ display: "grid", gridTemplateColumns: "65px 65px 110px 1fr 32px", gap: 8, marginBottom: 7, alignItems: "center" }}>
-                                        <input type="number" min="0" max="100" value={slab.min_score} onChange={e => updateKpiSlab(cfg.kpi_name, si, "min_score", e.target.value)} style={{ ...inp, padding: "7px 8px", fontSize: 12 }} />
-                                        <input type="number" min="0" max="100" value={slab.max_score} onChange={e => updateKpiSlab(cfg.kpi_name, si, "max_score", e.target.value)} style={{ ...inp, padding: "7px 8px", fontSize: 12 }} />
-                                        <select value={slab.type} onChange={e => updateKpiSlab(cfg.kpi_name, si, "type", e.target.value)} style={{ ...inp, padding: "7px 8px", fontSize: 12 }}>
-                                          <option value="none">No Bonus</option>
-                                          <option value="fixed">Fixed ₹</option>
-                                          <option value="target_percentage">% of Target</option>
-                                        </select>
-                                        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                                          <input
-                                            type="number" min="0" step="0.1"
-                                            value={slab.value}
-                                            disabled={slab.type === "none"}
-                                            onChange={e => updateKpiSlab(cfg.kpi_name, si, "value", e.target.value)}
-                                            placeholder={slab.type === "target_percentage" ? "e.g. 3.2" : "e.g. 3000"}
-                                            style={{
-                                              ...inp, padding: "7px 8px", fontSize: 12,
-                                              background: slab.type === "none" ? "#f8fafc" : "#fff",
-                                              color: slab.type === "none" ? "#94a3b8" : "#1e293b"
-                                            }}
-                                          />
-                                          {/* ── Auto-calculate display ── */}
-                                          {slab.type === "target_percentage" && slab.value > 0 && cfg.target && (
-                                            <span style={{
-                                              fontSize: 10, fontWeight: 700, color: "#4f46e5",
-                                              background: "#eef2ff", borderRadius: 4,
-                                              padding: "2px 6px", textAlign: "center"
-                                            }}>
-                                              = ₹{((Number(slab.value) / 100) * Number(cfg.target)).toLocaleString("en-IN")}
-                                            </span>
-                                          )}
-                                          {/* {slab.type === "fixed" && slab.value > 0 && (
-                                            <span style={{
-                                              fontSize: 10, fontWeight: 700, color: "#16a34a",
-                                              background: "#f0fdf4", borderRadius: 4,
-                                              padding: "2px 6px", textAlign: "center"
-                                            }}>
-                                              ₹{Number(slab.value).toLocaleString("en-IN")} fixed
-                                            </span>
-                                          )} */}
-                                        </div>
-                                        <button onClick={() => removeKpiSlab(cfg.kpi_name, si)}
-                                          style={{ background: "#fef2f2", border: "none", borderRadius: 7, padding: "7px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                          <HugeiconsIcon icon={Delete02Icon} size={13} color="#dc2626" strokeWidth={2} />
-                                        </button>
-                                      </div>
-                                    ))}
-                                  </>
-                                )}
-                              </div>
+                                    <div>
+                                      <label style={lbl}>Value Type</label>
+                                      <select value={cfg.value_type} onChange={e => updateKpiConfig(cfg.kpi_name, "value_type", e.target.value)} style={inp}>
+                                        {VALUE_TYPES.map(vt => <option key={vt.value} value={vt.value}>{vt.label}</option>)}
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label style={lbl}>Operator</label>
+                                      <select value={cfg.operator} onChange={e => updateKpiConfig(cfg.kpi_name, "operator", e.target.value)} style={inp}>
+                                        {OPERATORS.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}
+                                      </select>
+                                    </div>
+                                  </div>
+                                  {cfg.rule_label && (
+                                    <div style={{ padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#15803d" }}>
+                                      📌 Rule: Achieve <strong>{cfg.kpi_name}</strong> {cfg.rule_label}
+                                    </div>
+                                  )}
+                                  <SlabEditor
+                                    slabs={cfg.slabs}
+                                    cfg={cfg}
+                                    onAdd={() => addSlabToKpi(cfg.kpi_name)}
+                                    onUpdate={(si, field, val) => updateKpiSlab(cfg.kpi_name, si, field, val)}
+                                    onRemove={(si) => removeKpiSlab(cfg.kpi_name, si)}
+                                  />
+                                </>
+                              )}
                             </div>
                           </div>
                         );
@@ -736,22 +957,18 @@ export default function IncentivePlans() {
                   </Section>
                 )}
 
-                {/* ── STEP 5: Completion Reward ── UPDATED SECTION ── */}
+                {/* STEP 5: Completion Reward */}
                 {form.kpi_configs.length > 0 && (
                   <Section step={5} title="Completion Reward" icon="🏆">
-
                     <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
                       <p style={{ margin: 0, fontSize: 13, color: "#92400e", fontWeight: 600 }}>
                         🎯 If an employee achieves <strong>100%</strong> across <strong>ALL KPIs</strong>, award this bonus reward:
                       </p>
                     </div>
-
-                    {/* Reward inputs */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                       <div>
                         <label style={lbl}>Reward Type</label>
-                        <select value={form.completion_reward_type}
-                          onChange={e => setForm({ ...form, completion_reward_type: e.target.value })} style={inp}>
+                        <select value={form.completion_reward_type} onChange={e => setForm({ ...form, completion_reward_type: e.target.value })} style={inp}>
                           <option value="none">No Reward</option>
                           <option value="fixed">Fixed Amount ₹</option>
                           <option value="percentage">% of Salary</option>
@@ -760,8 +977,7 @@ export default function IncentivePlans() {
                       {form.completion_reward_type !== "none" && (<>
                         <div>
                           <label style={lbl}>{form.completion_reward_type === "fixed" ? "Amount (₹)" : "Percentage (%)"}</label>
-                          <input type="number" min="0"
-                            value={form.completion_reward_value}
+                          <input type="number" min="0" value={form.completion_reward_value}
                             onChange={e => setForm({ ...form, completion_reward_value: Number(e.target.value) })}
                             placeholder={form.completion_reward_type === "fixed" ? "e.g. 10000" : "e.g. 5"}
                             style={inp} />
@@ -774,7 +990,6 @@ export default function IncentivePlans() {
                         </div>
                       </>)}
                     </div>
-
                     {form.completion_reward_type !== "none" && form.completion_reward_value > 0 && (
                       <div style={{ marginTop: 12, padding: "10px 14px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 9, display: "flex", alignItems: "center", gap: 10 }}>
                         <HugeiconsIcon icon={Award01Icon} size={18} color="#16a34a" strokeWidth={2} />
@@ -789,7 +1004,6 @@ export default function IncentivePlans() {
                     )}
                   </Section>
                 )}
-
               </>)}
 
               {/* STANDALONE */}
@@ -843,18 +1057,13 @@ export default function IncentivePlans() {
 
               {/* Actions */}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", borderTop: "1px solid #f1f5f9", paddingTop: 16 }}>
-                <button onClick={() => setShowForm(false)} style={{ padding: "10px 20px", background: "#f1f5f9", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 14, cursor: "pointer", color: "#475569" }}>
-                  Cancel
-                </button>
-                <button onClick={handleSave} disabled={saving} style={{
-                  display: "flex", alignItems: "center", gap: 8, padding: "10px 24px", color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 14, boxShadow: "0 2px 8px rgba(79,70,229,0.3)",
-                  background: saving ? "#a5b4fc" : "#4f46e5", cursor: saving ? "not-allowed" : "pointer"
-                }}>
+                <button onClick={() => setShowForm(false)} style={{ padding: "10px 20px", background: "#f1f5f9", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 14, cursor: "pointer", color: "#475569" }}>Cancel</button>
+                <button onClick={handleSave} disabled={saving}
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 24px", color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 14, boxShadow: "0 2px 8px rgba(79,70,229,0.3)", background: saving ? "#a5b4fc" : "#4f46e5", cursor: saving ? "not-allowed" : "pointer" }}>
                   <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color="#fff" strokeWidth={2} />
                   {saving ? "Saving..." : editId ? "Update Plan" : "Create Plan"}
                 </button>
               </div>
-
             </div>
           </div>
         </div>
@@ -868,9 +1077,7 @@ function Section({ step, title, icon, children }) {
   return (
     <div style={{ border: "1.5px solid #e2e8f0", borderRadius: 14, overflow: "hidden" }}>
       <div style={{ padding: "12px 18px", background: "#f8fafc", borderBottom: "1.5px solid #e2e8f0", display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#4f46e5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#fff", flexShrink: 0 }}>
-          {step}
-        </div>
+        <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#4f46e5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{step}</div>
         <span style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>{icon} {title}</span>
       </div>
       <div style={{ padding: "16px 18px" }}>{children}</div>

@@ -6,8 +6,25 @@ import {
   Megaphone, Calendar, Edit3, Save, X, User
 } from "lucide-react";
 import EmployeeLayout from "./EmployeeLayout";
+import CareerPathModal from "./CareerPathModal";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+const fmt = (v) => {
+  if (!v) return "—";
+
+  const n = Number(v);
+
+  if (n >= 100000) {
+    return `₹${(n / 100000).toFixed(1)}L`;
+  }
+
+  if (n >= 1000) {
+    return `₹${(n / 1000).toFixed(0)}K`;
+  }
+
+  return `₹${n}`;
+};
 
 function ScoreArc({ score = 0 }) {
   const size = 110;
@@ -42,11 +59,12 @@ export default function EmployeeDashboard() {
   const [announcements,       setAnnouncements]       = useState([]);
   const [employeeGrade,       setEmployeeGrade]       = useState(null);
   const [impactAnnouncements, setImpactAnnouncements] = useState([]);
+  const [deptBands,           setDeptBands]           = useState([]);   // ✅ NEW
+  const [showCareer,          setShowCareer]          = useState(false); // ✅ NEW
 
-  // ── NEW: dept + designation dropdown state ────────────────────────────────
+  // ── dept + designation dropdown state ─────────────────────────────────────
   const [departments, setDepartments] = useState([]);
-  const [deptDesigs,  setDeptDesigs]  = useState([]); // filtered by selected dept
-  // ─────────────────────────────────────────────────────────────────────────
+  const [deptDesigs,  setDeptDesigs]  = useState([]);
 
   useEffect(() => {
     const hideCrisp = () => { if (window.$crisp) window.$crisp.push(["do", "chat:hide"]); };
@@ -75,20 +93,25 @@ export default function EmployeeDashboard() {
         setEmployee(res.data); setEditData(res.data);
       }
 
-      // ── NEW: fetch active departments + pre-load designations ─────────────
+      // dept + designations
       try {
         const deptRes = await axios.get(`${API_BASE}/api/departments`);
         const activeDepts = (deptRes.data.data || deptRes.data || [])
           .filter(d => !d.status || d.status === "active");
         setDepartments(activeDepts);
-        // Pre-load designations for current employee dept
         if (res.data?.department) {
           const found = activeDepts.find(d => d.name === res.data.department);
           if (found) setDeptDesigs((found.designations || []).filter(dg => dg.status === "active"));
         }
       } catch (_) {}
-      // ─────────────────────────────────────────────────────────────────────
 
+      // ✅ NEW: dept grade salary bands
+      try {
+        const dbRes = await axios.get(`${API_BASE}/api/dept-grade-salary`);
+        setDeptBands(dbRes.data.data || []);
+      } catch (_) {}
+
+      // KPI score
       try {
         const kr = await axios.get(`${API_BASE}/api/kpi-assignments/${id}`);
         if (kr.data.success && kr.data.data) {
@@ -131,14 +154,17 @@ export default function EmployeeDashboard() {
         const an = await axios.get(`${API_BASE}/api/announcements`);
         if (an.data.success) setAnnouncements(an.data.data?.slice(0, 3) || []);
       } catch (_) {}
+
       try {
         const gradeRes = await axios.get(`${API_BASE}/api/assign-grade/employee/${id}`);
         if (gradeRes.data.success && gradeRes.data.data) setEmployeeGrade(gradeRes.data.data);
       } catch (_) {}
+
       try {
         const ibRes = await axios.get(`${API_BASE}/api/impact-bonus/announcements`);
         if (ibRes.data.success) setImpactAnnouncements(ibRes.data.data);
       } catch (_) {}
+
     } catch (err) { console.log(err); }
     finally { setLoading(false); }
   };
@@ -163,14 +189,12 @@ export default function EmployeeDashboard() {
 
   const handleChange = (e) => { const { name, value } = e.target; setEditData(p => ({ ...p, [name]: value })); };
 
-  // ── NEW: dept change → reset designation + filter desig list ─────────────
   const handleDeptChange = (e) => {
     const deptName = e.target.value;
     setEditData(p => ({ ...p, department: deptName, designation: "" }));
     const found = departments.find(d => d.name === deptName);
     setDeptDesigs(found ? (found.designations || []).filter(dg => dg.status === "active") : []);
   };
-  // ─────────────────────────────────────────────────────────────────────────
 
   const handleDocChange = (i, f, v) => { const d = [...editData.documents]; d[i] = { ...d[i], [f]: v }; setEditData(p => ({ ...p, documents: d })); };
   const handleAddDoc    = () => setEditData(p => ({ ...p, documents: [...p.documents, { docType: "New Document", fileUrl: "" }] }));
@@ -193,7 +217,6 @@ export default function EmployeeDashboard() {
     fontFamily: "'Manrope',sans-serif", transition: "border-color .15s"
   };
 
-  // hero dark-background select style
   const heroSel = {
     flex: 1, minWidth: 90,
     background: "rgba(255,255,255,.1)",
@@ -206,15 +229,32 @@ export default function EmployeeDashboard() {
 
   const scoreColor  = kpiScore === null ? "#c5cad8" : kpiScore >= 75 ? "#00c896" : kpiScore >= 50 ? "#4f8ef7" : kpiScore >= 30 ? "#f0a500" : "#f45b5b";
   const statusColor = isApproved ? "#00a875" : isRejected ? "#f45b5b" : "#d97706";
-  const statusBg    = isApproved ? "#f0fdf8" : isRejected ? "#fff1f2" : "#fffbeb";
-  const statusBorder= isApproved ? "#a7f3d0" : isRejected ? "#fecaca" : "#fde68a";
-  const statusLabel = isApproved ? "Active" : isRejected ? "Rejected" : "Pending";
   const statusEmoji = isApproved ? "✅" : isRejected ? "❌" : "⏳";
 
   const gradeStage  = employeeGrade?.grade_id?.bgr_stage;
   const gradeColor  = gradeStage === "Build" ? "#059669" : gradeStage === "Grow" ? "#2563eb" : "#d97706";
   const gradeBg     = gradeStage === "Build" ? "#d1fae5" : gradeStage === "Grow" ? "#dbeafe" : "#fef3c7";
   const gradeBorder = gradeStage === "Build" ? "#6ee7b7" : gradeStage === "Grow" ? "#93c5fd" : "#fcd34d";
+
+  const careerLevels = [...deptBands]
+  .filter(b => b.department_name === employee?.department)
+  .sort((a, b) =>
+    parseInt((a.grade_level || "L0").replace("L", "")) -
+    parseInt((b.grade_level || "L0").replace("L", ""))
+  );
+
+const careerIndex = careerLevels.findIndex(
+  b => b.grade_level === employeeGrade?.grade_id?.level
+);
+
+const careerPct = careerLevels.length > 1
+  ? Math.round(((careerIndex + 1) / careerLevels.length) * 100)
+  : 0;
+
+// ── NEW: employee-இன் current grade-க்கு match ஆகும் salary band ──
+const currentSalaryBand = careerLevels.find(
+  b => b.grade_level === employeeGrade?.grade_id?.level
+) || null;
 
   return (
     <EmployeeLayout>
@@ -264,7 +304,6 @@ export default function EmployeeDashboard() {
         .ed-hero-edit-btn    { width: 100%; }
         .ed-hero-edit-btn > button, .ed-hero-edit-btn > div { width: 100%; justify-content: center; }
 
-        /* ── option color fix for dark hero selects ── */
         .ed-hero-select option { color: #111827 !important; background: #fff !important; }
 
         .ed-card       { background: #fff; border-radius: 14px; border: 1px solid #eef0f6; min-width: 0; overflow: hidden; }
@@ -292,6 +331,20 @@ export default function EmployeeDashboard() {
         .ed-score-wrap    { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; overflow: hidden; }
         .ed-score-arc-wrap{ flex-shrink: 0; transform: scale(0.82); transform-origin: left center; }
         .ed-score-num     { font-size: 26px; font-weight: 800; line-height: 1; letter-spacing: -1px; font-family: 'JetBrains Mono', monospace; }
+
+        .ed-career-btn {
+          width: 100%; margin-top: 12px;
+          padding: 9px 0;
+          border: 1.5px solid #bfdbfe;
+          border-radius: 9px;
+          background: #eff6ff;
+          color: #2563eb;
+          font-size: 13px; font-weight: 700;
+          cursor: pointer;
+          font-family: 'Manrope', sans-serif;
+          transition: all .15s;
+        }
+        .ed-career-btn:hover { background: #2563eb; color: #fff; border-color: #2563eb; }
 
         @media (min-width: 768px) {
           .ed-topbar { padding: 0 28px; height: 60px; }
@@ -334,9 +387,6 @@ export default function EmployeeDashboard() {
             <div style={{ width: 30, height: 30, borderRadius: "50%", overflow: "hidden", border: "2px solid #eef0f6", flexShrink: 0 }}>
               <img src={employee.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=e8f0fe&color=4f8ef7&size=36`} alt="av" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
-            
-           
-           
           </div>
         </div>
 
@@ -365,40 +415,24 @@ export default function EmployeeDashboard() {
             <div className="ed-hero-name-block">
               {isEditing ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {/* Name */}
                   <input
                     style={{ ...inp, background: "rgba(255,255,255,.12)", border: "1.5px solid rgba(255,255,255,.22)", color: "#fff", fontSize: 14 }}
                     name="name" value={editData.name || ""} onChange={handleChange} placeholder="Full Name"
                   />
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-
-                    {/* ── CHANGED: Department dropdown from API ── */}
-                    <select
-                      className="ed-hero-select"
-                      value={editData.department || ""}
-                      onChange={handleDeptChange}
-                      style={{ ...heroSel }}>
+                    <select className="ed-hero-select" value={editData.department || ""} onChange={handleDeptChange} style={{ ...heroSel }}>
                       <option value="">Select Department</option>
-                      {departments.map(d => (
-                        <option key={d._id} value={d.name}>{d.name}</option>
-                      ))}
+                      {departments.map(d => (<option key={d._id} value={d.name}>{d.name}</option>))}
                     </select>
-
-                    {/* ── CHANGED: Designation dropdown filtered by dept ── */}
                     <select
                       className="ed-hero-select"
                       value={editData.designation || ""}
                       onChange={e => setEditData(p => ({ ...p, designation: e.target.value }))}
                       disabled={!editData.department}
                       style={{ ...heroSel, cursor: editData.department ? "pointer" : "not-allowed", opacity: editData.department ? 1 : 0.5 }}>
-                      <option value="">
-                        {editData.department ? "Select Designation" : "Select dept first"}
-                      </option>
-                      {deptDesigs.map(dg => (
-                        <option key={dg._id || dg.title} value={dg.title}>{dg.title}</option>
-                      ))}
+                      <option value="">{editData.department ? "Select Designation" : "Select dept first"}</option>
+                      {deptDesigs.map(dg => (<option key={dg._id || dg.title} value={dg.title}>{dg.title}</option>))}
                     </select>
-
                   </div>
                 </div>
               ) : (
@@ -437,8 +471,6 @@ export default function EmployeeDashboard() {
                 </p>
               </div>
             </div>
-           
-              
           </div>
         </div>
 
@@ -523,33 +555,118 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          {/* Grade Card */}
-          {employeeGrade && (
-            <div className="ed-card" style={{ padding: "14px" }}>
-              <p className="ed-card-title" style={{ padding: 0, marginBottom: 14 }}>🏅 My Grade Level</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-                <div style={{ background: "#1a1a2e", color: "#fff", borderRadius: 12, padding: "10px 18px", fontSize: 26, fontWeight: 900, letterSpacing: "-1px", flexShrink: 0, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>
-                  {employeeGrade.grade_id?.level}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 800, color: "#1a1d2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{employeeGrade.grade_id?.designation}</p>
-                  <p style={{ margin: "0 0 8px", fontSize: 12, color: "#6b7280" }}>📅 {employeeGrade.grade_id?.experience_range}</p>
-                  <span style={{ background: gradeBg, color: gradeColor, border: `1px solid ${gradeBorder}`, fontSize: 11, fontWeight: 700, padding: "3px 12px", borderRadius: 20 }}>{gradeStage} Stage</span>
-                </div>
-              </div>
-              {employeeGrade.grade_id?.core_responsibility && (
-                <p style={{ margin: "12px 0 0", fontSize: 12, color: "#374151", background: "#f8fafc", borderRadius: 8, padding: "10px 12px", lineHeight: 1.6, borderLeft: `3px solid ${gradeColor}` }}>
-                  {employeeGrade.grade_id.core_responsibility}
-                </p>
-              )}
-            </div>
-          )}
+          {/* ── Grade Card ── */}
+{employeeGrade && (
+  <div className="ed-card" style={{ padding: "14px" }}>
+    <p className="ed-card-title" style={{ padding: 0, marginBottom: 14 }}>🏅 My Grade Level</p>
 
-      
+    <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+      {/* Level badge */}
+      <div style={{
+        background: "#1a1a2e", color: "#fff",
+        borderRadius: 12, padding: "10px 18px",
+        fontSize: 26, fontWeight: 900, letterSpacing: "-1px",
+        flexShrink: 0, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1,
+      }}>
+        {employeeGrade.grade_id?.level}
+      </div>
 
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Posting — salary band-இல் இருந்து */}
+        <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 800, color: "#1a1d2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {currentSalaryBand?.posting || "—"}
+        </p>
+
+        {/* Years in Role — salary band-இல் இருந்து */}
+        {currentSalaryBand?.years_in_role && (
+          <p style={{ margin: "0 0 8px", fontSize: 12, color: "#6b7280" }}>
+            📅 {currentSalaryBand.years_in_role}
+          </p>
+        )}
+
+        {/* Salary A/B/C — salary band-இல் இருந்து */}
+        {(currentSalaryBand?.salary_band_min || currentSalaryBand?.salary_band_mid || currentSalaryBand?.salary_band_max) && (
+          <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+            {currentSalaryBand.salary_band_min && (
+              <span style={{ background: "#ecfdf5", color: "#059669", border: "1px solid #6ee7b7", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, fontFamily: "'JetBrains Mono',monospace" }}>
+                A: {fmt(currentSalaryBand.salary_band_min)}
+              </span>
+            )}
+            {currentSalaryBand.salary_band_mid && (
+              <span style={{ background: "#eff6ff", color: "#2563eb", border: "1px solid #93c5fd", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, fontFamily: "'JetBrains Mono',monospace" }}>
+                B: {fmt(currentSalaryBand.salary_band_mid)}
+              </span>
+            )}
+            {currentSalaryBand.salary_band_max && (
+              <span style={{ background: "#fff7ed", color: "#d97706", border: "1px solid #fcd34d", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, fontFamily: "'JetBrains Mono',monospace" }}>
+                C: {fmt(currentSalaryBand.salary_band_max)}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+
+    {/* Promotion Timeline — salary band-இல் இருந்து */}
+    {currentSalaryBand?.promotion_timeline && (
+      <div style={{ margin: "12px 0 0", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>Next promotion:</span>
+        <span style={{ background: "#f0fdf4", color: "#059669", border: "1px solid #6ee7b7", borderRadius: 6, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>
+          ⏱ {currentSalaryBand.promotion_timeline}
+        </span>
+      </div>
+    )}
+
+    {/* Notes — salary band-இல் இருந்து (optional) */}
+    {currentSalaryBand?.notes && (
+      <p style={{ margin: "10px 0 0", fontSize: 12, color: "#374151", background: "#f8fafc", borderRadius: 8, padding: "10px 12px", lineHeight: 1.6, borderLeft: "3px solid #3b82f6" }}>
+        {currentSalaryBand.notes}
+      </p>
+    )}
+
+    {/* Salary band configure ஆகவில்லை என்றால் message */}
+    {!currentSalaryBand && (
+      <p style={{ margin: "10px 0 0", fontSize: 12, color: "#9ca3af", fontStyle: "italic" }}>
+        Salary band not configured for this level yet.
+      </p>
+    )}
+
+    {/* Career progress bar */}
+    {careerLevels.length > 0 && careerIndex >= 0 && (
+      <div style={{ marginTop: 14 }}>
+        <div style={{ background: "#f3f4f6", borderRadius: 99, height: 5, overflow: "hidden" }}>
+          <div style={{
+            width: `${careerPct}%`, height: "100%", borderRadius: 99,
+            background: "linear-gradient(90deg, #059669, #3b82f6, #f59e0b)",
+            transition: "width .8s cubic-bezier(.4,0,.2,1)"
+          }} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#9ca3af", marginTop: 4, fontWeight: 600 }}>
+          <span>Level {careerIndex + 1} of {careerLevels.length}</span>
+          <span>{careerPct}% of career path</span>
+        </div>
+      </div>
+    )}
+
+    {/* View Career Path button */}
+    <button className="ed-career-btn" onClick={() => setShowCareer(true)}>
+      View Career Path →
+    </button>
+  </div>
+)}
 
         </div>
       </div>
+
+      {/* ✅ Career Path Modal */}
+      <CareerPathModal
+        open={showCareer}
+        onClose={() => setShowCareer(false)}
+        employeeGrade={employeeGrade}
+        deptBands={deptBands}
+        department={employee?.department}
+      />
+
     </EmployeeLayout>
   );
 }

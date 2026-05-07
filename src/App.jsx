@@ -104,6 +104,7 @@ import IncentiveResults from "./pages/hr/IncentiveResults";
 import PolicyManagement from "./pages/hr/PolicyManagement";
 import SOPManagement from "./pages/hr/Sopmanagement";
 import PolicyQuizManagementPage from "./pages/hr/PolicyQuizManagementPage";
+import DeptGradeSalary from "./pages/hr/DeptGradeSalary";
 
 
 
@@ -290,6 +291,7 @@ function App() {
           <Route path="/hr/dashboard/appraisal" element={<AppraisalHub />} />
 
           <Route path="grading/grade-master" element={<GradeMaster />} />
+          <Route path="grading/dept-salary" element={<DeptGradeSalary />} />
           <Route path="grading/assign-grade" element={<AssignGrade />} />
           <Route path="grading/grade-reports" element={<GradeReports />} />
 

@@ -14,34 +14,104 @@ const labelStyle = { display: "block", fontSize: 12, fontWeight: 700, color: "#3
 
 // ── Core slab calculator ──────────────────────────────────────────────────────
 function calcIncentive(plan, finalScore, salary = 0, kpiBreakdown = []) {
-  if (!plan) return { amount: 0, slabLabel: "No Plan Matched" };
+  if (!plan) return { amount: 0, slabLabel: "No Plan Matched", kpiDetails: [] };
 
   // ── STANDALONE ──
   if (plan.plan_type === "standalone") {
     const score = Math.round(finalScore || 0);
-    const slab = (plan.slabs || []).find(s => score >= s.min_score && score <= s.max_score);
-    if (!slab || slab.type === "none") return { amount: 0, slabLabel: `${score}% → No Bonus` };
+    const slab  = (plan.slabs || []).find(s => score >= s.min_score && score <= s.max_score);
+    if (!slab || slab.type === "none") return { amount: 0, slabLabel: `${score}% → No Bonus`, kpiDetails: [] };
     const amount = slab.type === "percentage"
       ? Math.round((slab.value / 100) * salary)
       : slab.value;
-    return { amount, slabLabel: `${score}% → ₹${amount.toLocaleString("en-IN")}` };
+    return { amount, slabLabel: `${score}% → ₹${amount.toLocaleString("en-IN")}`, kpiDetails: [] };
   }
 
   // ── KPI-LINKED ──
   const kpiConfigs = plan.kpi_configs || [];
-  if (!kpiConfigs.length) return { amount: 0, slabLabel: "No KPI configs" };
+  if (!kpiConfigs.length) return { amount: 0, slabLabel: "No KPI configs", kpiDetails: [] };
 
   const normalize = (s) => (s || "").toLowerCase().trim();
 
   let totalAmount = 0;
-  const labels = [];
+  const labels    = [];
+  const kpiDetails = []; // ← structured data for UI rendering
 
   kpiConfigs.forEach(cfg => {
     const kpiData = (kpiBreakdown || []).find(
       k => normalize(k.kpi_name) === normalize(cfg.kpi_name)
     );
 
-    // ── Achievement % — use review's own target & actual ──
+    // ── ADMISSION KPI: per-program slab calculation ──────────────────────────
+    if (cfg.is_admission_kpi) {
+      const programSlabs   = cfg.program_slabs   || [];
+      const programTargets = cfg.program_targets || [];
+
+      let admissionTotal = 0;
+      const programDetails = [];
+
+      programTargets.forEach(pt => {
+        // Find actual admissions for this program from kpi_breakdown
+        // kpi_breakdown entries for admission KPIs should have program_id or program_name
+        const progActual = (kpiBreakdown || []).find(k =>
+          normalize(k.kpi_name) === normalize(cfg.kpi_name) &&
+          (k.program_id === pt.program_id || normalize(k.program_name) === normalize(pt.program_name))
+        );
+
+        // Fallback: if no per-program breakdown, try matching by kpi_name only (old data)
+        const actualAdmissions = progActual?.actual_value ??
+          (programTargets.length === 1 ? kpiData?.actual_value : 0) ?? 0;
+
+        const programTarget = Number(pt.target) || 0;
+        const achPct = programTarget > 0
+          ? Math.min(Math.round((Number(actualAdmissions) / programTarget) * 100), 100)
+          : 0;
+
+        // Find matching slab for this program
+        const progSlabEntry = programSlabs.find(ps => ps.program_id === pt.program_id);
+        const slabs         = progSlabEntry?.slabs || [];
+        const slab          = slabs.find(s => achPct >= s.min_score && achPct <= s.max_score);
+
+        let amt = 0;
+        let slabDesc = "No Slab";
+        if (slab && slab.type !== "none" && slab.value > 0) {
+          if (slab.type === "target_percentage") {
+            amt = Math.round((slab.value / 100) * programTarget);
+          } else if (slab.type === "percentage") {
+            amt = Math.round((slab.value / 100) * salary);
+          } else {
+            amt = slab.value;
+          }
+          slabDesc = `${slab.min_score}–${slab.max_score}% → ₹${amt.toLocaleString("en-IN")}`;
+        } else if (slab && slab.type === "none") {
+          slabDesc = `${slab.min_score}–${slab.max_score}% → No Bonus`;
+        }
+
+        admissionTotal += amt;
+        programDetails.push({
+          program_id:   pt.program_id,
+          program_name: pt.program_name,
+          target:       programTarget,
+          actual:       actualAdmissions,
+          achPct,
+          slabDesc,
+          amount:       amt,
+        });
+      });
+
+      totalAmount += admissionTotal;
+      labels.push(`${cfg.kpi_name}: ₹${admissionTotal.toLocaleString("en-IN")} (${programTargets.length} programs)`);
+      kpiDetails.push({
+        kpi_name:        cfg.kpi_name,
+        is_admission_kpi: true,
+        weight:          cfg.weight,
+        amount:          admissionTotal,
+        programDetails,
+      });
+      return;
+    }
+
+    // ── NORMAL KPI ───────────────────────────────────────────────────────────
     let kpiScore = 0;
     if (kpiData) {
       if (kpiData.target && Number(kpiData.target) > 0 && kpiData.actual_value != null) {
@@ -56,7 +126,6 @@ function calcIncentive(plan, finalScore, salary = 0, kpiBreakdown = []) {
       }
     }
 
-    // ── Slab match ──
     const slab = (cfg.slabs || []).find(
       s => kpiScore >= s.min_score && kpiScore <= s.max_score
     );
@@ -75,10 +144,37 @@ function calcIncentive(plan, finalScore, salary = 0, kpiBreakdown = []) {
     } else {
       labels.push(`${cfg.kpi_name}: ${kpiScore}% → No Bonus`);
     }
+
+    kpiDetails.push({
+      kpi_name:        cfg.kpi_name,
+      is_admission_kpi: false,
+      weight:          cfg.weight,
+      target:          kpiData?.target ?? cfg.target,
+      actual:          kpiData?.actual_value,
+      achPct:          kpiScore,
+      amount:          amt,
+      slabDesc:        slab
+        ? slab.type === "none"
+          ? "No Bonus"
+          : `${slab.min_score}–${slab.max_score}%`
+        : "No Slab",
+    });
   });
 
   // ── Completion reward ──
   const allPerfect = kpiConfigs.every(cfg => {
+    if (cfg.is_admission_kpi) {
+      // For admission KPIs, check if all programs hit 100%
+      const programTargets = cfg.program_targets || [];
+      return programTargets.every(pt => {
+        const progActual = (kpiBreakdown || []).find(k =>
+          normalize(k.kpi_name) === normalize(cfg.kpi_name) &&
+          (k.program_id === pt.program_id || normalize(k.program_name) === normalize(pt.program_name))
+        );
+        if (!progActual) return false;
+        return Number(progActual.actual_value) >= Number(pt.target);
+      });
+    }
     const kpiData = (kpiBreakdown || []).find(
       k => normalize(k.kpi_name) === normalize(cfg.kpi_name)
     );
@@ -98,8 +194,9 @@ function calcIncentive(plan, finalScore, salary = 0, kpiBreakdown = []) {
   }
 
   return {
-    amount: totalAmount,
-    slabLabel: labels.join(" | ") || "No slabs matched",
+    amount:     totalAmount,
+    slabLabel:  labels.join(" | ") || "No slabs matched",
+    kpiDetails,
   };
 }
 
@@ -110,12 +207,12 @@ const STATUS_META = {
 };
 
 export default function IncentiveResults() {
-  const [results,   setResults]   = useState([]);
-  const [plans,     setPlans]     = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [toast,     setToast]     = useState(null);
-  const [bulkBusy,  setBulkBusy]  = useState(false);
-  const [recalcIds, setRecalcIds] = useState(new Set());
+  const [results,     setResults]     = useState([]);
+  const [plans,       setPlans]       = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [toast,       setToast]       = useState(null);
+  const [bulkBusy,    setBulkBusy]    = useState(false);
+  const [recalcIds,   setRecalcIds]   = useState(new Set());
   const [expandedRow, setExpandedRow] = useState(null);
 
   // filters
@@ -142,7 +239,7 @@ export default function IncentiveResults() {
     setToast({ msg, type }); setTimeout(() => setToast(null), 3000);
   };
 
-  // ── Recalculate: fetch latest PerformanceReview kpi_breakdown ──────────────
+  // ── Recalculate ───────────────────────────────────────────────────────────
   const recalculate = async (result) => {
     const resultId   = result._id;
     const employeeId = result.employee_id?._id || result.employee_id;
@@ -171,7 +268,6 @@ export default function IncentiveResults() {
       };
 
       const matched = reviews.filter(rv => toMonthYear(rv.period) === toMonthYear(period));
-
       if (!matched.length) {
         const available = [...new Set(reviews.map(rv => rv.period))].join(", ");
         showToast(`No review for "${period}". Available: ${available}`, "error"); return;
@@ -186,7 +282,6 @@ export default function IncentiveResults() {
         showToast("Review score is 0 — finalize the review first", "error"); return;
       }
 
-      // ── Recalculate incentive amount using kpi_breakdown ──
       const plan = plans.find(p => p._id === (result.plan_id?._id || result.plan_id));
       const { amount } = calcIncentive(plan, latestScore, result.salary || 0, latestBreakdown);
 
@@ -207,7 +302,6 @@ export default function IncentiveResults() {
     }
   };
 
-  // options
   const depts   = useMemo(() => ["All", ...new Set(results.map(r => r.employee_id?.department).filter(Boolean))], [results]);
   const periods = useMemo(() => ["All", ...new Set(results.map(r => r.cycle_period).filter(Boolean))].sort((a, b) => b.localeCompare(a)), [results]);
 
@@ -223,9 +317,8 @@ export default function IncentiveResults() {
     return calcIncentive(plan, r.performance_score, r.salary, r.kpi_breakdown || []);
   };
 
-  // summary
   const stats = useMemo(() => {
-    const amt = (r) => r.calculated_amount ?? getCalc(r).amount;
+    const amt  = (r) => r.calculated_amount ?? getCalc(r).amount;
     const total    = filtered.reduce((s, r) => s + amt(r), 0);
     const approved = filtered.filter(r => r.status === "approved").reduce((s, r) => s + amt(r), 0);
     return {
@@ -373,31 +466,14 @@ export default function IncentiveResults() {
               <tbody>
                 {filtered.map((r, i) => {
                   const plan = plans.find(p => p._id === (r.plan_id?._id || r.plan_id));
-                  const { amount, slabLabel } = calcIncentive(plan, r.performance_score, r.salary, r.kpi_breakdown || []);
+                  const { amount, slabLabel, kpiDetails } = calcIncentive(plan, r.performance_score, r.salary, r.kpi_breakdown || []);
                   const finalAmt   = r.calculated_amount ?? amount;
                   const sm         = STATUS_META[r.status] || STATUS_META.pending;
                   const score      = Math.round(r.performance_score || 0);
                   const scoreColor = score >= 90 ? "#16a34a" : score >= 75 ? "#2563eb" : score >= 60 ? "#d97706" : "#dc2626";
                   const isBusy     = recalcIds.has(r._id);
                   const isExpanded = expandedRow === r._id;
-                  const hasBreakdown = (r.kpi_breakdown || []).length > 0;
-
-                  // ── Per-KPI breakdown rows ──
-                  const kpiRows = hasBreakdown ? (r.kpi_breakdown || []).map(kpi => {
-                    const achPct = kpi.target && Number(kpi.target) > 0
-                      ? Math.min(Math.round((Number(kpi.actual_value) / Number(kpi.target)) * 100), 100)
-                      : 0;
-                    const cfg = plan?.kpi_configs?.find(c => (c.kpi_name || "").toLowerCase().trim() === (kpi.kpi_name || "").toLowerCase().trim());
-                    const slab = cfg ? (cfg.slabs || []).find(s => achPct >= s.min_score && achPct <= s.max_score) : null;
-                    let slabAmt = 0;
-                    if (slab && slab.type !== "none" && slab.value > 0) {
-                      if (slab.type === "target_percentage") slabAmt = Math.round((slab.value / 100) * Number(cfg.target));
-                      else if (slab.type === "percentage")   slabAmt = Math.round((slab.value / 100) * (r.salary || 0));
-                      else slabAmt = slab.value;
-                    }
-                    const achColor = achPct >= 90 ? "#16a34a" : achPct >= 70 ? "#2563eb" : achPct >= 50 ? "#d97706" : "#dc2626";
-                    return { ...kpi, achPct, slabAmt, achColor };
-                  }) : [];
+                  const hasBreakdown = (r.kpi_breakdown || []).length > 0 || kpiDetails.length > 0;
 
                   return (
                     <>
@@ -446,9 +522,9 @@ export default function IncentiveResults() {
                         </td>
 
                         {/* KPI Breakdown summary */}
-                        <td style={{ padding: "12px 16px", fontSize: 11, color: "#9ca3af", maxWidth: 200 }}>
+                        <td style={{ padding: "12px 16px", fontSize: 11, color: "#9ca3af", maxWidth: 220 }}>
                           {hasBreakdown ? (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                               {slabLabel.split(" | ").map((l, idx) => (
                                 <span key={idx} style={{ color: l.includes("No Bonus") ? "#9ca3af" : "#374151", fontWeight: l.includes("No Bonus") ? 400 : 600 }}>{l}</span>
                               ))}
@@ -508,53 +584,120 @@ export default function IncentiveResults() {
                               <div style={{ padding: "10px 16px", background: "#f1f5f9", borderBottom: "1px solid #e5e7eb" }}>
                                 <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>📊 Per-KPI Incentive Breakdown</span>
                               </div>
-                              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                                <thead>
-                                  <tr style={{ background: "#f8fafc" }}>
-                                    {["KPI Name", "Target", "Actual", "Achievement %", "Slab Matched", "Incentive"].map(h => (
-                                      <th key={h} style={{ padding: "9px 14px", textAlign: "left", fontWeight: 700, color: "#6b7280", borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap", fontSize: 12 }}>{h}</th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {kpiRows.map((kpi, ki) => {
-                                    const cfg  = plan?.kpi_configs?.find(c => (c.kpi_name || "").toLowerCase().trim() === (kpi.kpi_name || "").toLowerCase().trim());
-                                    const slab = cfg ? (cfg.slabs || []).find(s => kpi.achPct >= s.min_score && kpi.achPct <= s.max_score) : null;
-                                    const slabLabel = slab
-                                      ? slab.type === "none" ? "No Bonus"
-                                        : `${slab.min_score}–${slab.max_score}%`
-                                      : "No Slab";
-                                    return (
-                                      <tr key={ki} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                                        <td style={{ padding: "10px 14px", fontWeight: 600, color: "#1f2937" }}>{kpi.kpi_name}</td>
-                                        <td style={{ padding: "10px 14px", color: "#6b7280" }}>{kpi.target} {kpi.unit || ""}</td>
-                                        <td style={{ padding: "10px 14px", fontWeight: 700, color: kpi.achColor }}>{kpi.actual_value} {kpi.unit || ""}</td>
+
+                              {kpiDetails.map((kd, kdIdx) => (
+                                kd.is_admission_kpi ? (
+                                  /* ── Admission KPI: per-program sub-table ── */
+                                  <div key={kdIdx} style={{ borderBottom: kdIdx < kpiDetails.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                                    {/* Admission KPI header */}
+                                    <div style={{ padding: "10px 16px", background: "#f0f9ff", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #bae6fd" }}>
+                                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                        <span style={{ fontSize: 12, fontWeight: 800, color: "#0369a1" }}>🎓 {kd.kpi_name}</span>
+                                        <span style={{ fontSize: 10, background: "#e0f2fe", color: "#0369a1", padding: "2px 8px", borderRadius: 99, fontWeight: 700, border: "1px solid #bae6fd" }}>
+                                          Admission KPI · Weight {kd.weight}%
+                                        </span>
+                                      </div>
+                                      <span style={{ fontSize: 13, fontWeight: 800, color: kd.amount > 0 ? "#16a34a" : "#9ca3af" }}>
+                                        {kd.amount > 0 ? `₹${kd.amount.toLocaleString("en-IN")}` : "—"}
+                                      </span>
+                                    </div>
+
+                                    {/* Per-program rows */}
+                                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                                      <thead>
+                                        <tr style={{ background: "#f8fafc" }}>
+                                          {["Program", "Target", "Actual Admissions", "Achievement %", "Slab Matched", "Incentive"].map(h => (
+                                            <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontWeight: 700, color: "#6b7280", borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap", fontSize: 11 }}>{h}</th>
+                                          ))}
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {kd.programDetails.map((pd, pdi) => {
+                                          const achColor = pd.achPct >= 90 ? "#16a34a" : pd.achPct >= 70 ? "#2563eb" : pd.achPct >= 50 ? "#d97706" : "#dc2626";
+                                          return (
+                                            <tr key={pdi} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                                              <td style={{ padding: "9px 14px", fontWeight: 700, color: "#0369a1" }}>
+                                                <span style={{ background: "#f0f9ff", border: "1px solid #bae6fd", padding: "2px 8px", borderRadius: 5, fontSize: 12 }}>
+                                                  📚 {pd.program_name}
+                                                </span>
+                                              </td>
+                                              <td style={{ padding: "9px 14px", color: "#6b7280", fontWeight: 600 }}>{pd.target}</td>
+                                              <td style={{ padding: "9px 14px", fontWeight: 700, color: achColor }}>{pd.actual}</td>
+                                              <td style={{ padding: "9px 14px" }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                  <div style={{ background: "#f3f4f6", borderRadius: 99, height: 6, width: 60, overflow: "hidden" }}>
+                                                    <div style={{ width: `${pd.achPct}%`, height: "100%", background: achColor, borderRadius: 99 }} />
+                                                  </div>
+                                                  <span style={{ fontWeight: 700, color: achColor, fontSize: 12 }}>{pd.achPct}%</span>
+                                                </div>
+                                              </td>
+                                              <td style={{ padding: "9px 14px" }}>
+                                                <span style={{ background: pd.amount > 0 ? "#eef2ff" : "#f3f4f6", color: pd.amount > 0 ? "#4f46e5" : "#9ca3af", fontWeight: 600, padding: "3px 8px", borderRadius: 5, fontSize: 11 }}>
+                                                  {pd.slabDesc}
+                                                </span>
+                                              </td>
+                                              <td style={{ padding: "9px 14px", fontWeight: 800, color: pd.amount > 0 ? "#16a34a" : "#9ca3af", fontSize: 13 }}>
+                                                {pd.amount > 0 ? `₹${pd.amount.toLocaleString("en-IN")}` : "—"}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                        {/* Admission KPI subtotal */}
+                                        <tr style={{ background: "#f0f9ff", borderTop: "1.5px solid #bae6fd" }}>
+                                          <td colSpan={5} style={{ padding: "8px 14px", fontWeight: 700, color: "#0369a1", fontSize: 12 }}>
+                                            🎓 {kd.kpi_name} Total
+                                          </td>
+                                          <td style={{ padding: "8px 14px", fontWeight: 800, color: kd.amount > 0 ? "#0369a1" : "#9ca3af", fontSize: 14 }}>
+                                            {kd.amount > 0 ? `₹${kd.amount.toLocaleString("en-IN")}` : "—"}
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                ) : (
+                                  /* ── Normal KPI row ── */
+                                  <table key={kdIdx} style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                                    {kdIdx === 0 && (
+                                      <thead>
+                                        <tr style={{ background: "#f8fafc" }}>
+                                          {["KPI Name", "Target", "Actual", "Achievement %", "Slab Matched", "Incentive"].map(h => (
+                                            <th key={h} style={{ padding: "9px 14px", textAlign: "left", fontWeight: 700, color: "#6b7280", borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap", fontSize: 12 }}>{h}</th>
+                                          ))}
+                                        </tr>
+                                      </thead>
+                                    )}
+                                    <tbody>
+                                      <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
+                                        <td style={{ padding: "10px 14px", fontWeight: 600, color: "#1f2937" }}>{kd.kpi_name}</td>
+                                        <td style={{ padding: "10px 14px", color: "#6b7280" }}>{kd.target}</td>
+                                        <td style={{ padding: "10px 14px", fontWeight: 700, color: kd.achPct >= 75 ? "#16a34a" : "#dc2626" }}>{kd.actual}</td>
                                         <td style={{ padding: "10px 14px" }}>
                                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                             <div style={{ background: "#f3f4f6", borderRadius: 99, height: 6, width: 70, overflow: "hidden" }}>
-                                              <div style={{ width: `${kpi.achPct}%`, height: "100%", background: kpi.achColor, borderRadius: 99 }} />
+                                              <div style={{ width: `${kd.achPct}%`, height: "100%", background: kd.achPct >= 75 ? "#16a34a" : "#dc2626", borderRadius: 99 }} />
                                             </div>
-                                            <span style={{ fontWeight: 700, color: kpi.achColor, fontSize: 12 }}>{kpi.achPct}%</span>
+                                            <span style={{ fontWeight: 700, color: kd.achPct >= 75 ? "#16a34a" : "#dc2626", fontSize: 12 }}>{kd.achPct}%</span>
                                           </div>
                                         </td>
                                         <td style={{ padding: "10px 14px" }}>
-                                          <span style={{ background: kpi.slabAmt > 0 ? "#eef2ff" : "#f3f4f6", color: kpi.slabAmt > 0 ? "#4f46e5" : "#9ca3af", fontWeight: 600, padding: "3px 8px", borderRadius: 5, fontSize: 11 }}>{slabLabel}</span>
+                                          <span style={{ background: kd.amount > 0 ? "#eef2ff" : "#f3f4f6", color: kd.amount > 0 ? "#4f46e5" : "#9ca3af", fontWeight: 600, padding: "3px 8px", borderRadius: 5, fontSize: 11 }}>{kd.slabDesc}</span>
                                         </td>
-                                        <td style={{ padding: "10px 14px", fontWeight: 800, color: kpi.slabAmt > 0 ? "#16a34a" : "#9ca3af", fontSize: 14 }}>
-                                          {kpi.slabAmt > 0 ? `₹${kpi.slabAmt.toLocaleString("en-IN")}` : "—"}
+                                        <td style={{ padding: "10px 14px", fontWeight: 800, color: kd.amount > 0 ? "#16a34a" : "#9ca3af", fontSize: 14 }}>
+                                          {kd.amount > 0 ? `₹${kd.amount.toLocaleString("en-IN")}` : "—"}
                                         </td>
                                       </tr>
-                                    );
-                                  })}
-                                  {/* Total row */}
-                                  <tr style={{ background: "#f0fdf4", borderTop: "2px solid #86efac" }}>
-                                    <td colSpan={5} style={{ padding: "10px 14px", fontWeight: 700, color: "#15803d", fontSize: 13 }}>Total Incentive</td>
-                                    <td style={{ padding: "10px 14px", fontWeight: 800, color: "#16a34a", fontSize: 16 }}>
-                                      ₹{finalAmt.toLocaleString("en-IN")}
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
+                                    </tbody>
+                                  </table>
+                                )
+                              ))}
+
+                              {/* Grand Total row */}
+                              <div style={{ background: "#f0fdf4", borderTop: "2px solid #86efac", padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontWeight: 700, color: "#15803d", fontSize: 13 }}>💰 Total Incentive</span>
+                                <span style={{ fontWeight: 800, color: "#16a34a", fontSize: 18 }}>
+                                  ₹{finalAmt.toLocaleString("en-IN")}
+                                </span>
+                              </div>
                             </div>
                           </td>
                         </tr>
