@@ -241,66 +241,116 @@ export default function IncentiveResults() {
 
   // ── Recalculate ───────────────────────────────────────────────────────────
   const recalculate = async (result) => {
-    const resultId   = result._id;
-    const employeeId = result.employee_id?._id || result.employee_id;
-    const period     = result.cycle_period;
+  const resultId   = result._id;
+  const employeeId = result.employee_id?._id || result.employee_id;
+  const period     = result.cycle_period;
 
-    if (!employeeId || !period) {
-      showToast("Missing employee or period info", "error"); return;
+  if (!employeeId || !period) {
+    showToast("Missing employee or period info", "error"); return;
+  }
+
+  setRecalcIds(prev => new Set(prev).add(resultId));
+
+  try {
+    const reviewRes = await axios.get(`${API_BASE}/api/performance-reviews/${employeeId}`);
+    const reviews   = reviewRes.data?.data || [];
+
+    if (!reviews.length) {
+      showToast("No performance reviews found", "error"); return;
     }
 
-    setRecalcIds(prev => new Set(prev).add(resultId));
+    const toMonthYear = (p = "") => {
+      if (isNaN(p[0])) return p.trim().toLowerCase();
+      const [year, month] = p.split("-");
+      if (!year || !month) return p.trim().toLowerCase();
+      return new Date(parseInt(year), parseInt(month) - 1, 1)
+        .toLocaleString("en-US", { month: "long", year: "numeric" }).toLowerCase();
+    };
 
+    const matched = reviews.filter(rv => toMonthYear(rv.period) === toMonthYear(period));
+    if (!matched.length) {
+      const available = [...new Set(reviews.map(rv => rv.period))].join(", ");
+      showToast(`No review for "${period}". Available: ${available}`, "error"); return;
+    }
+
+    const sorted  = [...matched].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    const best    = sorted.find(rv => rv.status === "finalized") || sorted[0];
+    const latestScore     = best?.final_score ?? 0;
+    const latestBreakdown = best?.kpi_breakdown || [];
+
+    if (latestScore === 0) {
+      showToast("Review score is 0 — finalize the review first", "error"); return;
+    }
+
+    // ✅ FIX: Daily logs-இல் இருந்து program-wise actuals fetch பண்ணு
+    let enrichedBreakdown = [...latestBreakdown];
     try {
-      const reviewRes = await axios.get(`${API_BASE}/api/performance-reviews/${employeeId}`);
-      const reviews   = reviewRes.data?.data || [];
+      const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/${employeeId}`);
+      if (assignRes.data.success && assignRes.data.data) {
+        const assignmentId = assignRes.data.data._id;
+        const logsRes = await axios.get(`${API_BASE}/api/daily-logs/${employeeId}/${assignmentId}`);
+        const allLogs = logsRes.data.data || [];
 
-      if (!reviews.length) {
-        showToast("No performance reviews found", "error"); return;
+        // Program-wise totals build பண்ணு
+        const programTotals = {}; // { kpi_item_id: { program_id: total } }
+        allLogs.forEach(log => {
+          if (log.program_values && Object.keys(log.program_values).length > 0) {
+            if (!programTotals[log.kpi_item_id]) programTotals[log.kpi_item_id] = {};
+            Object.entries(log.program_values).forEach(([progId, val]) => {
+              programTotals[log.kpi_item_id][progId] = 
+                (programTotals[log.kpi_item_id][progId] || 0) + (Number(val) || 0);
+            });
+          }
+        });
+
+        // kpi_items from assignment to get program_targets
+        const kpiItems = assignRes.data.data.template_id?.kpi_items || [];
+
+        // enrichedBreakdown-ல் admission KPI-க்கு program entries add பண்ணு
+        const additionalEntries = [];
+        kpiItems.forEach(kpiItem => {
+          if (kpiItem.is_admission_kpi && kpiItem.program_targets?.length > 0) {
+            const progTotals = programTotals[kpiItem._id] || {};
+            kpiItem.program_targets.forEach(pt => {
+              additionalEntries.push({
+                kpi_name:     kpiItem.kpi_name,
+                program_id:   pt.program_id,
+                program_name: pt.program_name,
+                actual_value: progTotals[pt.program_id] || 0,
+                target:       pt.target,
+              });
+            });
+          }
+        });
+
+        if (additionalEntries.length > 0) {
+          enrichedBreakdown = [...latestBreakdown, ...additionalEntries];
+        }
       }
-
-      const toMonthYear = (p = "") => {
-        if (isNaN(p[0])) return p.trim().toLowerCase();
-        const [year, month] = p.split("-");
-        if (!year || !month) return p.trim().toLowerCase();
-        return new Date(parseInt(year), parseInt(month) - 1, 1)
-          .toLocaleString("en-US", { month: "long", year: "numeric" }).toLowerCase();
-      };
-
-      const matched = reviews.filter(rv => toMonthYear(rv.period) === toMonthYear(period));
-      if (!matched.length) {
-        const available = [...new Set(reviews.map(rv => rv.period))].join(", ");
-        showToast(`No review for "${period}". Available: ${available}`, "error"); return;
-      }
-
-      const sorted  = [...matched].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      const best    = sorted.find(rv => rv.status === "finalized") || sorted[0];
-      const latestScore     = best?.final_score ?? 0;
-      const latestBreakdown = best?.kpi_breakdown || [];
-
-      if (latestScore === 0) {
-        showToast("Review score is 0 — finalize the review first", "error"); return;
-      }
-
-      const plan = plans.find(p => p._id === (result.plan_id?._id || result.plan_id));
-      const { amount } = calcIncentive(plan, latestScore, result.salary || 0, latestBreakdown);
-
-      await axios.put(`${API_BASE}/api/incentive-results/${resultId}`, {
-        performance_score: latestScore,
-        kpi_breakdown:     latestBreakdown,
-        calculated_amount: amount,
-      });
-
-      showToast(`Recalculated ✅ Score: ${Math.round(latestScore)}% → ₹${amount.toLocaleString("en-IN")}`);
-      fetchAll();
-
-    } catch (err) {
-      console.error("Recalculate error:", err);
-      showToast("Recalculate failed", "error");
-    } finally {
-      setRecalcIds(prev => { const s = new Set(prev); s.delete(resultId); return s; });
+    } catch (logErr) {
+      console.warn("Could not fetch daily logs for program actuals:", logErr);
+      // Fallback: latestBreakdown மட்டும் use பண்ணு
     }
-  };
+
+    const plan = plans.find(p => p._id === (result.plan_id?._id || result.plan_id));
+    const { amount } = calcIncentive(plan, latestScore, result.salary || 0, enrichedBreakdown);
+
+    await axios.put(`${API_BASE}/api/incentive-results/${resultId}`, {
+      performance_score: latestScore,
+      kpi_breakdown:     enrichedBreakdown,
+      calculated_amount: amount,
+    });
+
+    showToast(`Recalculated ✅ Score: ${Math.round(latestScore)}% → ₹${amount.toLocaleString("en-IN")}`);
+    fetchAll();
+
+  } catch (err) {
+    console.error("Recalculate error:", err);
+    showToast("Recalculate failed", "error");
+  } finally {
+    setRecalcIds(prev => { const s = new Set(prev); s.delete(resultId); return s; });
+  }
+};
 
   const depts   = useMemo(() => ["All", ...new Set(results.map(r => r.employee_id?.department).filter(Boolean))], [results]);
   const periods = useMemo(() => ["All", ...new Set(results.map(r => r.cycle_period).filter(Boolean))].sort((a, b) => b.localeCompare(a)), [results]);

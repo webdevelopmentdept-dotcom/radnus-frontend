@@ -587,21 +587,42 @@ const currentSalaryBand = careerLevels.find(
         {/* Salary A/B/C — salary band-இல் இருந்து */}
         {(currentSalaryBand?.salary_band_min || currentSalaryBand?.salary_band_mid || currentSalaryBand?.salary_band_max) && (
           <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-            {currentSalaryBand.salary_band_min && (
-              <span style={{ background: "#ecfdf5", color: "#059669", border: "1px solid #6ee7b7", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, fontFamily: "'JetBrains Mono',monospace" }}>
-                A: {fmt(currentSalaryBand.salary_band_min)}
-              </span>
-            )}
-            {currentSalaryBand.salary_band_mid && (
-              <span style={{ background: "#eff6ff", color: "#2563eb", border: "1px solid #93c5fd", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, fontFamily: "'JetBrains Mono',monospace" }}>
-                B: {fmt(currentSalaryBand.salary_band_mid)}
-              </span>
-            )}
-            {currentSalaryBand.salary_band_max && (
-              <span style={{ background: "#fff7ed", color: "#d97706", border: "1px solid #fcd34d", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, fontFamily: "'JetBrains Mono',monospace" }}>
-                C: {fmt(currentSalaryBand.salary_band_max)}
-              </span>
-            )}
+           {(() => {
+  // salary_scale_point: "min" | "mid" | "max"
+  const scalePoint = employeeGrade?.salary_scale_point;
+  
+  const value =
+    scalePoint === "min" ? currentSalaryBand?.salary_band_min :
+    scalePoint === "mid" ? currentSalaryBand?.salary_band_mid :
+    scalePoint === "max" ? currentSalaryBand?.salary_band_max : null;
+
+  const label =
+    scalePoint === "min" ? "A" :
+    scalePoint === "mid" ? "B" :
+    scalePoint === "max" ? "C" : null;
+
+  const styles = {
+    min: { bg: "#ecfdf5", color: "#059669", border: "#6ee7b7" },
+    mid: { bg: "#eff6ff", color: "#2563eb", border: "#93c5fd" },
+    max: { bg: "#fff7ed", color: "#d97706", border: "#fcd34d" },
+  }[scalePoint] || {};
+
+  return value && label ? (
+    <span style={{
+      background: styles.bg, color: styles.color,
+      border: `1px solid ${styles.border}`,
+      fontSize: 10, fontWeight: 700,
+      padding: "2px 8px", borderRadius: 6,
+      fontFamily: "'JetBrains Mono',monospace"
+    }}>
+      Scale {label}: {fmt(value)}
+    </span>
+  ) : (
+    <span style={{ fontSize: 11, color: "#9ca3af" }}>
+      Scale not assigned
+    </span>
+  );
+})()}
           </div>
         )}
       </div>

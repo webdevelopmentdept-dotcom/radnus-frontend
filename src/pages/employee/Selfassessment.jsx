@@ -5,10 +5,10 @@ import {
   Send, AlertCircle, Plus, Trash2, Calendar, TrendingUp
 } from "lucide-react";
 import EmployeeLayout from "./EmployeeLayout";
- 
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const today = new Date().toISOString().split("T")[0];
- 
+
 export default function SelfAssessment() {
   const [assignment, setAssignment]   = useState(null);
   const [existing, setExisting]       = useState(null);
@@ -19,7 +19,7 @@ export default function SelfAssessment() {
   const [toast, setToast]             = useState(null);
   const [expandedItem, setExpandedItem] = useState(null);
   const [activeTab, setActiveTab]     = useState("assessment");
- 
+
   const [logs, setLogs]               = useState([]);
   const [logTotals, setLogTotals]     = useState({});
   const [programLogTotals, setProgramLogTotals] = useState({});
@@ -27,20 +27,21 @@ export default function SelfAssessment() {
   const [programValues, setProgramValues] = useState({});
   const [savingLog, setSavingLog]     = useState(false);
   const [deletingLog, setDeletingLog] = useState(null);
+  const [assessmentProgramValues, setAssessmentProgramValues] = useState({});
   const [employee, setEmployee]       = useState(null);
- 
+
   const [completedReviews, setCompletedReviews] = useState([]);
- 
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
- 
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
- 
+
   const employeeId = localStorage.getItem("employeeId");
- 
+
   const HR_FINALIZED_STATUSES = ["reviewed", "finalized", "completed", "hr_reviewed", "approved"];
   const isHRReviewed =
     HR_FINALIZED_STATUSES.includes(existing?.status) ||
@@ -51,20 +52,20 @@ export default function SelfAssessment() {
       r.assignment_id === assignment?._id ||
       r._id === existing?._id
     );
- 
+
   useEffect(() => { fetchData(); }, []);
- 
+
   const fetchData = async () => {
     try {
       const empRes = await axios.get(`${API_BASE}/api/employee/me/${employeeId}`);
       setEmployee(empRes.data);
- 
+
       const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/${employeeId}`);
       if (assignRes.data.success && assignRes.data.data) {
         const assign = assignRes.data.data;
         setAssignment(assign);
         const kpiItems = assign.template_id?.kpi_items || [];
- 
+
         const initItems = kpiItems.map(item => ({
           kpi_item_id:      item._id,
           kpi_name:         item.kpi_name,
@@ -76,20 +77,20 @@ export default function SelfAssessment() {
           self_value:       "",
           self_comment:     ""
         }));
- 
+
         const existingRes = await axios.get(`${API_BASE}/api/self-assessment/by-assignment/${assign._id}`);
         if (existingRes.data.success && existingRes.data.data) {
           const prev = existingRes.data.data;
           setExisting(prev);
           setSubmitted(true);
- 
+
           const isFinalized = HR_FINALIZED_STATUSES.includes(prev.status) ||
             prev.isLocked === true ||
             prev.hr_finalized === true ||
             (prev.final_score !== undefined && prev.final_score !== null);
- 
+
           if (isFinalized) setActiveTab("completed");
- 
+
           const filledItems = initItems.map(item => {
             const prevItem = prev.items.find(p => p.kpi_item_id === item.kpi_item_id);
             return prevItem
@@ -107,10 +108,10 @@ export default function SelfAssessment() {
         } else {
           setForm({ items: initItems, overall_comment: "" });
         }
- 
+
         await fetchLogs(assign._id);
       }
- 
+
       await fetchCompletedReviews();
     } catch (err) {
       console.error(err);
@@ -118,7 +119,7 @@ export default function SelfAssessment() {
       setLoading(false);
     }
   };
- 
+
   const fetchCompletedReviews = async () => {
     try {
       const res = await axios.get(`${API_BASE}/api/self-assessment/completed/${employeeId}`);
@@ -127,7 +128,7 @@ export default function SelfAssessment() {
       console.error("Completed reviews fetch error:", err);
     }
   };
- 
+
   const fetchLogs = async (assignmentId) => {
     try {
       const [logsRes, totalsRes] = await Promise.all([
@@ -141,7 +142,7 @@ export default function SelfAssessment() {
       if (totalsRes.data.success) setLogTotals(totalsRes.data.data);
     } catch (err) { console.error(err); }
   };
- 
+
   const buildProgramTotals = (allLogs) => {
     const totals = {};
     allLogs.forEach(log => {
@@ -154,31 +155,64 @@ export default function SelfAssessment() {
     });
     setProgramLogTotals(totals);
   };
- 
+
   const selectedLogKpi = form.items.find(i => i.kpi_item_id === logForm.kpi_item_id);
   const isAdmissionLogKpi = selectedLogKpi?.is_admission_kpi || false;
   const programValuesTotal = Object.values(programValues).reduce((s, v) => s + (Number(v) || 0), 0);
- 
+
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
   };
- 
+
+  // const autoFillFromLogs = () => {
+  //   if (!Object.keys(logTotals).length) return showToast("No daily logs found to auto-fill", "error");
+  //   setForm(f => ({
+  //     ...f,
+  //     items: f.items.map(item => ({
+  //       ...item,
+  //       self_value: logTotals[item.kpi_item_id] !== undefined
+  //         ? String(logTotals[item.kpi_item_id])
+  //         : item.self_value
+  //     }))
+  //   }));
+  //   setActiveTab("assessment");
+  //   showToast("Self assessment auto-filled from your daily logs! ✅");
+  // };
+
   const autoFillFromLogs = () => {
-    if (!Object.keys(logTotals).length) return showToast("No daily logs found to auto-fill", "error");
-    setForm(f => ({
-      ...f,
-      items: f.items.map(item => ({
-        ...item,
-        self_value: logTotals[item.kpi_item_id] !== undefined
-          ? String(logTotals[item.kpi_item_id])
-          : item.self_value
-      }))
-    }));
-    setActiveTab("assessment");
-    showToast("Self assessment auto-filled from your daily logs! ✅");
-  };
- 
+  if (!Object.keys(logTotals).length) return showToast("No daily logs found to auto-fill", "error");
+  
+  // ✅ Program-wise totals-ஐயும் assessmentProgramValues-ல் fill பண்ணு
+  const newAssessmentProgVals = {};
+  form.items.forEach(item => {
+    if (item.is_admission_kpi && item.program_targets?.length > 0) {
+      const progTotals = programLogTotals[item.kpi_item_id] || {};
+      if (Object.keys(progTotals).length > 0) {
+        newAssessmentProgVals[item.kpi_item_id] = {};
+        item.program_targets.forEach(pt => {
+          newAssessmentProgVals[item.kpi_item_id][pt.program_id] = progTotals[pt.program_id] || 0;
+        });
+      }
+    }
+  });
+  setAssessmentProgramValues(newAssessmentProgVals);
+
+  // self_value fill (existing logic)
+  setForm(f => ({
+    ...f,
+    items: f.items.map(item => ({
+      ...item,
+      self_value: logTotals[item.kpi_item_id] !== undefined
+        ? String(logTotals[item.kpi_item_id])
+        : item.self_value
+    }))
+  }));
+  
+  setActiveTab("assessment");
+  showToast("Self assessment auto-filled from your daily logs! ✅");
+};
+
   const handleAddLog = async () => {
     if (!logForm.kpi_item_id) return showToast("Select KPI", "error");
     if (isAdmissionLogKpi) {
@@ -186,7 +220,7 @@ export default function SelfAssessment() {
     } else {
       if (!logForm.value) return showToast("Enter a value", "error");
     }
- 
+
     setSavingLog(true);
     try {
       const kpiItem = form.items.find(i => i.kpi_item_id === logForm.kpi_item_id);
@@ -200,7 +234,13 @@ export default function SelfAssessment() {
         note:           logForm.note,
         log_date:       logForm.log_date,
         period:         assignment.period,
-        program_values: isAdmissionLogKpi ? programValues : {}
+        program_values: isAdmissionLogKpi 
+  ? Object.fromEntries(
+      Object.entries(programValues)
+        .filter(([_, v]) => v !== "" && Number(v) > 0)
+        .map(([k, v]) => [k, Number(v)])
+    ) 
+  : {}
       };
       const res = await axios.post(`${API_BASE}/api/daily-logs`, payload);
       if (res.data.success) {
@@ -215,7 +255,7 @@ export default function SelfAssessment() {
       setSavingLog(false);
     }
   };
- 
+
   const handleDeleteLog = async (id) => {
     setDeletingLog(id);
     try {
@@ -228,7 +268,7 @@ export default function SelfAssessment() {
       setDeletingLog(null);
     }
   };
- 
+
   const handleItemChange = (idx, field, value) => {
     setForm(f => {
       const items = [...f.items];
@@ -236,21 +276,21 @@ export default function SelfAssessment() {
       return { ...f, items };
     });
   };
- 
+
   const getProgress = (item) => {
     if (!item.self_value || !item.target) return 0;
     return Math.min(Math.round((parseFloat(item.self_value) / item.target) * 100), 150);
   };
- 
+
   const getProgressColor = (pct) => {
     if (pct >= 100) return "#16a34a";
     if (pct >= 75)  return "#2563eb";
     if (pct >= 50)  return "#d97706";
     return "#dc2626";
   };
- 
+
   const isFormValid = () => form.items.every(item => item.self_value !== "" && item.self_value !== null);
- 
+
   const calcOverallScore = () => {
     if (!form.items.length) return 0;
     let total = 0;
@@ -263,7 +303,7 @@ export default function SelfAssessment() {
     });
     return Math.round(total);
   };
- 
+
   const handleSubmit = async () => {
     if (!isFormValid()) return showToast("Please fill all KPI values", "error");
     setSaving(true);
@@ -299,7 +339,7 @@ export default function SelfAssessment() {
       setSaving(false);
     }
   };
- 
+
   const getRatingLabel = (score) => {
     if (score >= 90) return { label: "Outstanding",          color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0", emoji: "🏆" };
     if (score >= 75) return { label: "Exceeds Expectations", color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe", emoji: "⭐" };
@@ -307,24 +347,24 @@ export default function SelfAssessment() {
     if (score >= 45) return { label: "Needs Improvement",    color: "#ea580c", bg: "#fff7ed", border: "#fed7aa", emoji: "⚠️" };
     return             { label: "Unsatisfactory",            color: "#dc2626", bg: "#fef2f2", border: "#fecaca", emoji: "🔴" };
   };
- 
+
   const overallScore = calcOverallScore();
- 
+
   const logsByDate = logs.reduce((acc, log) => {
     if (!acc[log.log_date]) acc[log.log_date] = [];
     acc[log.log_date].push(log);
     return acc;
   }, {});
- 
+
   const formatMonthLabel = (monthKey) => {
     const [y, m] = monthKey.split("-");
     const date = new Date(parseInt(y), parseInt(m) - 1, 1);
     return date.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
   };
- 
+
   const labelStyle = { display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 5 };
   const inputStyle = { width: "100%", padding: "9px 11px", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 13, color: "#1a1a2e", background: "#fff", boxSizing: "border-box", outline: "none" };
- 
+
   if (loading) return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
       <div style={{ textAlign: "center" }}>
@@ -334,7 +374,7 @@ export default function SelfAssessment() {
       </div>
     </div>
   );
- 
+
   return (
     <EmployeeLayout>
       <style>{`
@@ -355,7 +395,7 @@ export default function SelfAssessment() {
         .prog-chip-input { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; background: #fff; border: 1.5px solid #bae6fd; border-radius: 9px; margin-bottom: 8px; transition: border-color 0.15s; }
         .prog-chip-input:focus-within { border-color: #0369a1; }
       `}</style>
- 
+
       {/* ── HEADER ── */}
       <header style={{ background: "#fff", padding: "14px 20px", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, zIndex: 50, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -365,16 +405,16 @@ export default function SelfAssessment() {
           </div>
         </div>
       </header>
- 
+
       <div style={{ padding: isMobile ? "14px" : "28px 32px", background: "#f4f6fb", minHeight: "100vh", overflowX: "hidden", boxSizing: "border-box", width: "100%" }}>
- 
+
         {/* TOAST */}
         {toast && (
           <div style={{ position: "fixed", top: 16, right: 14, left: 14, zIndex: 9999, background: toast.type === "error" ? "#ff4d4f" : "#52c41a", color: "#fff", padding: "12px 16px", borderRadius: 8, boxShadow: "0 4px 16px rgba(0,0,0,0.15)", fontWeight: 500, fontSize: 14, textAlign: "center" }}>
             {toast.msg}
           </div>
         )}
- 
+
         {!assignment ? (
           <div style={{ background: "#fff", borderRadius: 16, padding: "60px 20px", textAlign: "center", border: "1px solid #e5e7eb" }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
@@ -400,7 +440,7 @@ export default function SelfAssessment() {
                 </div>
               )}
             </div>
- 
+
             {/* ── TABS ── */}
             <div className="sa-tab-strip">
               {[
@@ -414,7 +454,7 @@ export default function SelfAssessment() {
                 </button>
               ))}
             </div>
- 
+
             {/* ═══════════════════════════════════
                 DAILY LOG TAB
             ═══════════════════════════════════ */}
@@ -423,7 +463,7 @@ export default function SelfAssessment() {
                 <div style={{ minWidth: 0 }}>
                   <div style={{ background: "#fff", borderRadius: 14, padding: isMobile ? 14 : 24, border: "1px solid #e5e7eb", marginBottom: 16 }}>
                     <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1a1a2e" }}>📝 Log Today's Progress</h3>
- 
+
                     <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 12 }}>
                       <div>
                         <label style={labelStyle}>Select KPI *</label>
@@ -443,8 +483,8 @@ export default function SelfAssessment() {
                         <input type="date" value={logForm.log_date} onChange={e => setLogForm(f => ({ ...f, log_date: e.target.value }))} style={inputStyle}/>
                       </div>
                     </div>
- 
-                    {/* ✅ Admission KPI — Program-wise entry */}
+
+                    {/* Admission KPI — Program-wise entry */}
                     {isAdmissionLogKpi && selectedLogKpi?.program_targets?.length > 0 ? (
                       <div style={{ marginBottom: 14 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -498,13 +538,13 @@ export default function SelfAssessment() {
                         </div>
                       </div>
                     )}
- 
+
                     <button onClick={handleAddLog} disabled={savingLog}
                       style={{ background: savingLog ? "#93c5fd" : "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 700, fontSize: 14, cursor: savingLog ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8, width: isMobile ? "100%" : "auto", justifyContent: "center" }}>
                       <Plus size={16}/> {savingLog ? "Saving..." : "Add Log Entry"}
                     </button>
                   </div>
- 
+
                   {/* Log History */}
                   <div style={{ background: "#fff", borderRadius: 14, padding: isMobile ? 14 : 24, border: "1px solid #e5e7eb" }}>
                     <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1a1a2e" }}>📚 Log History</h3>
@@ -538,7 +578,7 @@ export default function SelfAssessment() {
                                   <Trash2 size={14} color={deletingLog === log._id ? "#d1d5db" : "#ef4444"}/>
                                 </button>
                               </div>
-                              {/* ✅ Program-wise pills in log history */}
+                              {/* Program-wise pills in log history */}
                               {log.program_values && Object.keys(log.program_values).length > 0 && (
                                 <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px dashed #e0f2fe", display: "flex", flexWrap: "wrap", gap: 6 }}>
                                   {Object.entries(log.program_values).map(([progId, val]) => {
@@ -559,7 +599,7 @@ export default function SelfAssessment() {
                     )}
                   </div>
                 </div>
- 
+
                 {/* Sidebar */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <div style={{ background: "#fff", borderRadius: 14, padding: 18, border: "1px solid #e5e7eb" }}>
@@ -584,8 +624,8 @@ export default function SelfAssessment() {
                             <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 99, transition: "width 0.5s" }}/>
                           </div>
                           <p style={{ margin: "4px 0 0", fontSize: 11, color, fontWeight: 600, textAlign: "right" }}>{pct}%</p>
- 
-                          {/* ✅ Program-wise breakdown */}
+
+                          {/* Program-wise breakdown */}
                           {item.is_admission_kpi && item.program_targets?.length > 0 && (
                             <div style={{ marginTop: 10 }}>
                               {item.program_targets.map((pt, pi) => {
@@ -614,7 +654,7 @@ export default function SelfAssessment() {
                       );
                     })}
                   </div>
- 
+
                   <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 14, padding: 18 }}>
                     <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: 14, color: "#1e40af" }}>🪄 Auto-fill Assessment</p>
                     <p style={{ margin: "0 0 12px", fontSize: 13, color: "#3b82f6", lineHeight: 1.5 }}>Fill your self assessment automatically using the totals from your daily logs.</p>
@@ -622,7 +662,7 @@ export default function SelfAssessment() {
                       <TrendingUp size={16}/> Auto-fill from Logs
                     </button>
                   </div>
- 
+
                   <div style={{ background: "#fff", borderRadius: 14, padding: 16, border: "1px solid #e5e7eb" }}>
                     <p style={{ margin: "0 0 10px", fontWeight: 700, fontSize: 13, color: "#1a1a2e" }}>Period Details</p>
                     {[
@@ -639,7 +679,7 @@ export default function SelfAssessment() {
                 </div>
               </div>
             )}
- 
+
             {/* ═══════════════════════════════════
                 SELF ASSESSMENT TAB
             ═══════════════════════════════════ */}
@@ -662,13 +702,13 @@ export default function SelfAssessment() {
                       )}
                     </div>
                   </div>
- 
+
                   {form.items.map((item, idx) => {
                     const pct = getProgress(item);
                     const color = getProgressColor(pct);
                     const isOpen = expandedItem === idx;
                     const logTotal = logTotals[item.kpi_item_id];
- 
+
                     return (
                       <div key={idx} style={{ background: "#fff", borderRadius: 12, marginBottom: 12, border: `1px solid ${item.is_admission_kpi ? "#bae6fd" : item.self_value !== "" ? "#e5e7eb" : "#fde68a"}`, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
                         <div className="kpi-card-header" onClick={() => !isHRReviewed && setExpandedItem(isOpen ? null : idx)}
@@ -705,7 +745,7 @@ export default function SelfAssessment() {
                             {!isHRReviewed && (isOpen ? <ChevronUp size={16} color="#9ca3af"/> : <ChevronDown size={16} color="#9ca3af"/>)}
                           </div>
                         </div>
- 
+
                         {item.self_value !== "" && (
                           <div style={{ padding: "0 14px 4px" }}>
                             <div style={{ background: "#f3f4f6", borderRadius: 99, height: 5, overflow: "hidden" }}>
@@ -713,6 +753,7 @@ export default function SelfAssessment() {
                             </div>
                           </div>
                         )}
+
                         {isHRReviewed && item.is_admission_kpi && item.program_targets?.length > 0 && (
                           <div style={{ padding: "12px 14px", borderTop: "1px solid #e0f2fe", background: "#f8fbff" }}>
                             <p style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 700, color: "#0369a1" }}>🎓 Program-wise Target Breakdown</p>
@@ -731,7 +772,7 @@ export default function SelfAssessment() {
                             </div>
                           </div>
                         )}
- 
+
                         {isOpen && !isHRReviewed && (
                           <div style={{ padding: "14px", borderTop: "1px solid #f3f4f6" }}>
                             {item.is_admission_kpi && item.program_targets?.length > 0 && (
@@ -755,8 +796,8 @@ export default function SelfAssessment() {
                                 </div>
                               </div>
                             )}
- 
-                            <div style={{ marginBottom: 12 }}>
+
+                            {/* <div style={{ marginBottom: 12 }}>
                               <label style={labelStyle}>{item.is_admission_kpi ? "Your Total Admissions *" : "Your Achievement *"}</label>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                                 <input type="number" value={item.self_value} onChange={e => handleItemChange(idx, "self_value", e.target.value)} placeholder={`e.g. ${item.target}`} min="0" style={{ ...inputStyle, maxWidth: isMobile ? "100%" : 160 }}/>
@@ -768,8 +809,106 @@ export default function SelfAssessment() {
                                 )}
                               </div>
                               {item.is_admission_kpi && <p style={{ margin: "5px 0 0", fontSize: 11, color: "#0369a1" }}>💡 Enter your overall total admissions across all programs</p>}
-                            </div>
- 
+                            </div> */}
+
+                            <div style={{ marginBottom: 12 }}>
+  <label style={labelStyle}>
+    {item.is_admission_kpi ? "Your Total Admissions *" : "Your Achievement *"}
+  </label>
+
+  {/* ── ADMISSION KPI: dual-mode UI ── */}
+  {item.is_admission_kpi && item.program_targets?.length > 0 ? (
+    <div>
+      {/* Program-wise input rows */}
+      <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: 12, marginBottom: 10 }}>
+        <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "#0369a1" }}>
+          🎓 Program-wise Entry
+          <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 400, color: "#6b7280" }}>(auto-sums to total)</span>
+        </p>
+        {item.program_targets.map((pt) => {
+          const currentProgVals = assessmentProgramValues[item.kpi_item_id] || {};
+          return (
+            <div key={pt.program_id} className="prog-chip-input">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{pt.program_name}</p>
+                <p style={{ margin: "1px 0 0", fontSize: 10, color: "#6b7280" }}>Target: {pt.target} admissions</p>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                <input
+                  type="number" min="0"
+                  value={currentProgVals[pt.program_id] ?? ""}
+                  onChange={e => {
+                    const newVals = {
+                      ...(assessmentProgramValues[item.kpi_item_id] || {}),
+                      [pt.program_id]: e.target.value
+                    };
+                    setAssessmentProgramValues(prev => ({
+                      ...prev,
+                      [item.kpi_item_id]: newVals
+                    }));
+                    // Auto-sum → self_value
+                    const sum = Object.values(newVals).reduce((s, v) => s + (Number(v) || 0), 0);
+                    handleItemChange(idx, "self_value", String(sum));
+                  }}
+                  placeholder="0"
+                  style={{ width: 70, padding: "7px 10px", border: "1.5px solid #bae6fd", borderRadius: 7, fontSize: 14, fontWeight: 700, color: "#0369a1", textAlign: "center", outline: "none", background: "#fff" }}
+                />
+                <span style={{ fontSize: 11, color: "#6b7280" }}>admits</span>
+              </div>
+            </div>
+          );
+        })}
+        {/* Auto-sum display */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "#0369a1", borderRadius: 8, marginTop: 4 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>🎯 Auto Total</span>
+          <span style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "monospace" }}>
+            {Object.values(assessmentProgramValues[item.kpi_item_id] || {}).reduce((s, v) => s + (Number(v) || 0), 0)}
+          </span>
+        </div>
+      </div>
+
+      {/* OR — Direct total override */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 600 }}>Or enter total directly:</span>
+        <input
+          type="number" min="0"
+          value={item.self_value}
+          onChange={e => handleItemChange(idx, "self_value", e.target.value)}
+          placeholder={`e.g. ${item.target}`}
+          style={{ ...inputStyle, maxWidth: 120 }}
+        />
+        <span style={{ fontSize: 13, color: "#6b7280" }}>{item.unit}</span>
+        {logTotal !== undefined && (
+          <button onClick={() => handleItemChange(idx, "self_value", String(logTotal))}
+            style={{ fontSize: 12, color: "#2563eb", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontWeight: 600 }}>
+            Use log total ({logTotal})
+          </button>
+        )}
+      </div>
+      {/* <p style={{ margin: "5px 0 0", fontSize: 11, color: "#0369a1" }}>
+        💡 Program-wise பண்ணினா auto-sum ஆகும் — or total directly type பண்ணலாம்
+      </p> */}
+    </div>
+  ) : (
+    /* ── NORMAL KPI ── */
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      <input
+        type="number" value={item.self_value}
+        onChange={e => handleItemChange(idx, "self_value", e.target.value)}
+        placeholder={`e.g. ${item.target}`} min="0"
+        style={{ ...inputStyle, maxWidth: isMobile ? "100%" : 160 }}
+      />
+      <span style={{ fontSize: 13, color: "#6b7280" }}>{item.unit}</span>
+      {logTotal !== undefined && (
+        <button onClick={() => handleItemChange(idx, "self_value", String(logTotal))}
+          style={{ fontSize: 12, color: "#2563eb", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontWeight: 600 }}>
+          Use log total ({logTotal})
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
                             {item.self_value !== "" && (
                               <div style={{ background: `${color}15`, borderRadius: 8, padding: "8px 12px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
                                 <span style={{ fontSize: 13, color, fontWeight: 600 }}>
@@ -778,7 +917,7 @@ export default function SelfAssessment() {
                                 <span style={{ fontSize: 14, fontWeight: 800, color }}>{pct}%</span>
                               </div>
                             )}
- 
+
                             <div>
                               <label style={labelStyle}>Comment (Optional)</label>
                               <textarea value={item.self_comment} onChange={e => handleItemChange(idx, "self_comment", e.target.value)}
@@ -790,14 +929,14 @@ export default function SelfAssessment() {
                       </div>
                     );
                   })}
- 
+
                   <div style={{ background: "#fff", borderRadius: 12, padding: 14, border: "1px solid #e5e7eb", marginBottom: 16 }}>
                     <label style={{ ...labelStyle, fontSize: 14 }}>Overall Comment for this Period</label>
                     <textarea value={form.overall_comment} onChange={e => !isHRReviewed && setForm(f => ({ ...f, overall_comment: e.target.value }))}
                       placeholder="Summarize your overall performance..." rows={4} readOnly={isHRReviewed}
                       style={{ ...inputStyle, resize: "vertical", background: isHRReviewed ? "#f9fafb" : "#fff", color: isHRReviewed ? "#6b7280" : "#1a1a2e", cursor: isHRReviewed ? "not-allowed" : "text" }}/>
                   </div>
- 
+
                   {isHRReviewed ? (
                     <div style={{ width: "100%", padding: "16px", borderRadius: 10, background: "#f0fdf4", border: "1px solid #bbf7d0", textAlign: "center", boxSizing: "border-box" }}>
                       <CheckCircle size={22} color="#16a34a" style={{ marginBottom: 6 }}/>
@@ -815,7 +954,7 @@ export default function SelfAssessment() {
                     </>
                   )}
                 </div>
- 
+
                 {/* RIGHT sidebar */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <div style={{ background: "#fff", borderRadius: 14, padding: 18, border: "1px solid #e5e7eb", textAlign: "center" }}>
@@ -871,7 +1010,7 @@ export default function SelfAssessment() {
                 </div>
               </div>
             )}
- 
+
             {/* ═══════════════════════════════════
                 COMPLETED TAB
             ═══════════════════════════════════ */}
@@ -888,12 +1027,11 @@ export default function SelfAssessment() {
                     {completedReviews.map((review, ri) => {
                       const finalScore = review.final_score ?? review.self_score ?? 0;
                       const rating = getRatingLabel(finalScore);
-                      // ✅ monthly_logs comes directly from backend now
                       const monthlyLogs = review.monthly_logs || [];
- 
+
                       return (
                         <div key={ri} style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
- 
+
                           {/* Review Header */}
                           <div className="review-card-header"
                             style={{ padding: isMobile ? "14px" : "20px 24px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center", background: rating.bg, gap: 12 }}>
@@ -913,11 +1051,11 @@ export default function SelfAssessment() {
                               </div>
                             </div>
                           </div>
- 
+
                           {/* Review body */}
                           <div style={{ padding: isMobile ? "14px" : "20px 24px", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
                             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
- 
+
                               {/* Score comparison */}
                               <div style={{ background: "#f8fafc", borderRadius: 10, padding: 14 }}>
                                 <p style={{ margin: "0 0 10px", fontWeight: 700, fontSize: 13, color: "#374151" }}>📊 Score Comparison</p>
@@ -932,8 +1070,8 @@ export default function SelfAssessment() {
                                   </div>
                                 </div>
                               </div>
- 
-                              {/* KPI Breakdown */}
+
+                              {/* KPI Breakdown — FIX: uses review.items with merged program_targets */}
                               <div style={{ background: "#f8fafc", borderRadius: 10, padding: 14 }}>
                                 <p style={{ margin: "0 0 10px", fontWeight: 700, fontSize: 13, color: "#374151" }}>🎯 KPI Breakdown</p>
                                 {(review.items || []).map((item, ii) => {
@@ -954,8 +1092,8 @@ export default function SelfAssessment() {
                                         <span style={{ fontSize: 12, color: "#6b7280" }}>Self: <b style={{ color: "#2563eb" }}>{item.self_value} {item.unit}</b></span>
                                         {item.hr_value !== undefined && <span style={{ fontSize: 12, color: "#6b7280" }}>HR: <b style={{ color: c }}>{item.hr_value} {item.unit}</b></span>}
                                       </div>
- 
-                                      {/* ✅ Program-wise targets grid */}
+
+                                      {/* ✅ FIX: Program-wise targets grid — now shows because backend merges program_targets */}
                                       {item.is_admission_kpi && item.program_targets?.length > 0 && (
                                         <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 8, padding: 10, marginBottom: 8 }}>
                                           <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#0369a1" }}>🎓 Program-wise Targets</p>
@@ -973,7 +1111,7 @@ export default function SelfAssessment() {
                                           </div>
                                         </div>
                                       )}
- 
+
                                       <div style={{ background: "#e5e7eb", borderRadius: 99, height: 6, overflow: "hidden" }}>
                                         <div style={{ width: `${hrPct}%`, height: "100%", background: c, borderRadius: 99 }}/>
                                       </div>
@@ -983,23 +1121,20 @@ export default function SelfAssessment() {
                                   );
                                 })}
                               </div>
- 
-                              {/* ✅ Month-wise Log Summary — from backend monthly_logs */}
+
+                              {/* Month-wise Log Summary */}
                               {monthlyLogs.length > 0 && (
                                 <div style={{ background: "#f8fafc", borderRadius: 10, padding: 14 }}>
                                   <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 13, color: "#374151" }}>📅 Month-wise Log Summary</p>
                                   {monthlyLogs.map((monthData) => (
-                                    <MonthSection
-                                      key={monthData.month}
-                                      monthLabel={formatMonthLabel(monthData.month)}
-                                      monthData={monthData}
-                                      isMobile={isMobile}
-                                    />
+                                    <div key={monthData.month} style={{ marginBottom: 12 }}>
+                                      <p style={{ margin: "0 0 6px", fontSize: 12, fontWeight: 700, color: "#374151" }}>{formatMonthLabel(monthData.month)}</p>
+                                    </div>
                                   ))}
                                 </div>
                               )}
                             </div>
- 
+
                             {/* Right column */}
                             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                               <div style={{ background: "#f8fafc", borderRadius: 10, padding: 14 }}>
@@ -1054,84 +1189,5 @@ export default function SelfAssessment() {
         )}
       </div>
     </EmployeeLayout>
-  );
-}
- 
-/* ✅ MonthSection — uses backend-provided monthData directly */
-function MonthSection({ monthLabel, monthData, isMobile }) {
-  const [open, setOpen] = useState(false);
-  const totalEntries = monthData.kpis.reduce((s, k) => s + k.entries.length, 0);
-  const monthTotal   = monthData.kpis.reduce((s, k) => s + k.total, 0);
- 
-  return (
-    <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 10, overflow: "hidden" }}>
-      {/* Month Header */}
-      <div onClick={() => setOpen(o => !o)}
-        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 14px", background: open ? "#f0f9ff" : "#fff", cursor: "pointer", borderBottom: open ? "1px solid #e0f2fe" : "none", transition: "background 0.15s", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Calendar size={14} color="#0369a1"/>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{monthLabel}</span>
-          <span style={{ fontSize: 11, color: "#6b7280" }}>{totalEntries} entries</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1", background: "#e0f2fe", padding: "2px 10px", borderRadius: 99 }}>
-            Total: {monthTotal}
-          </span>
-          {open ? <ChevronUp size={15} color="#6b7280"/> : <ChevronDown size={15} color="#6b7280"/>}
-        </div>
-      </div>
- 
-      {/* Month Body */}
-      {open && (
-        <div style={{ padding: "12px 14px" }}>
-          {monthData.kpis.map((kpi, ki) => (
-            <div key={ki} style={{ marginBottom: 16, paddingBottom: 16, borderBottom: ki < monthData.kpis.length - 1 ? "1px solid #f3f4f6" : "none" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 6 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#1f2937" }}>{kpi.kpi_name}</span>
-                  {kpi.program_totals?.length > 0 && (
-                    <span style={{ fontSize: 10, background: "#f0f9ff", color: "#0369a1", padding: "1px 7px", borderRadius: 99, border: "1px solid #bae6fd", fontWeight: 700 }}>🎓 Admission</span>
-                  )}
-                </div>
-                <span style={{ fontSize: 13, fontWeight: 800, color: "#0369a1" }}>{kpi.total} {kpi.unit}</span>
-              </div>
- 
-              {/* ✅ Program-wise grid — directly from backend */}
-              {kpi.program_totals?.length > 0 && (
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(auto-fill, minmax(100px, 1fr))", gap: 6, marginBottom: 8 }}>
-                    {kpi.program_totals.map((pt, pi) => (
-                      <div key={pi} style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 7, padding: "8px 10px", textAlign: "center" }}>
-                        <p style={{ margin: "0 0 3px", fontSize: 10, color: "#6b7280", fontWeight: 600, lineHeight: 1.2 }}>{pt.program_name}</p>
-                        <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#0369a1", fontFamily: "monospace", lineHeight: 1 }}>{pt.total}</p>
-                        <p style={{ margin: "2px 0 0", fontSize: 9, color: "#9ca3af" }}>admissions</p>
-                      </div>
-                    ))}
-                    <div style={{ background: "#0369a1", borderRadius: 7, padding: "8px 10px", textAlign: "center" }}>
-                      <p style={{ margin: "0 0 3px", fontSize: 10, color: "#bae6fd", fontWeight: 600 }}>Total</p>
-                      <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "monospace", lineHeight: 1 }}>{kpi.total}</p>
-                      <p style={{ margin: "2px 0 0", fontSize: 9, color: "#e0f2fe" }}>this month</p>
-                    </div>
-                  </div>
-                </div>
-              )}
- 
-              {/* Individual log entries */}
-              {kpi.entries.map((entry, ei) => (
-                <div key={ei} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "#f8fafc", borderRadius: 6, marginBottom: 4, fontSize: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ color: "#6b7280" }}>
-                      {new Date(entry.log_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                    </span>
-                    {entry.note && <span style={{ color: "#9ca3af", fontStyle: "italic", fontSize: 11 }}>{entry.note}</span>}
-                  </div>
-                  <span style={{ fontWeight: 700, color: "#0369a1" }}>{entry.value} {kpi.unit}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }

@@ -229,11 +229,11 @@ export default function MyDocuments() {
 
     return (
       <div className="col-md-6">
-        {/* Hidden file input — only when not active */}
+        {/* FIX 3: PDF removed from accept */}
         {!isEmployeeActive && (
           <input
             type="file"
-            accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+            accept=".jpg,.jpeg,.png,.doc,.docx"
             style={{ display: "none" }}
             ref={el => (fileRefs.current[docType] = el)}
             onChange={e => handleUpload(docType, e.target.files[0])}
@@ -286,10 +286,8 @@ export default function MyDocuments() {
                 >
                   <Download size={13} /> {downloading[docType] ? "..." : "Download"}
                 </button>
-                {/* ✅ Active ஆனா Replace காட்டாதே */}
               </>
             ) : (
-              // ✅ Active ஆனா Upload காட்டாதே
               !isEmployeeActive ? (
                 <button
                   onClick={() => fileRefs.current[docType]?.click()}
@@ -386,7 +384,6 @@ export default function MyDocuments() {
                             className="btn btn-sm btn-primary d-flex align-items-center gap-1">
                             <Download size={12} /> {downloading[side.type] ? "..." : "Download"}
                           </button>
-                          {/* ✅ Active ஆனா Replace இல்லை */}
                         </>
                       ) : (
                         !isEmployeeActive ? (
@@ -445,7 +442,6 @@ export default function MyDocuments() {
             </div>
           </div>
 
-          {/* Saved value display */}
           {isUploaded && (
             <div className="mb-2" style={{
               background: "#f0fdf4", borderRadius: 8, padding: "6px 10px",
@@ -455,7 +451,6 @@ export default function MyDocuments() {
             </div>
           )}
 
-          {/* ✅ Active ஆனா input + save காட்டாதே */}
           {!isEmployeeActive ? (
             <>
               <div className="d-flex gap-2">
@@ -537,7 +532,7 @@ export default function MyDocuments() {
 
         <div className="container-fluid" style={{ padding: 28 }}>
 
-          {/* ✅ Active Banner */}
+          {/* Active Banner */}
           {isEmployeeActive && (
             <div style={{
               background: "#f0fdf4",
@@ -560,9 +555,9 @@ export default function MyDocuments() {
           {/* Stats */}
           <div className="row g-3 mb-4">
             {[
-              { label: "HR Documents",       value: `${hrDocs.length} / ${HR_DOC_TYPES.length}`,                  icon: <ShieldCheck size={22} className="text-white" />, bg: "linear-gradient(135deg,#2563eb,#1e40af)" },
-              { label: "Personal Documents", value: `${totalPersonalUploaded} / ${ALL_PERSONAL_DOCS.length}`,     icon: <FileCheck   size={22} className="text-white" />, bg: "linear-gradient(135deg,#7c3aed,#5b21b6)" },
-              { label: "Total Documents",    value: hrDocs.length + totalPersonalUploaded,                        icon: <FileText    size={22} className="text-white" />, bg: "linear-gradient(135deg,#059669,#065f46)" },
+              { label: "HR Documents",       value: `${hrDocs.length} / ${HR_DOC_TYPES.length}`,              icon: <ShieldCheck size={22} className="text-white" />, bg: "linear-gradient(135deg,#2563eb,#1e40af)" },
+              { label: "Personal Documents", value: `${totalPersonalUploaded} / ${ALL_PERSONAL_DOCS.length}`, icon: <FileCheck   size={22} className="text-white" />, bg: "linear-gradient(135deg,#7c3aed,#5b21b6)" },
+              { label: "Total Documents",    value: hrDocs.length + totalPersonalUploaded,                    icon: <FileText    size={22} className="text-white" />, bg: "linear-gradient(135deg,#059669,#065f46)" },
             ].map((s, i) => (
               <div key={i} className="col-md-4">
                 <div className="card border-0 text-white" style={{ background: s.bg }}>
@@ -685,6 +680,30 @@ export default function MyDocuments() {
                   }
                   <RationCardBlock />
 
+                  {/* FIX 1: Gas Book FileCard — Identity section */}
+                  <FileCard
+                    docType="Gas Book"
+                    label="Gas Book"
+                    category="IDENTITY"
+                    required={false}
+                  />
+
+                  {/* FIX 2: Reference Number 1 & 2 TextCards — Identity section */}
+                  <TextCard
+                    docType="Reference Number 1"
+                    label="Reference Number 1"
+                    category="IDENTITY"
+                    placeholder="Enter Reference Number 1"
+                    iconColor="#cf1322"
+                  />
+                  <TextCard
+                    docType="Reference Number 2"
+                    label="Reference Number 2"
+                    category="IDENTITY"
+                    placeholder="Enter Reference Number 2"
+                    iconColor="#cf1322"
+                  />
+
                   {/* ── 2. PF & ESI ── */}
                   <SectionDivider title="PF & ESI Details" icon={<CreditCard size={16} />} color="#7c3aed" />
                   {TEXT_FIELD_DOCS.map((doc) => (
@@ -775,7 +794,6 @@ export default function MyDocuments() {
                                 >
                                   <Download size={13} /> {downloading[doc.docType] ? "..." : "Download"}
                                 </button>
-                                {/* ✅ No replace — active employee */}
                               </div>
                             </div>
                           </div>

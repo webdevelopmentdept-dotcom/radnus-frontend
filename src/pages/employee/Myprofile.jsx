@@ -169,7 +169,7 @@ export default function MyProfile() {
   const TABS = [
     {id:"personal",   icon:<UserCircle size={15}/>, label:"Personal Info"},
     {id:"employment", icon:<Briefcase size={15}/>,  label:"Employment"},
-    {id:"password",   icon:<KeyRound size={15}/>,   label:"Security"},
+    // {id:"password",   icon:<KeyRound size={15}/>,   label:"Security"},
   ];
 
   const GradeBadge = () => {
@@ -515,7 +515,7 @@ export default function MyProfile() {
           )}
 
           {/* ── Security Tab ── */}
-          {activeTab==="password" && (
+          {/* {activeTab==="password" && (
             <div className="mp-card">
               <div className="mp-card-head">
                 <div className="mp-card-icon dark"><ShieldCheck size={15} color="#fff"/></div>
@@ -566,7 +566,7 @@ export default function MyProfile() {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </EmployeeLayout>
