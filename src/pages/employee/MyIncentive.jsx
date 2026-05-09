@@ -37,63 +37,6 @@ function metricLabel(plan) {
 }
 
 // ── Per-KPI incentive calculator (mirrors HR side) ────────────────────────────
-// function calcKpiIncentive(plan, kpiBreakdown = [], salary = 0) {
-//   const normalize = (s) => (s || "").toLowerCase().trim();
-//   const kpiConfigs = plan?.kpi_configs || [];
-//   if (!kpiConfigs.length) return { rows: [], total: 0 };
-
-//   let total = 0;
-//   const rows = kpiConfigs.map(cfg => {
-//     const kpiData = kpiBreakdown.find(k => normalize(k.kpi_name) === normalize(cfg.kpi_name));
-
-//     let achPct = 0;
-//     if (kpiData) {
-//       if (kpiData.target && Number(kpiData.target) > 0 && kpiData.actual_value != null) {
-//         achPct = Math.min(Math.round((Number(kpiData.actual_value) / Number(kpiData.target)) * 100), 100);
-//       } else if (kpiData.pct_achieved != null) {
-//         achPct = Math.round(kpiData.pct_achieved);
-//       } else {
-//         achPct = Math.round(kpiData.actual_value || 0);
-//       }
-//     }
-
-//     const slab = (cfg.slabs || []).find(s => achPct >= s.min_score && achPct <= s.max_score);
-//     let amt = 0;
-//     let slabDesc = "No Bonus";
-
-//     if (slab && slab.type !== "none" && slab.value > 0) {
-//       if (slab.type === "target_percentage") {
-//         amt = Math.round((slab.value / 100) * Number(cfg.target));
-//         slabDesc = `${slab.value}% of Target`;
-//       } else if (slab.type === "percentage") {
-//         amt = Math.round((slab.value / 100) * salary);
-//         slabDesc = `${slab.value}% of Salary`;
-//       } else {
-//         amt = slab.value;
-//         slabDesc = `₹${Number(slab.value).toLocaleString("en-IN")} Fixed`;
-//       }
-//       total += amt;
-//     }
-
-//     const achColor = achPct >= 90 ? "#16a34a" : achPct >= 70 ? "#6366f1" : achPct >= 50 ? "#d97706" : "#dc2626";
-
-//     return {
-//       kpi_name:  cfg.kpi_name,
-//       weight:    cfg.weight,
-//       target:    kpiData?.target ?? cfg.target,
-//       actual:    kpiData?.actual_value,
-//       unit:      kpiData?.unit || "",
-//       achPct,
-//       achColor,
-//       slabs:     cfg.slabs || [],
-//       slab,
-//       slabDesc,
-//       amt,
-//     };
-//   });
-
-//   return { rows, total };
-// }
 function calcKpiIncentive(plan, kpiBreakdown = [], salary = 0) {
   const normalize = (s) => (s || "").toLowerCase().trim();
   const kpiConfigs = plan?.kpi_configs || [];
@@ -692,7 +635,7 @@ export default function MyIncentive() {
                                         </tr>
                                       </>
                                     ) : (
-                                      // ── Normal KPI row (existing code) ──
+                                      // ── Normal KPI row ──
                                       <tr key={ri} style={{ borderBottom: "1px solid #f3f4f6" }}>
                                         <td style={{ padding: "11px 12px", fontWeight: 700, color: "#1f2937", fontSize: 13 }}>
                                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -753,40 +696,74 @@ export default function MyIncentive() {
                           </div>
                         )}
 
-                        {/* ── 4. Slab Structure (what slabs exist in the plan) ── */}
+                        {/* ── 4. Slab Structure ── */}
                         {isKpi && (r.plan_id?.kpi_configs || []).length > 0 && (
                           <div style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", border: "1px solid #e5e7eb", marginBottom: 16 }}>
                             <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>📊 Slab Structure</p>
                             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                               {r.plan_id.kpi_configs.map((cfg, ci) => (
-                                cfg.slabs?.length > 0 && (
+                                (cfg.slabs?.length > 0 || cfg.is_admission_kpi) && (
                                   <div key={ci}>
                                     <p style={{ margin: "0 0 6px", fontSize: 12, fontWeight: 700, color: "#374151" }}>
                                       <Target size={12} color="#6366f1" style={{ marginRight: 4 }} />
                                       {cfg.kpi_name} <span style={{ color: "#9ca3af", fontWeight: 400 }}>(target: {cfg.target})</span>
                                     </p>
-                                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                                      {cfg.slabs.map((slab, si) => {
-                                        const isMatched = kpiRows.find(row =>
-                                          (row.kpi_name || "").toLowerCase().trim() === (cfg.kpi_name || "").toLowerCase().trim()
-                                        )?.slab === slab;
-                                        return (
-                                          <div key={si} style={{
-                                            padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600,
-                                            border: isMatched ? "2px solid #6366f1" : "1px solid #e5e7eb",
-                                            background: isMatched ? "#eef2ff" : slab.type === "none" ? "#f3f4f6" : "#fff",
-                                            color: isMatched ? "#4f46e5" : slab.type === "none" ? "#9ca3af" : "#374151",
-                                          }}>
-                                            {slab.min_score}–{slab.max_score}%:&nbsp;
-                                            {slab.type === "none" ? "No Bonus"
-                                              : slab.type === "target_percentage" ? `${slab.value}% of Target`
-                                                : slab.type === "percentage" ? `${slab.value}% of Salary`
-                                                  : `₹${Number(slab.value).toLocaleString("en-IN")}`}
-                                            {isMatched && <span style={{ marginLeft: 4 }}>← You</span>}
+                                    {cfg.is_admission_kpi ? (
+                                      // ── Admission KPI: program-wise slabs ──
+                                      (cfg.program_slabs || []).map((ps, psi) => (
+                                        <div key={psi} style={{ marginBottom: 10 }}>
+                                          <p style={{ margin: "0 0 6px", fontSize: 12, fontWeight: 700, color: "#0369a1" }}>
+                                            📚 {ps.program_name}
+                                          </p>
+                                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                            {ps.slabs.map((slab, si) => {
+                                              const isMatched = kpiRows
+                                                .find(row => row.kpi_name === cfg.kpi_name)
+                                                ?.programDetails?.find(pd => pd.program_name === ps.program_name)
+                                                ?.slabDesc?.includes(`${slab.min_score}–${slab.max_score}`);
+                                              return (
+                                                <div key={si} style={{
+                                                  padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600,
+                                                  border: isMatched ? "2px solid #0369a1" : "1px solid #bae6fd",
+                                                  background: isMatched ? "#e0f2fe" : "#f0f9ff",
+                                                  color: isMatched ? "#0369a1" : "#374151",
+                                                }}>
+                                                  {slab.min_score}–{slab.max_score}%:&nbsp;
+                                                  {slab.type === "none" ? "No Bonus"
+                                                    : slab.type === "target_percentage" ? `${slab.value}% of Target`
+                                                    : `₹${Number(slab.value).toLocaleString("en-IN")}`}
+                                                  {isMatched && <span style={{ marginLeft: 4 }}>← You</span>}
+                                                </div>
+                                              );
+                                            })}
                                           </div>
-                                        );
-                                      })}
-                                    </div>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      // ── Normal KPI slabs ──
+                                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                        {cfg.slabs.map((slab, si) => {
+                                          const isMatched = kpiRows.find(row =>
+                                            (row.kpi_name || "").toLowerCase().trim() === (cfg.kpi_name || "").toLowerCase().trim()
+                                          )?.slab === slab;
+                                          return (
+                                            <div key={si} style={{
+                                              padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600,
+                                              border: isMatched ? "2px solid #6366f1" : "1px solid #e5e7eb",
+                                              background: isMatched ? "#eef2ff" : slab.type === "none" ? "#f3f4f6" : "#fff",
+                                              color: isMatched ? "#4f46e5" : slab.type === "none" ? "#9ca3af" : "#374151",
+                                            }}>
+                                              {slab.min_score}–{slab.max_score}%:&nbsp;
+                                              {slab.type === "none" ? "No Bonus"
+                                                : slab.type === "target_percentage" ? `${slab.value}% of Target`
+                                                  : slab.type === "percentage" ? `${slab.value}% of Salary`
+                                                    : `₹${Number(slab.value).toLocaleString("en-IN")}`}
+                                              {isMatched && <span style={{ marginLeft: 4 }}>← You</span>}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
                                   </div>
                                 )
                               ))}
