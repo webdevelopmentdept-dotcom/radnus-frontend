@@ -497,7 +497,7 @@ export default function RetentionPlan({ role = "hr" }) {
           </div>
           <div>
             <h4 className="mb-0 fw-bold">My Retention Plan</h4>
-            <p className="mb-0 text-muted" style={{ fontSize:12 }}>Radnus Policy 3.38 — Custom Retention Plan for Critical Positions</p>
+            <p className="mb-0 text-muted" style={{ fontSize:12 }}>Custom Retention Plan for Critical Positions</p>
           </div>
         </div>
         <div className="alert alert-info d-flex align-items-center gap-2 mb-4" style={{ fontSize:13 }}>
@@ -582,7 +582,7 @@ export default function RetentionPlan({ role = "hr" }) {
           </div>
           <div>
             <h4 className="mb-0 fw-bold">Custom Retention Plans</h4>
-            <p className="mb-0 text-muted" style={{ fontSize:12 }}>Radnus Policy 3.38 · Personalised plans for critical positions</p>
+            <p className="mb-0 text-muted" style={{ fontSize:12 }}>Personalised plans for critical positions</p>
           </div>
         </div>
         <div className="d-flex gap-2">

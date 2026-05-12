@@ -161,7 +161,6 @@ function HistoryTimeline({ history }) {
 }
 
 // ── Dept Salary Band Info Box (modal) ─────────────────────────────────────────
-// Shows ONLY the band for employee's department + selected grade
 function DeptSalaryBandInfo({ band, loading, deptName }) {
   if (loading) {
     return (
@@ -170,7 +169,6 @@ function DeptSalaryBandInfo({ band, loading, deptName }) {
       </div>
     );
   }
-  // No band found for this dept+grade combo — show nothing (don't show other dept bands)
   if (!band) return null;
 
   const hasAny = band.salary_band_min || band.salary_band_mid || band.salary_band_max;
@@ -219,7 +217,6 @@ function DeptSalaryBandInfo({ band, loading, deptName }) {
 }
 
 // ── Salary Scale Selector ─────────────────────────────────────────────────────
-// Uses dept band if available (for this employee's dept), else falls back to global grade band
 function SalaryScaleSelector({ grade, deptBand, value, onChange }) {
   const activeBand = (deptBand && (deptBand.salary_band_min || deptBand.salary_band_mid || deptBand.salary_band_max))
     ? deptBand : grade;
@@ -323,7 +320,6 @@ function DeptSalaryBadge({ assignment, deptBands }) {
   const gradeId     = assignment.grade_id?._id?.toString() || assignment.grade_id?.toString();
   const scalePoint  = assignment.salary_scale_point;
 
-  // ✅ KEY FIX: match by employee's department name OR id, AND grade
   const band = deptBands.find(b => {
     const bGrade = b.grade_id?._id?.toString() || b.grade_id?.toString();
     const bDept  = b.department_id?._id?.toString() || b.department_id?.toString();
@@ -366,7 +362,6 @@ export default function AssignGrade() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [toast,         setToast]         = useState(null);
 
-  // Dept band for modal (only this employee's dept + selected grade)
   const [modalDeptBand,        setModalDeptBand]        = useState(null);
   const [modalDeptBandLoading, setModalDeptBandLoading] = useState(false);
 
@@ -376,8 +371,6 @@ export default function AssignGrade() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  // ✅ KEY FIX: When employee OR grade changes in modal, find the band that matches
-  // BOTH this employee's department AND the selected grade (from already-fetched deptBands)
   useEffect(() => {
     if (!form.employee_id || !form.grade_id) {
       setModalDeptBand(null);
@@ -393,7 +386,6 @@ export default function AssignGrade() {
 
     setModalDeptBandLoading(true);
 
-    // Filter from already-loaded deptBands — no extra API call needed
     const matched = deptBands.find(b => {
       const bGrade = b.grade_id?._id?.toString() || b.grade_id?.toString();
       const bDept  = b.department_id?._id?.toString() || b.department_id?.toString();
@@ -530,7 +522,6 @@ export default function AssignGrade() {
     }))
   ).sort((a, b) => new Date(b.changed_at) - new Date(a.changed_at));
 
-  // Get dept band for view modal
   const getAssignmentDeptBand = (assignment) => {
     const empDeptName = assignment.employee_id?.department;
     const empDeptId   = assignment.employee_id?.department_id || assignment.employee_id?.departmentId;
@@ -547,7 +538,18 @@ export default function AssignGrade() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="ag-page" style={{ fontFamily: "'Segoe UI', sans-serif", minHeight: "100vh", background: "#f4f6fb" }}>
+    // ✅ SCROLL FIX: overflowY auto + height 100vh added
+    <div
+      className="ag-page"
+      style={{
+        fontFamily: "'Segoe UI', sans-serif",
+        minHeight: "100vh",
+        height: "100vh",
+        overflowY: "auto",
+        boxSizing: "border-box",
+        background: "#f4f6fb",
+      }}
+    >
       <style>{STYLES}</style>
 
       {/* Toast */}
@@ -638,7 +640,7 @@ export default function AssignGrade() {
           ) : (
             <>
               {/* Desktop Table */}
-              <div className="ag-table-wrap" style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              <div className="ag-table-wrap" style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", overflowX: "auto", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e5e7eb" }}>
@@ -863,7 +865,6 @@ export default function AssignGrade() {
                       </div>
                     </div>
 
-                    {/* Dept salary band — only this employee's dept */}
                     {viewDeptBand ? (
                       <div style={{ marginBottom: 16 }}>
                         <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>
@@ -997,21 +998,6 @@ export default function AssignGrade() {
                 </select>
               </div>
 
-              {/* Grade Preview */}
-              {/* {selectedGrade && (() => {
-                const m = BGR_META[selectedGrade.bgr_stage] || BGR_META.Build;
-                return (
-                  <div style={{ background: m.bg, border: `1px solid ${m.border}`, borderRadius: 10, padding: "12px 16px", marginBottom: 16 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                      <span style={{ background: "#1a1a2e", color: "#fff", borderRadius: 6, padding: "3px 10px", fontSize: 13, fontWeight: 800 }}>{selectedGrade.level}</span>
-                      <span style={{ fontWeight: 700, color: "#1a1a2e", fontSize: 14 }}>{selectedGrade.designation}</span>
-                      <span style={{ background: m.bg, color: m.color, border: `1px solid ${m.border}`, borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700, marginLeft: "auto" }}>{selectedGrade.bgr_stage}</span>
-                    </div>
-                    <div style={{ fontSize: 12, color: "#6b7280" }}>📅 {selectedGrade.experience_range}</div>
-                  </div>
-                );
-              })()} */}
-
               {/* ✅ Dept Salary Band — ONLY for this employee's department */}
               {form.employee_id && form.grade_id && (
                 <DeptSalaryBandInfo
@@ -1030,7 +1016,7 @@ export default function AssignGrade() {
                 </div>
               )}
 
-              {/* Salary Scale Selector — uses this employee's dept band */}
+              {/* Salary Scale Selector */}
               <SalaryScaleSelector
                 grade={selectedGrade}
                 deptBand={modalDeptBand}

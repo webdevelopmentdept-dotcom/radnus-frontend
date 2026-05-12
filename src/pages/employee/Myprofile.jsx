@@ -339,13 +339,13 @@ export default function MyProfile() {
             {toast.type==="error" ? <AlertTriangle size={15}/> : <CheckCircle size={15}/>}
             {toast.msg}
           </div>
-        )}
+        )} 
 
         {/* ── Topbar ── */}
-        <div className="mp-top">
+        {/* <div className="mp-top">
           <span className="mp-top-title">My Profile</span>
           <div className="mp-top-av"><img src={avatarUrl(34)} alt="avatar"/></div>
-        </div>
+        </div> */}
 
         {/* ── Hero ── */}
         <div className="mp-hero">

@@ -61,7 +61,7 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
           <div>
             <h5 style={{ margin:0, fontWeight:800 }}>Mark Attendance</h5>
             <p style={{ margin:0, fontSize:12, color:"#6b7280", marginTop:2 }}>
-              {employee.name} · {employee.employee_code} · {fmtD(date)}
+              {employee.name} · {employee.employeeId || employee.employee_code} · {fmtD(date)}
             </p>
           </div>
           <button onClick={onClose} style={{ background:"#f1f5f9", border:"none", width:32, height:32, borderRadius:8, cursor:"pointer", fontSize:18, color:"#6b7280" }}>×</button>
@@ -262,7 +262,8 @@ function DailyTab() {
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding:"10px 14px", color:"#6b7280", fontSize:12, fontWeight:600 }}>{r.employee?.employee_code || "—"}</td>
+                      {/* <td style={{ padding:"10px 14px", color:"#6b7280", fontSize:12, fontWeight:600 }}>{r.employee?.employee_code || "—"}</td> */}
+                      <td style={{ padding:"10px 14px", color:"#6b7280", fontSize:12, fontWeight:600 }}>{r.employee?.employeeId || r.employee?.employee_code || "—"}</td>
                       <td style={{ padding:"10px 14px", color:"#6b7280" }}>{r.employee?.department || "—"}</td>
                       <td style={{ padding:"10px 14px" }}>
                         <span style={{ background:meta.bg, color:meta.color, padding:"3px 10px", borderRadius:20, fontWeight:800, fontSize:11 }}>{meta.label}</span>
@@ -429,7 +430,8 @@ function MonthlyTab() {
                           <span style={{ fontWeight:700, color:"#111827" }}>{r.name}</span>
                         </div>
                       </td>
-                      <td style={{ padding:"10px 14px", color:"#6b7280", fontSize:12 }}>{r.employee_code}</td>
+                      {/* <td style={{ padding:"10px 14px", color:"#6b7280", fontSize:12 }}>{r.employee_code}</td> */}
+                      <td style={{ padding:"10px 14px", color:"#6b7280", fontSize:12 }}>{r.employeeId || r.employee_code || "—"}</td>
                       <td style={{ padding:"10px 14px", color:"#6b7280" }}>{r.department}</td>
                       <td style={{ padding:"10px 14px", fontWeight:700 }}>{r.work_days}</td>
                       <td style={{ padding:"10px 14px" }}><span style={{ color:"#16a34a", fontWeight:800 }}>{r.present}</span></td>

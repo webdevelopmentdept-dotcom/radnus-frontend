@@ -479,7 +479,7 @@ export default function HrSidebar() {
             Dept Salary Bands ✅
             <span className="hr-flow-label">2</span>
           </NavLink>
- 
+
 
           <NavLink to="/hr/dashboard/grading/assign-grade"
             className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
@@ -556,8 +556,8 @@ export default function HrSidebar() {
 
 
           {/* ══════════════════════════════
-    INCENTIVE
-══════════════════════════════ */}
+                        INCENTIVE
+            ══════════════════════════════ */}
           <div className="hr-section">Incentive</div>
 
           <NavLink to="/hr/dashboard/incentives/plans"

@@ -558,7 +558,7 @@ export default function HrLeadershipTrack() {
             </div>
             <div>
               <h3 style={{ margin:0, fontWeight:800, fontSize:20, color:"#1a1a2e" }}>Leadership Track</h3>
-              <p style={{ margin:"2px 0 0", fontSize:12, color:"#6b7280" }}>Radnus Policy 3.39 · Grow with Radnus Leadership Track</p>
+              <p style={{ margin:"2px 0 0", fontSize:12, color:"#6b7280" }}>Grow with Radnus Leadership Track</p>
             </div>
           </div>
           <div style={{ display:"flex", gap:10 }}>
@@ -620,7 +620,7 @@ export default function HrLeadershipTrack() {
         <div style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:10, padding:"12px 16px", marginBottom:20, display:"flex", gap:10, fontSize:12, color:"#1e40af" }}>
           <Info size={14} color="#3b82f6" style={{ flexShrink:0, marginTop:1 }}/>
           <p style={{ margin:0 }}>
-            <strong>Policy 3.39:</strong> Leadership assessments every 6 months. Promotion eligibility linked to certification, project outcomes, and mentorship feedback. HiPo employees receive ESOP and fast-track benefits.
+            Leadership assessments every 6 months. Promotion eligibility linked to certification, project outcomes, and mentorship feedback. HiPo employees receive ESOP and fast-track benefits.
           </p>
         </div>
 

@@ -102,7 +102,7 @@ function CreateAlumniModal({ employees, onClose, onSave }) {
               </div>
               <div>
                 <p className="mb-0 fw-bold" style={{ fontSize: 14 }}>Add Alumni Profile</p>
-                <p className="mb-0 text-muted" style={{ fontSize: 11 }}>Policy 3.40 — Alumni Network</p>
+                <p className="mb-0 text-muted" style={{ fontSize: 11 }}>Alumni Network</p>
               </div>
             </div>
             <button className="btn-close" onClick={onClose} />
@@ -623,7 +623,7 @@ export default function AlumniNetwork() {
           </div>
           <div>
             <h4 className="mb-0 fw-bold">Alumni Network</h4>
-            <p className="mb-0 text-muted" style={{ fontSize: 12 }}>Policy 3.40 — Ex-Radnus Employees as Brand Advocates</p>
+            <p className="mb-0 text-muted" style={{ fontSize: 12 }}>Ex-Radnus Employees as Brand Advocates</p>
           </div>
         </div>
         <div className="d-flex gap-2">
@@ -640,7 +640,7 @@ export default function AlumniNetwork() {
       <div className="alert d-flex align-items-start gap-2 mb-4" style={{ background: "#ecfdf5", border: "1px solid #6ee7b7", borderRadius: 10, fontSize: 12 }}>
         <Info size={15} color="#059669" style={{ flexShrink: 0, marginTop: 1 }} />
         <p className="mb-0" style={{ color: "#065f46" }}>
-          <strong>Policy 3.40:</strong> Radnus maintains a structured Alumni Network to retain long-term relationships with ex-employees, turning them into brand ambassadors, mentors, referral sources, or future rehires.
+          Radnus maintains a structured Alumni Network to retain long-term relationships with ex-employees, turning them into brand ambassadors, mentors, referral sources, or future rehires.
         </p>
       </div>
 
@@ -786,7 +786,7 @@ export default function AlumniNetwork() {
       {stats && (
         <div className="card border-0 shadow-sm mt-4" style={{ borderRadius: 12 }}>
           <div className="card-body">
-            <p className="fw-bold mb-3" style={{ fontSize: 13 }}>KPI Dashboard — Alumni Network (Policy 3.40)</p>
+            <p className="fw-bold mb-3" style={{ fontSize: 13 }}>KPI Dashboard — Alumni Network</p>
             <div className="row g-3">
               {[
                 { metric: "Alumni Registration Rate",           target: "≥ 80% of ex-employees", current: `${stats.total} alumni`, frequency: "Annual" },

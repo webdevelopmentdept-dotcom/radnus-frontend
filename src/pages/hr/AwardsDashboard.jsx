@@ -487,7 +487,7 @@ export default function AwardsDashboard() {
           </div>
           <div>
             <h1 style={{ margin:0, fontSize:17, fontWeight:800, color:"#111827", letterSpacing:"-0.01em" }}>Recognition Hub</h1>
-            <p style={{ margin:0, fontSize:11, color:"#9ca3af" }}>Radnus Policy 3.27 — Spot · Star · Innovation</p>
+            <p style={{ margin:0, fontSize:11, color:"#9ca3af" }}>Spot · Star · Innovation</p>
           </div>
         </div>
         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>

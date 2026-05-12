@@ -354,7 +354,7 @@ export default function TrainingRoadmapHR() {
           </div>
           <div>
             <h4 className="mb-0 fw-bold">Training Roadmap</h4>
-            <p className="mb-0 text-muted" style={{ fontSize:12 }}>Policy 3.15 — Job-Role Based Mandatory Training (RCA)</p>
+            <p className="mb-0 text-muted" style={{ fontSize:12 }}>Job-Role Based Mandatory Training (RCA)</p>
           </div>
         </div>
         <div className="d-flex gap-2 flex-wrap">
@@ -700,7 +700,7 @@ export default function TrainingRoadmapHR() {
       {/* ══ KPI TAB ══════════════════════════════════════════════ */}
       {activeTab === "kpi" && (
         <div>
-          <p className="fw-bold mb-3" style={{ fontSize:14 }}>Performance Indicators (KPIs) — Policy 3.15</p>
+          <p className="fw-bold mb-3" style={{ fontSize:14 }}>Performance Indicators (KPIs)</p>
           <div className="row g-3 mb-4">
             {[
               { kpi:"Training Completion Rate",                    target:"≥ 95%",             freq:"Quarterly",  current:`${stats?.completionRate||0}%`,  pass:(stats?.completionRate||0)>=95 },

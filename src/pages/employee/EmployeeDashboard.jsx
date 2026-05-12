@@ -3,7 +3,10 @@ import axios from "axios";
 import {
   Mail, Phone, FileText, CheckCircle, Clock,
   ExternalLink, Plus, TrendingUp, Star,
-  Megaphone, Calendar, Edit3, Save, X, User
+  Megaphone, Calendar, Edit3, Save, X, User,
+  Trophy, AlertTriangle, Hourglass, Medal,
+  Lightbulb, Users, BadgeCheck, ArrowRight,
+  Timer, StickyNote, ChevronRight, Bell
 } from "lucide-react";
 import EmployeeLayout from "./EmployeeLayout";
 import CareerPathModal from "./CareerPathModal";
@@ -12,17 +15,9 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const fmt = (v) => {
   if (!v) return "—";
-
   const n = Number(v);
-
-  if (n >= 100000) {
-    return `₹${(n / 100000).toFixed(1)}L`;
-  }
-
-  if (n >= 1000) {
-    return `₹${(n / 1000).toFixed(0)}K`;
-  }
-
+  if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
+  if (n >= 1000) return `₹${(n / 1000).toFixed(0)}K`;
   return `₹${n}`;
 };
 
@@ -49,22 +44,40 @@ function ScoreArc({ score = 0 }) {
   );
 }
 
-export default function EmployeeDashboard() {
-  const [employee,            setEmployee]            = useState(null);
-  const [loading,             setLoading]             = useState(true);
-  const [isEditing,           setIsEditing]           = useState(false);
-  const [editData,            setEditData]            = useState({});
-  const [kpiScore,            setKpiScore]            = useState(null);
-  const [kpiPeriod,           setKpiPeriod]           = useState("");
-  const [announcements,       setAnnouncements]       = useState([]);
-  const [employeeGrade,       setEmployeeGrade]       = useState(null);
-  const [impactAnnouncements, setImpactAnnouncements] = useState([]);
-  const [deptBands,           setDeptBands]           = useState([]);   // ✅ NEW
-  const [showCareer,          setShowCareer]          = useState(false); // ✅ NEW
+const getImpactEmployeeName = (ib) => {
+  return (
+    ib.employee_name ||
+    ib.employeeName ||
+    ib.awarded_to?.name ||
+    ib.awardedTo?.name ||
+    ib.submitted_by?.name ||
+    ib.submittedBy?.name ||
+    ib.employee?.name ||
+    ib.user?.name ||
+    (ib.message && typeof ib.message === "string" && ib.message.includes("·")
+      ? ib.message.split("·")[0].trim()
+      : null) ||
+    ""
+  );
+};
 
-  // ── dept + designation dropdown state ─────────────────────────────────────
+export default function EmployeeDashboard() {
+  const [employee, setEmployee] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({});
+  const [kpiScore, setKpiScore] = useState(null);
+  const [kpiPeriod, setKpiPeriod] = useState("");
+  const [announcements, setAnnouncements] = useState([]);
+  const [employeeGrade, setEmployeeGrade] = useState(null);
+  const [impactAnnouncements, setImpactAnnouncements] = useState([]);
+  const [deptBands, setDeptBands] = useState([]);
+  const [showCareer, setShowCareer] = useState(false);
   const [departments, setDepartments] = useState([]);
-  const [deptDesigs,  setDeptDesigs]  = useState([]);
+  const [deptDesigs, setDeptDesigs] = useState([]);
+
+  // ── Notification unread count ──
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const hideCrisp = () => { if (window.$crisp) window.$crisp.push(["do", "chat:hide"]); };
@@ -78,7 +91,22 @@ export default function EmployeeDashboard() {
     if (!id) { window.location.href = "/login"; return; }
     fetchAll(id);
     const t = setInterval(() => fetchAll(id), 30000);
-    return () => clearInterval(t);
+
+    // ── Fetch unread notification count ──
+    const fetchUnread = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/notifications/${id}`);
+        const data = res.data?.data || res.data || [];
+        setUnreadCount(data.filter(n => !n.isRead).length);
+      } catch (_) {}
+    };
+    fetchUnread();
+    const notifInterval = setInterval(fetchUnread, 30000);
+
+    return () => {
+      clearInterval(t);
+      clearInterval(notifInterval);
+    };
   }, []);
 
   const fetchAll = async (id) => {
@@ -93,7 +121,6 @@ export default function EmployeeDashboard() {
         setEmployee(res.data); setEditData(res.data);
       }
 
-      // dept + designations
       try {
         const deptRes = await axios.get(`${API_BASE}/api/departments`);
         const activeDepts = (deptRes.data.data || deptRes.data || [])
@@ -103,15 +130,13 @@ export default function EmployeeDashboard() {
           const found = activeDepts.find(d => d.name === res.data.department);
           if (found) setDeptDesigs((found.designations || []).filter(dg => dg.status === "active"));
         }
-      } catch (_) {}
+      } catch (_) { }
 
-      // ✅ NEW: dept grade salary bands
       try {
         const dbRes = await axios.get(`${API_BASE}/api/dept-grade-salary`);
         setDeptBands(dbRes.data.data || []);
-      } catch (_) {}
+      } catch (_) { }
 
-      // KPI score
       try {
         const kr = await axios.get(`${API_BASE}/api/kpi-assignments/${id}`);
         if (kr.data.success && kr.data.data) {
@@ -126,7 +151,7 @@ export default function EmployeeDashboard() {
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
               if (sorted.length > 0) { setKpiScore(sorted[0].final_score); scoreSet = true; }
             }
-          } catch (_) {}
+          } catch (_) { }
           if (!scoreSet) {
             try {
               const saRes = await axios.get(`${API_BASE}/api/self-assessment/by-assignment/${assign._id}`);
@@ -145,32 +170,32 @@ export default function EmployeeDashboard() {
                 });
                 setKpiScore(Math.round(total));
               }
-            } catch (_) {}
+            } catch (_) { }
           }
         }
-      } catch (_) {}
+      } catch (_) { }
 
       try {
         const an = await axios.get(`${API_BASE}/api/announcements`);
         if (an.data.success) setAnnouncements(an.data.data?.slice(0, 3) || []);
-      } catch (_) {}
+      } catch (_) { }
 
       try {
         const gradeRes = await axios.get(`${API_BASE}/api/assign-grade/employee/${id}`);
         if (gradeRes.data.success && gradeRes.data.data) setEmployeeGrade(gradeRes.data.data);
-      } catch (_) {}
+      } catch (_) { }
 
       try {
         const ibRes = await axios.get(`${API_BASE}/api/impact-bonus/announcements`);
         if (ibRes.data.success) setImpactAnnouncements(ibRes.data.data);
-      } catch (_) {}
+      } catch (_) { }
 
     } catch (err) { console.log(err); }
     finally { setLoading(false); }
   };
 
   const handleEditToggle = () => { if (!employee) return; setEditData(JSON.parse(JSON.stringify(employee))); setIsEditing(true); };
-  const handleCancel     = () => setIsEditing(false);
+  const handleCancel = () => setIsEditing(false);
 
   const handleDocReplace = async (index, file) => {
     const fd = new FormData(); fd.append("file", file); fd.append("docId", editData.documents[index]._id);
@@ -197,7 +222,7 @@ export default function EmployeeDashboard() {
   };
 
   const handleDocChange = (i, f, v) => { const d = [...editData.documents]; d[i] = { ...d[i], [f]: v }; setEditData(p => ({ ...p, documents: d })); };
-  const handleAddDoc    = () => setEditData(p => ({ ...p, documents: [...p.documents, { docType: "New Document", fileUrl: "" }] }));
+  const handleAddDoc = () => setEditData(p => ({ ...p, documents: [...p.documents, { docType: "New Document", fileUrl: "" }] }));
 
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "#f7f8fc" }}>
@@ -227,34 +252,34 @@ export default function EmployeeDashboard() {
     cursor: "pointer",
   };
 
-  const scoreColor  = kpiScore === null ? "#c5cad8" : kpiScore >= 75 ? "#00c896" : kpiScore >= 50 ? "#4f8ef7" : kpiScore >= 30 ? "#f0a500" : "#f45b5b";
+  const scoreColor = kpiScore === null ? "#c5cad8" : kpiScore >= 75 ? "#00c896" : kpiScore >= 50 ? "#4f8ef7" : kpiScore >= 30 ? "#f0a500" : "#f45b5b";
   const statusColor = isApproved ? "#00a875" : isRejected ? "#f45b5b" : "#d97706";
-  const statusEmoji = isApproved ? "✅" : isRejected ? "❌" : "⏳";
+  const StatusIcon = isApproved ? CheckCircle : isRejected ? X : Hourglass;
+  const statusIconColor = isApproved ? "#00a875" : isRejected ? "#f45b5b" : "#d97706";
 
-  const gradeStage  = employeeGrade?.grade_id?.bgr_stage;
-  const gradeColor  = gradeStage === "Build" ? "#059669" : gradeStage === "Grow" ? "#2563eb" : "#d97706";
-  const gradeBg     = gradeStage === "Build" ? "#d1fae5" : gradeStage === "Grow" ? "#dbeafe" : "#fef3c7";
+  const gradeStage = employeeGrade?.grade_id?.bgr_stage;
+  const gradeColor = gradeStage === "Build" ? "#059669" : gradeStage === "Grow" ? "#2563eb" : "#d97706";
+  const gradeBg = gradeStage === "Build" ? "#d1fae5" : gradeStage === "Grow" ? "#dbeafe" : "#fef3c7";
   const gradeBorder = gradeStage === "Build" ? "#6ee7b7" : gradeStage === "Grow" ? "#93c5fd" : "#fcd34d";
 
   const careerLevels = [...deptBands]
-  .filter(b => b.department_name === employee?.department)
-  .sort((a, b) =>
-    parseInt((a.grade_level || "L0").replace("L", "")) -
-    parseInt((b.grade_level || "L0").replace("L", ""))
+    .filter(b => b.department_name === employee?.department)
+    .sort((a, b) =>
+      parseInt((a.grade_level || "L0").replace("L", "")) -
+      parseInt((b.grade_level || "L0").replace("L", ""))
+    );
+
+  const careerIndex = careerLevels.findIndex(
+    b => b.grade_level === employeeGrade?.grade_id?.level
   );
 
-const careerIndex = careerLevels.findIndex(
-  b => b.grade_level === employeeGrade?.grade_id?.level
-);
+  const careerPct = careerLevels.length > 1
+    ? Math.round(((careerIndex + 1) / careerLevels.length) * 100)
+    : 0;
 
-const careerPct = careerLevels.length > 1
-  ? Math.round(((careerIndex + 1) / careerLevels.length) * 100)
-  : 0;
-
-// ── NEW: employee-இன் current grade-க்கு match ஆகும் salary band ──
-const currentSalaryBand = careerLevels.find(
-  b => b.grade_level === employeeGrade?.grade_id?.level
-) || null;
+  const currentSalaryBand = careerLevels.find(
+    b => b.grade_level === employeeGrade?.grade_id?.level
+  ) || null;
 
   return (
     <EmployeeLayout>
@@ -269,6 +294,7 @@ const currentSalaryBand = careerLevels.find(
         .ed-topbar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: 8px; }
         .ed-topbar-name  { font-size: 12px; font-weight: 700; color: #1a1d2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; max-width: 90px; }
         .ed-topbar-sub   { font-size: 10px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+        .ed-topbar-avatar { display: flex; }
 
         .ed-status-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 99px; font-size: 10px; font-weight: 700; border: 1.5px solid; white-space: nowrap; flex-shrink: 0; }
         .ed-pill-text { display: none; }
@@ -279,13 +305,42 @@ const currentSalaryBand = careerLevels.find(
         .ed-btn-outline:hover { border-color: #4f8ef7; color: #4f8ef7; }
         .ed-topbar-actions { display: none; }
 
+        /* ── Notification Bell ── */
+        .ed-notif-btn {
+          position: relative;
+          width: 34px; height: 34px;
+          border-radius: 9px;
+          border: 1.5px solid #eef0f6;
+          background: #f7f8fc;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer;
+          transition: all 0.15s;
+          color: #6b7280;
+          flex-shrink: 0;
+          padding: 0;
+        }
+        .ed-notif-btn:hover { background: #eff6ff; border-color: #bfdbfe; color: #2563eb; }
+        .ed-notif-badge {
+          position: absolute;
+          top: -5px; right: -5px;
+          min-width: 17px; height: 17px;
+          background: #dc2626;
+          color: #fff;
+          border-radius: 99px;
+          font-size: 9px; font-weight: 700;
+          display: flex; align-items: center; justify-content: center;
+          padding: 0 3px;
+          border: 2px solid #fff;
+          line-height: 1;
+        }
+
         .ed-hero { background: linear-gradient(120deg, #1a1d2e 0%, #252a45 60%, #1f2c4a 100%); padding: 16px 14px; position: relative; overflow: hidden; width: 100%; }
         .ed-hero::before { content: ''; position: absolute; top: -80px; right: -80px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(79,142,247,.18) 0%, transparent 70%); pointer-events: none; }
 
         .ed-hero-profile-row { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; margin-bottom: 14px; width: 100%; overflow: hidden; }
         .ed-avatar-wrap { position: relative; flex-shrink: 0; }
         .ed-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2.5px solid rgba(255,255,255,.2); display: block; }
-        .ed-avatar-overlay { position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; cursor: pointer; }
+        .ed-avatar-overlay { position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,.5); display: flex; align-items: center; justifyContent: center; opacity: 0; transition: opacity .2s; cursor: pointer; }
         .ed-avatar-wrap:hover .ed-avatar-overlay { opacity: 1; }
         .ed-avatar-wrap input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 5; border-radius: 50%; }
         .ed-hero-name-block { flex: 1; min-width: 0; overflow: hidden; }
@@ -303,7 +358,6 @@ const currentSalaryBand = careerLevels.find(
         .ed-hero-status-text { flex: 1; min-width: 0; }
         .ed-hero-edit-btn    { width: 100%; }
         .ed-hero-edit-btn > button, .ed-hero-edit-btn > div { width: 100%; justify-content: center; }
-
         .ed-hero-select option { color: #111827 !important; background: #fff !important; }
 
         .ed-card       { background: #fff; border-radius: 14px; border: 1px solid #eef0f6; min-width: 0; overflow: hidden; }
@@ -343,15 +397,17 @@ const currentSalaryBand = careerLevels.find(
           cursor: pointer;
           font-family: 'Manrope', sans-serif;
           transition: all .15s;
+          display: flex; align-items: center; justify-content: center; gap: 6px;
         }
         .ed-career-btn:hover { background: #2563eb; color: #fff; border-color: #2563eb; }
 
         @media (min-width: 768px) {
-          .ed-topbar { padding: 0 28px; height: 60px; }
+          .ed-topbar { display: none; }
           .ed-topbar-name { font-size: 13px; max-width: none; }
           .ed-topbar-sub  { font-size: 11px; }
           .ed-topbar-right{ gap: 10px; }
           .ed-topbar-actions { display: flex; align-items: center; gap: 8px; }
+          .ed-topbar-avatar { display: none; }
           .ed-pill-text { display: inline; }
           .ed-status-pill { padding: 5px 10px; font-size: 11px; }
           .ed-hero { padding: 28px 32px; }
@@ -381,12 +437,28 @@ const currentSalaryBand = careerLevels.find(
 
       <div className="emp-dash">
 
-        {/* ── Topbar ── */}
+        {/* ── Topbar (mobile only) ── */}
         <div className="ed-topbar">
           <div className="ed-topbar-left">
-            <div style={{ width: 30, height: 30, borderRadius: "50%", overflow: "hidden", border: "2px solid #eef0f6", flexShrink: 0 }}>
+            <div className="ed-topbar-avatar" style={{ width: 30, height: 30, borderRadius: "50%", overflow: "hidden", border: "2px solid #eef0f6", flexShrink: 0 }}>
               <img src={employee.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=e8f0fe&color=4f8ef7&size=36`} alt="av" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
+          </div>
+
+          {/* ── Bell Icon (mobile topbar) ── */}
+          <div className="ed-topbar-right">
+            <button
+              className="ed-notif-btn"
+              onClick={() => window.location.href = "/employee/notifications"}
+              title="Notifications"
+            >
+              <Bell size={16} />
+              {unreadCount > 0 && (
+                <span className="ed-notif-badge">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -442,14 +514,29 @@ const currentSalaryBand = careerLevels.find(
                 </>
               )}
             </div>
+
+            {/* ── Bell Icon (desktop hero) ── */}
+            <button
+              className="ed-notif-btn"
+              onClick={() => window.location.href = "/employee/notifications"}
+              title="Notifications"
+              style={{ background: "rgba(255,255,255,.1)", border: "1.5px solid rgba(255,255,255,.18)", color: "#fff" }}
+            >
+              <Bell size={16} />
+              {unreadCount > 0 && (
+                <span className="ed-notif-badge">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </button>
           </div>
 
           {/* Chips */}
           <div className="ed-hero-chips">
             {[
               { label: "Employee ID", value: employee.employeeId || "—" },
-              { label: "Email",       value: employee.email },
-              { label: "Mobile",      value: employee.mobile || "—" },
+              { label: "Email", value: employee.email },
+              { label: "Mobile", value: employee.mobile || "—" },
             ].map((s, i) => (
               <div key={i} className="ed-chip">
                 <span className="ed-chip-label">{s.label}</span>
@@ -461,7 +548,13 @@ const currentSalaryBand = careerLevels.find(
           {/* Status bar */}
           <div className="ed-hero-status-bar">
             <div className="ed-hero-status-row">
-              <span style={{ fontSize: 20, flexShrink: 0 }}>{statusEmoji}</span>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                background: isApproved ? "rgba(0,168,117,.15)" : isRejected ? "rgba(244,91,91,.15)" : "rgba(217,119,6,.15)",
+                display: "flex", alignItems: "center", justifyContent: "center"
+              }}>
+                <StatusIcon size={16} color={statusIconColor} />
+              </div>
               <div className="ed-hero-status-text" style={{ marginLeft: 10 }}>
                 <p style={{ margin: "0 0 1px", fontSize: 12, fontWeight: 800, color: statusColor }}>
                   {isApproved ? "Approved" : isRejected ? "Rejected" : "Pending"}
@@ -491,7 +584,9 @@ const currentSalaryBand = careerLevels.find(
                   <div style={{ minWidth: 0 }}>
                     <p style={{ margin: "0 0 2px", fontSize: 12, fontWeight: 700, color: "#9ca3af" }}>No KPIs Assigned</p>
                     <p style={{ margin: "0 0 6px", fontSize: 11, color: "#c5cad8" }}>HR will assign your KPIs soon</p>
-                    <a href="/employee/performance" style={{ fontSize: 12, color: "#4f8ef7", fontWeight: 700, textDecoration: "none" }}>View Performance →</a>
+                    <a href="/employee/performance" style={{ fontSize: 12, color: "#4f8ef7", fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      View Performance <ArrowRight size={12} />
+                    </a>
                   </div>
                 </div>
               ) : (
@@ -506,7 +601,9 @@ const currentSalaryBand = careerLevels.find(
                       <span style={{ background: "#f0f4ff", color: "#4f8ef7", fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 99, border: "1px solid #c7d2fe", fontFamily: "'JetBrains Mono',monospace", display: "inline-block", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{kpiPeriod}</span>
                     )}
                     <div style={{ marginTop: 8 }}>
-                      <a href="/employee/performance" style={{ fontSize: 12, color: "#4f8ef7", fontWeight: 700, textDecoration: "none" }}>View Full Report →</a>
+                      <a href="/employee/performance" style={{ fontSize: 12, color: "#4f8ef7", fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        View Full Report <ArrowRight size={12} />
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -516,20 +613,33 @@ const currentSalaryBand = careerLevels.find(
             {/* Announcements Card */}
             <div className="ed-card" style={{ overflow: "hidden" }}>
               <p className="ed-card-title"><Megaphone size={12} /> Announcements</p>
-              {impactAnnouncements.map((ib, i) => (
-                <div key={`ib-${i}`} className="ed-ann-row">
-                  <div style={{ width: 30, height: 30, minWidth: 30, borderRadius: 8, background: "#ecfdf5", border: "1px solid #6ee7b7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>🏆</div>
-                  <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-                    <p style={{ margin: "0 0 2px", fontSize: 12, fontWeight: 700, color: "#059669", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🎉 Innovation Announced!</p>
-                    <p style={{ margin: "0 0 1px", fontSize: 12, color: "#1a1d2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 700 }}>{ib.title}</p>
-                    <p style={{ margin: "0 0 4px", fontSize: 11, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 500 }}>👤 {ib.employee_name || ib.message?.split('·')[0]?.trim() || ""}</p>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                      {ib.bonus_amount > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#059669", background: "#d1fae5", padding: "2px 8px", borderRadius: 99, border: "1px solid #6ee7b7" }}>₹{ib.bonus_amount.toLocaleString("en-IN")} Bonus</span>}
-                      {ib.total_score  > 0 && <span style={{ fontSize: 10, color: "#b0b8c9", fontWeight: 600 }}>Score: {ib.total_score}/100</span>}
+
+              {impactAnnouncements.map((ib, i) => {
+                const empName = getImpactEmployeeName(ib);
+                return (
+                  <div key={`ib-${i}`} className="ed-ann-row">
+                    <div style={{ width: 30, height: 30, minWidth: 30, borderRadius: 8, background: "#ecfdf5", border: "1px solid #6ee7b7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Trophy size={14} color="#059669" />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
+                        <Lightbulb size={11} color="#059669" />
+                        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#059669", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Innovation Announced!</p>
+                      </div>
+                      <p style={{ margin: "0 0 1px", fontSize: 12, color: "#1a1d2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 700 }}>{ib.title}</p>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
+                        <User size={10} color="#6b7280" />
+                        <p style={{ margin: 0, fontSize: 11, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 500 }}>{empName || "—"}</p>
+                      </div>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                        {ib.bonus_amount > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#059669", background: "#d1fae5", padding: "2px 8px", borderRadius: 99, border: "1px solid #6ee7b7" }}>₹{ib.bonus_amount.toLocaleString("en-IN")} Bonus</span>}
+                        {ib.total_score > 0 && <span style={{ fontSize: 10, color: "#b0b8c9", fontWeight: 600 }}>Score: {ib.total_score}/100</span>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
+
               {announcements.length === 0 && impactAnnouncements.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "16px 14px 20px" }}>
                   <div style={{ width: 38, height: 38, borderRadius: 10, background: "#f7f8fc", border: "1px solid #eef0f6", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
@@ -540,7 +650,9 @@ const currentSalaryBand = careerLevels.find(
               ) : (
                 announcements.map((ann, i) => (
                   <div key={i} className="ed-ann-row">
-                    <div style={{ width: 30, height: 30, minWidth: 30, borderRadius: 8, background: "#fffbeb", border: "1px solid #fde68a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>📢</div>
+                    <div style={{ width: 30, height: 30, minWidth: 30, borderRadius: 8, background: "#fffbeb", border: "1px solid #fde68a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Megaphone size={13} color="#d97706" />
+                    </div>
                     <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
                       <p style={{ margin: "0 0 2px", fontSize: 12, fontWeight: 700, color: "#1a1d2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ann.title}</p>
                       <p style={{ margin: "0 0 3px", fontSize: 11, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ann.message || ann.content}</p>
@@ -556,130 +668,79 @@ const currentSalaryBand = careerLevels.find(
           </div>
 
           {/* ── Grade Card ── */}
-{employeeGrade && (
-  <div className="ed-card" style={{ padding: "14px" }}>
-    <p className="ed-card-title" style={{ padding: 0, marginBottom: 14 }}>🏅 My Grade Level</p>
-
-    <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-      {/* Level badge */}
-      <div style={{
-        background: "#1a1a2e", color: "#fff",
-        borderRadius: 12, padding: "10px 18px",
-        fontSize: 26, fontWeight: 900, letterSpacing: "-1px",
-        flexShrink: 0, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1,
-      }}>
-        {employeeGrade.grade_id?.level}
-      </div>
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Posting — salary band-இல் இருந்து */}
-        <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 800, color: "#1a1d2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {currentSalaryBand?.posting || "—"}
-        </p>
-
-        {/* Years in Role — salary band-இல் இருந்து */}
-        {currentSalaryBand?.years_in_role && (
-          <p style={{ margin: "0 0 8px", fontSize: 12, color: "#6b7280" }}>
-            📅 {currentSalaryBand.years_in_role}
-          </p>
-        )}
-
-        {/* Salary A/B/C — salary band-இல் இருந்து */}
-        {(currentSalaryBand?.salary_band_min || currentSalaryBand?.salary_band_mid || currentSalaryBand?.salary_band_max) && (
-          <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-           {(() => {
-  // salary_scale_point: "min" | "mid" | "max"
-  const scalePoint = employeeGrade?.salary_scale_point;
-  
-  const value =
-    scalePoint === "min" ? currentSalaryBand?.salary_band_min :
-    scalePoint === "mid" ? currentSalaryBand?.salary_band_mid :
-    scalePoint === "max" ? currentSalaryBand?.salary_band_max : null;
-
-  const label =
-    scalePoint === "min" ? "A" :
-    scalePoint === "mid" ? "B" :
-    scalePoint === "max" ? "C" : null;
-
-  const styles = {
-    min: { bg: "#ecfdf5", color: "#059669", border: "#6ee7b7" },
-    mid: { bg: "#eff6ff", color: "#2563eb", border: "#93c5fd" },
-    max: { bg: "#fff7ed", color: "#d97706", border: "#fcd34d" },
-  }[scalePoint] || {};
-
-  return value && label ? (
-    <span style={{
-      background: styles.bg, color: styles.color,
-      border: `1px solid ${styles.border}`,
-      fontSize: 10, fontWeight: 700,
-      padding: "2px 8px", borderRadius: 6,
-      fontFamily: "'JetBrains Mono',monospace"
-    }}>
-      Scale {label}: {fmt(value)}
-    </span>
-  ) : (
-    <span style={{ fontSize: 11, color: "#9ca3af" }}>
-      Scale not assigned
-    </span>
-  );
-})()}
-          </div>
-        )}
-      </div>
-    </div>
-
-    {/* Promotion Timeline — salary band-இல் இருந்து */}
-    {currentSalaryBand?.promotion_timeline && (
-      <div style={{ margin: "12px 0 0", display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>Next promotion:</span>
-        <span style={{ background: "#f0fdf4", color: "#059669", border: "1px solid #6ee7b7", borderRadius: 6, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>
-          ⏱ {currentSalaryBand.promotion_timeline}
-        </span>
-      </div>
-    )}
-
-    {/* Notes — salary band-இல் இருந்து (optional) */}
-    {currentSalaryBand?.notes && (
-      <p style={{ margin: "10px 0 0", fontSize: 12, color: "#374151", background: "#f8fafc", borderRadius: 8, padding: "10px 12px", lineHeight: 1.6, borderLeft: "3px solid #3b82f6" }}>
-        {currentSalaryBand.notes}
-      </p>
-    )}
-
-    {/* Salary band configure ஆகவில்லை என்றால் message */}
-    {!currentSalaryBand && (
-      <p style={{ margin: "10px 0 0", fontSize: 12, color: "#9ca3af", fontStyle: "italic" }}>
-        Salary band not configured for this level yet.
-      </p>
-    )}
-
-    {/* Career progress bar */}
-    {careerLevels.length > 0 && careerIndex >= 0 && (
-      <div style={{ marginTop: 14 }}>
-        <div style={{ background: "#f3f4f6", borderRadius: 99, height: 5, overflow: "hidden" }}>
-          <div style={{
-            width: `${careerPct}%`, height: "100%", borderRadius: 99,
-            background: "linear-gradient(90deg, #059669, #3b82f6, #f59e0b)",
-            transition: "width .8s cubic-bezier(.4,0,.2,1)"
-          }} />
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#9ca3af", marginTop: 4, fontWeight: 600 }}>
-          <span>Level {careerIndex + 1} of {careerLevels.length}</span>
-          <span>{careerPct}% of career path</span>
-        </div>
-      </div>
-    )}
-
-    {/* View Career Path button */}
-    <button className="ed-career-btn" onClick={() => setShowCareer(true)}>
-      View Career Path →
-    </button>
-  </div>
-)}
-
+          {employeeGrade && (
+            <div className="ed-card" style={{ padding: "14px" }}>
+              <p className="ed-card-title" style={{ padding: 0, marginBottom: 14 }}>
+                <Medal size={12} /> My Grade Level
+              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                <div style={{ background: "#1a1a2e", color: "#fff", borderRadius: 12, padding: "10px 18px", fontSize: 26, fontWeight: 900, letterSpacing: "-1px", flexShrink: 0, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>
+                  {employeeGrade.grade_id?.level}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 800, color: "#1a1d2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {currentSalaryBand?.posting || "—"}
+                  </p>
+                  {currentSalaryBand?.years_in_role && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+                      <Calendar size={11} color="#6b7280" />
+                      <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{currentSalaryBand.years_in_role}</p>
+                    </div>
+                  )}
+                  {(currentSalaryBand?.salary_band_min || currentSalaryBand?.salary_band_mid || currentSalaryBand?.salary_band_max) && (
+                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                      {(() => {
+                        const scalePoint = employeeGrade?.salary_scale_point;
+                        const value = scalePoint === "min" ? currentSalaryBand?.salary_band_min : scalePoint === "mid" ? currentSalaryBand?.salary_band_mid : scalePoint === "max" ? currentSalaryBand?.salary_band_max : null;
+                        const label = scalePoint === "min" ? "A" : scalePoint === "mid" ? "B" : scalePoint === "max" ? "C" : null;
+                        const st = { min: { bg: "#ecfdf5", color: "#059669", border: "#6ee7b7" }, mid: { bg: "#eff6ff", color: "#2563eb", border: "#93c5fd" }, max: { bg: "#fff7ed", color: "#d97706", border: "#fcd34d" } }[scalePoint] || {};
+                        return value && label ? (
+                          <span style={{ background: st.bg, color: st.color, border: `1px solid ${st.border}`, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, fontFamily: "'JetBrains Mono',monospace" }}>
+                            Scale {label}: {fmt(value)}
+                          </span>
+                        ) : <span style={{ fontSize: 11, color: "#9ca3af" }}>Scale not assigned</span>;
+                      })()}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {currentSalaryBand?.promotion_timeline && (
+                <div style={{ margin: "12px 0 0", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>Next promotion:</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, background: "#f0fdf4", color: "#059669", border: "1px solid #6ee7b7", borderRadius: 6, padding: "2px 10px" }}>
+                    <Timer size={11} color="#059669" />
+                    <span style={{ fontSize: 11, fontWeight: 700 }}>{currentSalaryBand.promotion_timeline}</span>
+                  </div>
+                </div>
+              )}
+              {currentSalaryBand?.notes && (
+                <div style={{ display: "flex", gap: 8, margin: "10px 0 0", background: "#f8fafc", borderRadius: 8, padding: "10px 12px", borderLeft: "3px solid #3b82f6" }}>
+                  <StickyNote size={13} color="#3b82f6" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <p style={{ margin: 0, fontSize: 12, color: "#374151", lineHeight: 1.6 }}>{currentSalaryBand.notes}</p>
+                </div>
+              )}
+              {!currentSalaryBand && (
+                <p style={{ margin: "10px 0 0", fontSize: 12, color: "#9ca3af", fontStyle: "italic" }}>Salary band not configured for this level yet.</p>
+              )}
+              {careerLevels.length > 0 && careerIndex >= 0 && (
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ background: "#f3f4f6", borderRadius: 99, height: 5, overflow: "hidden" }}>
+                    <div style={{ width: `${careerPct}%`, height: "100%", borderRadius: 99, background: "linear-gradient(90deg, #059669, #3b82f6, #f59e0b)", transition: "width .8s cubic-bezier(.4,0,.2,1)" }} />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#9ca3af", marginTop: 4, fontWeight: 600 }}>
+                    <span>Level {careerIndex + 1} of {careerLevels.length}</span>
+                    <span>{careerPct}% of career path</span>
+                  </div>
+                </div>
+              )}
+              <button className="ed-career-btn" onClick={() => setShowCareer(true)}>
+                <ChevronRight size={15} /> View Career Path
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ✅ Career Path Modal */}
       <CareerPathModal
         open={showCareer}
         onClose={() => setShowCareer(false)}

@@ -3,7 +3,7 @@ import axios from "axios";
 import {
   Calendar, ClipboardList, Clock, CheckCircle2, PartyPopper,
   Inbox, BarChart2, MousePointerClick, Filter, User, CheckCheck,
-  Zap  // ← incentive trigger icon
+  Zap, Lock
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -22,6 +22,19 @@ const getProgressColor = (pct) => {
   if (pct >= 50)  return "#d97706";
   return "#dc2626";
 };
+
+// ── owner_role helpers ──────────────────────────────────────────
+const ownerStyles = {
+  self:    { bg: "#f0fdf4", color: "#16a34a", label: "Self (Employee)" },
+  manager: { bg: "#eff6ff", color: "#2563eb", label: "Manager"         },
+  md:      { bg: "#f5f3ff", color: "#7c3aed", label: "MD / Director"   },
+  hr:      { bg: "#fffbeb", color: "#d97706", label: "HR"              },
+};
+
+// HR-ஆல் fill பண்ணணும்னு சொன்னாலே மட்டும் HR edit பண்ணலாம்
+// மத்தவை (self/manager/md) → employee self value காட்டு, readonly
+const isHREditable = (item) => (item.owner_role || "self") === "hr";
+// ───────────────────────────────────────────────────────────────
 
 const STYLES = `
   .pr-page { padding: 28px 32px; }
@@ -62,26 +75,25 @@ const STYLES = `
 `;
 
 export default function PerformanceReviews() {
-  const [assessments,       setAssessments]       = useState([]);
-  const [completedReviews,  setCompletedReviews]  = useState([]);
-  const [incentivePlans,    setIncentivePlans]     = useState([]); // ← NEW
-  const [loading,           setLoading]            = useState(true);
-  const [selectedAssessment,setSelectedAssessment] = useState(null);
-  const [reviewForm,        setReviewForm]         = useState({ items: [], hr_comment: "" });
-  const [saving,            setSaving]             = useState(false);
-  const [toast,             setToast]              = useState(null);
-  const [activeTab,         setActiveTab]          = useState("pending");
+  const [assessments,        setAssessments]        = useState([]);
+  const [completedReviews,   setCompletedReviews]   = useState([]);
+  const [incentivePlans,     setIncentivePlans]      = useState([]);
+  const [loading,            setLoading]             = useState(true);
+  const [selectedAssessment, setSelectedAssessment]  = useState(null);
+  const [reviewForm,         setReviewForm]          = useState({ items: [], hr_comment: "" });
+  const [saving,             setSaving]              = useState(false);
+  const [toast,              setToast]               = useState(null);
+  const [activeTab,          setActiveTab]           = useState("pending");
 
-  const [allAssignments,       setAllAssignments]       = useState([]);
-  const [selectedEmployeeLog,  setSelectedEmployeeLog]  = useState("");
-  const [logDateFrom,          setLogDateFrom]          = useState("");
-  const [logDateTo,            setLogDateTo]            = useState("");
-  const [employeeLogs,         setEmployeeLogs]         = useState([]);
-  const [logTotals,            setLogTotals]            = useState({});
-  const [logsLoading,          setLogsLoading]          = useState(false);
+  const [allAssignments,      setAllAssignments]      = useState([]);
+  const [selectedEmployeeLog, setSelectedEmployeeLog] = useState("");
+  const [logDateFrom,         setLogDateFrom]         = useState("");
+  const [logDateTo,           setLogDateTo]           = useState("");
+  const [employeeLogs,        setEmployeeLogs]        = useState([]);
+  const [logTotals,           setLogTotals]           = useState({});
+  const [logsLoading,         setLogsLoading]         = useState(false);
 
-  // ── NEW: incentive trigger state ─────────────────────────────────────────
-  const [incentiveResult, setIncentiveResult] = useState(null); // after finalize
+  const [incentiveResult, setIncentiveResult] = useState(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -91,7 +103,7 @@ export default function PerformanceReviews() {
         axios.get(`${API_BASE}/api/self-assessment/all`),
         axios.get(`${API_BASE}/api/performance-reviews/all`),
         axios.get(`${API_BASE}/api/kpi-assignments`),
-        axios.get(`${API_BASE}/api/incentive-plans`),   // ← NEW
+        axios.get(`${API_BASE}/api/incentive-plans`),
       ]);
       if (assessRes.data.success) setAssessments(assessRes.data.data);
       if (reviewRes.data.success) setCompletedReviews(reviewRes.data.data);
@@ -111,11 +123,19 @@ export default function PerformanceReviews() {
   const openReview = (assessment) => {
     setSelectedAssessment(assessment);
     setIncentiveResult(null);
+
+    // ── CHANGE: owner_role include பண்றோம், hr KPI மட்டும் editable ──
     const items = assessment.items.map(item => ({
-      kpi_item_id: item.kpi_item_id, kpi_name: item.kpi_name,
-      target: item.target, unit: item.unit, weight: item.weight || 0,
-      self_value: item.self_value, self_comment: item.self_comment || "",
-      actual_value: item.self_value
+      kpi_item_id:  item.kpi_item_id,
+      kpi_name:     item.kpi_name,
+      target:       item.target,
+      unit:         item.unit,
+      weight:       item.weight || 0,
+      owner_role:   item.owner_role || "self",
+      self_value:   item.self_value,
+      self_comment: item.self_comment || "",
+      // hr KPI → blank (HR enters now), others → pre-fill with employee's self value
+      actual_value: (item.owner_role || "self") === "hr" ? "" : item.self_value,
     }));
     setReviewForm({ items, hr_comment: "" });
   };
@@ -157,25 +177,13 @@ export default function PerformanceReviews() {
     return Math.round(s);
   };
 
-  // ── NEW: Find matching incentive plan for this employee ──────────────────
   const findMatchingPlan = (assessment) => {
-    const dept   = assessment.employee_id?.department;
-    const period = assessment.period;
-
-    // 1. Try KPI-Linked plan for this dept first
-    const kpiPlan = incentivePlans.find(
-      p => p.plan_type === "kpi_linked" && p.department === dept
-    );
+    const dept = assessment.employee_id?.department;
+    const kpiPlan = incentivePlans.find(p => p.plan_type === "kpi_linked" && p.department === dept);
     if (kpiPlan) return kpiPlan;
-
-    // 2. Fallback to standalone plan for same dept
-    const standalonePlan = incentivePlans.find(
-      p => p.plan_type === "standalone" && p.department === dept
-    );
-    return standalonePlan || null;
+    return incentivePlans.find(p => p.plan_type === "standalone" && p.department === dept) || null;
   };
 
-  // ── NEW: Calculate incentive amount from plan slabs + score ──────────────
   const calcIncentiveAmount = (plan, finalScore, salary = 0) => {
     if (!plan) return { amount: 0, slabLabel: "No plan found for dept" };
     const score = Math.round(finalScore || 0);
@@ -190,25 +198,29 @@ export default function PerformanceReviews() {
     };
   };
 
-  // ── MAIN: Submit review + auto-create incentive result ───────────────────
   const handleSubmitReview = async () => {
     if (!reviewForm.hr_comment.trim())
       return showToast("Please add HR feedback comment", "error");
-    if (reviewForm.items.some(i => i.actual_value === "" || i.actual_value === null || i.actual_value === undefined))
-      return showToast("Please fill all actual values", "error");
+
+    // ── CHANGE: HR KPI-கள் மட்டும் validate, மத்தவை skip ──
+    const hrItems = reviewForm.items.filter(i => isHREditable(i));
+    if (hrItems.some(i => i.actual_value === "" || i.actual_value === null || i.actual_value === undefined))
+      return showToast("Please fill all HR-owned KPI values", "error");
 
     setSaving(true);
     try {
       const finalScore = calcLiveScore();
 
-      // Step 1 — Submit performance review
       const reviewPayload = {
         employee_id:        selectedAssessment.employee_id._id || selectedAssessment.employee_id,
         assignment_id:      selectedAssessment.assignment_id?._id || selectedAssessment.assignment_id,
         self_assessment_id: selectedAssessment._id,
         period:             selectedAssessment.period,
-        kpi_breakdown:      reviewForm.items.map(i => ({ ...i, actual_value: parseFloat(i.actual_value) })),
-        hr_comment:         reviewForm.hr_comment,
+        kpi_breakdown:      reviewForm.items.map(i => ({
+          ...i,
+          actual_value: parseFloat(i.actual_value) || parseFloat(i.self_value) || 0
+        })),
+        hr_comment: reviewForm.hr_comment,
       };
       const reviewRes = await axios.post(`${API_BASE}/api/performance-reviews`, reviewPayload);
       if (!reviewRes.data.success) {
@@ -217,14 +229,11 @@ export default function PerformanceReviews() {
         return;
       }
 
-      // Step 2 — Find matching incentive plan
       const matchedPlan = findMatchingPlan(selectedAssessment);
       const empSalary   = selectedAssessment.employee_id?.salary || 0;
       const { amount, slabLabel } = calcIncentiveAmount(matchedPlan, finalScore, empSalary);
 
-      // Step 3 — Check if incentive-result already exists for this review
       let incentiveCreated = false;
-      let incentiveData    = null;
       try {
         const resultPayload = {
           employee_id:       selectedAssessment.employee_id._id || selectedAssessment.employee_id,
@@ -236,38 +245,20 @@ export default function PerformanceReviews() {
           status:            "pending",
         };
         const incentiveRes = await axios.post(`${API_BASE}/api/incentive-results`, resultPayload);
-        if (incentiveRes.data?.success || incentiveRes.status === 201) {
-          incentiveCreated = true;
-          incentiveData    = incentiveRes.data?.data;
-        }
+        if (incentiveRes.data?.success || incentiveRes.status === 201) incentiveCreated = true;
       } catch (incentiveErr) {
-        // If already exists (409) or plan missing, don't fail the whole flow
-        const status = incentiveErr.response?.status;
-        if (status === 409) {
-          incentiveCreated = false; // already exists — fine
-        } else {
+        if (incentiveErr.response?.status !== 409)
           console.warn("Incentive result creation failed:", incentiveErr.message);
-        }
       }
 
-      // Step 4 — Show success with incentive info
-      setIncentiveResult({
-        finalScore,
-        amount,
-        slabLabel,
-        planName:  matchedPlan?.name || null,
-        created:   incentiveCreated,
-      });
-
+      setIncentiveResult({ finalScore, amount, slabLabel, planName: matchedPlan?.name || null, created: incentiveCreated });
       showToast(
         incentiveCreated
           ? `Review finalized! Incentive ₹${amount.toLocaleString("en-IN")} auto-created ✅`
           : "Review finalized! (No incentive plan matched for this dept)",
         incentiveCreated ? "success" : "warning"
       );
-
       fetchData();
-
     } catch (err) {
       showToast(err.response?.data?.message || "Server error", "error");
     } finally {
@@ -331,20 +322,17 @@ export default function PerformanceReviews() {
     <div className="pr-page" style={{ fontFamily: "'Segoe UI', sans-serif", minHeight: "100vh", background: "#f4f6fb" }}>
       <style>{STYLES}</style>
 
-      {/* Toast */}
       {toast && (
         <div style={{ position: "fixed", top: 16, right: 16, left: 16, zIndex: 9999, background: toast.type === "error" ? "#ff4d4f" : toast.type === "warning" ? "#f59e0b" : "#52c41a", color: "#fff", padding: "12px 16px", borderRadius: 8, fontWeight: 600, fontSize: 13, textAlign: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.15)", maxWidth: "calc(100vw - 32px)" }}>
           {toast.msg}
         </div>
       )}
 
-      {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#1a1a2e" }}>Performance Reviews</h2>
         <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 14 }}>Review employee self assessments and finalize scores</p>
       </div>
 
-      {/* Stats */}
       <div className="pr-stats" style={{ display: "grid", gap: 16, marginBottom: 24 }}>
         {STATS.map((s, i) => (
           <div key={i} style={{ background: "#fff", borderRadius: 12, padding: "18px 20px", border: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -359,7 +347,6 @@ export default function PerformanceReviews() {
         ))}
       </div>
 
-      {/* Tabs */}
       <div className="pr-tabs" style={{ display: "flex", gap: 4, background: "#fff", borderRadius: 10, padding: 4, border: "1px solid #e5e7eb", marginBottom: 20 }}>
         {TABS.map(tab => (
           <button key={tab.id} className="pr-tab-btn" onClick={() => setActiveTab(tab.id)} style={{
@@ -387,7 +374,6 @@ export default function PerformanceReviews() {
             </div>
           ) : (
             <>
-              {/* Desktop Table */}
               <div className="pr-table-wrap" style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                   <thead>
@@ -420,7 +406,6 @@ export default function PerformanceReviews() {
                           <td style={{ padding: "14px 20px", color: "#374151" }}>{a.items.length} KPIs</td>
                           <td style={{ padding: "14px 20px" }}><span style={{ fontWeight: 800, fontSize: 16, color }}>{selfScore}%</span></td>
                           <td style={{ padding: "14px 20px", color: "#6b7280", fontSize: 13 }}>{new Date(a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</td>
-                          {/* ← NEW: Incentive Plan preview */}
                           <td style={{ padding: "14px 20px" }}>
                             {matchedPlan ? (
                               <span style={{ fontSize:12, fontWeight:700, padding:"3px 8px", borderRadius:5,
@@ -442,7 +427,6 @@ export default function PerformanceReviews() {
                 </table>
               </div>
 
-              {/* Mobile Cards */}
               <div className="pr-card-list">
                 {pendingAssessments.map(a => {
                   const selfScore   = calcSelfScore(a);
@@ -702,10 +686,14 @@ export default function PerformanceReviews() {
         </div>
       )}
 
-      {/* ── REVIEW MODAL ── */}
+      {/* ══════════════════════════════════════
+          REVIEW MODAL — owner_role logic here
+      ══════════════════════════════════════ */}
       {selectedAssessment && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 780, maxHeight: "92vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
+
+            {/* Modal Header */}
             <div style={{ padding: "16px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", zIndex: 10, gap: 12 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1a1a2e" }}>Review — {selectedAssessment.employee_id?.name}</h3>
@@ -723,7 +711,7 @@ export default function PerformanceReviews() {
 
             <div style={{ padding: "20px 24px" }}>
 
-              {/* ── NEW: Incentive Plan Preview inside modal ── */}
+              {/* Incentive Plan Preview */}
               {(() => {
                 const plan = findMatchingPlan(selectedAssessment);
                 if (!plan) return (
@@ -753,19 +741,13 @@ export default function PerformanceReviews() {
                 );
               })()}
 
-              {/* ── Incentive Result (after submit) ── */}
+              {/* Incentive Result (after submit) */}
               {incentiveResult && (
                 <div style={{ background:"#eff6ff", border:"2px solid #2563eb", borderRadius:12, padding:"16px 20px", marginBottom:20, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
                   <div>
-                    <p style={{ margin:"0 0 4px", fontWeight:800, fontSize:15, color:"#1d4ed8" }}>
-                      ✅ Review Finalized!
-                    </p>
-                    <p style={{ margin:0, fontSize:13, color:"#374151" }}>
-                      Final Score: <strong>{incentiveResult.finalScore}%</strong> · {incentiveResult.slabLabel}
-                    </p>
-                    {incentiveResult.planName && (
-                      <p style={{ margin:"4px 0 0", fontSize:12, color:"#6b7280" }}>Plan: {incentiveResult.planName}</p>
-                    )}
+                    <p style={{ margin:"0 0 4px", fontWeight:800, fontSize:15, color:"#1d4ed8" }}>✅ Review Finalized!</p>
+                    <p style={{ margin:0, fontSize:13, color:"#374151" }}>Final Score: <strong>{incentiveResult.finalScore}%</strong> · {incentiveResult.slabLabel}</p>
+                    {incentiveResult.planName && <p style={{ margin:"4px 0 0", fontSize:12, color:"#6b7280" }}>Plan: {incentiveResult.planName}</p>}
                   </div>
                   <div style={{ textAlign:"right" }}>
                     <p style={{ margin:0, fontSize:11, color:"#6b7280" }}>Incentive Created</p>
@@ -776,36 +758,99 @@ export default function PerformanceReviews() {
                 </div>
               )}
 
+              {/* ── KPI Items — owner_role பொறுத்து render மாறும் ── */}
               <h4 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1a1a2e" }}>KPI Actual Values</h4>
+
               {reviewForm.items.map((item, idx) => {
-                const selfPct   = item.self_value   ? Math.round((item.self_value / item.target) * 100) : 0;
-                const actualPct = item.actual_value ? Math.min(Math.round((parseFloat(item.actual_value) / item.target) * 100), 150) : 0;
+                const hrEditable  = isHREditable(item);
+                const ownerStyle  = ownerStyles[item.owner_role || "self"];
+                const selfPct     = item.self_value ? Math.round((item.self_value / item.target) * 100) : 0;
+                const actualPct   = item.actual_value
+                  ? Math.min(Math.round((parseFloat(item.actual_value) / item.target) * 100), 150)
+                  : 0;
                 const actualColor = getProgressColor(actualPct);
+
                 return (
-                  <div key={idx} style={{ background: "#f8fafc", borderRadius: 12, padding: 18, marginBottom: 14, border: "1px solid #e5e7eb" }}>
+                  <div key={idx} style={{
+                    background: hrEditable ? "#f8fafc" : "#fafafa",
+                    borderRadius: 12, padding: 18, marginBottom: 14,
+                    border: `1px solid ${hrEditable ? "#e5e7eb" : "#f0f0f0"}`
+                  }}>
+
+                    {/* KPI header */}
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, gap: 8 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#1f2937", wordBreak: "break-word" }}>{item.kpi_name}</p>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 2 }}>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#1f2937", wordBreak: "break-word" }}>{item.kpi_name}</p>
+                          {/* ── Owner badge ── */}
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", gap: 4,
+                            fontSize: 10, fontWeight: 700, padding: "2px 8px",
+                            borderRadius: 99, background: ownerStyle.bg, color: ownerStyle.color,
+                            border: `1px solid ${ownerStyle.color}30`
+                          }}>
+                            {!hrEditable && <Lock size={8} />}
+                            {ownerStyle.label}
+                          </span>
+                        </div>
                         <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>Target: {item.target} {item.unit} · Weight: {item.weight}%</p>
                       </div>
                       <span style={{ fontSize: 14, fontWeight: 800, color: actualColor, flexShrink: 0 }}>{actualPct}%</span>
                     </div>
+
                     <div className="pr-kpi-grid" style={{ display: "grid", gap: 12, marginBottom: 12 }}>
+
+                      {/* Employee self report — always visible */}
                       <div style={{ background: "#fff", borderRadius: 8, padding: "10px 14px", border: "1px solid #e5e7eb" }}>
                         <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" }}>Employee Self Report</p>
-                        <p style={{ margin: "0 0 4px", fontSize: 18, fontWeight: 800, color: "#2563eb" }}>{item.self_value} <span style={{ fontSize: 12, fontWeight: 400 }}>{item.unit}</span></p>
+                        <p style={{ margin: "0 0 4px", fontSize: 18, fontWeight: 800, color: "#2563eb" }}>
+                          {item.self_value} <span style={{ fontSize: 12, fontWeight: 400 }}>{item.unit}</span>
+                        </p>
                         <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>{selfPct}% of target</p>
                         {item.self_comment && <p style={{ margin: "6px 0 0", fontSize: 12, color: "#374151", fontStyle: "italic" }}>"{item.self_comment}"</p>}
                       </div>
-                      <div style={{ background: "#fff", borderRadius: 8, padding: "10px 14px", border: "2px solid #2563eb" }}>
-                        <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "#2563eb", textTransform: "uppercase" }}>HR Actual Value *</p>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <input type="number" value={item.actual_value} onChange={e => handleActualChange(idx, e.target.value)} min="0"
-                            style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 15, fontWeight: 700, color: actualColor, outline: "none", boxSizing: "border-box" }} />
-                          <span style={{ fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>{item.unit}</span>
+
+                      {/* HR Actual Value — editable only if owner_role === "hr" */}
+                      {hrEditable ? (
+                        <div style={{ background: "#fff", borderRadius: 8, padding: "10px 14px", border: "2px solid #d97706" }}>
+                          <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "#d97706", textTransform: "uppercase" }}>
+                            🧾 HR Actual Value *
+                          </p>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <input
+                              type="number"
+                              value={item.actual_value}
+                              onChange={e => handleActualChange(idx, e.target.value)}
+                              min="0"
+                              placeholder={`Enter actual (target: ${item.target})`}
+                              style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 15, fontWeight: 700, color: actualColor, outline: "none", boxSizing: "border-box" }}
+                            />
+                            <span style={{ fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>{item.unit}</span>
+                          </div>
+                          <p style={{ margin: "5px 0 0", fontSize: 11, color: "#d97706" }}>
+                            ✏️ HR fills this — employee cannot edit
+                          </p>
                         </div>
-                      </div>
+                      ) : (
+                        /* ── Read-only: self/manager/md filled by employee ── */
+                        <div style={{ background: "#f3f4f6", borderRadius: 8, padding: "10px 14px", border: "1px solid #e5e7eb", opacity: 0.85 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                            <Lock size={12} color="#9ca3af" />
+                            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" }}>
+                              Filled by {ownerStyle.label} — Using Self Value
+                            </p>
+                          </div>
+                          <p style={{ margin: "0 0 4px", fontSize: 18, fontWeight: 800, color: actualColor }}>
+                            {item.actual_value} <span style={{ fontSize: 12, fontWeight: 400, color: "#6b7280" }}>{item.unit}</span>
+                          </p>
+                          <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
+                            Auto-used from employee's self report · {actualPct}% of target
+                          </p>
+                        </div>
+                      )}
                     </div>
+
+                    {/* Progress bar */}
                     {item.actual_value && (
                       <div style={{ background: "#e5e7eb", borderRadius: 99, height: 8, overflow: "hidden" }}>
                         <div style={{ width: `${Math.min(actualPct, 100)}%`, height: "100%", background: actualColor, borderRadius: 99, transition: "width 0.4s ease" }} />
@@ -824,8 +869,13 @@ export default function PerformanceReviews() {
 
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>HR Feedback & Comments *</label>
-                <textarea value={reviewForm.hr_comment} onChange={e => setReviewForm(f => ({ ...f, hr_comment: e.target.value }))} placeholder="Write your feedback..." rows={4}
-                  style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, color: "#1a1a2e", background: "#fff", boxSizing: "border-box", outline: "none", resize: "vertical" }} />
+                <textarea
+                  value={reviewForm.hr_comment}
+                  onChange={e => setReviewForm(f => ({ ...f, hr_comment: e.target.value }))}
+                  placeholder="Write your feedback..."
+                  rows={4}
+                  style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, color: "#1a1a2e", background: "#fff", boxSizing: "border-box", outline: "none", resize: "vertical" }}
+                />
               </div>
 
               <div style={{ background: getRatingInfo(liveScore).bg, border: `1px solid ${getRatingInfo(liveScore).color}40`, borderRadius: 10, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>

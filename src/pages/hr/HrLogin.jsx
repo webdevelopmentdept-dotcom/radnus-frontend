@@ -29,6 +29,16 @@ export default function HrLogin() {
         setLoading(false);
         return;
       }
+
+      // ✅ Save HR info to localStorage so other pages can use it
+      // Adjust keys based on what your API actually returns:
+      // Common patterns: data.hr, data.user, data.data, data._id
+      const hrInfo = data.hr || data.user || data.data || {};
+
+      localStorage.setItem("hrToken", data.token || "");
+     localStorage.setItem("hrId",    hrInfo._id || hrInfo.id || "hr_admin_001");
+      localStorage.setItem("hrUser",  JSON.stringify(hrInfo));
+
       navigate("/hr/dashboard/applicants");
     } catch (err) {
       setError("Server error");
@@ -76,7 +86,6 @@ export default function HrLogin() {
           </button>
         </form>
 
-        {/* BACK BUTTON */}
         <button
           className="btn btn-secondary mt-3"
           style={{ width: "200px", margin: "0 auto", display: "block" }}

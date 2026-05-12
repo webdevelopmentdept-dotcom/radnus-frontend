@@ -5,12 +5,13 @@ import {
   TrendingUp, Target, Award, Star, CalendarCheck, BookOpen,
   MessageSquare, ChevronRight, ArrowUpRight, ArrowDownRight,
   CheckCircle, AlertCircle, BarChart2, Activity, Zap, Medal,
-  UserPlus, RefreshCw
+  UserPlus, RefreshCw, Bell
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
+import { useNavigate } from "react-router-dom";
 import HRLayout from "./HRLayout";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -138,6 +139,39 @@ const styles = `
       display: none;
     }
   }
+
+  /* ── Notification Bell ── */
+  .hr-notif-btn {
+    position: relative;
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #374151;
+    flex-shrink: 0;
+  }
+  .hr-notif-btn:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+  }
+  .hr-notif-badge {
+    position: absolute;
+    top: -5px; right: -5px;
+    min-width: 18px; height: 18px;
+    background: #dc2626;
+    color: #fff;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4px;
+    border: 2px solid #fff;
+    line-height: 1;
+  }
 `;
 
 /* ── tiny helpers ───────────────────────────────────── */
@@ -206,12 +240,45 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
+function getHrId() {
+  const hrUserRaw = localStorage.getItem("hrUser");
+  if (hrUserRaw) {
+    try {
+      const obj = JSON.parse(hrUserRaw);
+      const id = obj?._id || obj?.id || obj?.hrId || obj?.userId;
+      if (id) return String(id);
+    } catch (_) {}
+  }
+  const hrId = localStorage.getItem("hrId");
+  if (hrId && hrId !== "undefined" && hrId !== "null" && hrId.trim() !== "") return hrId.trim();
+  return null;
+}
+
 /* ══════════════════════════════════════════════════════
    MAIN COMPONENT
 ══════════════════════════════════════════════════════ */
 export default function HRDashboard() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // ── Notification unread count ──
+  const [unreadCount, setUnreadCount] = useState(0);
+  const hrId = getHrId();
+
+  useEffect(() => {
+    if (!hrId) return;
+    const fetchUnread = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/notifications/hr/${hrId}`);
+        const data = res.data?.data || res.data || [];
+        setUnreadCount(data.filter(n => !n.isRead).length);
+      } catch (_) {}
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30_000);
+    return () => clearInterval(interval);
+  }, [hrId]);
 
   /* ── state ── */
   const [empStats,      setEmpStats]      = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
@@ -456,10 +523,26 @@ export default function HRDashboard() {
             {new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 11, color: "#6b7280", background: "#f3f4f6", padding: "5px 10px", borderRadius: 8, whiteSpace: "nowrap" }}>
             Live Data
           </span>
+
+          {/* ── Notification Bell ── */}
+          <button
+            className="hr-notif-btn"
+            onClick={() => navigate("/hr/dashboard/notifications")}
+            title="Notifications"
+          >
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="hr-notif-badge">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </button>
+
           <div style={{
             width: 36, height: 36, background: COLORS.blue, borderRadius: "50%",
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -481,8 +564,6 @@ export default function HRDashboard() {
 
         {/* ══ SECTION 2 — Dept Distribution + Monthly Trend ══ */}
         <div className="hr-grid-2">
-
-          {/* Dept bar */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: "18px 16px" }}>
             <SectionTitle title="Department Distribution" sub="Headcount per department" />
             {deptChartData.length > 0 ? (
@@ -499,7 +580,6 @@ export default function HRDashboard() {
             )}
           </div>
 
-          {/* Monthly trend */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: "18px 16px" }}>
             <SectionTitle title="Headcount Trend" sub="Joined vs Left (last 7 months)" />
             <ResponsiveContainer width="100%" height={200}>
@@ -527,14 +607,12 @@ export default function HRDashboard() {
 
         {/* ══ SECTION 3 — Recruitment + Attendance ══ */}
         <div className="hr-grid-2">
-
-          {/* Recruitment */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: "18px 16px" }}>
             <SectionTitle title="Recruitment Overview" sub="Applicants & postings" />
             <div className="hr-grid-recruit-inner">
               {[
-                { label: "Total Applicants", value: recruitment.applicants,  color: COLORS.blue,   icon: UserPlus   },
-                { label: "Job Postings",      value: recruitment.jobPostings, color: COLORS.indigo, icon: Briefcase  },
+                { label: "Total Applicants", value: recruitment.applicants,  color: COLORS.blue,   icon: UserPlus    },
+                { label: "Job Postings",      value: recruitment.jobPostings, color: COLORS.indigo, icon: Briefcase   },
                 { label: "Selected",          value: recruitment.selected,    color: COLORS.green,  icon: CheckCircle },
                 { label: "Waiting",           value: recruitment.waiting,     color: COLORS.amber,  icon: AlertCircle },
               ].map((s, i) => (
@@ -560,14 +638,13 @@ export default function HRDashboard() {
             )}
           </div>
 
-          {/* Attendance */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: "18px 16px" }}>
             <SectionTitle title="Today's Attendance" sub="Real-time attendance snapshot" />
             <div className="hr-grid-recruit-inner">
               {[
-                { label: "Present",  value: attendance.present,  color: COLORS.blue,   icon: CheckCircle  },
-                { label: "Absent",   value: attendance.absent,   color: COLORS.red,    icon: UserX        },
-                { label: "Late",     value: attendance.late,     color: COLORS.amber,  icon: Clock        },
+                { label: "Present",  value: attendance.present,  color: COLORS.blue,   icon: CheckCircle   },
+                { label: "Absent",   value: attendance.absent,   color: COLORS.red,    icon: UserX         },
+                { label: "Late",     value: attendance.late,     color: COLORS.amber,  icon: Clock         },
                 { label: "On Leave", value: attendance.onLeave,  color: COLORS.purple, icon: CalendarCheck },
               ].map((s, i) => (
                 <div key={i} style={{ background: "#f8fafc", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
@@ -606,8 +683,6 @@ export default function HRDashboard() {
 
         {/* ══ SECTION 5 — Recognition + 360 Feedback + Training ══ */}
         <div className="hr-grid-3">
-
-          {/* Recognition */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: "18px 16px" }}>
             <SectionTitle title="Recognition" sub="Awards & bonuses" />
             {[
@@ -627,7 +702,6 @@ export default function HRDashboard() {
             ))}
           </div>
 
-          {/* 360 Feedback */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: "18px 16px" }}>
             <SectionTitle title="360° Feedback" sub="Cycle & submission stats" />
             {[
@@ -647,7 +721,6 @@ export default function HRDashboard() {
             ))}
           </div>
 
-          {/* Training */}
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, padding: "18px 16px" }}>
             <SectionTitle title="Training" sub="Roadmap & completion" />
             {[
