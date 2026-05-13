@@ -368,6 +368,7 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
       : employee.date_of_joining
         ? new Date(employee.date_of_joining).toISOString().split("T")[0]
         : "",
+         essl_id:         employee.essl_id         || "",
     basic:           activation?.salary?.basic           || "",
     hra:             activation?.salary?.hra             || "",
     da:              activation?.salary?.da              || "",
@@ -381,6 +382,13 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
   const [saving,  setSaving]  = useState(false);
   const [toast,   setToast]   = useState(null);
   const [changed, setChanged] = useState(false);
+
+  useEffect(() => {
+  setForm(prev => ({
+    ...prev,
+    essl_id: employee.essl_id || "",
+  }));
+}, [employee.essl_id]);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -407,6 +415,7 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
         department:      form.department,
         designation:     form.designation,
         date_of_joining: form.date_of_joining,
+        essl_id:         form.essl_id,   
         salary: {
           basic:           parseFloat(form.basic)           || 0,
           hra:             parseFloat(form.hra)             || 0,
@@ -486,7 +495,19 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
           <Field label="Department"      field="department"      placeholder="e.g. Engineering" />
           <Field label="Designation"     field="designation"     placeholder="e.g. Software Engineer" />
           <Field label="Date of Joining" field="date_of_joining" type="date" />
-        </div>
+          <div>
+  <label style={labelStyle}>eSSL Device ID</label>
+  <input
+    type="text"
+    value={form.essl_id}
+    placeholder="MB20 User ID (e.g. 142)"
+    onChange={e => handleChange("essl_id", e.target.value)}
+    onFocus={e => e.target.style.borderColor="#2563eb"}
+    onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+    style={{ ...inputStyle, fontFamily:"monospace" }}
+  />
+</div>
+       </div>
       </div>
 
       <div>
@@ -547,8 +568,11 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
         fetch(`${API_BASE}/api/hr/activation/${empData._id}`).then(r => r.json()).catch(() => null),
       ]);
       setAllDocs(empRes.documents || []);
-      setHrDocs(hrRes.success ? (hrRes.data || []) : []);
-      if (actRes?.success && actRes.data) setActivation(actRes.data);
+setHrDocs(hrRes.success ? (hrRes.data || []) : []);
+if (actRes?.success && actRes.data) setActivation(actRes.data);
+if (empRes.essl_id !== undefined) {
+  setEmpData(prev => ({ ...prev, essl_id: empRes.essl_id }));
+}
     } catch (err) {
       console.error(err);
     } finally {
@@ -558,12 +582,17 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
 
   useEffect(() => { fetchDocs(); }, [empData._id]);
 
-  const handleSaveSuccess = (updatedEmp) => {
-    if (updatedEmp) {
-      setEmpData(prev => ({ ...prev, ...updatedEmp }));
-      if (onEmployeeUpdate) onEmployeeUpdate(updatedEmp);
-    }
-  };
+ const handleSaveSuccess = (updatedEmp) => {
+  if (updatedEmp) {
+    // ✅ essl_id explicitly merge பண்ணு
+    setEmpData(prev => ({ 
+      ...prev, 
+      ...updatedEmp,
+      essl_id: updatedEmp.essl_id ?? prev.essl_id  // fallback to existing
+    }));
+    if (onEmployeeUpdate) onEmployeeUpdate(updatedEmp);
+  }
+};
 
   const getDoc = (type) =>
     allDocs.find(d => d.docType?.trim().toLowerCase() === type?.trim().toLowerCase()) || null;

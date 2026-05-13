@@ -18,6 +18,7 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+
 const DEPARTMENTS = ["IT", "Sales", "HR", "Finance", "Operations", "Marketing", "Support", "Admin"];
 
 // ✅ Build dynamic dept list — always include employee's actual backend value
@@ -69,6 +70,7 @@ const initialEmployment = {
   probation_period: "3 months",
   work_shift: "General Shift",
   reporting_manager: "",
+  essl_id:           "",
 };
 
 const initialSalary = {
@@ -617,6 +619,21 @@ export default function HrApproved() {
                       <label style={labelStyle}>Reporting Manager</label>
                       <input value={employment.reporting_manager} onChange={e => handleEmploymentChange("reporting_manager", e.target.value)} style={inputStyle} placeholder="Manager name" />
                     </div>
+                    <div>
+  <label style={labelStyle}>
+    eSSL Device ID
+    <span style={{ marginLeft:6, fontSize:10, color:"#6b7280", 
+      background:"#f3f4f6", padding:"2px 6px", borderRadius:4 }}>
+      MB20 Machine User ID
+    </span>
+  </label>
+  <input
+    value={employment.essl_id || ""}
+    onChange={e => handleEmploymentChange("essl_id", e.target.value)}
+    style={{ ...inputStyle, fontFamily:"monospace" }}
+    placeholder="e.g. 142  (MB20 device user list-ல பாரு)"
+  />
+</div>
                   </div>
                   <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end" }}>
                     <button onClick={() => setActiveSection(2)} style={{ ...btnSecondary, display: "inline-flex", alignItems: "center", gap: 6 }}>
