@@ -625,6 +625,18 @@ export default function HrSidebar() {
           </NavLink>
 
           {/* ══════════════════════════════
+    ANNOUNCEMENTS
+══════════════════════════════ */}
+<div className="hr-section">Announcements</div>
+
+<NavLink to="/hr/dashboard/announcements"
+  className={({ isActive }) => isActive ? "active" : ""}
+  onClick={close}>
+  <HugeiconsIcon icon={Notification01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+  Announcements
+</NavLink>
+
+          {/* ══════════════════════════════
                       WELLNESS
             ══════════════════════════════ */}
           <div className="hr-section">Wellness</div>

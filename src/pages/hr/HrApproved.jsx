@@ -18,18 +18,8 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-
-const DEPARTMENTS = ["IT", "Sales", "HR", "Finance", "Operations", "Marketing", "Support", "Admin"];
-
-// ✅ Build dynamic dept list — always include employee's actual backend value
-// e.g. "IT / System Department" will appear as first option and be pre-selected
-const buildDeptOptions = (empRawDept) => {
-  if (!empRawDept) return DEPARTMENTS;
-  const already = DEPARTMENTS.some(d => d.toLowerCase() === empRawDept.toLowerCase());
-  return already ? DEPARTMENTS : [empRawDept, ...DEPARTMENTS];
-};
-
-const EMP_TYPES = ["Full-time", "Part-time", "Contract", "Intern"];
+// ✅ FIXED: Hybrid added
+const EMP_TYPES = ["Full-time", "Part-time", "Contract", "Intern", "Hybrid"];
 const SHIFTS = ["General Shift", "Field Employee", "Rotational"];
 const PROBATION_OPTIONS = ["1 month", "2 months", "3 months", "6 months", "no probation"];
 
@@ -42,23 +32,17 @@ const HR_DOCS = [
   "HR Policy Document",
 ];
 
-// ✅ Get employee ID from backend field (same as All Employees page shows)
-// Falls back to index-based if backend field missing
+// ✅ Get employee ID from backend field
 const getEmpId = (emp, index) =>
   emp?.employeeId || emp?.employee_id || emp?.empId || `EMP-${String(index + 1).padStart(3, "0")}`;
 
-// ✅ Helper: extract designation from emp object safely
-// Handles different possible field names from backend
+// ✅ Extract designation from emp object safely
 const getDesignation = (emp) =>
   emp?.designation || emp?.role || emp?.position || emp?.job_title || emp?.jobTitle || "";
 
-// ✅ Helper: extract department from emp object safely
+// ✅ Extract department from emp object safely
 const getDepartment = (emp) =>
   emp?.department || emp?.dept || emp?.department_name || emp?.departmentName || "";
-
-// ✅ matchDepartment: pass raw value through directly
-// buildDeptOptions() adds it to the dropdown list if it's not in DEPARTMENTS
-const matchDepartment = (rawDept) => rawDept?.trim() || "";
 
 const initialEmployment = {
   employee_code: "",
@@ -70,7 +54,7 @@ const initialEmployment = {
   probation_period: "3 months",
   work_shift: "General Shift",
   reporting_manager: "",
-  essl_id:           "",
+  essl_id: "",
 };
 
 const initialSalary = {
@@ -214,8 +198,24 @@ export default function HrApproved() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
   const [existingActivation, setExistingActivation] = useState(null);
-  // ✅ Tracks the raw department string from backend for dynamic dropdown options
+
+  // ✅ FIXED: Dynamic departments fetched from /api/departments (active only)
+  const [departments, setDepartments] = useState([]);
+  // ✅ Raw dept value from employee registration (for fallback pre-fill)
   const [empRawDept, setEmpRawDept] = useState("");
+
+  // ✅ Fetch active departments from Department Master on mount
+  useEffect(() => {
+    fetch(`${API_BASE}/api/departments`)
+      .then(res => res.json())
+      .then(data => {
+        const list = data?.data || data || [];
+        // Only show active departments in the dropdown
+        const active = list.filter(d => d.status === "active");
+        setDepartments(active);
+      })
+      .catch(err => console.error("Failed to fetch departments:", err));
+  }, []);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/hr/approved`)
@@ -229,7 +229,17 @@ export default function HrApproved() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  // ✅ FIXED: Properly extract designation & department from employee registration data
+  // ✅ Build department dropdown options
+  // If employee's raw dept value is not in the fetched list, add it as first option
+  // so pre-fill still works even for older/legacy dept values
+  const buildDeptOptions = () => {
+    const names = departments.map(d => d.name);
+    if (empRawDept && !names.some(n => n.toLowerCase() === empRawDept.toLowerCase())) {
+      return [empRawDept, ...names];
+    }
+    return names;
+  };
+
   const openActivation = async (emp, index) => {
     setSelected(emp);
     setSelectedIndex(index);
@@ -240,25 +250,20 @@ export default function HrApproved() {
     setExistingActivation(null);
 
     const code = getEmpId(emp, index);
-
-    // ✅ Extract designation & raw department from employee registration data
     const empDesignation = getDesignation(emp);
-    const rawDept        = getDepartment(emp);       // e.g. "IT / System Department"
-    const empDepartment  = matchDepartment(rawDept); // pass-through trimmed value
+    const rawDept = getDepartment(emp);
 
-    // ✅ Store raw dept so dropdown can include it as an option
     setEmpRawDept(rawDept);
 
-    // ✅ Pre-fill both designation and department from employee registration data
     setEmployment({
       ...initialEmployment,
       employee_code: code,
-      department:    empDepartment,
-      designation:   empDesignation,
+      department: rawDept,
+      designation: empDesignation,
     });
     setSalary(initialSalary);
 
-    // ✅ If activation already saved, load it and merge — registration data as fallback
+    // Load existing activation if saved
     try {
       const res = await fetch(`${API_BASE}/api/hr/activation/${emp._id}`);
       const data = await res.json();
@@ -267,24 +272,20 @@ export default function HrApproved() {
         if (data.data.employment) {
           setEmployment({
             ...initialEmployment,
-            // ✅ Always keep registration designation & department as base
-            designation:   empDesignation,
-            department:    empDepartment,
-            // ✅ Saved activation data overrides base (saved data is more authoritative)
+            designation: empDesignation,
+            department: rawDept,
             ...data.data.employment,
-            // ✅ Re-match department from saved data too (in case saved value differs)
-            department: matchDepartment(data.data.employment.department) || empDepartment,
-            // ✅ Use saved code if valid, else use current employee's ID
+            department: data.data.employment.department || rawDept,
             employee_code: data.data.employment.employee_code || code,
           });
         }
         if (data.data.salary) setSalary({ ...initialSalary, ...data.data.salary });
       }
     } catch (e) {
-      // Activation not saved yet — registration pre-fill already set above, no problem
+      // Not saved yet — pre-fill already set
     }
 
-    // ✅ Load uploaded docs
+    // Load uploaded docs
     try {
       const res = await fetch(`${API_BASE}/api/hr/activation/docs/${emp._id}`);
       const data = await res.json();
@@ -307,10 +308,7 @@ export default function HrApproved() {
   };
 
   const handleEmploymentChange = (field, value) => {
-    setEmployment(prev => {
-      const updated = { ...prev, [field]: value };
-      return updated;
-    });
+    setEmployment(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSaveDetails = async () => {
@@ -467,7 +465,6 @@ export default function HrApproved() {
                     </td>
                     <td style={{ padding: "14px 20px", color: "#6b7280", whiteSpace: "nowrap" }}>{emp.email}</td>
                     <td style={{ padding: "14px 20px", color: "#374151", whiteSpace: "nowrap" }}>{getDepartment(emp) || "—"}</td>
-                    {/* ✅ Designation column now uses helper function */}
                     <td style={{ padding: "14px 20px", color: "#374151", whiteSpace: "nowrap" }}>{getDesignation(emp) || "—"}</td>
                     <td style={{ padding: "14px 20px" }}>
                       <span style={{
@@ -582,19 +579,41 @@ export default function HrApproved() {
                         placeholder="e.g. Software Engineer"
                       />
                     </div>
+
+                    {/* ✅ FIXED: Department dropdown — fetched from /api/departments (active only) */}
                     <div>
-                      <label style={labelStyle}>Department</label>
-                      <select value={employment.department} onChange={e => handleEmploymentChange("department", e.target.value)} style={inputStyle}>
+                      <label style={labelStyle}>
+                        Department
+                        {departments.length === 0 && (
+                          <span style={{ marginLeft: 6, fontSize: 10, color: "#9ca3af" }}>
+                            (loading…)
+                          </span>
+                        )}
+                      </label>
+                      <select
+                        value={employment.department}
+                        onChange={e => handleEmploymentChange("department", e.target.value)}
+                        style={inputStyle}
+                      >
                         <option value="">Select Department</option>
-                        {buildDeptOptions(empRawDept).map(d => <option key={d} value={d}>{d}</option>)}
+                        {buildDeptOptions().map(name => (
+                          <option key={name} value={name}>{name}</option>
+                        ))}
                       </select>
                     </div>
+
+                    {/* ✅ FIXED: Employment Type — Hybrid added */}
                     <div>
                       <label style={labelStyle}>Employment Type</label>
-                      <select value={employment.employment_type} onChange={e => handleEmploymentChange("employment_type", e.target.value)} style={inputStyle}>
+                      <select
+                        value={employment.employment_type}
+                        onChange={e => handleEmploymentChange("employment_type", e.target.value)}
+                        style={inputStyle}
+                      >
                         {EMP_TYPES.map(t => <option key={t}>{t}</option>)}
                       </select>
                     </div>
+
                     <div>
                       <label style={labelStyle}>Work Location / Branch</label>
                       <input value={employment.work_location} onChange={e => handleEmploymentChange("work_location", e.target.value)} style={inputStyle} placeholder="e.g. Chennai HQ" />
@@ -620,20 +639,19 @@ export default function HrApproved() {
                       <input value={employment.reporting_manager} onChange={e => handleEmploymentChange("reporting_manager", e.target.value)} style={inputStyle} placeholder="Manager name" />
                     </div>
                     <div>
-  <label style={labelStyle}>
-    eSSL Device ID
-    <span style={{ marginLeft:6, fontSize:10, color:"#6b7280", 
-      background:"#f3f4f6", padding:"2px 6px", borderRadius:4 }}>
-      MB20 Machine User ID
-    </span>
-  </label>
-  <input
-    value={employment.essl_id || ""}
-    onChange={e => handleEmploymentChange("essl_id", e.target.value)}
-    style={{ ...inputStyle, fontFamily:"monospace" }}
-    placeholder="e.g. 142  (MB20 device user list-ல பாரு)"
-  />
-</div>
+                      <label style={labelStyle}>
+                        eSSL Device ID
+                        <span style={{ marginLeft: 6, fontSize: 10, color: "#6b7280", background: "#f3f4f6", padding: "2px 6px", borderRadius: 4 }}>
+                          MB20 Machine User ID
+                        </span>
+                      </label>
+                      <input
+                        value={employment.essl_id || ""}
+                        onChange={e => handleEmploymentChange("essl_id", e.target.value)}
+                        style={{ ...inputStyle, fontFamily: "monospace" }}
+                        placeholder="e.g. 142"
+                      />
+                    </div>
                   </div>
                   <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end" }}>
                     <button onClick={() => setActiveSection(2)} style={{ ...btnSecondary, display: "inline-flex", alignItems: "center", gap: 6 }}>

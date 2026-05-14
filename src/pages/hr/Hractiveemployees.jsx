@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from "react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+const EMP_TYPES = ["Full-time", "Part-time", "Contract", "Intern", "Hybrid"];
+
 // ✅ Text-only doc types (stored as plain text/value, not file URLs)
 const TEXT_DOCS = ["CGPA", "PF Number", "ESI Number", "PG CGPA", "Reference Number 1", "Reference Number 2"];
 
@@ -276,7 +278,6 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
         border:`1.5px solid ${hasFile ? "#86efac" : "#e5e7eb"}`,
         borderRadius:10, transition:"all 0.15s",
       }}>
-        {/* Icon */}
         <div style={{ width:36, height:36, borderRadius:8, flexShrink:0, background:hasFile?"#dcfce7":"#eff6ff", display:"flex", alignItems:"center", justifyContent:"center" }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={hasFile?"#16a34a":"#2563eb"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -284,7 +285,6 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
           </svg>
         </div>
 
-        {/* Label + status */}
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
             <span style={{ fontSize:12, fontWeight:700, color:"#1a1a2e" }}>{label || docType}</span>
@@ -296,7 +296,6 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
             {isHrDoc && <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:99, background:"#eff6ff", color:"#2563eb" }}>HR</span>}
           </div>
 
-          {/* Text doc value display */}
           {isTextDoc && hasFile ? (
             <div style={{ marginTop:4, display:"flex", alignItems:"center", gap:6 }}>
               <span style={{ background:"#f0fdf4", border:"1px solid #86efac", borderRadius:6, padding:"2px 10px", fontSize:13, fontWeight:700, color:"#15803d" }}>{fileUrl}</span>
@@ -311,7 +310,6 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
           )}
         </div>
 
-        {/* Action buttons */}
         <div style={{ display:"flex", gap:5, flexShrink:0, flexWrap:"wrap" }}>
           {hasFile ? (
             <>
@@ -353,6 +351,358 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
 };
 
 // ─── Edit Info Tab ────────────────────────────────────────────────────────────
+// const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
+//   const emp = activation?.employment || {};
+
+//   const [form, setForm] = useState({
+//     name:            employee.name            || "",
+//     email:           employee.email           || "",
+//     mobile:          employee.mobile          || "",
+//     employeeId:      employee.employeeId      || "",
+//     department:      employee.department      || emp.department    || "",
+//     designation:     employee.designation     || emp.designation   || "",
+//     // ✅ FIX: Prefer activation employment_type over employee record
+//     employment_type: emp.employment_type      || employee.employment_type || "Full-time",
+//     date_of_joining: emp.date_of_joining
+//       ? new Date(emp.date_of_joining).toISOString().split("T")[0]
+//       : employee.date_of_joining
+//         ? new Date(employee.date_of_joining).toISOString().split("T")[0]
+//         : "",
+//     essl_id:         employee.essl_id         || emp.essl_id || "",
+//     basic:           activation?.salary?.basic           || "",
+//     hra:             activation?.salary?.hra             || "",
+//     da:              activation?.salary?.da              || "",
+//     ta:              activation?.salary?.ta              || "",
+//     other_allowance: activation?.salary?.other_allowance || "",
+//     pf_deduction:    activation?.salary?.pf_deduction    || "",
+//     esi_deduction:   activation?.salary?.esi_deduction   || "",
+//     pt:              activation?.salary?.pt              || "",
+//   });
+
+//   const [saving,  setSaving]  = useState(false);
+//   const [toast,   setToast]   = useState(null);
+//   const [changed, setChanged] = useState(false);
+
+//   const [departments,   setDepartments]   = useState([]);
+//   const [designations,  setDesignations]  = useState([]);
+//   const [loadingDepts,  setLoadingDepts]  = useState(true);
+//   const [loadingDesigs, setLoadingDesigs] = useState(false);
+
+//   // ✅ FIX: Re-sync ALL employment fields from activation when activation prop loads/changes
+//   useEffect(() => {
+//     if (activation?.employment) {
+//       const actEmp = activation.employment;
+//       setForm(prev => ({
+//         ...prev,
+//         // Only override if activation has a value (don't blank out existing form values)
+//         employment_type: actEmp.employment_type  || prev.employment_type,
+//         department:      actEmp.department       || prev.department,
+//         designation:     actEmp.designation      || prev.designation,
+//         date_of_joining: actEmp.date_of_joining
+//           ? new Date(actEmp.date_of_joining).toISOString().split("T")[0]
+//           : prev.date_of_joining,
+//         essl_id:         actEmp.essl_id !== undefined ? actEmp.essl_id : prev.essl_id,
+//       }));
+//     }
+//     // Also re-sync salary from activation
+//     if (activation?.salary) {
+//       const actSal = activation.salary;
+//       setForm(prev => ({
+//         ...prev,
+//         basic:           actSal.basic           ?? prev.basic,
+//         hra:             actSal.hra             ?? prev.hra,
+//         da:              actSal.da              ?? prev.da,
+//         ta:              actSal.ta              ?? prev.ta,
+//         other_allowance: actSal.other_allowance ?? prev.other_allowance,
+//         pf_deduction:    actSal.pf_deduction    ?? prev.pf_deduction,
+//         esi_deduction:   actSal.esi_deduction   ?? prev.esi_deduction,
+//         pt:              actSal.pt              ?? prev.pt,
+//       }));
+//     }
+//   }, [activation]);
+
+//   // ✅ Fetch active departments on mount
+//   useEffect(() => {
+//     fetch(`${API_BASE}/api/departments`)
+//       .then(r => r.json())
+//       .then(data => {
+//         const list = data?.data || data || [];
+//         setDepartments(list.filter(d => d.status === "active"));
+//       })
+//       .catch(() => {})
+//       .finally(() => setLoadingDepts(false));
+//   }, []);
+
+//   // ✅ When department changes, fetch its designations
+//   useEffect(() => {
+//     if (!form.department) { setDesignations([]); return; }
+//     const matched = departments.find(d => d.name === form.department);
+//     if (matched?._id) {
+//       setLoadingDesigs(true);
+//       fetch(`${API_BASE}/api/departments/${matched._id}`)
+//         .then(r => r.json())
+//         .then(data => {
+//           const dept = data?.data || data || {};
+//           const desigs = (dept.designations || []).filter(d => d.status === "active");
+//           setDesignations(desigs);
+//         })
+//         .catch(() => setDesignations([]))
+//         .finally(() => setLoadingDesigs(false));
+//     } else {
+//       setDesignations([]);
+//     }
+//   }, [form.department, departments]);
+
+//   const showToast = (msg, type = "success") => {
+//     setToast({ msg, type });
+//     setTimeout(() => setToast(null), 3000);
+//   };
+
+//   const handleChange = (field, value) => {
+//     setForm(prev => {
+//       const updated = { ...prev, [field]: value };
+//       if (field === "department") updated.designation = "";
+//       return updated;
+//     });
+//     setChanged(true);
+//   };
+
+//   const gross      = ["basic","hra","da","ta","other_allowance"].reduce((s,k) => s + (parseFloat(form[k])||0), 0);
+//   const deductions = ["pf_deduction","esi_deduction","pt"].reduce((s,k) => s + (parseFloat(form[k])||0), 0);
+//   const net        = gross - deductions;
+
+//   const handleSave = async () => {
+//     setSaving(true);
+//     try {
+//       const payload = {
+//         name:            form.name,
+//         email:           form.email,
+//         mobile:          form.mobile,
+//         employeeId:      form.employeeId,
+//         department:      form.department,
+//         designation:     form.designation,
+//         employment_type: form.employment_type,
+//         date_of_joining: form.date_of_joining,
+//         essl_id:         form.essl_id,
+//         salary: {
+//           basic:           parseFloat(form.basic)           || 0,
+//           hra:             parseFloat(form.hra)             || 0,
+//           da:              parseFloat(form.da)              || 0,
+//           ta:              parseFloat(form.ta)              || 0,
+//           other_allowance: parseFloat(form.other_allowance) || 0,
+//           pf_deduction:    parseFloat(form.pf_deduction)    || 0,
+//           esi_deduction:   parseFloat(form.esi_deduction)   || 0,
+//           pt:              parseFloat(form.pt)              || 0,
+//           gross, net,
+//         },
+//       };
+//       const res  = await fetch(`${API_BASE}/api/hr/activation/update/${employee._id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+//       const data = await res.json();
+//       if (data.success) {
+//         showToast("Employee info saved successfully ✓");
+//         setChanged(false);
+//         if (onSaveSuccess) onSaveSuccess(data.data);
+//       } else {
+//         showToast(data.message || "Save failed", "error");
+//       }
+//     } catch (err) {
+//       console.error(err);
+//       showToast("Something went wrong", "error");
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   const inputStyle  = { width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:8, fontSize:13, outline:"none", background:"#fff", boxSizing:"border-box", color:"#1a1a2e", transition:"border-color 0.15s" };
+//   const selectStyle = { ...inputStyle, cursor:"pointer", appearance:"auto" };
+//   const labelStyle  = { fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4, display:"block" };
+
+//   const sectionTitle = (title) => (
+//     <p style={{ margin:"0 0 10px", fontSize:12, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", paddingBottom:6, borderBottom:"1.5px solid #f0f0f0" }}>{title}</p>
+//   );
+
+//   const Field = ({ label, field, type="text", placeholder="" }) => (
+//     <div>
+//       <label style={labelStyle}>{label}</label>
+//       <input type={type} value={form[field]} placeholder={placeholder} onChange={e => handleChange(field, e.target.value)}
+//         onFocus={e => e.target.style.borderColor="#2563eb"} onBlur={e => e.target.style.borderColor="#e5e7eb"} style={inputStyle} />
+//     </div>
+//   );
+
+//   const AmountField = ({ label, field }) => (
+//     <div>
+//       <label style={labelStyle}>{label}</label>
+//       <div style={{ position:"relative" }}>
+//         <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"#9ca3af", fontWeight:600 }}>₹</span>
+//         <input type="number" value={form[field]} placeholder="0" onChange={e => handleChange(field, e.target.value)}
+//           onFocus={e => e.target.style.borderColor="#2563eb"} onBlur={e => e.target.style.borderColor="#e5e7eb"}
+//           style={{ ...inputStyle, paddingLeft:24 }} />
+//       </div>
+//     </div>
+//   );
+
+//   const deptOptions = () => {
+//     const names = departments.map(d => d.name);
+//     if (form.department && !names.includes(form.department)) return [form.department, ...names];
+//     return names;
+//   };
+
+//   const desigOptions = () => {
+//     const titles = designations.map(d => d.title);
+//     if (form.designation && !titles.includes(form.designation)) return [form.designation, ...titles];
+//     return titles;
+//   };
+
+//   return (
+//     <div style={{ display:"flex", flexDirection:"column", gap:20, paddingBottom:8 }}>
+//       {toast && (
+//         <div style={{ background:toast.type==="error"?"#fef2f2":"#f0fdf4", border:`1px solid ${toast.type==="error"?"#fecaca":"#86efac"}`, color:toast.type==="error"?"#dc2626":"#16a34a", padding:"10px 14px", borderRadius:8, fontSize:13, fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
+//           {toast.type==="error"?"✕":"✓"} {toast.msg}
+//         </div>
+//       )}
+
+//       {/* Basic Info */}
+//       <div>
+//         {sectionTitle("Basic Information")}
+//         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:12 }}>
+//           <Field label="Full Name"   field="name"       placeholder="Employee name" />
+//           <Field label="Email"       field="email"      type="email" placeholder="email@company.com" />
+//           <Field label="Mobile"      field="mobile"     type="tel"   placeholder="+91 XXXXX XXXXX" />
+//           <Field label="Employee ID" field="employeeId" placeholder="EMP001" />
+//         </div>
+//       </div>
+
+//       {/* Employment Details */}
+//       <div>
+//         {sectionTitle("Employment Details")}
+//         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:12 }}>
+
+//           {/* Department — dynamic dropdown */}
+//           <div>
+//             <label style={labelStyle}>
+//               Department
+//               {loadingDepts && <span style={{ marginLeft:5, fontSize:10, color:"#9ca3af" }}>(loading…)</span>}
+//             </label>
+//             <select
+//               value={form.department}
+//               onChange={e => handleChange("department", e.target.value)}
+//               onFocus={e => e.target.style.borderColor="#2563eb"}
+//               onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+//               style={selectStyle}
+//             >
+//               <option value="">Select Department</option>
+//               {deptOptions().map(name => (
+//                 <option key={name} value={name}>{name}</option>
+//               ))}
+//             </select>
+//           </div>
+
+//           {/* Designation — dynamic dropdown based on selected department */}
+//           <div>
+//             <label style={labelStyle}>
+//               Designation
+//               {loadingDesigs && <span style={{ marginLeft:5, fontSize:10, color:"#9ca3af" }}>(loading…)</span>}
+//             </label>
+//             <select
+//               value={form.designation}
+//               onChange={e => handleChange("designation", e.target.value)}
+//               onFocus={e => e.target.style.borderColor="#2563eb"}
+//               onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+//               style={selectStyle}
+//               disabled={!form.department}
+//             >
+//               <option value="">
+//                 {!form.department
+//                   ? "Select department first"
+//                   : designations.length === 0 && !loadingDesigs
+//                     ? "No designations found"
+//                     : "Select Designation"}
+//               </option>
+//               {desigOptions().map(title => (
+//                 <option key={title} value={title}>{title}</option>
+//               ))}
+//             </select>
+//             {!form.department && (
+//               <p style={{ margin:"4px 0 0", fontSize:10, color:"#9ca3af" }}>
+//                 Choose a department to see designations
+//               </p>
+//             )}
+//           </div>
+
+//           {/* ✅ FIX: Employment Type — always reads from form.employment_type which is synced from activation */}
+//           <div>
+//             <label style={labelStyle}>Employment Type</label>
+//             <select
+//               value={form.employment_type}
+//               onChange={e => handleChange("employment_type", e.target.value)}
+//               onFocus={e => e.target.style.borderColor="#2563eb"}
+//               onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+//               style={selectStyle}
+//             >
+//               {EMP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+//             </select>
+//           </div>
+
+//           <Field label="Date of Joining" field="date_of_joining" type="date" />
+
+//           {/* eSSL Device ID */}
+//           <div>
+//             <label style={labelStyle}>eSSL Device ID</label>
+//             <input
+//               type="text"
+//               value={form.essl_id}
+//               placeholder="MB20 User ID (e.g. 142)"
+//               onChange={e => handleChange("essl_id", e.target.value)}
+//               onFocus={e => e.target.style.borderColor="#2563eb"}
+//               onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+//               style={{ ...inputStyle, fontFamily:"monospace" }}
+//             />
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Salary */}
+//       <div>
+//         {sectionTitle("Salary Structure")}
+//         <p style={{ margin:"0 0 10px", fontSize:12, color:"#6b7280" }}>Earnings</p>
+//         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:10, marginBottom:14 }}>
+//           <AmountField label="Basic"           field="basic" />
+//           <AmountField label="HRA"             field="hra" />
+//           <AmountField label="DA"              field="da" />
+//           <AmountField label="TA"              field="ta" />
+//           <AmountField label="Other Allowance" field="other_allowance" />
+//         </div>
+//         <p style={{ margin:"0 0 10px", fontSize:12, color:"#6b7280" }}>Deductions</p>
+//         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:10, marginBottom:14 }}>
+//           <AmountField label="PF Deduction"    field="pf_deduction" />
+//           <AmountField label="ESI Deduction"   field="esi_deduction" />
+//           <AmountField label="Professional Tax" field="pt" />
+//         </div>
+//         <div style={{ display:"flex", gap:10, flexWrap:"wrap", background:"#f8fafc", border:"1px solid #e5e7eb", borderRadius:10, padding:"12px 16px" }}>
+//           {[
+//             { label:"Gross Salary",     value:gross,      color:"#16a34a", bg:"#f0fdf4", border:"#86efac" },
+//             { label:"Total Deductions", value:deductions, color:"#dc2626", bg:"#fef2f2", border:"#fecaca" },
+//             { label:"Net Salary",       value:net,        color:"#2563eb", bg:"#eff6ff", border:"#bfdbfe" },
+//           ].map((s,i) => (
+//             <div key={i} style={{ flex:1, minWidth:120, textAlign:"center", background:s.bg, border:`1px solid ${s.border}`, borderRadius:8, padding:"8px 12px" }}>
+//               <p style={{ margin:0, fontSize:10, fontWeight:700, color:s.color, textTransform:"uppercase", letterSpacing:"0.05em" }}>{s.label}</p>
+//               <p style={{ margin:"2px 0 0", fontSize:16, fontWeight:800, color:s.color }}>₹{s.value.toLocaleString("en-IN")}</p>
+//             </div>
+//           ))}
+//         </div>
+//       </div>
+
+//       <div style={{ display:"flex", justifyContent:"flex-end", paddingTop:4 }}>
+//         <button onClick={handleSave} disabled={saving || !changed} style={{ display:"flex", alignItems:"center", gap:7, padding:"10px 22px", border:"none", borderRadius:9, background:saving||!changed?"#9ca3af":"#2563eb", color:"#fff", fontWeight:700, fontSize:14, cursor:saving||!changed?"not-allowed":"pointer", boxShadow:saving||!changed?"none":"0 4px 12px rgba(37,99,235,0.35)", transition:"all 0.2s" }}>
+//           <SaveIcon />
+//           {saving ? "Saving..." : "Save Changes"}
+//         </button>
+//       </div>
+//     </div>
+//   );
+// };
+// ─── Edit Info Tab ────────────────────────────────────────────────────────────
+// PASTE THIS to replace your existing EditInfoTab component entirely
 const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
   const emp = activation?.employment || {};
 
@@ -363,12 +713,13 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
     employeeId:      employee.employeeId      || "",
     department:      employee.department      || emp.department    || "",
     designation:     employee.designation     || emp.designation   || "",
+    employment_type: emp.employment_type      || employee.employment_type || "Full-time",
     date_of_joining: emp.date_of_joining
       ? new Date(emp.date_of_joining).toISOString().split("T")[0]
       : employee.date_of_joining
         ? new Date(employee.date_of_joining).toISOString().split("T")[0]
         : "",
-         essl_id:         employee.essl_id         || "",
+    essl_id:         employee.essl_id         || emp.essl_id || "",
     basic:           activation?.salary?.basic           || "",
     hra:             activation?.salary?.hra             || "",
     da:              activation?.salary?.da              || "",
@@ -383,12 +734,76 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
   const [toast,   setToast]   = useState(null);
   const [changed, setChanged] = useState(false);
 
+  // ✅ FIX: departments now holds full objects (with designations array inside)
+  const [departments,   setDepartments]   = useState([]);
+  const [designations,  setDesignations]  = useState([]);
+  const [loadingDepts,  setLoadingDepts]  = useState(true);
+
+  // Re-sync form from activation when it loads/changes
   useEffect(() => {
-  setForm(prev => ({
-    ...prev,
-    essl_id: employee.essl_id || "",
-  }));
-}, [employee.essl_id]);
+    if (activation?.employment) {
+      const actEmp = activation.employment;
+      setForm(prev => ({
+        ...prev,
+        employment_type: actEmp.employment_type  || prev.employment_type,
+        department:      actEmp.department       || prev.department,
+        designation:     actEmp.designation      || prev.designation,
+        date_of_joining: actEmp.date_of_joining
+          ? new Date(actEmp.date_of_joining).toISOString().split("T")[0]
+          : prev.date_of_joining,
+        essl_id: actEmp.essl_id !== undefined ? actEmp.essl_id : prev.essl_id,
+      }));
+    }
+    if (activation?.salary) {
+      const s = activation.salary;
+      setForm(prev => ({
+        ...prev,
+        basic:           s.basic           ?? prev.basic,
+        hra:             s.hra             ?? prev.hra,
+        da:              s.da              ?? prev.da,
+        ta:              s.ta              ?? prev.ta,
+        other_allowance: s.other_allowance ?? prev.other_allowance,
+        pf_deduction:    s.pf_deduction    ?? prev.pf_deduction,
+        esi_deduction:   s.esi_deduction   ?? prev.esi_deduction,
+        pt:              s.pt              ?? prev.pt,
+      }));
+    }
+  }, [activation]);
+
+  // ✅ FIX 1: Use /api/departments/active — this endpoint returns designations[]
+  //           inside each department object. No second fetch needed.
+  useEffect(() => {
+    setLoadingDepts(true);
+    fetch(`${API_BASE}/api/departments/active`)
+      .then(r => r.json())
+      .then(data => {
+        const list = data?.data || data || [];
+        setDepartments(list); // list already has .designations[]
+      })
+      .catch(() => {})
+      .finally(() => setLoadingDepts(false));
+  }, []);
+
+  // ✅ FIX 2: When department changes, pull designations directly from
+  //           the already-fetched departments list. Zero extra API calls.
+  useEffect(() => {
+    if (!form.department || departments.length === 0) {
+      setDesignations([]);
+      return;
+    }
+    const matched = departments.find(
+      d => d.name === form.department
+    );
+    if (matched) {
+      // Only show active designations in the dropdown
+      const active = (matched.designations || []).filter(
+        d => d.status === "active"
+      );
+      setDesignations(active);
+    } else {
+      setDesignations([]);
+    }
+  }, [form.department, departments]);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -396,7 +811,12 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
   };
 
   const handleChange = (field, value) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm(prev => {
+      const updated = { ...prev, [field]: value };
+      // Reset designation whenever department changes
+      if (field === "department") updated.designation = "";
+      return updated;
+    });
     setChanged(true);
   };
 
@@ -414,8 +834,9 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
         employeeId:      form.employeeId,
         department:      form.department,
         designation:     form.designation,
+        employment_type: form.employment_type,
         date_of_joining: form.date_of_joining,
-        essl_id:         form.essl_id,   
+        essl_id:         form.essl_id,
         salary: {
           basic:           parseFloat(form.basic)           || 0,
           hra:             parseFloat(form.hra)             || 0,
@@ -428,7 +849,11 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
           gross, net,
         },
       };
-      const res  = await fetch(`${API_BASE}/api/hr/activation/update/${employee._id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+      const res  = await fetch(`${API_BASE}/api/hr/activation/update/${employee._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       const data = await res.json();
       if (data.success) {
         showToast("Employee info saved successfully ✓");
@@ -445,8 +870,10 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
     }
   };
 
-  const inputStyle = { width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:8, fontSize:13, outline:"none", background:"#fff", boxSizing:"border-box", color:"#1a1a2e", transition:"border-color 0.15s" };
-  const labelStyle = { fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4, display:"block" };
+  const inputStyle  = { width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:8, fontSize:13, outline:"none", background:"#fff", boxSizing:"border-box", color:"#1a1a2e", transition:"border-color 0.15s" };
+  const selectStyle = { ...inputStyle, cursor:"pointer", appearance:"auto" };
+  const labelStyle  = { fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4, display:"block" };
+
   const sectionTitle = (title) => (
     <p style={{ margin:"0 0 10px", fontSize:12, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", paddingBottom:6, borderBottom:"1.5px solid #f0f0f0" }}>{title}</p>
   );
@@ -454,8 +881,11 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
   const Field = ({ label, field, type="text", placeholder="" }) => (
     <div>
       <label style={labelStyle}>{label}</label>
-      <input type={type} value={form[field]} placeholder={placeholder} onChange={e => handleChange(field, e.target.value)}
-        onFocus={e => e.target.style.borderColor="#2563eb"} onBlur={e => e.target.style.borderColor="#e5e7eb"} style={inputStyle} />
+      <input type={type} value={form[field]} placeholder={placeholder}
+        onChange={e => handleChange(field, e.target.value)}
+        onFocus={e => e.target.style.borderColor="#2563eb"}
+        onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+        style={inputStyle} />
     </div>
   );
 
@@ -464,12 +894,30 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
       <label style={labelStyle}>{label}</label>
       <div style={{ position:"relative" }}>
         <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"#9ca3af", fontWeight:600 }}>₹</span>
-        <input type="number" value={form[field]} placeholder="0" onChange={e => handleChange(field, e.target.value)}
-          onFocus={e => e.target.style.borderColor="#2563eb"} onBlur={e => e.target.style.borderColor="#e5e7eb"}
+        <input type="number" value={form[field]} placeholder="0"
+          onChange={e => handleChange(field, e.target.value)}
+          onFocus={e => e.target.style.borderColor="#2563eb"}
+          onBlur={e  => e.target.style.borderColor="#e5e7eb"}
           style={{ ...inputStyle, paddingLeft:24 }} />
       </div>
     </div>
   );
+
+  // ✅ If employee's current dept isn't in active list, still show it
+  const deptOptions = () => {
+    const names = departments.map(d => d.name);
+    if (form.department && !names.includes(form.department))
+      return [form.department, ...names];
+    return names;
+  };
+
+  // ✅ If employee's current designation isn't in active list, still show it
+  const desigOptions = () => {
+    const titles = designations.map(d => d.title);
+    if (form.designation && !titles.includes(form.designation))
+      return [form.designation, ...titles];
+    return titles;
+  };
 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:20, paddingBottom:8 }}>
@@ -479,6 +927,7 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
         </div>
       )}
 
+      {/* Basic Info */}
       <div>
         {sectionTitle("Basic Information")}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:12 }}>
@@ -489,27 +938,96 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
         </div>
       </div>
 
+      {/* Employment Details */}
       <div>
         {sectionTitle("Employment Details")}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:12 }}>
-          <Field label="Department"      field="department"      placeholder="e.g. Engineering" />
-          <Field label="Designation"     field="designation"     placeholder="e.g. Software Engineer" />
-          <Field label="Date of Joining" field="date_of_joining" type="date" />
+
+          {/* ✅ Department dropdown */}
           <div>
-  <label style={labelStyle}>eSSL Device ID</label>
-  <input
-    type="text"
-    value={form.essl_id}
-    placeholder="MB20 User ID (e.g. 142)"
-    onChange={e => handleChange("essl_id", e.target.value)}
-    onFocus={e => e.target.style.borderColor="#2563eb"}
-    onBlur={e  => e.target.style.borderColor="#e5e7eb"}
-    style={{ ...inputStyle, fontFamily:"monospace" }}
-  />
-</div>
-       </div>
+            <label style={labelStyle}>
+              Department
+              {loadingDepts && <span style={{ marginLeft:5, fontSize:10, color:"#9ca3af" }}>(loading…)</span>}
+            </label>
+            <select
+              value={form.department}
+              onChange={e => handleChange("department", e.target.value)}
+              onFocus={e => e.target.style.borderColor="#2563eb"}
+              onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+              style={selectStyle}
+            >
+              <option value="">Select Department</option>
+              {deptOptions().map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* ✅ Designation dropdown — auto-populated from selected dept */}
+          <div>
+            <label style={labelStyle}>
+              Designation
+              {/* No loading spinner needed — sync operation now */}
+            </label>
+            <select
+              value={form.designation}
+              onChange={e => handleChange("designation", e.target.value)}
+              onFocus={e => e.target.style.borderColor="#2563eb"}
+              onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+              style={selectStyle}
+              disabled={!form.department || loadingDepts}
+            >
+              <option value="">
+                {!form.department
+                  ? "Select department first"
+                  : desigOptions().length === 0
+                    ? "No designations found"
+                    : "Select Designation"}
+              </option>
+              {desigOptions().map(title => (
+                <option key={title} value={title}>{title}</option>
+              ))}
+            </select>
+            {!form.department && (
+              <p style={{ margin:"4px 0 0", fontSize:10, color:"#9ca3af" }}>
+                Choose a department to see designations
+              </p>
+            )}
+          </div>
+
+          {/* Employment Type */}
+          <div>
+            <label style={labelStyle}>Employment Type</label>
+            <select
+              value={form.employment_type}
+              onChange={e => handleChange("employment_type", e.target.value)}
+              onFocus={e => e.target.style.borderColor="#2563eb"}
+              onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+              style={selectStyle}
+            >
+              {EMP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
+          <Field label="Date of Joining" field="date_of_joining" type="date" />
+
+          {/* eSSL Device ID */}
+          <div>
+            <label style={labelStyle}>eSSL Device ID</label>
+            <input
+              type="text"
+              value={form.essl_id}
+              placeholder="MB20 User ID (e.g. 142)"
+              onChange={e => handleChange("essl_id", e.target.value)}
+              onFocus={e => e.target.style.borderColor="#2563eb"}
+              onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+              style={{ ...inputStyle, fontFamily:"monospace" }}
+            />
+          </div>
+        </div>
       </div>
 
+      {/* Salary */}
       <div>
         {sectionTitle("Salary Structure")}
         <p style={{ margin:"0 0 10px", fontSize:12, color:"#6b7280" }}>Earnings</p>
@@ -522,8 +1040,8 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
         </div>
         <p style={{ margin:"0 0 10px", fontSize:12, color:"#6b7280" }}>Deductions</p>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:10, marginBottom:14 }}>
-          <AmountField label="PF Deduction"    field="pf_deduction" />
-          <AmountField label="ESI Deduction"   field="esi_deduction" />
+          <AmountField label="PF Deduction"     field="pf_deduction" />
+          <AmountField label="ESI Deduction"    field="esi_deduction" />
           <AmountField label="Professional Tax" field="pt" />
         </div>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap", background:"#f8fafc", border:"1px solid #e5e7eb", borderRadius:10, padding:"12px 16px" }}>
@@ -541,7 +1059,11 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
       </div>
 
       <div style={{ display:"flex", justifyContent:"flex-end", paddingTop:4 }}>
-        <button onClick={handleSave} disabled={saving || !changed} style={{ display:"flex", alignItems:"center", gap:7, padding:"10px 22px", border:"none", borderRadius:9, background:saving||!changed?"#9ca3af":"#2563eb", color:"#fff", fontWeight:700, fontSize:14, cursor:saving||!changed?"not-allowed":"pointer", boxShadow:saving||!changed?"none":"0 4px 12px rgba(37,99,235,0.35)", transition:"all 0.2s" }}>
+        <button
+          onClick={handleSave}
+          disabled={saving || !changed}
+          style={{ display:"flex", alignItems:"center", gap:7, padding:"10px 22px", border:"none", borderRadius:9, background:saving||!changed?"#9ca3af":"#2563eb", color:"#fff", fontWeight:700, fontSize:14, cursor:saving||!changed?"not-allowed":"pointer", boxShadow:saving||!changed?"none":"0 4px 12px rgba(37,99,235,0.35)", transition:"all 0.2s" }}
+        >
           <SaveIcon />
           {saving ? "Saving..." : "Save Changes"}
         </button>
@@ -568,11 +1090,11 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
         fetch(`${API_BASE}/api/hr/activation/${empData._id}`).then(r => r.json()).catch(() => null),
       ]);
       setAllDocs(empRes.documents || []);
-setHrDocs(hrRes.success ? (hrRes.data || []) : []);
-if (actRes?.success && actRes.data) setActivation(actRes.data);
-if (empRes.essl_id !== undefined) {
-  setEmpData(prev => ({ ...prev, essl_id: empRes.essl_id }));
-}
+      setHrDocs(hrRes.success ? (hrRes.data || []) : []);
+      if (actRes?.success && actRes.data) setActivation(actRes.data);
+      if (empRes.essl_id !== undefined) {
+        setEmpData(prev => ({ ...prev, essl_id: empRes.essl_id }));
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -582,23 +1104,26 @@ if (empRes.essl_id !== undefined) {
 
   useEffect(() => { fetchDocs(); }, [empData._id]);
 
- const handleSaveSuccess = (updatedEmp) => {
-  if (updatedEmp) {
-    // ✅ essl_id explicitly merge பண்ணு
-    setEmpData(prev => ({ 
-      ...prev, 
-      ...updatedEmp,
-      essl_id: updatedEmp.essl_id ?? prev.essl_id  // fallback to existing
-    }));
-    if (onEmployeeUpdate) onEmployeeUpdate(updatedEmp);
-  }
-};
+  const handleSaveSuccess = (updatedEmp) => {
+    if (updatedEmp) {
+      setEmpData(prev => ({
+        ...prev,
+        ...updatedEmp,
+        essl_id: updatedEmp.essl_id ?? prev.essl_id,
+      }));
+      if (onEmployeeUpdate) onEmployeeUpdate(updatedEmp);
+      // ✅ FIX: Re-fetch activation after save so employment_type syncs on next open
+      fetch(`${API_BASE}/api/hr/activation/${empData._id}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data?.success && data.data) setActivation(data.data);
+        })
+        .catch(() => {});
+    }
+  };
 
-  const getDoc = (type) =>
-    allDocs.find(d => d.docType?.trim().toLowerCase() === type?.trim().toLowerCase()) || null;
-
-  const getHrDoc = (type) =>
-    hrDocs.find(d => d.docType === type) || null;
+  const getDoc   = (type) => allDocs.find(d => d.docType?.trim().toLowerCase() === type?.trim().toLowerCase()) || null;
+  const getHrDoc = (type) => hrDocs.find(d => d.docType === type) || null;
 
   const experienceDocs = allDocs.filter(d =>
     d.docType?.startsWith("offer_") || d.docType?.startsWith("experience_")

@@ -29,6 +29,7 @@ const NAV_ITEMS = [
   { href: "/employee/retention",              icon: User,            label: "Retention Plan"   },
   { href: "/employee/sops", icon: Wallet, label: "My SOPs" },
   { href: "/employee/policies",               icon: FileText,        label: "Policies"         },
+  { href: "/employee/announcements", icon: Bell, label: "Announcements" },
   { href: "/employee/notifications",          icon: Bell,            label: "Notifications", badge: true },
   { href: "/employee/settings",              icon: Settings,        label: "Settings"         },
 ];

@@ -56,6 +56,7 @@ import EmployeePolicies from "./pages/employee/EmployeePolicies";
 import EmployeeSOPView from "./pages/employee/Employeesopview";
 import ForgotPassword from "./pages/employee/Forgotpassword";
 import ResetPassword from "./pages/employee/Resetpassword";
+import EmployeeAnnouncements from "./pages/employee/Employeeannouncements";
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
@@ -105,6 +106,7 @@ import PolicyManagement from "./pages/hr/PolicyManagement";
 import SOPManagement from "./pages/hr/Sopmanagement";
 import PolicyQuizManagementPage from "./pages/hr/PolicyQuizManagementPage";
 import DeptGradeSalary from "./pages/hr/DeptGradeSalary";
+import HRAnnouncements from "./pages/hr/Hrannouncements";
 
 
 
@@ -205,7 +207,6 @@ function App() {
 
         <Route path="/employee/performance" element={<MyPerformance />} />
         <Route path="/employee/self-assessment" element={<SelfAssessment />} />
-        {/* <Route path="/employee/my-salary" element={<EmployeeSalaryDashboard />} /> */}
         <Route path="/employee/my-salary" element={<MyPackage />} />
         <Route path="/employee/my-documents" element={<MyDocuments />} />
         <Route path="/employee/attendance" element={<EmployeeAttendance />} />
@@ -225,19 +226,9 @@ function App() {
         <Route path="/employee/sops" element={<EmployeeSOPView />} />
         <Route path="/employee/forgot-password"        element={<ForgotPassword />} />
 <Route path="/employee/reset-password/:token"  element={<ResetPassword />} />
+<Route path="/employee/announcements" element={<EmployeeAnnouncements />} />
  
-        {/* <Route path="/hr/dashboard" element={<HrDashboard />}>
-          <Route index element={<HrDashboardHome />} />
-          <Route path="applicants" element={<HrApplicants />} />
-          <Route path="employees" element={<HrEmployees />} />
-          <Route path="hr-pending" element={<HrPending />} />
-          <Route path="hr-approved" element={<HrApproved />} />
-          <Route path="hr-reject" element={<HrRejected />} />
-          <Route path="settings" element={<HrSettings />} />
-         <Route path="active-employees" element={<HrActiveEmployees />} />
-          <Route path="/hr/dashboard/attendance/daily" element={<HRAttendancePage />} />
-          <Route path="/hr/dashboard/attendance/monthly" element={<HRAttendancePage />} />
-          <Route path="/hr/dashboard/leave/requests" element={<HRLeaveRequests />} /> */}
+        {/* HR Routes */}
 
         <Route path="/hr/dashboard" element={<HrDashboard />}>
 
@@ -314,8 +305,11 @@ function App() {
           <Route path="performance/reports" element={<PerformanceReports />} />
 
           <Route path="policies" element={<PolicyManagement />} />
+          <Route path="announcements" element={<HRAnnouncements />} />
 
         </Route>
+
+
         {/* ADMIN */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
