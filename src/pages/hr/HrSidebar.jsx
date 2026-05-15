@@ -627,14 +627,26 @@ export default function HrSidebar() {
           {/* ══════════════════════════════
     ANNOUNCEMENTS
 ══════════════════════════════ */}
-<div className="hr-section">Announcements</div>
+          <div className="hr-section">Announcements</div>
 
-<NavLink to="/hr/dashboard/announcements"
-  className={({ isActive }) => isActive ? "active" : ""}
-  onClick={close}>
-  <HugeiconsIcon icon={Notification01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-  Announcements
-</NavLink>
+          <NavLink to="/hr/dashboard/announcements"
+            className={({ isActive }) => isActive ? "active" : ""}
+            onClick={close}>
+            <HugeiconsIcon icon={Notification01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+            Announcements
+          </NavLink>
+
+          {/* ══════════════════════════════
+    ESSL BIOMETRIC
+══════════════════════════════ */}
+          <div className="hr-section">Biometric</div>
+
+          <NavLink to="/hr/dashboard/essl-manager"
+            className={({ isActive }) => isActive ? "active" : ""}
+            onClick={close}>
+            <HugeiconsIcon icon={Notification01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+            eSSL Manager
+          </NavLink>
 
           {/* ══════════════════════════════
                       WELLNESS

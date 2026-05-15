@@ -107,6 +107,7 @@ import SOPManagement from "./pages/hr/Sopmanagement";
 import PolicyQuizManagementPage from "./pages/hr/PolicyQuizManagementPage";
 import DeptGradeSalary from "./pages/hr/DeptGradeSalary";
 import HRAnnouncements from "./pages/hr/Hrannouncements";
+import EsslEmployeeManager from "./pages/hr/EsslEmployeeManager";
 
 
 
@@ -227,6 +228,7 @@ function App() {
         <Route path="/employee/forgot-password"        element={<ForgotPassword />} />
 <Route path="/employee/reset-password/:token"  element={<ResetPassword />} />
 <Route path="/employee/announcements" element={<EmployeeAnnouncements />} />
+
  
         {/* HR Routes */}
 
@@ -306,6 +308,7 @@ function App() {
 
           <Route path="policies" element={<PolicyManagement />} />
           <Route path="announcements" element={<HRAnnouncements />} />
+          <Route path="essl-manager" element={<EsslEmployeeManager />} />
 
         </Route>
 
