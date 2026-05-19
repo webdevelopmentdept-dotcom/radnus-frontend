@@ -3,12 +3,14 @@ import axios from "axios";
 import {
   Search, Filter, RefreshCw, Edit3, Save,
   Download, CalendarCheck, AlertTriangle, Clock,
-  TrendingUp, TrendingDown, Users, Activity,
-  X, Eye, ChevronRight,
+  Users, X, Eye, ChevronRight, CheckCircle,
+  AlertCircle, Timer, TrendingUp, Calendar,
+  ArrowRightFromLine, Zap, Flag, Activity,
+  CircleDot, MinusCircle, LogIn, LogOut,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
-const getToken  = () => localStorage.getItem("hrToken") || localStorage.getItem("token") || sessionStorage.getItem("hrToken");
+const getToken   = () => localStorage.getItem("hrToken") || localStorage.getItem("token") || sessionStorage.getItem("hrToken");
 const authHeader = () => ({ Authorization: `Bearer ${getToken()}` });
 const pad   = (n) => String(n).padStart(2, "0");
 const fmt   = (d) => d ? new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "—";
@@ -29,10 +31,7 @@ const STATUS_META = {
   weekend:  { label: "Weekend",  color: "#94a3b8", bg: "#f1f5f9", border: "#e2e8f0" },
 };
 
-// ─── Punch helpers ───────────────────────────────────────────────────────────
-// Backend sends punches: [{ type: "in"|"out", time: ISOString }, ...]
-// Falls back to legacy checkIn / checkOut if punches array is absent
-
+// ─── Punch helpers ────────────────────────────────────────────────────────────
 const getFirstIn = (r) => {
   if (r.punches?.length) {
     const first = r.punches.find(p => p.type === "in");
@@ -43,33 +42,35 @@ const getFirstIn = (r) => {
 
 const getLastOut = (r) => {
   if (r.punches?.length) {
-    const outs = r.punches.filter(p => p.type === "out");
-    return outs.length ? outs[outs.length - 1].time : null;
+    const sorted = [...r.punches].sort((a, b) => new Date(a.time) - new Date(b.time));
+    const unique = sorted.filter((p, idx, arr) =>
+      idx === 0 || new Date(p.time).getTime() !== new Date(arr[idx - 1].time).getTime()
+    );
+    const outs = unique.filter(p => p.type === "out");
+    if (outs.length) return outs[outs.length - 1].time;
+    return null;
   }
   return r.checkOut || r.last_out || null;
 };
 
 const hasMissingOut = (r, dateStr) => {
-  const firstIn  = getFirstIn(r);
-  const lastOut  = getLastOut(r);
+  const firstIn = getFirstIn(r);
+  const lastOut = getLastOut(r);
   if (!firstIn) return false;
   if (lastOut)  return false;
-
-  // If it's today and before 8 PM, still working — not flagged yet
   const today = new Date().toISOString().split("T")[0];
-  if (dateStr === today) {
-    return new Date().getHours() >= 20;
-  }
+  if (dateStr === today) return new Date().getHours() >= 20;
   return true;
 };
 
-// ─── Time calculations ───────────────────────────────────────────────────────
+// ─── Time calculations ────────────────────────────────────────────────────────
 
+// ✅ CHANGED: Grace time updated to 10:00 AM (General shift start)
 const calcLateMinutes = (checkIn) => {
   if (!checkIn) return 0;
   const d = new Date(checkIn);
   const total = d.getHours() * 60 + d.getMinutes();
-  const grace = 9 * 60 + 60;
+  const grace = 10 * 60; // 10:00 AM grace time
   return Math.max(total - grace, 0);
 };
 
@@ -97,19 +98,24 @@ const fmtMins = (mins) => {
 const workHrsFromPunches = (r) => {
   const firstIn = getFirstIn(r);
   const lastOut = getLastOut(r);
-
   if (!firstIn) return "—";
-  if (!lastOut) return <span style={{ color: "#f59e0b", fontWeight: 700, fontSize: 11 }}>🟡 No Out</span>;
-
-  // If backend sends work_hours as string (e.g. "8h 15m"), prefer it
+  if (!lastOut) return (
+    <span style={{ color: "#f59e0b", fontWeight: 700, fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>
+      <AlertCircle size={11} /> No Out
+    </span>
+  );
   if (r.work_hours && typeof r.work_hours === "string") return r.work_hours;
-
+  if (r.work_hours && typeof r.work_hours === "number") {
+    const h = Math.floor(r.work_hours);
+    const m = Math.round((r.work_hours - h) * 60);
+    return `${h}h ${pad(m)}m`;
+  }
   const d = (new Date(lastOut) - new Date(firstIn)) / 3600000;
   return `${Math.floor(d)}h ${pad(Math.round((d % 1) * 60))}m`;
 };
 
 // ═══════════════════════════════════════════
-//  PUNCH TIMELINE (used inside drawer)
+//  PUNCH TIMELINE
 // ═══════════════════════════════════════════
 function PunchTimeline({ punches }) {
   if (!punches?.length) {
@@ -119,48 +125,27 @@ function PunchTimeline({ punches }) {
       </div>
     );
   }
-
   return (
     <div style={{ position: "relative", paddingLeft: 28 }}>
-      {/* Vertical line */}
-      <div style={{
-        position: "absolute", left: 10, top: 8, bottom: 8,
-        width: 2, background: "#e5e7eb", borderRadius: 2,
-      }} />
-
+      <div style={{ position: "absolute", left: 10, top: 8, bottom: 8, width: 2, background: "#e5e7eb", borderRadius: 2 }} />
       {punches.map((p, idx) => {
         const isIn  = p.type === "in";
         const color = isIn ? "#16a34a" : "#dc2626";
         const bg    = isIn ? "#dcfce7" : "#fee2e2";
-
         return (
           <div key={idx} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: idx < punches.length - 1 ? 12 : 0 }}>
-            {/* Dot */}
-            <div style={{
-              position: "absolute", left: 5,
-              width: 12, height: 12, borderRadius: "50%",
-              background: color, border: "2px solid #fff",
-              boxShadow: `0 0 0 2px ${color}33`,
-            }} />
-
-            {/* Card */}
-            <div style={{
-              background: bg, border: `1px solid ${color}33`,
-              borderRadius: 10, padding: "8px 14px",
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              flex: 1,
-            }}>
-              <div>
+            <div style={{ position: "absolute", left: 5, width: 12, height: 12, borderRadius: "50%", background: color, border: "2px solid #fff", boxShadow: `0 0 0 2px ${color}33` }} />
+            <div style={{ background: bg, border: `1px solid ${color}33`, borderRadius: 10, padding: "8px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {isIn
+                  ? <LogIn size={12} color={color} />
+                  : <LogOut size={12} color={color} />}
                 <span style={{ fontSize: 12, fontWeight: 800, color, textTransform: "uppercase" }}>
-                  {isIn ? "🟢 Punch In" : "🔴 Punch Out"}
+                  {isIn ? "Punch In" : "Punch Out"}
                 </span>
-                {p.method && (
-                  <span style={{ fontSize: 10, color: "#9ca3af", marginLeft: 8 }}>· {p.method}</span>
-                )}
+                {p.method && <span style={{ fontSize: 10, color: "#9ca3af", marginLeft: 4 }}>· {p.method}</span>}
               </div>
-              <span style={{ fontSize: 13, fontWeight: 900, color: "#111827", fontFamily: "monospace" }}>
-                {fmt(p.time)}
-              </span>
+              <span style={{ fontSize: 13, fontWeight: 900, color: "#111827", fontFamily: "monospace" }}>{fmt(p.time)}</span>
             </div>
           </div>
         );
@@ -178,12 +163,9 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
 
   const emp      = record?.employee;
   const meta     = STATUS_META[record?.status] || STATUS_META.absent;
-
-  // Resolve times from punches[] or legacy fields
   const firstIn  = getFirstIn(record);
   const lastOut  = getLastOut(record);
   const punches  = record?.punches || (
-    // Build synthetic punches array from legacy checkIn/checkOut for display
     [
       record?.checkIn  ? { type: "in",  time: record.checkIn,  method: record.method || "Manual" } : null,
       record?.checkOut ? { type: "out", time: record.checkOut, method: record.method || "Manual" } : null,
@@ -203,17 +185,13 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
     return `${Math.floor(d)}h ${pad(Math.round((d % 1) * 60))}m`;
   };
 
-  // Fetch this month's summary for the employee
   useEffect(() => {
     if (!emp?._id) return;
     const d = new Date(date);
     const year  = d.getFullYear();
     const month = d.getMonth() + 1;
     setLoadingMonth(true);
-    axios.get(
-      `${API_BASE}/api/attendance/monthly-report?year=${year}&month=${month}`,
-      { headers: authHeader() }
-    )
+    axios.get(`${API_BASE}/api/attendance/monthly-report?year=${year}&month=${month}`, { headers: authHeader() })
       .then(res => {
         const allData = res.data?.data || [];
         const found = allData.find(r =>
@@ -245,18 +223,9 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
 
   return (
     <>
-      {/* Backdrop */}
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 9998 }} />
+      <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: "min(440px, 95vw)", background: "#fff", zIndex: 9999, boxShadow: "-8px 0 40px rgba(0,0,0,0.15)", display: "flex", flexDirection: "column", borderRadius: "16px 0 0 16px", overflow: "hidden" }}>
 
-      {/* Drawer */}
-      <div style={{
-        position: "fixed", top: 0, right: 0, bottom: 0,
-        width: "min(440px, 95vw)",
-        background: "#fff", zIndex: 9999,
-        boxShadow: "-8px 0 40px rgba(0,0,0,0.15)",
-        display: "flex", flexDirection: "column",
-        borderRadius: "16px 0 0 16px", overflow: "hidden",
-      }}>
         {/* Header */}
         <div style={{ background: "#111827", padding: "20px 20px 16px", flexShrink: 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -276,78 +245,68 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
               <X size={16} />
             </button>
           </div>
-
-          {/* Status + Date */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14 }}>
             <span style={{ background: meta.bg, color: meta.color, padding: "4px 12px", borderRadius: 20, fontWeight: 800, fontSize: 12 }}>{meta.label}</span>
             <span style={{ color: "#6b7280", fontSize: 12 }}>{fmtD(date)}</span>
-            {record?.shift && (
-              <span style={{ color: "#6b7280", fontSize: 11, marginLeft: "auto" }}>🕐 {record.shift}</span>
-            )}
+            {record?.shift && <span style={{ color: "#6b7280", fontSize: 11, marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}><Clock size={11} /> {record.shift}</span>}
           </div>
         </div>
 
-        {/* Scrollable Body */}
+        {/* Body */}
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
 
-          {/* ── Today's Time Summary ── */}
+          {/* Time Summary */}
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 10 }}>
-              ⏰ Time Summary
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}>
+              <Timer size={12} /> Time Summary
             </div>
             <div style={{ background: "#f8fafc", borderRadius: 12, padding: "4px 14px" }}>
-              <Row label="First In"   value={fmt(firstIn)  || "—"} valueColor="#16a34a" />
-              <Row label="Last Out"   value={lastOut ? fmt(lastOut) : missingPunch ? "⚠ Pending" : "—"} valueColor={lastOut ? "#dc2626" : "#f59e0b"} />
-              <Row label="Work Hours" value={workHrs()} valueColor="#2563eb" />
-              {punches.length > 0 && (
-                <Row label="Total Punches" value={`${punches.length} punches`} valueColor="#6b7280" />
-              )}
-              {record?.remark && (
-                <div style={{ padding: "9px 0", fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>
-                  Remark: {record.remark}
-                </div>
-              )}
+              <Row label="First In"     value={fmt(firstIn) || "—"} valueColor="#16a34a" />
+              <Row label="Last Out"     value={lastOut ? fmt(lastOut) : missingPunch ? "Pending" : "—"} valueColor={lastOut ? "#dc2626" : "#f59e0b"} />
+              <Row label="Work Hours"   value={workHrs()} valueColor="#2563eb" />
+              {punches.length > 0 && <Row label="Total Punches" value={`${punches.length} punches`} valueColor="#6b7280" />}
+              {record?.remark && <div style={{ padding: "9px 0", fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>Remark: {record.remark}</div>}
             </div>
           </div>
 
-          {/* ── Punch History Timeline ── */}
+          {/* Punch History */}
           {punches.length > 0 && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 10 }}>
-                🕐 Punch History ({punches.length})
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}>
+                <Activity size={12} /> Punch History ({punches.length})
               </div>
               <PunchTimeline punches={punches} />
             </div>
           )}
 
-          {/* ── Flags ── */}
+          {/* Flags */}
           {(lateMinutes > 0 || earlyOutMins > 0 || overtimeMins > 0 || missingPunch) && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 10 }}>
-                🚩 Flags
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}>
+                <Flag size={12} /> Flags
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {lateMinutes > 0 && (
                   <div style={{ background: "#fef9c3", border: "1px solid #fde68a", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 13, color: "#92400e", fontWeight: 600 }}>Late Arrival</span>
+                    <span style={{ fontSize: 13, color: "#92400e", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}><Clock size={13} /> Late Arrival</span>
                     <span style={{ fontSize: 13, color: "#d97706", fontWeight: 800 }}>{fmtMins(lateMinutes)}</span>
                   </div>
                 )}
                 {earlyOutMins > 0 && (
                   <div style={{ background: "#faf5ff", border: "1px solid #e9d5ff", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 13, color: "#6b21a8", fontWeight: 600 }}>Early Out</span>
+                    <span style={{ fontSize: 13, color: "#6b21a8", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}><ArrowRightFromLine size={13} /> Early Out</span>
                     <span style={{ fontSize: 13, color: "#9333ea", fontWeight: 800 }}>{fmtMins(earlyOutMins)}</span>
                   </div>
                 )}
                 {overtimeMins > 0 && (
                   <div style={{ background: "#ecfdf5", border: "1px solid #6ee7b7", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 13, color: "#065f46", fontWeight: 600 }}>Overtime</span>
+                    <span style={{ fontSize: 13, color: "#065f46", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}><Zap size={13} /> Overtime</span>
                     <span style={{ fontSize: 13, color: "#047857", fontWeight: 800 }}>{fmtMins(overtimeMins)}</span>
                   </div>
                 )}
                 {missingPunch && (
                   <div style={{ background: "#fff1f2", border: "1px solid #fda4af", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 13, color: "#9f1239", fontWeight: 600 }}>Missing Punch Out</span>
+                    <span style={{ fontSize: 13, color: "#9f1239", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}><AlertCircle size={13} /> Missing Punch Out</span>
                     <span style={{ fontSize: 13, color: "#b91c1c", fontWeight: 800 }}>No Out</span>
                   </div>
                 )}
@@ -355,10 +314,10 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
             </div>
           )}
 
-          {/* ── Monthly Summary ── */}
+          {/* Monthly Summary */}
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 10 }}>
-              📅 {monthName} Summary
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}>
+              <Calendar size={12} /> {monthName} Summary
             </div>
             {loadingMonth ? (
               <div style={{ textAlign: "center", padding: "20px 0", color: "#9ca3af", fontSize: 13 }}>Loading...</div>
@@ -393,14 +352,12 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
                 </div>
               </>
             ) : (
-              <div style={{ textAlign: "center", padding: "16px 0", color: "#9ca3af", fontSize: 13 }}>
-                No monthly data available
-              </div>
+              <div style={{ textAlign: "center", padding: "16px 0", color: "#9ca3af", fontSize: 13 }}>No monthly data available</div>
             )}
           </div>
         </div>
 
-        {/* Footer Actions */}
+        {/* Footer */}
         <div style={{ padding: "14px 20px", borderTop: "1px solid #f1f5f9", display: "flex", gap: 10, flexShrink: 0 }}>
           <button onClick={onClose} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1.5px solid #e5e7eb", background: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", fontSize: 13 }}>Close</button>
           <button onClick={() => { onClose(); onEdit(); }} style={{ flex: 2, padding: "10px 0", borderRadius: 10, background: "#111827", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
@@ -413,18 +370,154 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
 }
 
 // ═══════════════════════════════════════════
+//  SHIFT SELECTOR
+// ═══════════════════════════════════════════
+
+// ✅ CHANGED: 3 new shifts — General (10:00–19:00), Shift B (09:30–18:30), Shift C (12:30–20:30)
+const DEFAULT_SHIFTS = [
+  { _id: "s1", name: "General", startTime: "10:00", endTime: "19:00" },
+  { _id: "s2", name: "Shift B", startTime: "09:30", endTime: "18:30" },
+  { _id: "s3", name: "Shift C", startTime: "12:30", endTime: "20:30" },
+];
+
+function ShiftSelector({ value, onChange }) {
+  const [shifts,     setShifts]     = useState(DEFAULT_SHIFTS);
+  const [loading,    setLoading]    = useState(true);
+  const [showCustom, setShowCustom] = useState(false);
+  const [editId,     setEditId]     = useState(null);
+  const [saving,     setSaving]     = useState(false);
+  const [customForm, setCustomForm] = useState({ name: "", startTime: "10:00", endTime: "19:00" });
+
+  useEffect(() => { loadShifts(); }, []);
+
+  const loadShifts = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_BASE}/api/shifts`, { headers: authHeader() });
+      const data = res.data?.data || res.data || [];
+      if (data.length > 0) setShifts(data);
+    } catch { } finally { setLoading(false); }
+  };
+
+  const shiftLabel = (s) => `${s.name} (${s.startTime} – ${s.endTime})`;
+
+  const openEdit = (s, e) => {
+    e.stopPropagation();
+    setEditId(s._id);
+    setCustomForm({ name: s.name, startTime: s.startTime, endTime: s.endTime });
+    setShowCustom(true);
+  };
+
+  const openNew = () => {
+    setEditId(null);
+    setCustomForm({ name: "", startTime: "10:00", endTime: "19:00" });
+    setShowCustom(true);
+  };
+
+  const saveShift = async () => {
+    if (!customForm.name.trim()) return;
+    setSaving(true);
+    try {
+      if (editId) {
+        const res = await axios.put(`${API_BASE}/api/shifts/${editId}`, customForm, { headers: authHeader() });
+        const updated = res.data?.data || res.data;
+        setShifts(prev => prev.map(s => s._id === editId ? updated : s));
+        onChange(shiftLabel(updated));
+      } else {
+        const res = await axios.post(`${API_BASE}/api/shifts`, customForm, { headers: authHeader() });
+        const created = res.data?.data || res.data;
+        setShifts(prev => [...prev, created]);
+        onChange(shiftLabel(created));
+      }
+      setShowCustom(false);
+      setEditId(null);
+    } catch { alert("Failed to save shift"); }
+    finally { setSaving(false); }
+  };
+
+  const deleteShift = async (s, e) => {
+    e.stopPropagation();
+    if (!window.confirm(`Delete "${s.name}" shift?`)) return;
+    try {
+      await axios.delete(`${API_BASE}/api/shifts/${s._id}`, { headers: authHeader() });
+      setShifts(prev => prev.filter(x => x._id !== s._id));
+      if (value === shiftLabel(s)) onChange("");
+    } catch { alert("Delete failed"); }
+  };
+
+  const inp2 = { border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "8px 10px", fontSize: 12, outline: "none", fontFamily: "inherit", background: "#f9fafb", width: "100%", boxSizing: "border-box" };
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+        <label style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Shift</label>
+        <button onClick={openNew} style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", background: "none", border: "none", cursor: "pointer", padding: 0 }}>+ Add New Shift</button>
+      </div>
+      {loading ? (
+        <div style={{ fontSize: 12, color: "#9ca3af", padding: "8px 0" }}>Loading shifts...</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: showCustom ? 10 : 0 }}>
+          {shifts.map(s => {
+            const label    = shiftLabel(s);
+            const selected = value === label;
+            return (
+              <div key={s._id} onClick={() => onChange(label)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 12px", borderRadius: 9, cursor: "pointer", border: `2px solid ${selected ? "#111827" : "#e5e7eb"}`, background: selected ? "#111827" : "#f9fafb", transition: "all 0.15s" }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: selected ? "#fff" : "#111827" }}>{s.name}</div>
+                  <div style={{ fontSize: 11, color: selected ? "#9ca3af" : "#6b7280", marginTop: 1 }}>{s.startTime} – {s.endTime}</div>
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={(e) => openEdit(s, e)} style={{ background: selected ? "#374151" : "#e5e7eb", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, fontWeight: 700, color: selected ? "#d1d5db" : "#374151", cursor: "pointer", fontFamily: "inherit" }}>Edit</button>
+                  <button onClick={(e) => deleteShift(s, e)} style={{ background: selected ? "#7f1d1d" : "#fee2e2", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 11, fontWeight: 700, color: selected ? "#fca5a5" : "#dc2626", cursor: "pointer", fontFamily: "inherit" }}>
+                    <X size={11} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {showCustom && (
+        <div style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: 12, marginTop: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#374151", marginBottom: 8 }}>{editId ? "Edit Shift" : "New Shift"}</div>
+          <div style={{ marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>Shift Name</label>
+            <input placeholder="e.g. Split Shift, Flexible..." value={customForm.name} onChange={e => setCustomForm(f => ({ ...f, name: e.target.value }))} style={inp2} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>Start Time</label>
+              <input type="time" value={customForm.startTime} onChange={e => setCustomForm(f => ({ ...f, startTime: e.target.value }))} style={inp2} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>End Time</label>
+              <input type="time" value={customForm.endTime} onChange={e => setCustomForm(f => ({ ...f, endTime: e.target.value }))} style={inp2} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => { setShowCustom(false); setEditId(null); }} style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: "1.5px solid #e5e7eb", background: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+            <button onClick={saveShift} disabled={saving || !customForm.name.trim()} style={{ flex: 2, padding: "7px 0", borderRadius: 8, background: "#111827", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: !customForm.name.trim() ? 0.5 : 1 }}>
+              {saving ? "Saving..." : editId ? "Update Shift" : "Save & Select"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
 //  HR MARK MODAL
 // ═══════════════════════════════════════════
 function HRMarkModal({ employee, date, existing, onSave, onClose }) {
-  // For HR mark modal, we use first punch in / last punch out
-  const existingFirstIn  = existing ? getFirstIn(existing)  : null;
-  const existingLastOut  = existing ? getLastOut(existing)  : null;
+  const existingFirstIn = existing ? getFirstIn(existing) : null;
+  const existingLastOut = existing ? getLastOut(existing) : null;
 
   const [form, setForm] = useState({
     status:   existing?.status || "present",
-    checkIn:  existingFirstIn  ? new Date(existingFirstIn).toTimeString().slice(0, 5)  : "09:45",
-    checkOut: existingLastOut  ? new Date(existingLastOut).toTimeString().slice(0, 5) : "19:00",
-    shift:    existing?.shift  || "General (9:45 AM – 7:00 PM)",
+    checkIn:  existingFirstIn ? new Date(existingFirstIn).toTimeString().slice(0, 5) : "10:00",
+    checkOut: existingLastOut ? new Date(existingLastOut).toTimeString().slice(0, 5) : "",
+    shift:    existing?.shift  || "",
     remark:   existing?.remark || "",
   });
   const [saving, setSaving] = useState(false);
@@ -441,16 +534,13 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
         shift:    form.shift,
         remark:   form.remark,
       }, { headers: authHeader() });
-      onSave("success", `✅ ${employee.name} — attendance marked!`);
+      onSave("success", `${employee.name} — attendance marked!`);
     } catch (err) {
       onSave("error", err.response?.data?.message || "Failed");
     } finally { setSaving(false); }
   };
 
-  const inp = {
-    width: "100%", padding: "9px 12px", border: "1.5px solid #e5e7eb",
-    borderRadius: 8, fontSize: 13, outline: "none", fontFamily: "inherit", background: "#f9fafb",
-  };
+  const inp = { width: "100%", padding: "9px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, outline: "none", fontFamily: "inherit", background: "#f9fafb" };
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000 }} onClick={onClose}>
@@ -462,19 +552,20 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
               {employee.name} · {employee.employeeId || employee.employee_code} · {fmtD(date)}
             </p>
           </div>
-          <button onClick={onClose} style={{ background: "#f1f5f9", border: "none", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 18, color: "#6b7280" }}>×</button>
+          <button onClick={onClose} style={{ background: "#f1f5f9", border: "none", width: 32, height: 32, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280" }}>
+            <X size={16} />
+          </button>
         </div>
 
         <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 8 }}>Status</label>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 16 }}>
           {Object.entries(STATUS_META).filter(([k]) => !["weekend", "holiday"].includes(k)).map(([k, m]) => (
-            <button key={k} onClick={() => setForm(f => ({ ...f, status: k }))} style={{
-              padding: "5px 13px", borderRadius: 20,
-              border: `2px solid ${form.status === k ? m.color : "#e5e7eb"}`,
-              background: form.status === k ? m.bg : "#fff",
-              color: form.status === k ? m.color : "#6b7280",
-              fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit",
-            }}>{m.label}</button>
+            <button key={k} onClick={() => setForm(f => {
+              const noTime = ["absent", "leave", "holiday", "weekend"].includes(k);
+              return { ...f, status: k, checkIn: noTime ? "" : (f.checkIn || "10:00"), checkOut: noTime ? "" : (f.checkOut || "19:00") };
+            })} style={{ padding: "5px 13px", borderRadius: 20, border: `2px solid ${form.status === k ? m.color : "#e5e7eb"}`, background: form.status === k ? m.bg : "#fff", color: form.status === k ? m.color : "#6b7280", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+              {m.label}
+            </button>
           ))}
         </div>
 
@@ -487,16 +578,11 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
           ))}
         </div>
 
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 5 }}>Shift</label>
-          <input value={form.shift} onChange={e => setForm(f => ({ ...f, shift: e.target.value }))} style={inp} />
-        </div>
+        <ShiftSelector value={form.shift} onChange={(val) => setForm(f => ({ ...f, shift: val }))} />
 
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 5 }}>HR Remark</label>
-          <textarea rows={2} placeholder="Optional..." value={form.remark}
-            onChange={e => setForm(f => ({ ...f, remark: e.target.value }))}
-            style={{ ...inp, resize: "vertical" }} />
+          <textarea rows={2} placeholder="Optional..." value={form.remark} onChange={e => setForm(f => ({ ...f, remark: e.target.value }))} style={{ ...inp, resize: "vertical" }} />
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
@@ -532,15 +618,43 @@ function DailyTab() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/api/attendance/daily?date=${date}`, { headers: authHeader() });
-      setData(res.data?.data || []);
-    } catch { showToast("error", "Failed to load"); }
-    finally { setLoading(false); }
+      const [attendanceRes, approvedRes] = await Promise.all([
+        axios.get(`${API_BASE}/api/attendance/daily?date=${date}`, { headers: authHeader() }),
+        axios.get(`${API_BASE}/api/hr/approved`, { headers: authHeader() }).catch(() => ({ data: [] })),
+      ]);
+
+      const attendanceData = attendanceRes.data?.data || [];
+      const approvedList   = Array.isArray(approvedRes.data) ? approvedRes.data : (approvedRes.data?.data || []);
+      const attendanceIds  = new Set(attendanceData.map(r => r.employee?._id).filter(Boolean));
+
+      const approvedNotInAttendance = approvedList
+        .filter(emp => !attendanceIds.has(emp._id))
+        .map(emp => ({
+          employee: {
+            _id:         emp._id,
+            name:        emp.name,
+            employeeId:  emp.employeeId || emp.employee_id || emp.empId || "",
+            department:  emp.department || emp.dept || "",
+            designation: emp.designation || emp.role || "",
+          },
+          status:        "absent",
+          punches:       [],
+          checkIn:       null,
+          checkOut:      null,
+          date,
+          _fromApproved: true,
+        }));
+
+      setData([...attendanceData, ...approvedNotInAttendance]);
+    } catch {
+      showToast("error", "Failed to load");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const departments = ["all", ...new Set(data.map(r => r.employee?.department).filter(Boolean))];
 
-  // Enrich each row using punches[] (or legacy checkIn/checkOut)
   const enriched = data.map(r => ({
     ...r,
     _firstIn:     getFirstIn(r),
@@ -552,16 +666,15 @@ function DailyTab() {
   }));
 
   const filtered = enriched.filter(r => {
-    const matchS = !search || (r.employee?.name || "").toLowerCase().includes(search.toLowerCase()) || (r.employee?.employeeId || r.employee?.employee_code || "").toLowerCase().includes(search.toLowerCase());
-    const matchF = statusFilter === "all" || r.status === statusFilter;
-    const matchD = deptFilter   === "all" || r.employee?.department === deptFilter;
+    const matchS    = !search || (r.employee?.name || "").toLowerCase().includes(search.toLowerCase()) || (r.employee?.employeeId || r.employee?.employee_code || "").toLowerCase().includes(search.toLowerCase());
+    const matchF    = statusFilter === "all" || r.status === statusFilter;
+    const matchD    = deptFilter   === "all" || r.employee?.department === deptFilter;
     const matchFlag =
       flagFilter === "all"           ? true :
       flagFilter === "late"          ? r.lateMinutes > 0 :
       flagFilter === "early_out"     ? r.earlyOutMins > 0 :
       flagFilter === "overtime"      ? r.overtimeMins > 0 :
-      flagFilter === "missing_punch" ? r.missingPunch :
-      true;
+      flagFilter === "missing_punch" ? r.missingPunch : true;
     return matchS && matchF && matchD && matchFlag;
   });
 
@@ -578,21 +691,22 @@ function DailyTab() {
   };
 
   const SUMMARY = [
-    { label: "Total",         value: s.total,        color: "#111827", bg: "#f1f5f9", border: "#e2e8f0", flag: "all" },
-    { label: "Present",       value: s.present,      color: "#16a34a", bg: "#dcfce7", border: "#bbf7d0", flag: "all" },
-    { label: "Late",          value: s.late,         color: "#d97706", bg: "#fef9c3", border: "#fde68a", flag: "late" },
-    { label: "Absent",        value: s.absent,       color: "#dc2626", bg: "#fee2e2", border: "#fecaca", flag: "all" },
-    { label: "On Leave",      value: s.leave,        color: "#0891b2", bg: "#e0f2fe", border: "#bae6fd", flag: "all" },
-    { label: "Half Day",      value: s.halfDay,      color: "#7c3aed", bg: "#f5f3ff", border: "#e9d5ff", flag: "all" },
-    { label: "Missing Punch", value: s.missingPunch, color: "#b91c1c", bg: "#fff1f2", border: "#fda4af", flag: "missing_punch" },
-    { label: "Overtime",      value: s.overtime,     color: "#047857", bg: "#ecfdf5", border: "#6ee7b7", flag: "overtime" },
-    { label: "Early Out",     value: s.earlyOut,     color: "#9333ea", bg: "#faf5ff", border: "#d8b4fe", flag: "early_out" },
+    { label: "Total",         value: s.total,        color: "#111827", bg: "#f1f5f9", border: "#e2e8f0", flag: "all",          icon: <Users size={13} /> },
+    { label: "Present",       value: s.present,      color: "#16a34a", bg: "#dcfce7", border: "#bbf7d0", flag: "all",          icon: <CheckCircle size={13} /> },
+    { label: "Late",          value: s.late,         color: "#d97706", bg: "#fef9c3", border: "#fde68a", flag: "late",         icon: <Clock size={13} /> },
+    { label: "Absent",        value: s.absent,       color: "#dc2626", bg: "#fee2e2", border: "#fecaca", flag: "all",          icon: <MinusCircle size={13} /> },
+    { label: "On Leave",      value: s.leave,        color: "#0891b2", bg: "#e0f2fe", border: "#bae6fd", flag: "all",          icon: <Calendar size={13} /> },
+    { label: "Half Day",      value: s.halfDay,      color: "#7c3aed", bg: "#f5f3ff", border: "#e9d5ff", flag: "all",          icon: <CircleDot size={13} /> },
+    { label: "Missing Punch", value: s.missingPunch, color: "#b91c1c", bg: "#fff1f2", border: "#fda4af", flag: "missing_punch", icon: <AlertCircle size={13} /> },
+    { label: "Overtime",      value: s.overtime,     color: "#047857", bg: "#ecfdf5", border: "#6ee7b7", flag: "overtime",     icon: <Zap size={13} /> },
+    { label: "Early Out",     value: s.earlyOut,     color: "#9333ea", bg: "#faf5ff", border: "#d8b4fe", flag: "early_out",    icon: <ArrowRightFromLine size={13} /> },
   ];
 
   return (
     <div>
       {toast && (
-        <div style={{ position: "fixed", top: 20, right: 24, zIndex: 10001, background: toast.type === "error" ? "#ef4444" : "#16a34a", color: "#fff", padding: "12px 20px", borderRadius: 10, fontWeight: 700, fontSize: 14, boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}>
+        <div style={{ position: "fixed", top: 20, right: 24, zIndex: 10001, background: toast.type === "error" ? "#ef4444" : "#16a34a", color: "#fff", padding: "12px 20px", borderRadius: 10, fontWeight: 700, fontSize: 14, boxShadow: "0 8px 24px rgba(0,0,0,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
+          {toast.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
           {toast.msg}
         </div>
       )}
@@ -616,49 +730,42 @@ function DailyTab() {
         />
       )}
 
-      {/* ── Summary Cards ── */}
+      {/* Summary Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px,1fr))", gap: 10, marginBottom: 20 }}>
         {SUMMARY.map(c => (
           <div key={c.label}
             onClick={() => setFlagFilter(prev => prev === c.flag && c.flag !== "all" ? "all" : c.flag)}
             style={{ background: c.bg, border: `1.5px solid ${(flagFilter === c.flag && c.flag !== "all") ? c.color : c.border}`, borderRadius: 12, padding: "13px 14px", textAlign: "center", cursor: c.flag !== "all" ? "pointer" : "default", transition: "all 0.15s", boxShadow: (flagFilter === c.flag && c.flag !== "all") ? `0 0 0 2px ${c.color}33` : "none" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 4, color: c.color, opacity: 0.7 }}>{c.icon}</div>
             <div style={{ fontSize: 22, fontWeight: 900, color: c.color, lineHeight: 1 }}>{c.value}</div>
             <div style={{ fontSize: 10, fontWeight: 700, color: c.color, opacity: 0.8, marginTop: 4, lineHeight: 1.2 }}>{c.label}</div>
           </div>
         ))}
       </div>
 
-      {/* ── Filters ── */}
+      {/* Filters */}
       <div style={{ background: "#fff", borderRadius: 12, padding: "12px 16px", marginBottom: 14, border: "1px solid #e5e7eb", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "7px 12px" }}>
           <CalendarCheck size={13} color="#111827" />
-          <input type="date" value={date} onChange={e => setDate(e.target.value)}
-            style={{ border: "none", background: "transparent", fontSize: 13, fontWeight: 700, outline: "none", fontFamily: "inherit", color: "#111827" }} />
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ border: "none", background: "transparent", fontSize: 13, fontWeight: 700, outline: "none", fontFamily: "inherit", color: "#111827" }} />
         </div>
-
         <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "7px 12px", flex: 1, minWidth: 150 }}>
           <Search size={13} color="#9ca3af" />
-          <input placeholder="Search name or code..." value={search} onChange={e => setSearch(e.target.value)}
-            style={{ border: "none", background: "transparent", fontSize: 13, outline: "none", fontFamily: "inherit", width: "100%" }} />
+          <input placeholder="Search name or code..." value={search} onChange={e => setSearch(e.target.value)} style={{ border: "none", background: "transparent", fontSize: 13, outline: "none", fontFamily: "inherit", width: "100%" }} />
         </div>
-
         <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "7px 12px" }}>
           <Filter size={13} color="#9ca3af" />
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-            style={{ border: "none", background: "transparent", fontSize: 13, outline: "none", fontFamily: "inherit", fontWeight: 600 }}>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ border: "none", background: "transparent", fontSize: 13, outline: "none", fontFamily: "inherit", fontWeight: 600 }}>
             <option value="all">All Status</option>
             {Object.entries(STATUS_META).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
           </select>
         </div>
-
         <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "7px 12px" }}>
           <Users size={13} color="#9ca3af" />
-          <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
-            style={{ border: "none", background: "transparent", fontSize: 13, outline: "none", fontFamily: "inherit", fontWeight: 600 }}>
+          <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} style={{ border: "none", background: "transparent", fontSize: 13, outline: "none", fontFamily: "inherit", fontWeight: 600 }}>
             {departments.map(d => <option key={d} value={d}>{d === "all" ? "All Depts" : d}</option>)}
           </select>
         </div>
-
         <button onClick={fetchData} style={{ background: "#111827", border: "none", borderRadius: 9, padding: "7px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontWeight: 700, fontSize: 13, color: "#fff", fontFamily: "inherit" }}>
           <RefreshCw size={13} />Refresh
         </button>
@@ -667,22 +774,19 @@ function DailyTab() {
       {/* Flag filter pills */}
       <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
         {[
-          { id: "all",           label: "All" },
-          { id: "late",          label: "⏰ Late Arrivals" },
-          { id: "early_out",     label: "🏃 Early Out" },
-          { id: "overtime",      label: "💼 Overtime" },
-          { id: "missing_punch", label: "🔴 Missing Punch" },
+          { id: "all",           label: "All",            icon: <Users size={11} /> },
+          { id: "late",          label: "Late Arrivals",  icon: <Clock size={11} /> },
+          { id: "early_out",     label: "Early Out",      icon: <ArrowRightFromLine size={11} /> },
+          { id: "overtime",      label: "Overtime",       icon: <Zap size={11} /> },
+          { id: "missing_punch", label: "Missing Punch",  icon: <AlertCircle size={11} /> },
         ].map(f => (
-          <button key={f.id} onClick={() => setFlagFilter(f.id)} style={{
-            padding: "5px 13px", borderRadius: 20, border: `1.5px solid ${flagFilter === f.id ? "#111827" : "#e5e7eb"}`,
-            background: flagFilter === f.id ? "#111827" : "#fff",
-            color: flagFilter === f.id ? "#fff" : "#6b7280",
-            fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit",
-          }}>{f.label}</button>
+          <button key={f.id} onClick={() => setFlagFilter(f.id)} style={{ padding: "5px 13px", borderRadius: 20, border: `1.5px solid ${flagFilter === f.id ? "#111827" : "#e5e7eb"}`, background: flagFilter === f.id ? "#111827" : "#fff", color: flagFilter === f.id ? "#fff" : "#6b7280", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 5 }}>
+            {f.icon}{f.label}
+          </button>
         ))}
       </div>
 
-      {/* ── Table ── */}
+      {/* Table */}
       <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", overflow: "hidden" }}>
         <div style={{ padding: "13px 18px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontWeight: 800, fontSize: 14, color: "#111827" }}>
@@ -706,17 +810,20 @@ function DailyTab() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr><td colSpan={10} style={{ textAlign: "center", padding: "44px 0", color: "#d1d5db" }}>
-                    <div style={{ fontSize: 36, marginBottom: 8 }}>📋</div>No records found
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                      <Activity size={36} color="#e5e7eb" />
+                      No records found
+                    </div>
                   </td></tr>
                 ) : filtered.map((r, i) => {
-                  const meta    = STATUS_META[r.status] || STATUS_META.absent;
-                  const hrs     = workHrsFromPunches(r);
+                  const meta       = STATUS_META[r.status] || STATUS_META.absent;
+                  const hrs        = workHrsFromPunches(r);
                   const punchCount = r.punches?.length || (r.checkIn ? (r.checkOut ? 2 : 1) : 0);
                   const flags = [];
-                  if (r.lateMinutes > 0)  flags.push({ label: `Late ${fmtMins(r.lateMinutes)}`,  color: "#d97706", bg: "#fef9c3" });
+                  if (r.lateMinutes > 0)  flags.push({ label: `Late ${fmtMins(r.lateMinutes)}`,   color: "#d97706", bg: "#fef9c3" });
                   if (r.earlyOutMins > 0) flags.push({ label: `Early ${fmtMins(r.earlyOutMins)}`, color: "#9333ea", bg: "#faf5ff" });
-                  if (r.overtimeMins > 0) flags.push({ label: `OT ${fmtMins(r.overtimeMins)}`,   color: "#047857", bg: "#ecfdf5" });
-                  if (r.missingPunch)     flags.push({ label: "No Out",                            color: "#b91c1c", bg: "#fff1f2" });
+                  if (r.overtimeMins > 0) flags.push({ label: `OT ${fmtMins(r.overtimeMins)}`,    color: "#047857", bg: "#ecfdf5" });
+                  if (r.missingPunch)     flags.push({ label: "No Out",                             color: "#b91c1c", bg: "#fff1f2" });
 
                   return (
                     <tr key={i}
@@ -744,42 +851,26 @@ function DailyTab() {
                         <span style={{ background: meta.bg, color: meta.color, padding: "3px 10px", borderRadius: 20, fontWeight: 800, fontSize: 11 }}>{meta.label}</span>
                       </td>
 
-                      {/* First In */}
-                      <td style={{ padding: "10px 14px", color: "#16a34a", fontWeight: 700, fontFamily: "monospace" }}>
-                        {fmt(r._firstIn)}
-                      </td>
+                      <td style={{ padding: "10px 14px", color: "#16a34a", fontWeight: 700, fontFamily: "monospace" }}>{fmt(r._firstIn)}</td>
 
-                      {/* Last Out */}
                       <td style={{ padding: "10px 14px", fontWeight: 700, fontFamily: "monospace" }}>
                         {r._lastOut
                           ? <span style={{ color: "#dc2626" }}>{fmt(r._lastOut)}</span>
                           : r._firstIn
-                            ? <span style={{ color: "#f59e0b", fontSize: 11 }}>⚠ Pending</span>
+                            ? <span style={{ color: "#f59e0b", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}><AlertCircle size={11} /> Pending</span>
                             : "—"}
                       </td>
 
-                      {/* Work Hrs */}
-                      <td style={{ padding: "10px 14px", color: "#2563eb", fontWeight: 700 }}>
-                        {typeof hrs === "string" ? hrs : hrs}
-                      </td>
+                      <td style={{ padding: "10px 14px", color: "#2563eb", fontWeight: 700 }}>{typeof hrs === "string" ? hrs : hrs}</td>
 
-                      {/* Punch Count badge */}
                       <td style={{ padding: "10px 14px" }}>
                         {punchCount > 0 ? (
-                          <span style={{
-                            background: punchCount > 2 ? "#eff6ff" : "#f1f5f9",
-                            color: punchCount > 2 ? "#2563eb" : "#6b7280",
-                            border: `1px solid ${punchCount > 2 ? "#bfdbfe" : "#e2e8f0"}`,
-                            padding: "2px 9px", borderRadius: 10, fontSize: 11, fontWeight: 800,
-                          }}>
-                            {punchCount} {punchCount > 2 ? "🔄" : ""}
+                          <span style={{ background: punchCount > 2 ? "#eff6ff" : "#f1f5f9", color: punchCount > 2 ? "#2563eb" : "#6b7280", border: `1px solid ${punchCount > 2 ? "#bfdbfe" : "#e2e8f0"}`, padding: "2px 9px", borderRadius: 10, fontSize: 11, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            {punchCount} {punchCount > 2 && <RefreshCw size={10} />}
                           </span>
-                        ) : (
-                          <span style={{ color: "#d1d5db", fontSize: 11 }}>—</span>
-                        )}
+                        ) : <span style={{ color: "#d1d5db", fontSize: 11 }}>—</span>}
                       </td>
 
-                      {/* Flags */}
                       <td style={{ padding: "10px 14px" }}>
                         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                           {flags.length === 0
@@ -790,17 +881,12 @@ function DailyTab() {
                         </div>
                       </td>
 
-                      {/* Actions */}
                       <td style={{ padding: "10px 14px" }}>
                         <div style={{ display: "flex", gap: 6 }}>
-                          <button
-                            onClick={() => setDrawerRecord(r)}
-                            style={{ background: "#f1f5f9", color: "#374151", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <button onClick={() => setDrawerRecord(r)} style={{ background: "#f1f5f9", color: "#374151", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
                             <Eye size={11} />View
                           </button>
-                          <button
-                            onClick={() => setMarkModal({ employee: r.employee, existing: r._firstIn ? r : null })}
-                            style={{ background: "#111827", color: "#fff", border: "none", borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <button onClick={() => setMarkModal({ employee: r.employee, existing: r._firstIn ? r : null })} style={{ background: "#111827", color: "#fff", border: "none", borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
                             <Edit3 size={11} />{r._firstIn ? "Edit" : "Mark"}
                           </button>
                         </div>
@@ -818,7 +904,7 @@ function DailyTab() {
 }
 
 // ═══════════════════════════════════════════
-//  MONTHLY TAB  (unchanged from original)
+//  MONTHLY TAB
 // ═══════════════════════════════════════════
 function MonthlyTab() {
   const [year,      setYear]      = useState(new Date().getFullYear());
@@ -838,23 +924,56 @@ function MonthlyTab() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/api/attendance/monthly-report?year=${year}&month=${month}`, { headers: authHeader() });
-      setData(res.data?.data || []);
-    } catch { showToast("error", "Failed to load"); }
-    finally { setLoading(false); }
+      const [monthlyRes, approvedRes] = await Promise.all([
+        axios.get(`${API_BASE}/api/attendance/monthly-report?year=${year}&month=${month}`, { headers: authHeader() }),
+        axios.get(`${API_BASE}/api/hr/approved`, { headers: authHeader() }).catch(() => ({ data: [] })),
+      ]);
+
+      const monthlyData  = monthlyRes.data?.data || [];
+      const approvedList = Array.isArray(approvedRes.data) ? approvedRes.data : (approvedRes.data?.data || []);
+      const monthlyIds   = new Set(monthlyData.map(r => r._id || r.employee_id).filter(Boolean));
+
+      const approvedNotInMonthly = approvedList
+        .filter(emp => !monthlyIds.has(emp._id))
+        .map(emp => ({
+          _id:                emp._id,
+          name:               emp.name,
+          employeeId:         emp.employeeId || emp.employee_id || emp.empId || "",
+          employee_code:      emp.employeeId || emp.employee_id || emp.empId || "",
+          department:         emp.department || emp.dept || "",
+          designation:        emp.designation || emp.role || "",
+          work_days:          0,
+          present:            0,
+          late:               0,
+          half_day:           0,
+          on_leave:           0,
+          absent:             0,
+          overtime_days:      0,
+          avg_work_hours:     "—",
+          avg_work_hours_num: 0,
+          total_late_minutes: 0,
+          attendance_pct:     0,
+          _fromApproved:      true,
+        }));
+
+      setData([...monthlyData, ...approvedNotInMonthly]);
+    } catch {
+      showToast("error", "Failed to load");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleExport = async () => {
     setExporting(true);
     try {
-      const res = await axios.get(`${API_BASE}/api/attendance/export?year=${year}&month=${month}`,
-        { headers: authHeader(), responseType: "blob" });
+      const res = await axios.get(`${API_BASE}/api/attendance/export?year=${year}&month=${month}`, { headers: authHeader(), responseType: "blob" });
       const url  = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href  = url;
       link.setAttribute("download", `Attendance_${month}_${year}.xlsx`);
       document.body.appendChild(link); link.click(); link.remove();
-      showToast("success", "📥 Excel exported!");
+      showToast("success", "Excel exported!");
     } catch { showToast("error", "Export failed"); }
     finally { setExporting(false); }
   };
@@ -872,9 +991,9 @@ function MonthlyTab() {
       return sortDir === "asc" ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
     });
 
-  const totalPresent  = data.reduce((s, r) => s + (r.present  || 0), 0);
-  const totalAbsent   = data.reduce((s, r) => s + (r.absent   || 0), 0);
-  const totalLate     = data.reduce((s, r) => s + (r.late     || 0), 0);
+  const totalPresent  = data.reduce((s, r) => s + (r.present       || 0), 0);
+  const totalAbsent   = data.reduce((s, r) => s + (r.absent        || 0), 0);
+  const totalLate     = data.reduce((s, r) => s + (r.late          || 0), 0);
   const totalOT       = data.reduce((s, r) => s + (r.overtime_days || 0), 0);
   const avgAttendance = data.length ? Math.round(data.reduce((s, r) => s + (r.attendance_pct || 0), 0) / data.length) : 0;
 
@@ -887,61 +1006,59 @@ function MonthlyTab() {
   return (
     <div>
       {toast && (
-        <div style={{ position: "fixed", top: 20, right: 24, zIndex: 9999, background: toast.type === "error" ? "#ef4444" : "#16a34a", color: "#fff", padding: "12px 20px", borderRadius: 10, fontWeight: 700, fontSize: 14, boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}>
+        <div style={{ position: "fixed", top: 20, right: 24, zIndex: 9999, background: toast.type === "error" ? "#ef4444" : "#16a34a", color: "#fff", padding: "12px 20px", borderRadius: 10, fontWeight: 700, fontSize: 14, boxShadow: "0 8px 24px rgba(0,0,0,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
+          {toast.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
           {toast.msg}
         </div>
       )}
 
+      {/* Summary Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 12, marginBottom: 20 }}>
         {[
-          { label: "Employees",      value: data.length,         color: "#111827", bg: "#f1f5f9", border: "#e2e8f0" },
-          { label: "Total Present",  value: totalPresent,        color: "#16a34a", bg: "#dcfce7", border: "#bbf7d0" },
-          { label: "Total Absent",   value: totalAbsent,         color: "#dc2626", bg: "#fee2e2", border: "#fecaca" },
-          { label: "Total Late",     value: totalLate,           color: "#d97706", bg: "#fef9c3", border: "#fde68a" },
-          { label: "OT Days",        value: totalOT,             color: "#047857", bg: "#ecfdf5", border: "#6ee7b7" },
-          { label: "Avg Attendance", value: `${avgAttendance}%`, color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
+          { label: "Employees",      value: data.length,         color: "#111827", bg: "#f1f5f9", border: "#e2e8f0", icon: <Users size={14} /> },
+          { label: "Total Present",  value: totalPresent,        color: "#16a34a", bg: "#dcfce7", border: "#bbf7d0", icon: <CheckCircle size={14} /> },
+          { label: "Total Absent",   value: totalAbsent,         color: "#dc2626", bg: "#fee2e2", border: "#fecaca", icon: <MinusCircle size={14} /> },
+          { label: "Total Late",     value: totalLate,           color: "#d97706", bg: "#fef9c3", border: "#fde68a", icon: <Clock size={14} /> },
+          { label: "OT Days",        value: totalOT,             color: "#047857", bg: "#ecfdf5", border: "#6ee7b7", icon: <Zap size={14} /> },
+          { label: "Avg Attendance", value: `${avgAttendance}%`, color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe", icon: <Activity size={14} /> },
         ].map(c => (
           <div key={c.label} style={{ background: c.bg, border: `1.5px solid ${c.border}`, borderRadius: 12, padding: "14px 16px", textAlign: "center" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 4, color: c.color, opacity: 0.7 }}>{c.icon}</div>
             <div style={{ fontSize: 24, fontWeight: 900, color: c.color }}>{c.value}</div>
             <div style={{ fontSize: 11, fontWeight: 700, color: c.color, opacity: 0.8, marginTop: 2 }}>{c.label}</div>
           </div>
         ))}
       </div>
 
+      {/* Filters */}
       <div style={{ background: "#fff", borderRadius: 12, padding: "12px 16px", marginBottom: 14, border: "1px solid #e5e7eb", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "7px 12px" }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Month:</span>
-          <select value={month} onChange={e => setMonth(Number(e.target.value))}
-            style={{ border: "none", background: "transparent", fontSize: 13, fontWeight: 600, outline: "none", fontFamily: "inherit" }}>
+          <select value={month} onChange={e => setMonth(Number(e.target.value))} style={{ border: "none", background: "transparent", fontSize: 13, fontWeight: 600, outline: "none", fontFamily: "inherit" }}>
             {Array.from({ length: 12 }, (_, i) => (
               <option key={i + 1} value={i + 1}>{new Date(2000, i).toLocaleString("en-IN", { month: "long" })}</option>
             ))}
           </select>
         </div>
-
         <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "7px 12px" }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Year:</span>
-          <select value={year} onChange={e => setYear(Number(e.target.value))}
-            style={{ border: "none", background: "transparent", fontSize: 13, fontWeight: 600, outline: "none", fontFamily: "inherit" }}>
+          <select value={year} onChange={e => setYear(Number(e.target.value))} style={{ border: "none", background: "transparent", fontSize: 13, fontWeight: 600, outline: "none", fontFamily: "inherit" }}>
             {[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
-
         <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "7px 12px", flex: 1, minWidth: 150 }}>
           <Search size={13} color="#9ca3af" />
-          <input placeholder="Search employee..." value={search} onChange={e => setSearch(e.target.value)}
-            style={{ border: "none", background: "transparent", fontSize: 13, outline: "none", fontFamily: "inherit", width: "100%" }} />
+          <input placeholder="Search employee..." value={search} onChange={e => setSearch(e.target.value)} style={{ border: "none", background: "transparent", fontSize: 13, outline: "none", fontFamily: "inherit", width: "100%" }} />
         </div>
-
         <button onClick={fetchData} style={{ background: "#111827", border: "none", borderRadius: 9, padding: "7px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontWeight: 700, fontSize: 13, color: "#fff", fontFamily: "inherit" }}>
           <RefreshCw size={13} />Refresh
         </button>
-
         <button onClick={handleExport} disabled={exporting} style={{ background: "#16a34a", border: "none", borderRadius: 9, padding: "7px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontWeight: 700, fontSize: 13, color: "#fff", fontFamily: "inherit", marginLeft: "auto" }}>
           <Download size={13} />{exporting ? "Exporting..." : "Export Excel"}
         </button>
       </div>
 
+      {/* Table */}
       <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", overflow: "hidden" }}>
         <div style={{ padding: "13px 18px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between" }}>
           <span style={{ fontWeight: 800, fontSize: 14, color: "#111827" }}>
@@ -975,7 +1092,10 @@ function MonthlyTab() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr><td colSpan={13} style={{ textAlign: "center", padding: "44px 0", color: "#d1d5db" }}>
-                    <div style={{ fontSize: 36, marginBottom: 8 }}>📊</div>No data for this period
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                      <Activity size={36} color="#e5e7eb" />
+                      No data for this period
+                    </div>
                   </td></tr>
                 ) : filtered.map((r, i) => {
                   const pct    = r.attendance_pct || 0;
@@ -1000,9 +1120,7 @@ function MonthlyTab() {
                       <td style={{ padding: "10px 14px" }}><span style={{ color: "#16a34a", fontWeight: 800 }}>{r.present}</span></td>
                       <td style={{ padding: "10px 14px" }}>
                         <span style={{ color: "#d97706", fontWeight: 800 }}>{r.late}</span>
-                        {r.total_late_minutes > 0 && (
-                          <div style={{ fontSize: 10, color: "#9ca3af" }}>{fmtMins(r.total_late_minutes)} total</div>
-                        )}
+                        {r.total_late_minutes > 0 && <div style={{ fontSize: 10, color: "#9ca3af" }}>{fmtMins(r.total_late_minutes)} total</div>}
                       </td>
                       <td style={{ padding: "10px 14px" }}><span style={{ color: "#7c3aed", fontWeight: 800 }}>{r.half_day}</span></td>
                       <td style={{ padding: "10px 14px" }}><span style={{ color: "#0891b2", fontWeight: 800 }}>{r.on_leave}</span></td>
@@ -1040,8 +1158,8 @@ export default function HRAttendancePage() {
   const [activeTab, setActiveTab] = useState("daily");
 
   const TABS = [
-    { id: "daily",   label: "📅 Daily Attendance" },
-    { id: "monthly", label: "📊 Monthly Report"   },
+    { id: "daily",   label: "Daily Attendance", icon: <CalendarCheck size={15} /> },
+    { id: "monthly", label: "Monthly Report",   icon: <Activity size={15} /> },
   ];
 
   return (
@@ -1053,12 +1171,9 @@ export default function HRAttendancePage() {
 
       <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#fff", borderRadius: 10, padding: 4, border: "1px solid #e5e7eb", width: "fit-content" }}>
         {TABS.map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
-            padding: "8px 20px", borderRadius: 8, border: "none", fontFamily: "inherit",
-            fontWeight: 700, fontSize: 13, cursor: "pointer", transition: "all 0.2s",
-            background: activeTab === t.id ? "#111827" : "transparent",
-            color:       activeTab === t.id ? "#fff"    : "#6b7280",
-          }}>{t.label}</button>
+          <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ padding: "8px 20px", borderRadius: 8, border: "none", fontFamily: "inherit", fontWeight: 700, fontSize: 13, cursor: "pointer", transition: "all 0.2s", background: activeTab === t.id ? "#111827" : "transparent", color: activeTab === t.id ? "#fff" : "#6b7280", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            {t.icon}{t.label}
+          </button>
         ))}
       </div>
 

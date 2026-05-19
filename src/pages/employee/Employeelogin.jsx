@@ -30,10 +30,10 @@ export default function EmployeeLogin() {
   const [isRegister, setIsRegister]     = useState(true);
 
   // ── Department / Designation state ──────────────────────────────────────────
-  const [departments, setDepartments]         = useState([]);
-  const [deptLoading, setDeptLoading]         = useState(false);
-  const [designations, setDesignations]       = useState([]);
-  const [selectedDeptId, setSelectedDeptId]   = useState("");
+  const [departments, setDepartments]       = useState([]);
+  const [deptLoading, setDeptLoading]       = useState(false);
+  const [designations, setDesignations]     = useState([]);
+  const [selectedDeptId, setSelectedDeptId] = useState("");
 
   const form = useForm({
     mode: "onChange",
@@ -70,9 +70,9 @@ export default function EmployeeLogin() {
   useEffect(() => {
     if (!isRegister) { setXp(0); return; }
     let v = 0;
-    if (watched.name?.length > 2)        v += 50;
-    if (watched.email?.includes("@"))    v += 25;
-    if (watched.password?.length > 5)    v += 25;
+    if (watched.name?.length > 2)     v += 50;
+    if (watched.email?.includes("@")) v += 25;
+    if (watched.password?.length > 5) v += 25;
     setXp(v);
   }, [watched, isRegister]);
 
@@ -125,6 +125,24 @@ export default function EmployeeLogin() {
     }
   };
 
+  // ── Helper: parse login error message ────────────────────────────────────────
+// ── Helper: parse login error message ────────────────────────────────────────
+const getLoginErrorMsg = (err, fallback = "Invalid email or password") => {
+  const msg = err?.response?.data?.message;
+  
+  // ✅ INGA MATUM CHANGE PANNU — backend message match aaganum
+  if (msg === "ACCESS_DEACTIVATED") {
+    return "🚫 Your account has been deactivated. Please contact HR.";
+  }
+  if (msg === "ACCOUNT_INACTIVE") {
+    return "🚫 Your account is inactive (relieved/fired). Please contact HR.";
+  }
+  if (msg === "Invalid email") return "Invalid email address.";
+  if (msg === "Invalid password") return "Incorrect password.";
+  
+  return fallback;
+};
+
   // ── Submit ───────────────────────────────────────────────────────────────────
   const onSubmit = (data) => {
     if (isRegister) {
@@ -152,8 +170,9 @@ export default function EmployeeLogin() {
                   navigate("/employee/upload-docs");
                 }
               },
-              onError: () => {
-                setErrorMsg("Auto login failed, please login");
+              onError: (err) => {
+                // ✅ Deactivated account check — auto-login after register
+                setErrorMsg(getLoginErrorMsg(err, "Auto login failed, please login"));
                 setIsRegister(false);
               },
             }
@@ -191,8 +210,9 @@ export default function EmployeeLogin() {
               navigate("/employee/upload-docs");
             }
           },
-          onError: () => {
-            setErrorMsg("Invalid email or password");
+          onError: (err) => {
+            // ✅ Deactivated account check — direct login
+            setErrorMsg(getLoginErrorMsg(err));
           },
         }
       );
@@ -201,7 +221,13 @@ export default function EmployeeLogin() {
 
   // ── Strength bar color ───────────────────────────────────────────────────────
   const strengthColor =
-    strength <= 1 ? "#ef4444" : strength === 2 ? "#f59e0b" : strength === 3 ? "#3b82f6" : "#10b981";
+    strength <= 1
+      ? "#ef4444"
+      : strength === 2
+      ? "#f59e0b"
+      : strength === 3
+      ? "#3b82f6"
+      : "#10b981";
 
   return (
     <Container className="py-5">
@@ -349,7 +375,7 @@ export default function EmployeeLogin() {
                       </div>
                     )}
 
-                    {/* ✅ FORGOT PASSWORD LINK — Login mode la மட்டும் காட்டும் */}
+                    {/* Forgot Password — Login mode மட்டும் */}
                     {!isRegister && (
                       <div className="text-end mt-1">
                         <Button
@@ -406,7 +432,7 @@ export default function EmployeeLogin() {
                         </p>
                       </Col>
 
-                      {/* ── Department Dropdown ── */}
+                      {/* Department Dropdown */}
                       <Col md={12}>
                         <Form.Select
                           value={form.watch("department")}
@@ -430,7 +456,7 @@ export default function EmployeeLogin() {
                         </p>
                       </Col>
 
-                      {/* ── Designation Dropdown ── */}
+                      {/* Designation Dropdown */}
                       <Col md={12}>
                         {designations.length > 0 ? (
                           <>
