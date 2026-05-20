@@ -64,14 +64,15 @@ const hasMissingOut = (r, dateStr) => {
 };
 
 // ─── Time calculations ────────────────────────────────────────────────────────
-
-// ✅ CHANGED: Grace time updated to 10:00 AM (General shift start)
 const calcLateMinutes = (checkIn) => {
   if (!checkIn) return 0;
   const d = new Date(checkIn);
   const total = d.getHours() * 60 + d.getMinutes();
-  const grace = 10 * 60; // 10:00 AM grace time
-  return Math.max(total - grace, 0);
+  
+  // Only present window can have late minutes
+  // 10:00 AM - 11:30 AM la vandha late illa
+  // 11:30 ku mela = half day, late flag vendam
+  return 0; // Half day ah irundha late show pannakoodathu
 };
 
 const calcEarlyOut = (checkOut) => {
@@ -372,8 +373,6 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
 // ═══════════════════════════════════════════
 //  SHIFT SELECTOR
 // ═══════════════════════════════════════════
-
-// ✅ CHANGED: 3 new shifts — General (10:00–19:00), Shift B (09:30–18:30), Shift C (12:30–20:30)
 const DEFAULT_SHIFTS = [
   { _id: "s1", name: "General", startTime: "10:00", endTime: "19:00" },
   { _id: "s2", name: "Shift B", startTime: "09:30", endTime: "18:30" },
@@ -904,18 +903,279 @@ function DailyTab() {
 }
 
 // ═══════════════════════════════════════════
+//  EMPLOYEE MONTH DETAIL MODAL  ← NEW
+// ═══════════════════════════════════════════
+function EmployeeMonthModal({ employee, year, month, onClose }) {
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState(null);
+
+  const monthName = new Date(year, month - 1).toLocaleString("en-IN", { month: "long" });
+  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  useEffect(() => {
+    if (!employee?._id) return;
+    setLoading(true);
+    axios
+      .get(`${API_BASE}/api/attendance/monthly/${employee._id}?year=${year}&month=${month}`, { headers: authHeader() })
+      .then((res) => {
+        const raw = res.data?.data || [];
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const filled = [];
+        let presentCount = 0, lateCount = 0, absentCount = 0,
+            otCount = 0, leaveCount = 0, halfCount = 0;
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateStr  = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          const dayOfWeek = new Date(year, month - 1, d).getDay();
+          const isWeekend = dayOfWeek === 0;
+
+          const rec = raw.find((r) => r.date === dateStr);
+
+          if (isWeekend) {
+            filled.push({ date: dateStr, dayOfWeek, status: "weekend", isWeekend: true });
+            continue;
+          }
+
+          if (rec) {
+            // Resolve first_in / last_out
+            let firstIn = rec.first_in || rec.checkIn || null;
+            let lastOut = rec.last_out || rec.checkOut || null;
+            if (!firstIn && rec.punches?.length) {
+              const ins = rec.punches.filter(p => p.type === "in").sort((a, b) => new Date(a.time) - new Date(b.time));
+              firstIn = ins[0]?.time || null;
+            }
+            if (!lastOut && rec.punches?.length) {
+              const outs = rec.punches.filter(p => p.type === "out").sort((a, b) => new Date(b.time) - new Date(a.time));
+              lastOut = outs[0]?.time || null;
+            }
+
+            // Work hours
+            let workHrs = "—";
+            if (rec.work_hours && typeof rec.work_hours === "number" && rec.work_hours > 0) {
+              const h = Math.floor(rec.work_hours);
+              const m = Math.round((rec.work_hours - h) * 60);
+              workHrs = `${h}h ${pad(m)}m`;
+            } else if (firstIn && lastOut) {
+              const diff = (new Date(lastOut) - new Date(firstIn)) / 3600000;
+              workHrs = `${Math.floor(diff)}h ${pad(Math.round((diff % 1) * 60))}m`;
+            } else if (firstIn && !lastOut) {
+              workHrs = "Ongoing";
+            }
+
+            if      (rec.status === "present")  presentCount++;
+            else if (rec.status === "late")     lateCount++;
+            else if (rec.status === "leave")    leaveCount++;
+            else if (rec.status === "half_day") halfCount++;
+            else if (rec.status === "absent")   absentCount++;
+            if ((rec.overtime_minutes || 0) > 0) otCount++;
+
+            filled.push({
+              date: dateStr, dayOfWeek, status: rec.status,
+              firstIn, lastOut, workHrs,
+              lateMin: rec.late_minutes     || 0,
+              otMin:   rec.overtime_minutes || 0,
+              remark:  rec.remark           || "",
+            });
+          } else {
+            absentCount++;
+            filled.push({ date: dateStr, dayOfWeek, status: "absent", firstIn: null, lastOut: null, workHrs: "—", lateMin: 0, otMin: 0 });
+          }
+        }
+
+        setSummary({ presentCount, lateCount, absentCount, otCount, leaveCount, halfCount });
+        setRecords(filled);
+      })
+      .catch(() => { setRecords([]); setSummary(null); })
+      .finally(() => setLoading(false));
+  }, [employee?._id, year, month]);
+
+  const statusStyle = (status) => {
+    const map = {
+      present:  { color: "#16a34a", bg: "#dcfce7", label: "Present"  },
+      late:     { color: "#d97706", bg: "#fef9c3", label: "Late"     },
+      absent:   { color: "#dc2626", bg: "#fee2e2", label: "Absent"   },
+      half_day: { color: "#7c3aed", bg: "#f5f3ff", label: "Half Day" },
+      leave:    { color: "#0891b2", bg: "#e0f2fe", label: "On Leave" },
+      weekend:  { color: "#94a3b8", bg: "#f1f5f9", label: "Weekend"  },
+      holiday:  { color: "#be185d", bg: "#fce7f3", label: "Holiday"  },
+    };
+    return map[status] || map.absent;
+  };
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 10000, backdropFilter: "blur(2px)" }}
+      />
+
+      {/* Modal container */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 10001, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, pointerEvents: "none" }}>
+        <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 860, maxHeight: "92vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.22)", pointerEvents: "all" }}>
+
+          {/* ── Header ── */}
+          <div style={{ background: "#111827", borderRadius: "20px 20px 0 0", padding: "20px 24px", flexShrink: 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 48, height: 48, background: "#374151", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 900, fontSize: 20, flexShrink: 0 }}>
+                  {(employee?.name || "?").charAt(0)}
+                </div>
+                <div>
+                  <div style={{ color: "#fff", fontWeight: 800, fontSize: 17 }}>{employee?.name || "—"}</div>
+                  <div style={{ color: "#9ca3af", fontSize: 12, marginTop: 3 }}>
+                    {employee?.employeeId || "—"} · {employee?.department || "—"}
+                  </div>
+                  <div style={{ color: "#6b7280", fontSize: 12, marginTop: 2, fontWeight: 700 }}>
+                    📅 {monthName} {year} — Full Month Report
+                  </div>
+                </div>
+              </div>
+              <button onClick={onClose} style={{ background: "#374151", border: "none", width: 34, height: 34, borderRadius: 9, cursor: "pointer", color: "#9ca3af", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <X size={17} />
+              </button>
+            </div>
+
+            {/* Summary chips */}
+            {summary && (
+              <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
+                {[
+                  { label: "Present",  value: summary.presentCount, color: "#4ade80" },
+                  { label: "Late",     value: summary.lateCount,    color: "#fbbf24" },
+                  { label: "Absent",   value: summary.absentCount,  color: "#f87171" },
+                  { label: "Leave",    value: summary.leaveCount,   color: "#38bdf8" },
+                  { label: "Half Day", value: summary.halfCount,    color: "#a78bfa" },
+                  { label: "OT Days",  value: summary.otCount,      color: "#34d399" },
+                ].map(c => (
+                  <div key={c.label} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, padding: "4px 13px", display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: c.color }}>{c.value}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>{c.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Body ── */}
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "56px 0", color: "#9ca3af", fontSize: 14 }}>
+                Loading attendance data...
+              </div>
+            ) : records.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "56px 0", color: "#9ca3af", fontSize: 14 }}>
+                No records found for this month.
+              </div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
+                    <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e5e7eb" }}>
+                      {["Date", "Day", "Status", "Check In", "Check Out", "Work Hrs", "Late", "Overtime"].map(h => (
+                        <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11, fontWeight: 800, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.4px", whiteSpace: "nowrap" }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {records.map((row, idx) => {
+                      const st    = statusStyle(row.status);
+                      const isWkd = row.isWeekend;
+                      return (
+                        <tr
+                          key={idx}
+                          style={{ borderBottom: "1px solid #f1f5f9", background: isWkd ? "#f8fafc" : "transparent", opacity: isWkd ? 0.5 : 1 }}
+                          onMouseEnter={e => { if (!isWkd) e.currentTarget.style.background = "#f8fafc"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = isWkd ? "#f8fafc" : "transparent"; }}
+                        >
+                          {/* Date */}
+                          <td style={{ padding: "10px 14px", fontWeight: 700, color: "#111827", whiteSpace: "nowrap" }}>
+                            {new Date(row.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+                          </td>
+
+                          {/* Day */}
+                          <td style={{ padding: "10px 14px", color: "#6b7280", fontWeight: 600, fontSize: 12 }}>
+                            {DAY_NAMES[row.dayOfWeek]}
+                          </td>
+
+                          {/* Status */}
+                          <td style={{ padding: "10px 14px" }}>
+                            <span style={{ background: st.bg, color: st.color, padding: "3px 11px", borderRadius: 20, fontWeight: 800, fontSize: 11, whiteSpace: "nowrap" }}>
+                              {st.label}
+                            </span>
+                          </td>
+
+                          {/* Check In */}
+                          <td style={{ padding: "10px 14px", fontWeight: 700, color: "#16a34a", fontFamily: "monospace", fontSize: 13 }}>
+                            {row.firstIn
+                              ? new Date(row.firstIn).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+                              : <span style={{ color: "#d1d5db" }}>—</span>}
+                          </td>
+
+                          {/* Check Out */}
+                          <td style={{ padding: "10px 14px", fontWeight: 700, fontFamily: "monospace", fontSize: 13 }}>
+                            {row.lastOut
+                              ? <span style={{ color: "#dc2626" }}>{new Date(row.lastOut).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
+                              : row.firstIn
+                                ? <span style={{ color: "#f59e0b", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}><AlertCircle size={11} /> No Out</span>
+                                : <span style={{ color: "#d1d5db" }}>—</span>}
+                          </td>
+
+                          {/* Work Hrs */}
+                          <td style={{ padding: "10px 14px", color: "#2563eb", fontWeight: 700 }}>
+                            {row.workHrs || "—"}
+                          </td>
+
+                          {/* Late */}
+                          <td style={{ padding: "10px 14px" }}>
+                            {row.lateMin > 0
+                              ? <span style={{ background: "#fef9c3", color: "#d97706", padding: "2px 9px", borderRadius: 10, fontWeight: 800, fontSize: 11 }}>{fmtMins(row.lateMin)}</span>
+                              : <span style={{ color: "#d1d5db" }}>—</span>}
+                          </td>
+
+                          {/* Overtime */}
+                          <td style={{ padding: "10px 14px" }}>
+                            {row.otMin > 0
+                              ? <span style={{ background: "#ecfdf5", color: "#047857", padding: "2px 9px", borderRadius: 10, fontWeight: 800, fontSize: 11 }}>{fmtMins(row.otMin)}</span>
+                              : <span style={{ color: "#d1d5db" }}>—</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* ── Footer ── */}
+          <div style={{ padding: "14px 24px", borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "flex-end", flexShrink: 0, background: "#fafafa", borderRadius: "0 0 20px 20px" }}>
+            <button onClick={onClose} style={{ padding: "10px 28px", borderRadius: 10, background: "#111827", color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════
 //  MONTHLY TAB
 // ═══════════════════════════════════════════
 function MonthlyTab() {
-  const [year,      setYear]      = useState(new Date().getFullYear());
-  const [month,     setMonth]     = useState(new Date().getMonth() + 1);
-  const [data,      setData]      = useState([]);
-  const [loading,   setLoading]   = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [search,    setSearch]    = useState("");
-  const [sortKey,   setSortKey]   = useState("name");
-  const [sortDir,   setSortDir]   = useState("asc");
-  const [toast,     setToast]     = useState(null);
+  const [year,       setYear]       = useState(new Date().getFullYear());
+  const [month,      setMonth]      = useState(new Date().getMonth() + 1);
+  const [data,       setData]       = useState([]);
+  const [loading,    setLoading]    = useState(false);
+  const [exporting,  setExporting]  = useState(false);
+  const [search,     setSearch]     = useState("");
+  const [sortKey,    setSortKey]    = useState("name");
+  const [sortDir,    setSortDir]    = useState("asc");
+  const [toast,      setToast]      = useState(null);
+  const [monthModal, setMonthModal] = useState(null); // ← NEW
 
   useEffect(() => { fetchData(); }, [year, month]);
 
@@ -1012,6 +1272,16 @@ function MonthlyTab() {
         </div>
       )}
 
+      {/* ── NEW: Employee Month Modal ── */}
+      {monthModal && (
+        <EmployeeMonthModal
+          employee={monthModal.employee}
+          year={year}
+          month={month}
+          onClose={() => setMonthModal(null)}
+        />
+      )}
+
       {/* Summary Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 12, marginBottom: 20 }}>
         {[
@@ -1087,11 +1357,15 @@ function MonthlyTab() {
                   <SortTh label="OT Days"     k="overtime_days" />
                   <SortTh label="Avg Hrs"     k="avg_work_hours_num" />
                   <SortTh label="Attendance%" k="attendance_pct" />
+                  {/* ── NEW column ── */}
+                  <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 800, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.4px", borderBottom: "2px solid #e5e7eb" }}>
+                    Details
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={13} style={{ textAlign: "center", padding: "44px 0", color: "#d1d5db" }}>
+                  <tr><td colSpan={14} style={{ textAlign: "center", padding: "44px 0", color: "#d1d5db" }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                       <Activity size={36} color="#e5e7eb" />
                       No data for this period
@@ -1138,6 +1412,23 @@ function MonthlyTab() {
                           </div>
                           <span style={{ background: pctBg, color: pctClr, padding: "2px 9px", borderRadius: 20, fontWeight: 800, fontSize: 11, whiteSpace: "nowrap" }}>{pct}%</span>
                         </div>
+                      </td>
+
+                      {/* ── NEW: View button ── */}
+                      <td style={{ padding: "10px 14px" }}>
+                        <button
+                          onClick={() => setMonthModal({
+                            employee: {
+                              _id:        r._id,
+                              name:       r.name,
+                              employeeId: r.employeeId || r.employee_code || "",
+                              department: r.department || "",
+                            }
+                          })}
+                          style={{ background: "#f1f5f9", color: "#374151", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "5px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}
+                        >
+                          <Eye size={11} /> View
+                        </button>
                       </td>
                     </tr>
                   );

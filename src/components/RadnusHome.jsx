@@ -136,7 +136,7 @@ function RadnusHome() {
         </div>
       </section>
 
-      <UpcomingEventsPopup />
+      {/* <UpcomingEventsPopup /> */}
 
       {/* ===== HERO CSS (GLOBAL & CORRECT PLACE) ===== */}
       <style>

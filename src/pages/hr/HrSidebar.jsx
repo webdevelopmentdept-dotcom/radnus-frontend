@@ -318,14 +318,41 @@ export default function HrSidebar() {
           {/* ══════════════════════════════
               LEAVE
           ══════════════════════════════ */}
-          <div className="hr-section">Leave</div>
+          {/* <div className="hr-section">Leave</div>
 
           <NavLink to="/hr/dashboard/leave/requests"
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
             <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
             Requests
-          </NavLink>
+          </NavLink> */}
+
+
+          {/* ══════════════════════════════
+    ATTENDANCE & LEAVE
+══════════════════════════════ */}
+<div className="hr-section">Attendance & Leave</div>
+
+<NavLink to="/hr/dashboard/attendance/monthly"
+  className={({ isActive }) => isActive ? "active" : ""}
+  onClick={close}>
+  <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+  Attendance
+</NavLink>
+
+<NavLink to="/hr/dashboard/leave/requests"
+  className={({ isActive }) => isActive ? "active" : ""}
+  onClick={close}>
+  <HugeiconsIcon icon={Clock01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+  Leave Requests
+</NavLink>
+
+<NavLink to="/hr/dashboard/essl-manager"
+  className={({ isActive }) => isActive ? "active" : ""}
+  onClick={close}>
+  <HugeiconsIcon icon={Notification01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+  eSSL Manager
+</NavLink>
 
           {/* ══════════════════════════════
               PERFORMANCE — KPI FLOW
@@ -424,13 +451,13 @@ export default function HrSidebar() {
             <HugeiconsIcon icon={BarChartIcon} size={18} color="currentColor" strokeWidth={1.8} />
             ESOP
           </NavLink>
-
+{/* 
           <NavLink to="/hr/dashboard/attendance/monthly"
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
             <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
             Attendance
-          </NavLink>
+          </NavLink> */}
 
           {/* ══════════════════════════════
               RECOGNITION
@@ -639,14 +666,14 @@ export default function HrSidebar() {
           {/* ══════════════════════════════
     ESSL BIOMETRIC
 ══════════════════════════════ */}
-          <div className="hr-section">Biometric</div>
+          {/* <div className="hr-section">Biometric</div>
 
           <NavLink to="/hr/dashboard/essl-manager"
             className={({ isActive }) => isActive ? "active" : ""}
             onClick={close}>
             <HugeiconsIcon icon={Notification01Icon} size={18} color="currentColor" strokeWidth={1.8} />
             eSSL Manager
-          </NavLink>
+          </NavLink> */}
 
           {/* ══════════════════════════════
                       WELLNESS

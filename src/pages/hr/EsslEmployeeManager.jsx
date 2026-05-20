@@ -50,31 +50,7 @@ function Toast({ t }) {
   );
 }
 
-// ═══════════════════════════════════════════
-//  MACHINE STATUS BADGE
-// ═══════════════════════════════════════════
-function MachineBadge({ status, onCheck }) {
-  const cfg = {
-    online:   { bg: '#dcfce7', color: '#15803d', border: '#bbf7d0', icon: <Wifi size={12} />,   label: 'Machine Online'  },
-    offline:  { bg: '#fee2e2', color: '#dc2626', border: '#fecaca', icon: <WifiOff size={12} />, label: 'Machine Offline' },
-    checking: { bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0', icon: <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} />, label: 'Checking...' },
-    unknown:  { bg: '#f8fafc', color: '#64748b', border: '#e2e8f0', icon: <Monitor size={12} />, label: 'Check Machine'  },
-  }[status] || {};
 
-  return (
-    <button onClick={onCheck} style={{
-      display: 'flex', alignItems: 'center', gap: 6,
-      padding: '7px 14px', borderRadius: 8,
-      background: cfg.bg, color: cfg.color,
-      border: `1.5px solid ${cfg.border}`,
-      fontSize: 12, fontWeight: 700, cursor: 'pointer',
-      fontFamily: "'DM Sans', sans-serif",
-      transition: 'all 0.15s',
-    }}>
-      {cfg.icon} {cfg.label}
-    </button>
-  );
-}
 
 // ═══════════════════════════════════════════
 //  EMPLOYEE FORM MODAL
@@ -277,170 +253,170 @@ function EmpModal({ emp, onDone, onClose }) {
 // ═══════════════════════════════════════════
 //  MACHINE PANEL MODAL
 // ═══════════════════════════════════════════
-function MachinePanel({ onClose }) {
-  const [data,    setData]    = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [err,     setErr]     = useState('');
-  const [search,  setSearch]  = useState('');
+// function MachinePanel({ onClose }) {
+//   const [data,    setData]    = useState(null);
+//   const [loading, setLoading] = useState(true);
+//   const [err,     setErr]     = useState('');
+//   const [search,  setSearch]  = useState('');
 
-  useEffect(() => {
-    axios.get(`${API}/api/essl/machine/enroll-status`, { headers: H() })
-      .then(res => {
-        const d = res.data;
-        setData({
-          machine_online:  d.machine_online !== false,
-          machine_warning: d.machine_warning || null,
-          total:           d.total           || 0,
-          with_essl_id:    d.with_essl_id    || 0,
-          no_essl_id:      d.no_essl_id      || 0,
-          face_enrolled:   d.face_enrolled   || 0,
-          finger_enrolled: d.finger_enrolled || 0,
-          active_punchers: d.active_punchers || 0,
-          employees:       d.users           || [],
-        });
-      })
-      .catch(e => setErr(e.response?.data?.message || e.message))
-      .finally(() => setLoading(false));
-  }, []);
+//   useEffect(() => {
+//     axios.get(`${API}/api/essl/machine/enroll-status`, { headers: H() })
+//       .then(res => {
+//         const d = res.data;
+//         setData({
+//           machine_online:  d.machine_online !== false,
+//           machine_warning: d.machine_warning || null,
+//           total:           d.total           || 0,
+//           with_essl_id:    d.with_essl_id    || 0,
+//           no_essl_id:      d.no_essl_id      || 0,
+//           face_enrolled:   d.face_enrolled   || 0,
+//           finger_enrolled: d.finger_enrolled || 0,
+//           active_punchers: d.active_punchers || 0,
+//           employees:       d.users           || [],
+//         });
+//       })
+//       .catch(e => setErr(e.response?.data?.message || e.message))
+//       .finally(() => setLoading(false));
+//   }, []);
 
-  const filtered = (data?.employees || []).filter(e => {
-    if (!search) return true;
-    const s = search.toLowerCase();
-    return (
-      e.name?.toLowerCase().includes(s) ||
-      (e.essl_id || '').includes(s) ||
-      (e.department || '').toLowerCase().includes(s) ||
-      (e.employeeId || '').toLowerCase().includes(s)
-    );
-  });
+//   const filtered = (data?.employees || []).filter(e => {
+//     if (!search) return true;
+//     const s = search.toLowerCase();
+//     return (
+//       e.name?.toLowerCase().includes(s) ||
+//       (e.essl_id || '').includes(s) ||
+//       (e.department || '').toLowerCase().includes(s) ||
+//       (e.employeeId || '').toLowerCase().includes(s)
+//     );
+//   });
 
-  const stats = data ? [
-    { label: 'Total Employees', value: data.total,           color: '#0f172a', bg: '#f8fafc', border: '#e2e8f0' },
-    { label: 'With eSSL ID',    value: data.with_essl_id,    color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0' },
-    { label: 'No eSSL ID',      value: data.no_essl_id,      color: '#dc2626', bg: '#fff1f2', border: '#fecaca' },
-    { label: 'Active (30d)',     value: data.active_punchers, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
-    { label: 'Face Enrolled',   value: data.machine_online ? data.face_enrolled   : '?', color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
-    { label: 'Finger Enrolled', value: data.machine_online ? data.finger_enrolled : '?', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-  ] : [];
+//   const stats = data ? [
+//     { label: 'Total Employees', value: data.total,           color: '#0f172a', bg: '#f8fafc', border: '#e2e8f0' },
+//     { label: 'With eSSL ID',    value: data.with_essl_id,    color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0' },
+//     { label: 'No eSSL ID',      value: data.no_essl_id,      color: '#dc2626', bg: '#fff1f2', border: '#fecaca' },
+//     { label: 'Active (30d)',     value: data.active_punchers, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+//     { label: 'Face Enrolled',   value: data.machine_online ? data.face_enrolled   : '?', color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
+//     { label: 'Finger Enrolled', value: data.machine_online ? data.finger_enrolled : '?', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+//   ] : [];
 
-  return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: 16, backdropFilter: 'blur(4px)' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 760, maxHeight: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 80px rgba(0,0,0,0.28)' }}>
-        <div style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', padding: '18px 22px', borderRadius: '18px 18px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-            <div style={{ width: 36, height: 36, background: 'rgba(239,68,68,0.2)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Monitor size={16} color="#f87171" />
-            </div>
-            <div>
-              <div style={{ color: '#f1f5f9', fontWeight: 800, fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>MB20 Machine — Employee Enroll Status</div>
-              <div style={{ color: '#64748b', fontSize: 11, marginTop: 2, fontFamily: "'DM Sans', sans-serif" }}>⚠️ Machine offline — showing HRMS data (ADMS push mode)</div>
-            </div>
-          </div>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', width: 32, height: 32, borderRadius: 8, cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={14} /></button>
-        </div>
+//   return (
+//     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: 16, backdropFilter: 'blur(4px)' }}>
+//       <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 760, maxHeight: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 80px rgba(0,0,0,0.28)' }}>
+//         <div style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', padding: '18px 22px', borderRadius: '18px 18px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+//           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+//             <div style={{ width: 36, height: 36, background: 'rgba(239,68,68,0.2)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+//               <Monitor size={16} color="#f87171" />
+//             </div>
+//             <div>
+//               <div style={{ color: '#f1f5f9', fontWeight: 800, fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>MB20 Machine — Employee Enroll Status</div>
+//               <div style={{ color: '#64748b', fontSize: 11, marginTop: 2, fontFamily: "'DM Sans', sans-serif" }}>⚠️ Machine offline — showing HRMS data (ADMS push mode)</div>
+//             </div>
+//           </div>
+//           <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', width: 32, height: 32, borderRadius: 8, cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={14} /></button>
+//         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '60px 0', color: '#94a3b8' }}>
-              <Loader size={28} style={{ animation: 'spin 1s linear infinite', marginBottom: 12 }} />
-              <div style={{ fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>Loading employee data...</div>
-            </div>
-          ) : err ? (
-            <div style={{ background: '#fff1f2', border: '1px solid #fecaca', borderRadius: 12, padding: '18px 20px' }}>
-              <div style={{ color: '#dc2626', fontWeight: 800, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'DM Sans', sans-serif" }}>
-                <AlertTriangle size={15} /> Cannot fetch data
-              </div>
-              <div style={{ color: '#dc2626', fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>{err}</div>
-            </div>
-          ) : (
-            <>
-              {data?.machine_warning && (
-                <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: 10, padding: '11px 14px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 9 }}>
-                  <AlertTriangle size={15} color="#d97706" style={{ flexShrink: 0, marginTop: 1 }} />
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#92400e', fontFamily: "'DM Sans', sans-serif", marginBottom: 3 }}>Biometric Machine Unreachable</div>
-                    <div style={{ fontSize: 11, color: '#92400e', fontFamily: "'DM Sans', sans-serif" }}>{data.machine_warning}</div>
-                    <div style={{ fontSize: 11, color: '#b45309', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>💡 Attendance push (ADMS) still works normally.</div>
-                  </div>
-                </div>
-              )}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
-                {stats.map(s => (
-                  <div key={s.label} style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 12, padding: '14px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 26, fontWeight: 900, color: s.color, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.1 }}>{s.value ?? 0}</div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: s.color, opacity: 0.75, marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: 9, padding: '9px 13px', marginBottom: 12 }}>
-                <Search size={13} color="#94a3b8" />
-                <input placeholder="Search name, eSSL ID, department..." value={search} onChange={e => setSearch(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 13, width: '100%', fontFamily: "'DM Sans', sans-serif", color: '#0f172a' }} />
-                {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><X size={13} /></button>}
-              </div>
-              <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: '#f8fafc' }}>
-                      {['#', 'Employee', 'Department', 'eSSL ID', 'Last Seen (30d)', 'Punches', 'Face', 'Finger'].map(h => (
-                        <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid #e5e7eb', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {!filtered.length ? (
-                      <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px 0', color: '#cbd5e1', fontFamily: "'DM Sans', sans-serif", fontSize: 13 }}>{search ? `No results for "${search}"` : 'No employees found'}</td></tr>
-                    ) : filtered.map((e, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', background: !e.has_essl_id ? '#fffbeb' : 'transparent' }}>
-                        <td style={{ padding: '10px 12px', color: '#cbd5e1', fontWeight: 700, fontSize: 12 }}>{i + 1}</td>
-                        <td style={{ padding: '10px 12px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 30, height: 30, background: `hsl(${(e.name?.charCodeAt(0) || 65) * 5 % 360}, 65%, 20%)`, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 12, flexShrink: 0 }}>{(e.name || '?').charAt(0).toUpperCase()}</div>
-                            <div>
-                              <div style={{ fontWeight: 700, color: '#0f172a', fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>{e.name}</div>
-                              <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: "'DM Sans', sans-serif" }}>{e.employeeId || '—'}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td style={{ padding: '10px 12px', color: '#64748b', fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>{e.department || '—'}</td>
-                        <td style={{ padding: '10px 12px' }}>
-                          {e.essl_id ? (
-                            <span style={{ background: '#eff6ff', color: '#2563eb', padding: '3px 9px', borderRadius: 7, fontWeight: 800, fontSize: 13, fontFamily: 'monospace', border: '1px solid #bfdbfe' }}>#{e.essl_id}</span>
-                          ) : (
-                            <span style={{ background: '#fff7ed', color: '#d97706', padding: '3px 9px', borderRadius: 7, fontWeight: 700, fontSize: 11, border: '1px solid #fde68a', fontFamily: "'DM Sans', sans-serif" }}>⚠ Not set</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '10px 12px' }}>
-                          {e.last_seen ? (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#15803d', fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}><Clock size={10} /> {e.last_seen}</span>
-                          ) : (
-                            <span style={{ color: '#cbd5e1', fontSize: 11, fontFamily: "'DM Sans', sans-serif" }}>—</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '10px 12px' }}>
-                          {e.punch_days_30 > 0 ? (
-                            <span style={{ background: '#f0fdf4', color: '#15803d', padding: '3px 9px', borderRadius: 7, fontSize: 11, fontWeight: 700, border: '1px solid #bbf7d0', fontFamily: "'DM Sans', sans-serif" }}>{e.punch_days_30}d / {e.total_punches}p</span>
-                          ) : (
-                            <span style={{ color: '#cbd5e1', fontSize: 11, fontFamily: "'DM Sans', sans-serif" }}>No data</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '10px 12px' }}><span style={{ background: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0', padding: '3px 9px', borderRadius: 7, fontSize: 11, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>N/A</span></td>
-                        <td style={{ padding: '10px 12px' }}><span style={{ background: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0', padding: '3px 9px', borderRadius: 7, fontSize: 11, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>N/A</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </div>
+//         <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+//           {loading ? (
+//             <div style={{ textAlign: 'center', padding: '60px 0', color: '#94a3b8' }}>
+//               <Loader size={28} style={{ animation: 'spin 1s linear infinite', marginBottom: 12 }} />
+//               <div style={{ fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>Loading employee data...</div>
+//             </div>
+//           ) : err ? (
+//             <div style={{ background: '#fff1f2', border: '1px solid #fecaca', borderRadius: 12, padding: '18px 20px' }}>
+//               <div style={{ color: '#dc2626', fontWeight: 800, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'DM Sans', sans-serif" }}>
+//                 <AlertTriangle size={15} /> Cannot fetch data
+//               </div>
+//               <div style={{ color: '#dc2626', fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>{err}</div>
+//             </div>
+//           ) : (
+//             <>
+//               {data?.machine_warning && (
+//                 <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: 10, padding: '11px 14px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+//                   <AlertTriangle size={15} color="#d97706" style={{ flexShrink: 0, marginTop: 1 }} />
+//                   <div>
+//                     <div style={{ fontSize: 12, fontWeight: 800, color: '#92400e', fontFamily: "'DM Sans', sans-serif", marginBottom: 3 }}>Biometric Machine Unreachable</div>
+//                     <div style={{ fontSize: 11, color: '#92400e', fontFamily: "'DM Sans', sans-serif" }}>{data.machine_warning}</div>
+//                     <div style={{ fontSize: 11, color: '#b45309', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>💡 Attendance push (ADMS) still works normally.</div>
+//                   </div>
+//                 </div>
+//               )}
+//               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
+//                 {stats.map(s => (
+//                   <div key={s.label} style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 12, padding: '14px', textAlign: 'center' }}>
+//                     <div style={{ fontSize: 26, fontWeight: 900, color: s.color, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.1 }}>{s.value ?? 0}</div>
+//                     <div style={{ fontSize: 10, fontWeight: 700, color: s.color, opacity: 0.75, marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>{s.label}</div>
+//                   </div>
+//                 ))}
+//               </div>
+//               <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: 9, padding: '9px 13px', marginBottom: 12 }}>
+//                 <Search size={13} color="#94a3b8" />
+//                 <input placeholder="Search name, eSSL ID, department..." value={search} onChange={e => setSearch(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 13, width: '100%', fontFamily: "'DM Sans', sans-serif", color: '#0f172a' }} />
+//                 {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><X size={13} /></button>}
+//               </div>
+//               <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
+//                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+//                   <thead>
+//                     <tr style={{ background: '#f8fafc' }}>
+//                       {['#', 'Employee', 'Department', 'eSSL ID', 'Last Seen (30d)', 'Punches', 'Face', 'Finger'].map(h => (
+//                         <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid #e5e7eb', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }}>{h}</th>
+//                       ))}
+//                     </tr>
+//                   </thead>
+//                   <tbody>
+//                     {!filtered.length ? (
+//                       <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px 0', color: '#cbd5e1', fontFamily: "'DM Sans', sans-serif", fontSize: 13 }}>{search ? `No results for "${search}"` : 'No employees found'}</td></tr>
+//                     ) : filtered.map((e, i) => (
+//                       <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', background: !e.has_essl_id ? '#fffbeb' : 'transparent' }}>
+//                         <td style={{ padding: '10px 12px', color: '#cbd5e1', fontWeight: 700, fontSize: 12 }}>{i + 1}</td>
+//                         <td style={{ padding: '10px 12px' }}>
+//                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+//                             <div style={{ width: 30, height: 30, background: `hsl(${(e.name?.charCodeAt(0) || 65) * 5 % 360}, 65%, 20%)`, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 12, flexShrink: 0 }}>{(e.name || '?').charAt(0).toUpperCase()}</div>
+//                             <div>
+//                               <div style={{ fontWeight: 700, color: '#0f172a', fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>{e.name}</div>
+//                               <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: "'DM Sans', sans-serif" }}>{e.employeeId || '—'}</div>
+//                             </div>
+//                           </div>
+//                         </td>
+//                         <td style={{ padding: '10px 12px', color: '#64748b', fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>{e.department || '—'}</td>
+//                         <td style={{ padding: '10px 12px' }}>
+//                           {e.essl_id ? (
+//                             <span style={{ background: '#eff6ff', color: '#2563eb', padding: '3px 9px', borderRadius: 7, fontWeight: 800, fontSize: 13, fontFamily: 'monospace', border: '1px solid #bfdbfe' }}>#{e.essl_id}</span>
+//                           ) : (
+//                             <span style={{ background: '#fff7ed', color: '#d97706', padding: '3px 9px', borderRadius: 7, fontWeight: 700, fontSize: 11, border: '1px solid #fde68a', fontFamily: "'DM Sans', sans-serif" }}>⚠ Not set</span>
+//                           )}
+//                         </td>
+//                         <td style={{ padding: '10px 12px' }}>
+//                           {e.last_seen ? (
+//                             <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#15803d', fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}><Clock size={10} /> {e.last_seen}</span>
+//                           ) : (
+//                             <span style={{ color: '#cbd5e1', fontSize: 11, fontFamily: "'DM Sans', sans-serif" }}>—</span>
+//                           )}
+//                         </td>
+//                         <td style={{ padding: '10px 12px' }}>
+//                           {e.punch_days_30 > 0 ? (
+//                             <span style={{ background: '#f0fdf4', color: '#15803d', padding: '3px 9px', borderRadius: 7, fontSize: 11, fontWeight: 700, border: '1px solid #bbf7d0', fontFamily: "'DM Sans', sans-serif" }}>{e.punch_days_30}d / {e.total_punches}p</span>
+//                           ) : (
+//                             <span style={{ color: '#cbd5e1', fontSize: 11, fontFamily: "'DM Sans', sans-serif" }}>No data</span>
+//                           )}
+//                         </td>
+//                         <td style={{ padding: '10px 12px' }}><span style={{ background: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0', padding: '3px 9px', borderRadius: 7, fontSize: 11, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>N/A</span></td>
+//                         <td style={{ padding: '10px 12px' }}><span style={{ background: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0', padding: '3px 9px', borderRadius: 7, fontSize: 11, fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>N/A</span></td>
+//                       </tr>
+//                     ))}
+//                   </tbody>
+//                 </table>
+//               </div>
+//             </>
+//           )}
+//         </div>
 
-        <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', flexShrink: 0 }}>
-          <button onClick={onClose} style={{ width: '100%', padding: '11px 0', borderRadius: 10, border: '1.5px solid #e5e7eb', background: '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#64748b' }}>Close</button>
-        </div>
-      </div>
-    </div>
-  );
-}
+//         <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', flexShrink: 0 }}>
+//           <button onClick={onClose} style={{ width: '100%', padding: '11px 0', borderRadius: 10, border: '1.5px solid #e5e7eb', background: '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#64748b' }}>Close</button>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
 // ═══════════════════════════════════════════
 //  DELETE CONFIRM MODAL
@@ -753,9 +729,7 @@ export default function EsslEmployeeManager() {
   const [statusF,    setStatusF]    = useState('all');
   const [modal,      setModal]      = useState(null);
   const [delEmp,     setDelEmp]     = useState(null);
-  const [machPanel,  setMachPanel]  = useState(false);
-  const [machStatus, setMachStatus] = useState('unknown');
-  const [syncingId,  setSyncingId]  = useState(null);
+  // const [machPanel,  setMachPanel]  = useState(false);
   const [toast,      setToast]      = useState(null);
   const [activeTab,  setActiveTab]  = useState('employees');
 
@@ -774,13 +748,7 @@ export default function EsslEmployeeManager() {
     } finally { setLoading(false); }
   }, []);
 
-  const checkMachine = async () => {
-    setMachStatus('checking');
-    try {
-      const r = await axios.get(`${API}/api/essl/ping`, { headers: H() });
-      setMachStatus(r.data.ok ? 'online' : 'offline');
-    } catch { setMachStatus('offline'); }
-  };
+ 
 
   useEffect(() => { load(); }, []);
 
@@ -793,27 +761,6 @@ export default function EsslEmployeeManager() {
     } catch (e) {
       showToast(e.response?.data?.message || 'Delete failed', 'error');
     }
-  };
-
-  const syncOne = async (emp) => {
-    setSyncingId(emp._id);
-    try {
-      const r = await axios.post(`${API}/api/essl/employees/${emp._id}/sync`, {}, { headers: H() });
-      showToast(r.data.message, r.data.success ? 'success' : 'error');
-      load();
-    } catch (e) {
-      showToast(e.response?.data?.message || 'Sync failed', 'error');
-    } finally { setSyncingId(null); }
-  };
-
-  const syncAll = async () => {
-    setSyncingId('all');
-    try {
-      const r = await axios.post(`${API}/api/essl/employees/sync-all`, {}, { headers: H() });
-      showToast(`Synced ${r.data.synced}/${r.data.total} to machine`, r.data.failed > 0 ? 'error' : 'success');
-      load();
-    } catch { showToast('Bulk sync failed', 'error'); }
-    finally { setSyncingId(null); }
   };
 
   const filtered = emps.filter(e => {
@@ -869,7 +816,7 @@ export default function EsslEmployeeManager() {
         />
       )}
       {delEmp && <DeleteModal emp={delEmp} onConfirm={handleDelete} onClose={() => setDelEmp(null)} />}
-      {machPanel && <MachinePanel onClose={() => setMachPanel(false)} />}
+      {/* {machPanel && <MachinePanel onClose={() => setMachPanel(false)} />} */}
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14, marginBottom: 20 }}>
@@ -883,14 +830,10 @@ export default function EsslEmployeeManager() {
           <p style={{ margin: 0, color: '#64748b', fontSize: 13 }}>HRMS + MB20 biometric machine sync · {emps.length} employees</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <MachineBadge status={machStatus} onCheck={checkMachine} />
-          <button onClick={() => setMachPanel(true)} style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 700, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Users size={13} /> Machine List
-          </button>
-          <button onClick={syncAll} disabled={syncingId === 'all'} style={{ background: '#1e293b', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: syncingId === 'all' ? 'not-allowed' : 'pointer', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 6, opacity: syncingId === 'all' ? 0.6 : 1 }}>
+          {/* <button onClick={syncAll} disabled={syncingId === 'all'} style={{ background: '#1e293b', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: syncingId === 'all' ? 'not-allowed' : 'pointer', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 6, opacity: syncingId === 'all' ? 0.6 : 1 }}>
             {syncingId === 'all' ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={12} />}
             Sync All
-          </button>
+          </button> */}
           <button onClick={() => setModal({})} style={{ background: 'linear-gradient(135deg, #16a34a, #15803d)', border: 'none', borderRadius: 8, padding: '7px 16px', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(22,163,74,0.3)' }}>
             <Plus size={13} /> Add Employee
           </button>
@@ -997,11 +940,6 @@ export default function EsslEmployeeManager() {
                           </td>
                           <td style={{ padding: '11px 14px' }}>
                             <div style={{ display: 'flex', gap: 5 }}>
-                              {emp.essl_id && (
-                                <button onClick={() => syncOne(emp)} disabled={syncingId === emp._id} title="Sync to machine" style={{ background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', borderRadius: 7, padding: '6px 9px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', opacity: syncingId === emp._id ? 0.5 : 1 }}>
-                                  {syncingId === emp._id ? <Loader size={11} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={11} />}
-                                </button>
-                              )}
                               <button onClick={() => setModal(emp)} style={{ background: '#f8fafc', color: '#374151', border: '1.5px solid #e2e8f0', borderRadius: 7, padding: '6px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                                 <Edit3 size={11} /> Edit
                               </button>

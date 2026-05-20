@@ -260,6 +260,7 @@ export default function HrApproved() {
       employee_code: code,
       department: rawDept,
       designation: empDesignation,
+      essl_id: emp?.essl_id || emp?.esslId || emp?.essl || "",
     });
     setSalary(initialSalary);
 
@@ -270,14 +271,13 @@ export default function HrApproved() {
       if (data.success && data.data) {
         setExistingActivation(data.data);
         if (data.data.employment) {
-          setEmployment({
-            ...initialEmployment,
-            designation: empDesignation,
-            department: rawDept,
-            ...data.data.employment,
-            department: data.data.employment.department || rawDept,
-            employee_code: data.data.employment.employee_code || code,
-          });
+        setEmployment({
+  ...initialEmployment,
+  employee_code: code,
+  department: rawDept,
+  designation: empDesignation,
+   essl_id: data.data.employment.essl_id || emp?.essl_id || "",
+});
         }
         if (data.data.salary) setSalary({ ...initialSalary, ...data.data.salary });
       }
