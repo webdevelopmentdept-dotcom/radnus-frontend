@@ -43,12 +43,12 @@ const getFirstIn = (r) => {
 const getLastOut = (r) => {
   if (r.punches?.length) {
     const sorted = [...r.punches].sort((a, b) => new Date(a.time) - new Date(b.time));
-    const unique = sorted.filter((p, idx, arr) =>
-      idx === 0 || new Date(p.time).getTime() !== new Date(arr[idx - 1].time).getTime()
-    );
-    const outs = unique.filter(p => p.type === "out");
-    if (outs.length) return outs[outs.length - 1].time;
-    return null;
+    const outs = sorted.filter(p => p.type === "out");
+    if (!outs.length) return null;
+    const lastOutTime = outs[outs.length - 1].time;
+    const firstIn = r.punches.find(p => p.type === "in")?.time;
+    if (firstIn && new Date(lastOutTime).getTime() === new Date(firstIn).getTime()) return null;
+    return lastOutTime;
   }
   return r.checkOut || r.last_out || null;
 };
@@ -105,14 +105,12 @@ const workHrsFromPunches = (r) => {
       <AlertCircle size={11} /> No Out
     </span>
   );
-  if (r.work_hours && typeof r.work_hours === "string") return r.work_hours;
-  if (r.work_hours && typeof r.work_hours === "number") {
-    const h = Math.floor(r.work_hours);
-    const m = Math.round((r.work_hours - h) * 60);
-    return `${h}h ${pad(m)}m`;
-  }
-  const d = (new Date(lastOut) - new Date(firstIn)) / 3600000;
-  return `${Math.floor(d)}h ${pad(Math.round((d % 1) * 60))}m`;
+  const diffMs = new Date(lastOut) - new Date(firstIn);
+  if (diffMs <= 0) return "—";
+  const totalMins = Math.round(diffMs / 60000);
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return `${h}h ${pad(m)}m`;
 };
 
 // ═══════════════════════════════════════════
@@ -174,7 +172,7 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
   );
 
   const lateMinutes  = calcLateMinutes(firstIn);
-  const earlyOutMins = firstIn && !lastOut ? 0 : calcEarlyOut(lastOut);
+  const earlyOutMins = (firstIn && lastOut) ? calcEarlyOut(lastOut) : 0;
   const overtimeMins = calcOvertime(lastOut);
   const missingPunch = hasMissingOut(record, date);
 
