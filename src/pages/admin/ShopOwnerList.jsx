@@ -333,7 +333,7 @@ const deleteShopOwner = async (id) => {
                 </div>
 
                 {/* OTHER */}
-                <div className="bg-white rounded p-3 shadow-sm">
+                <div className="bg-white rounded p-3 mb-3 shadow-sm">
                   <h6 className="fw-bold text-danger mb-3">Other</h6>
                   <div className="row">
                     <div className="col-md-4"><Info label="Timeline" value={selected.timeline} /></div>
@@ -342,6 +342,40 @@ const deleteShopOwner = async (id) => {
                     <div className="col-md-12"><Info label="Remarks" value={selected.remarks} /></div>
                   </div>
                 </div>
+
+                {/* ✅ DATE & TIME — newly added section */}
+                <div className="bg-white rounded p-3 shadow-sm">
+                  <h6 className="fw-bold text-danger mb-3">Date & Time</h6>
+                  <div className="row">
+                    <div className="col-md-6">
+                      <Info
+                        label="Submitted On (Created At)"
+                        value={
+                          selected.createdAt
+                            ? new Date(selected.createdAt).toLocaleString("en-IN", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              })
+                            : "-"
+                        }
+                      />
+                    </div>
+                    <div className="col-md-6">
+                      <Info
+                        label="Last Updated (Updated At)"
+                        value={
+                          selected.updatedAt
+                            ? new Date(selected.updatedAt).toLocaleString("en-IN", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              })
+                            : "-"
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
             </div>
