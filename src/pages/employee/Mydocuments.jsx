@@ -11,6 +11,17 @@ import EmployeeLayout from "./EmployeeLayout";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+// ─── Secure URL helper (frontend only) ────────────────────────────────────────
+const getSecureUrl = async (docId) => {
+  const token = localStorage.getItem("employeeToken") || 
+              sessionStorage.getItem("employeeToken");
+  const res = await fetch(`${API_BASE}/api/employee/view-doc/${docId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  return data.url;
+};
+
 const HR_DOC_TYPES = [
   { type: "Offer Letter",              icon: <ClipboardList size={28} />, desc: "Your official offer letter from HR" },
   { type: "Appointment Letter",        icon: <FileIcon      size={28} />, desc: "Formal appointment confirmation" },
@@ -66,24 +77,6 @@ const ALL_PERSONAL_DOCS = [
   ...REFERENCE_DOCS,
 ];
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
-const handleDownload = async (url, filename) => {
-  try {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    const blobUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = filename || "document";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(blobUrl);
-  } catch {
-    window.open(url, "_blank");
-  }
-};
-
 const getFileLabel = (url) => {
   if (!url) return "File";
   if (url.toLowerCase().includes("pdf")) return "PDF";
@@ -91,7 +84,6 @@ const getFileLabel = (url) => {
   return "Document";
 };
 
-// ─── Section divider ──────────────────────────────────────────────────────────
 const SectionDivider = ({ title, icon, color = "#2563eb" }) => (
   <div className="col-12" style={{ marginTop: 8, marginBottom: 4 }}>
     <div className="d-flex align-items-center gap-2" style={{ borderBottom: `2px solid ${color}22`, paddingBottom: 8 }}>
@@ -101,31 +93,26 @@ const SectionDivider = ({ title, icon, color = "#2563eb" }) => (
   </div>
 );
 
-// ─── Locked badge ─────────────────────────────────────────────────────────────
 const LockedBadge = () => (
-  <span style={{
-    display: "inline-flex", alignItems: "center", gap: 4,
-    fontSize: 11, color: "#9ca3af", marginTop: 6,
-  }}>
+  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "#9ca3af", marginTop: 6 }}>
     <Lock size={11} /> Contact HR to manage this document
   </span>
 );
 
 export default function MyDocuments() {
-  const [employee, setEmployee]           = useState(null);
-  const [hrDocs, setHrDocs]               = useState([]);
-  const [uploadedDocs, setUploadedDocs]   = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [activeTab, setActiveTab]         = useState("hr");
-  const [downloading, setDownloading]     = useState({});
-  const [uploading, setUploading]         = useState({});
-  const [uploadError, setUploadError]     = useState({});
+  const [employee, setEmployee]                 = useState(null);
+  const [hrDocs, setHrDocs]                     = useState([]);
+  const [uploadedDocs, setUploadedDocs]         = useState([]);
+  const [loading, setLoading]                   = useState(true);
+  const [activeTab, setActiveTab]               = useState("hr");
+  const [downloading, setDownloading]           = useState({});
+  const [uploading, setUploading]               = useState({});
+  const [uploadError, setUploadError]           = useState({});
   const [isEmployeeActive, setIsEmployeeActive] = useState(false);
-
-  const [linkInputs,  setLinkInputs]  = useState({});
-  const [savingLink,  setSavingLink]  = useState({});
-  const [linkError,   setLinkError]   = useState({});
-  const [linkSuccess, setLinkSuccess] = useState({});
+  const [linkInputs, setLinkInputs]             = useState({});
+  const [savingLink, setSavingLink]             = useState({});
+  const [linkError, setLinkError]               = useState({});
+  const [linkSuccess, setLinkSuccess]           = useState({});
 
   const fileRefs = useRef({});
 
@@ -134,12 +121,8 @@ export default function MyDocuments() {
       const empRes = await axios.get(`${API_BASE}/api/employee/me/${id}`);
       setEmployee(empRes.data);
       setUploadedDocs(empRes.data.documents || []);
-
-      // ✅ Active status check
       const status = empRes.data.status;
-      const active = status === "active" || status === "approved";
-      setIsEmployeeActive(active);
-
+      setIsEmployeeActive(status === "active" || status === "approved");
       const hrRes = await axios.get(`${API_BASE}/api/hr/activation/docs/${id}`);
       if (hrRes.data.success) setHrDocs(hrRes.data.data || []);
     } catch (err) {
@@ -156,19 +139,14 @@ export default function MyDocuments() {
   }, []);
 
   const getUploadedDoc = (type) =>
-    uploadedDocs.find(d =>
-      d.docType?.trim().toLowerCase() === type?.trim().toLowerCase()
-    ) || null;
+    uploadedDocs.find(d => d.docType?.trim().toLowerCase() === type?.trim().toLowerCase()) || null;
 
   const uploadedPersonalCount = ALL_PERSONAL_DOCS.filter(d => getUploadedDoc(d.type)).length;
 
-  // ── file upload ────────────────────────────────────────────────────────────
   const handleUpload = async (docType, file) => {
     if (!file || isEmployeeActive) return;
     const employeeId = localStorage.getItem("employeeId");
-    const existingDoc = uploadedDocs.find(
-      d => d.docType?.trim().toLowerCase() === docType?.trim().toLowerCase()
-    );
+    const existingDoc = uploadedDocs.find(d => d.docType?.trim().toLowerCase() === docType?.trim().toLowerCase());
     setUploading(p => ({ ...p, [docType]: true }));
     setUploadError(p => ({ ...p, [docType]: null }));
     try {
@@ -184,15 +162,13 @@ export default function MyDocuments() {
       }
       await fetchAll(employeeId);
     } catch (err) {
-      const msg = err?.response?.data?.message || "Upload failed";
-      setUploadError(p => ({ ...p, [docType]: msg }));
+      setUploadError(p => ({ ...p, [docType]: err?.response?.data?.message || "Upload failed" }));
     } finally {
       setUploading(p => ({ ...p, [docType]: false }));
       if (fileRefs.current[docType]) fileRefs.current[docType].value = "";
     }
   };
 
-  // ── text / link save ───────────────────────────────────────────────────────
   const handleSaveLink = async (docType) => {
     if (isEmployeeActive) return;
     const url = linkInputs[docType]?.trim();
@@ -214,10 +190,62 @@ export default function MyDocuments() {
     }
   };
 
-  const downloadFile = async (url, name) => {
-    setDownloading(p => ({ ...p, [name]: true }));
-    await handleDownload(url, name);
-    setDownloading(p => ({ ...p, [name]: false }));
+  // ── Secure View ────────────────────────────────────────────────────────────
+  // const handleView = async (docId) => {
+  //   try {
+  //     const url = await getSecureUrl(docId);
+  //     window.open(url, "_blank");
+  //   } catch {
+  //     alert("Failed to open document. Please try again.");
+  //   }
+  // };
+
+  // ── Secure View ────────────────────────────────────────────────────────────
+const handleView = async (docId) => {
+  const newTab = window.open('', '_blank');
+  try {
+    newTab.document.write('<p style="font-family:sans-serif;padding:20px;color:#333;">Loading document...</p>');
+    
+     const token = localStorage.getItem("employeeToken") || 
+                  sessionStorage.getItem("employeeToken");
+    const res = await fetch(`${API_BASE}/api/employee/view-doc/${docId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    
+    const data = await res.json();
+    console.log('view-doc response:', data); // debug
+    
+    if (data.url) {
+      newTab.location.href = data.url;
+    } else {
+      newTab.document.write('<p style="font-family:sans-serif;padding:20px;color:red;">Error: ' + (data.message || 'Failed to load') + '</p>');
+    }
+  } catch (err) {
+    console.log('handleView error:', err);
+    newTab.document.write('<p style="font-family:sans-serif;padding:20px;color:red;">Failed to load document.</p>');
+  }
+};    
+
+  // ── Secure Download ────────────────────────────────────────────────────────
+  const handleDownload = async (docId, filename) => {
+    setDownloading(p => ({ ...p, [filename]: true }));
+    try {
+      const url = await getSecureUrl(docId);
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename || "document";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      alert("Download failed. Please try again.");
+    } finally {
+      setDownloading(p => ({ ...p, [filename]: false }));
+    }
   };
 
   // ── File Card ──────────────────────────────────────────────────────────────
@@ -229,7 +257,6 @@ export default function MyDocuments() {
 
     return (
       <div className="col-md-6">
-        {/* FIX 3: PDF removed from accept */}
         {!isEmployeeActive && (
           <input
             type="file"
@@ -239,7 +266,6 @@ export default function MyDocuments() {
             onChange={e => handleUpload(docType, e.target.files[0])}
           />
         )}
-
         <div style={{
           border: `1.5px solid ${isUploaded ? "#86efac" : "#e5e7eb"}`,
           borderRadius: 12,
@@ -269,18 +295,18 @@ export default function MyDocuments() {
               }
             </div>
           </div>
-
           {error && <p style={{ fontSize: 11, color: "#dc2626", margin: "4px 0 6px" }}>{error}</p>}
-
           <div className="d-flex gap-2 mt-2 flex-wrap">
             {isUploaded ? (
               <>
-                <a href={uploaded.fileUrl} target="_blank" rel="noopener noreferrer"
-                  className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
-                  <ExternalLink size={13} /> View
-                </a>
                 <button
-                  onClick={() => downloadFile(uploaded.fileUrl, docType)}
+                  onClick={() => handleView(uploaded._id)}
+                  className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                >
+                  <ExternalLink size={13} /> View
+                </button>
+                <button
+                  onClick={() => handleDownload(uploaded._id, docType)}
                   disabled={downloading[docType]}
                   className="btn btn-sm btn-primary d-flex align-items-center gap-1"
                 >
@@ -308,7 +334,7 @@ export default function MyDocuments() {
     );
   };
 
-  // ── Ration Card block ──────────────────────────────────────────────────────
+  // ── Ration Card ────────────────────────────────────────────────────────────
   const RationCardBlock = () => {
     const sides = [
       { type: "Ration Card Front", label: "Ration Card — Front Side" },
@@ -340,7 +366,6 @@ export default function MyDocuments() {
               }
             </div>
           </div>
-
           <div className="row g-3">
             {sides.map(side => {
               const uploaded    = getUploadedDoc(side.type);
@@ -376,12 +401,17 @@ export default function MyDocuments() {
                     <div className="d-flex gap-2 flex-wrap">
                       {isUploaded ? (
                         <>
-                          <a href={uploaded.fileUrl} target="_blank" rel="noopener noreferrer"
-                            className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
+                          <button
+                            onClick={() => handleView(uploaded._id)}
+                            className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                          >
                             <ExternalLink size={12} /> View
-                          </a>
-                          <button onClick={() => downloadFile(uploaded.fileUrl, side.type)} disabled={downloading[side.type]}
-                            className="btn btn-sm btn-primary d-flex align-items-center gap-1">
+                          </button>
+                          <button
+                            onClick={() => handleDownload(uploaded._id, side.type)}
+                            disabled={downloading[side.type]}
+                            className="btn btn-sm btn-primary d-flex align-items-center gap-1"
+                          >
                             <Download size={12} /> {downloading[side.type] ? "..." : "Download"}
                           </button>
                         </>
@@ -441,7 +471,6 @@ export default function MyDocuments() {
               }
             </div>
           </div>
-
           {isUploaded && (
             <div className="mb-2" style={{
               background: "#f0fdf4", borderRadius: 8, padding: "6px 10px",
@@ -450,7 +479,6 @@ export default function MyDocuments() {
               {uploaded.fileUrl}
             </div>
           )}
-
           {!isEmployeeActive ? (
             <>
               <div className="d-flex gap-2">
@@ -471,8 +499,7 @@ export default function MyDocuments() {
                     ? <><span className="spinner-border spinner-border-sm me-1" />Saving...</>
                     : isUploaded
                       ? <><RefreshCw size={13} /> Update</>
-                      : <><CheckCircle size={13} /> Save</>
-                  }
+                      : <><CheckCircle size={13} /> Save</>}
                 </button>
               </div>
               {error   && <p style={{ fontSize: 11, color: "#dc2626", margin: "4px 0 0" }}>{error}</p>}
@@ -502,7 +529,6 @@ export default function MyDocuments() {
     <EmployeeLayout>
       <div style={{ background: "#f4f6fb", minHeight: "100vh" }}>
 
-        {/* Header */}
         <header style={{
           background: "#fff", padding: "14px 28px",
           borderBottom: "1px solid #e5e7eb",
@@ -532,27 +558,18 @@ export default function MyDocuments() {
 
         <div className="container-fluid" style={{ padding: 28 }}>
 
-          {/* Active Banner */}
           {isEmployeeActive && (
             <div style={{
-              background: "#f0fdf4",
-              border: "1.5px solid #86efac",
-              borderRadius: 12,
-              padding: "12px 18px",
-              marginBottom: 20,
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              fontSize: 13,
-              color: "#15803d",
-              fontWeight: 600,
+              background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 12,
+              padding: "12px 18px", marginBottom: 20,
+              display: "flex", alignItems: "center", gap: 10,
+              fontSize: 13, color: "#15803d", fontWeight: 600,
             }}>
               <ShieldCheck size={18} color="#16a34a" />
               Your account is active. Documents are locked for editing. To update any document, please Contact Web Team.
             </div>
           )}
 
-          {/* Stats */}
           <div className="row g-3 mb-4">
             {[
               { label: "HR Documents",       value: `${hrDocs.length} / ${HR_DOC_TYPES.length}`,              icon: <ShieldCheck size={22} className="text-white" />, bg: "linear-gradient(135deg,#2563eb,#1e40af)" },
@@ -566,10 +583,8 @@ export default function MyDocuments() {
                       <p className="mb-0 small opacity-75 fw-bold text-uppercase">{s.label}</p>
                       <h3 className="mb-0 fw-bold">{s.value}</h3>
                     </div>
-                    <div
-                      className="rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ width: 48, height: 48, background: "rgba(255,255,255,0.2)" }}
-                    >
+                    <div className="rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ width: 48, height: 48, background: "rgba(255,255,255,0.2)" }}>
                       {s.icon}
                     </div>
                   </div>
@@ -581,7 +596,6 @@ export default function MyDocuments() {
           <div className="card">
             <div className="card-body">
 
-              {/* Tabs */}
               <div className="d-flex gap-2 mb-4" style={{ borderBottom: "2px solid #e5e7eb" }}>
                 {[
                   { key: "hr",       label: <span className="d-flex align-items-center gap-2"><Building2 size={15} />HR Documents</span>,    count: hrDocs.length },
@@ -610,8 +624,8 @@ export default function MyDocuments() {
               {activeTab === "hr" && (
                 <div className="row g-3">
                   {HR_DOC_TYPES.map((docInfo, i) => {
-                    const url = hrDocs.find(d => d.docType === docInfo.type)?.fileUrl || null;
-                    const isAvailable = !!url;
+                    const hrDoc = hrDocs.find(d => d.docType === docInfo.type) || null;
+                    const isAvailable = !!hrDoc;
                     return (
                       <div key={i} className="col-md-6 col-lg-4">
                         <div style={{
@@ -631,15 +645,17 @@ export default function MyDocuments() {
                             <>
                               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
                                 <CheckCircle size={13} color="#16a34a" />
-                                <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 700 }}>Available · {getFileLabel(url)}</span>
+                                <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 700 }}>Available · {getFileLabel(hrDoc.fileUrl)}</span>
                               </div>
                               <div className="d-flex gap-2">
-                                <a href={url} target="_blank" rel="noopener noreferrer"
-                                  className="btn btn-sm btn-outline-primary flex-grow-1 d-flex align-items-center justify-content-center gap-1">
-                                  <ExternalLink size={13} /> View
-                                </a>
                                 <button
-                                  onClick={() => downloadFile(url, docInfo.type)}
+                                  onClick={() => handleView(hrDoc._id)}
+                                  className="btn btn-sm btn-outline-primary flex-grow-1 d-flex align-items-center justify-content-center gap-1"
+                                >
+                                  <ExternalLink size={13} /> View
+                                </button>
+                                <button
+                                  onClick={() => handleDownload(hrDoc._id, docInfo.type)}
                                   disabled={downloading[docInfo.type]}
                                   className="btn btn-sm btn-primary flex-grow-1 d-flex align-items-center justify-content-center gap-1"
                                 >
@@ -664,103 +680,40 @@ export default function MyDocuments() {
               {activeTab === "personal" && (
                 <div className="row g-3">
 
-                  {/* ── 1. MANDATORY DOCS ── */}
                   <SectionDivider title="Mandatory Documents" icon={<ShieldCheck size={16} />} color="#2563eb" />
                   {MANDATORY_PERSONAL_DOCS
                     .filter(d => d.type !== "Ration Card Front" && d.type !== "Ration Card Back")
                     .map((doc) => (
-                      <FileCard
-                        key={doc.type}
-                        docType={doc.type}
-                        label={doc.type}
-                        category={doc.category}
-                        required={doc.required}
-                      />
+                      <FileCard key={doc.type} docType={doc.type} label={doc.type} category={doc.category} required={doc.required} />
                     ))
                   }
                   <RationCardBlock />
+                  <FileCard docType="Gas Book" label="Gas Book" category="IDENTITY" required={false} />
+                  <TextCard docType="Reference Number 1" label="Reference Number 1" category="IDENTITY" placeholder="Enter Reference Number 1" iconColor="#cf1322" />
+                  <TextCard docType="Reference Number 2" label="Reference Number 2" category="IDENTITY" placeholder="Enter Reference Number 2" iconColor="#cf1322" />
 
-                  {/* FIX 1: Gas Book FileCard — Identity section */}
-                  <FileCard
-                    docType="Gas Book"
-                    label="Gas Book"
-                    category="IDENTITY"
-                    required={false}
-                  />
-
-                  {/* FIX 2: Reference Number 1 & 2 TextCards — Identity section */}
-                  <TextCard
-                    docType="Reference Number 1"
-                    label="Reference Number 1"
-                    category="IDENTITY"
-                    placeholder="Enter Reference Number 1"
-                    iconColor="#cf1322"
-                  />
-                  <TextCard
-                    docType="Reference Number 2"
-                    label="Reference Number 2"
-                    category="IDENTITY"
-                    placeholder="Enter Reference Number 2"
-                    iconColor="#cf1322"
-                  />
-
-                  {/* ── 2. PF & ESI ── */}
                   <SectionDivider title="PF & ESI Details" icon={<CreditCard size={16} />} color="#7c3aed" />
                   {TEXT_FIELD_DOCS.map((doc) => (
-                    <TextCard
-                      key={doc.type}
-                      docType={doc.type}
-                      label={doc.type}
-                      category={doc.category}
-                      placeholder={`Enter ${doc.type} (if available)`}
-                      iconColor="#7c3aed"
-                    />
+                    <TextCard key={doc.type} docType={doc.type} label={doc.type} category={doc.category} placeholder={`Enter ${doc.type} (if available)`} iconColor="#7c3aed" />
                   ))}
                   {OPTIONAL_FILE_DOCS.map((doc) => (
-                    <FileCard
-                      key={doc.type}
-                      docType={doc.type}
-                      label={doc.type}
-                      category={doc.category}
-                      required={doc.required}
-                    />
+                    <FileCard key={doc.type} docType={doc.type} label={doc.type} category={doc.category} required={doc.required} />
                   ))}
 
-                  {/* ── 3. EDUCATION ── */}
                   <SectionDivider title="Education — UG / PG Degree" icon={<GraduationCap size={16} />} color="#059669" />
                   {UG_DOCS.map((doc) => (
-                    <FileCard
-                      key={doc.type}
-                      docType={doc.type}
-                      label={doc.label || doc.type}
-                      category={doc.category}
-                      required={doc.required}
-                    />
+                    <FileCard key={doc.type} docType={doc.type} label={doc.label || doc.type} category={doc.category} required={doc.required} />
                   ))}
                   {CGPA_TEXT_FIELDS.map((doc) => (
-                    <TextCard
-                      key={doc.type}
-                      docType={doc.type}
-                      label={doc.label}
-                      category={doc.category}
-                      placeholder={`Enter ${doc.label} (e.g. 8.5)`}
-                      iconColor="#059669"
-                    />
+                    <TextCard key={doc.type} docType={doc.type} label={doc.label} category={doc.category} placeholder={`Enter ${doc.label} (e.g. 8.5)`} iconColor="#059669" />
                   ))}
 
-                  {/* ── 4. EXPERIENCE DOCS ── */}
                   <SectionDivider title="Work Experience Documents" icon={<Briefcase size={16} />} color="#d97706" />
                   {uploadedDocs.filter(d => d.docType?.startsWith("offer_") || d.docType?.startsWith("experience_")).length === 0 ? (
                     <div className="col-12">
-                      <div style={{
-                        background: "#fffbeb", border: "1px solid #fde68a",
-                        borderRadius: 10, padding: "12px 16px",
-                        fontSize: 13, color: "#92400e", fontWeight: 600,
-                      }}>
+                      <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#92400e", fontWeight: 600 }}>
                         No experience documents uploaded yet.
-                        {isEmployeeActive
-                          ? " Contact HR to add experience documents."
-                          : " Complete the document upload step to add them."}
+                        {isEmployeeActive ? " Contact HR to add experience documents." : " Complete the document upload step to add them."}
                       </div>
                     </div>
                   ) : (
@@ -783,12 +736,14 @@ export default function MyDocuments() {
                                 </div>
                               </div>
                               <div className="d-flex gap-2 flex-wrap">
-                                <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer"
-                                  className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
-                                  <ExternalLink size={13} /> View
-                                </a>
                                 <button
-                                  onClick={() => downloadFile(doc.fileUrl, label)}
+                                  onClick={() => handleView(doc._id)}
+                                  className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                                >
+                                  <ExternalLink size={13} /> View
+                                </button>
+                                <button
+                                  onClick={() => handleDownload(doc._id, label)}
                                   disabled={downloading[doc.docType]}
                                   className="btn btn-sm btn-primary d-flex align-items-center gap-1"
                                 >
@@ -801,16 +756,9 @@ export default function MyDocuments() {
                       })
                   )}
 
-                  {/* ── 5. REFERENCE DOCS ── */}
                   <SectionDivider title="Reference Documents" icon={<User size={16} />} color="#6b7280" />
                   {REFERENCE_DOCS.map((doc) => (
-                    <FileCard
-                      key={doc.type}
-                      docType={doc.type}
-                      label={doc.type}
-                      category={doc.category}
-                      required={doc.required}
-                    />
+                    <FileCard key={doc.type} docType={doc.type} label={doc.type} category={doc.category} required={doc.required} />
                   ))}
 
                 </div>

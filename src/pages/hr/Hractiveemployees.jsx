@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { getSecureUrl } from "../../utils/secureDoc";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -190,13 +191,19 @@ const PreviewModal = ({ url, name, onClose }) => (
 );
 
 // ─── Doc Row Card ─────────────────────────────────────────────────────────────
-const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHrDoc }) => {
+const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, employeeId, onRefresh, isHrDoc }) => {
   const fileRef = useRef(null);
   const [uploading,   setUploading]   = useState(false);
   const [deleting,    setDeleting]    = useState(false);
-  const [preview,     setPreview]     = useState(false);
+  const [preview,     setPreview]     = useState(null);
   const [confirmDel,  setConfirmDel]  = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [fileUrl,     setFileUrl]     = useState(initialFileUrl); // ✅ FIX 1: local state
+
+  // ✅ FIX 2: parent refresh ஆனா புதுசா வந்த URL sync ஆகும்
+  useEffect(() => {
+    setFileUrl(initialFileUrl);
+  }, [initialFileUrl]);
 
   const hasFile   = !!fileUrl;
   const isTextDoc = TEXT_DOCS.includes(docType);
@@ -208,12 +215,16 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
       const formData = new FormData();
       formData.append("file", file);
       formData.append("employeeId", employeeId);
-      formData.append("docType", docType);
+      formData.append("isHrUpload", isHrDoc ? "true" : "false");
+      let res;
       if (isHrDoc) {
-        await fetch(`${API_BASE}/api/hr/activation/upload-doc`, { method:"POST", body:formData });
+        res = await fetch(`${API_BASE}/api/hr/activation/upload-doc`, { method:"POST", body:formData });
       } else {
-        await fetch(`${API_BASE}/api/employee/upload-doc`, { method:"POST", body:formData });
+        res = await fetch(`${API_BASE}/api/employee/upload-doc`, { method:"POST", body:formData });
       }
+      const data = await res.json();
+      // ✅ FIX 3: backend response-ல் new URL வந்தா உடனே update பண்ணு
+      if (data?.document?.fileUrl) setFileUrl(data.document.fileUrl);
       onRefresh();
     } catch (err) {
       console.error("Upload failed", err);
@@ -241,15 +252,27 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
   };
 
   const handleDownload = async () => {
-    if (!fileUrl) return;
-    setDownloading(true);
-    await downloadFile(fileUrl, label || docType);
+  if (!fileUrl) return;
+  setDownloading(true);
+  try {
+    let url = fileUrl;
+    if (docId) {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/employee/view-doc/${docId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.url) url = data.url;
+    }
+    await downloadFile(url, label || docType);
+  } finally {
     setDownloading(false);
-  };
+  }
+};
 
   return (
     <>
-      {preview && !isTextDoc && <PreviewModal url={fileUrl} name={label || docType} onClose={() => setPreview(false)} />}
+      {preview && !isTextDoc && <PreviewModal url={preview} name={label || docType} onClose={() => setPreview(null)} />}
 
       {confirmDel && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:1500, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
@@ -314,7 +337,17 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
           {hasFile ? (
             <>
               {!isTextDoc && (
-                <button onClick={() => setPreview(true)} title="Preview" style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 9px", border:"1px solid #e5e7eb", borderRadius:7, background:"#fff", color:"#374151", fontSize:11, fontWeight:600, cursor:"pointer" }}>
+                <button onClick={async () => {
+  if (!docId) { setPreview(fileUrl); return; } // fallback old docs
+  const newTab = window.open('', '_blank');
+  newTab.document.write('<p style="font-family:sans-serif;padding:20px;">Loading...</p>');
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/api/employee/view-doc/${docId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const data = await res.json();
+  if (data.url) newTab.location.href = data.url;
+}} title="Preview" style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 9px", border:"1px solid #e5e7eb", borderRadius:7, background:"#fff", color:"#374151", fontSize:11, fontWeight:600, cursor:"pointer" }}>
                   <EyeIcon /> View
                 </button>
               )}
@@ -350,359 +383,8 @@ const DocRow = ({ docType, label, fileUrl, required, employeeId, onRefresh, isHr
   );
 };
 
+
 // ─── Edit Info Tab ────────────────────────────────────────────────────────────
-// const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
-//   const emp = activation?.employment || {};
-
-//   const [form, setForm] = useState({
-//     name:            employee.name            || "",
-//     email:           employee.email           || "",
-//     mobile:          employee.mobile          || "",
-//     employeeId:      employee.employeeId      || "",
-//     department:      employee.department      || emp.department    || "",
-//     designation:     employee.designation     || emp.designation   || "",
-//     // ✅ FIX: Prefer activation employment_type over employee record
-//     employment_type: emp.employment_type      || employee.employment_type || "Full-time",
-//     date_of_joining: emp.date_of_joining
-//       ? new Date(emp.date_of_joining).toISOString().split("T")[0]
-//       : employee.date_of_joining
-//         ? new Date(employee.date_of_joining).toISOString().split("T")[0]
-//         : "",
-//     essl_id:         employee.essl_id         || emp.essl_id || "",
-//     basic:           activation?.salary?.basic           || "",
-//     hra:             activation?.salary?.hra             || "",
-//     da:              activation?.salary?.da              || "",
-//     ta:              activation?.salary?.ta              || "",
-//     other_allowance: activation?.salary?.other_allowance || "",
-//     pf_deduction:    activation?.salary?.pf_deduction    || "",
-//     esi_deduction:   activation?.salary?.esi_deduction   || "",
-//     pt:              activation?.salary?.pt              || "",
-//   });
-
-//   const [saving,  setSaving]  = useState(false);
-//   const [toast,   setToast]   = useState(null);
-//   const [changed, setChanged] = useState(false);
-
-//   const [departments,   setDepartments]   = useState([]);
-//   const [designations,  setDesignations]  = useState([]);
-//   const [loadingDepts,  setLoadingDepts]  = useState(true);
-//   const [loadingDesigs, setLoadingDesigs] = useState(false);
-
-//   // ✅ FIX: Re-sync ALL employment fields from activation when activation prop loads/changes
-//   useEffect(() => {
-//     if (activation?.employment) {
-//       const actEmp = activation.employment;
-//       setForm(prev => ({
-//         ...prev,
-//         // Only override if activation has a value (don't blank out existing form values)
-//         employment_type: actEmp.employment_type  || prev.employment_type,
-//         department:      actEmp.department       || prev.department,
-//         designation:     actEmp.designation      || prev.designation,
-//         date_of_joining: actEmp.date_of_joining
-//           ? new Date(actEmp.date_of_joining).toISOString().split("T")[0]
-//           : prev.date_of_joining,
-//         essl_id:         actEmp.essl_id !== undefined ? actEmp.essl_id : prev.essl_id,
-//       }));
-//     }
-//     // Also re-sync salary from activation
-//     if (activation?.salary) {
-//       const actSal = activation.salary;
-//       setForm(prev => ({
-//         ...prev,
-//         basic:           actSal.basic           ?? prev.basic,
-//         hra:             actSal.hra             ?? prev.hra,
-//         da:              actSal.da              ?? prev.da,
-//         ta:              actSal.ta              ?? prev.ta,
-//         other_allowance: actSal.other_allowance ?? prev.other_allowance,
-//         pf_deduction:    actSal.pf_deduction    ?? prev.pf_deduction,
-//         esi_deduction:   actSal.esi_deduction   ?? prev.esi_deduction,
-//         pt:              actSal.pt              ?? prev.pt,
-//       }));
-//     }
-//   }, [activation]);
-
-//   // ✅ Fetch active departments on mount
-//   useEffect(() => {
-//     fetch(`${API_BASE}/api/departments`)
-//       .then(r => r.json())
-//       .then(data => {
-//         const list = data?.data || data || [];
-//         setDepartments(list.filter(d => d.status === "active"));
-//       })
-//       .catch(() => {})
-//       .finally(() => setLoadingDepts(false));
-//   }, []);
-
-//   // ✅ When department changes, fetch its designations
-//   useEffect(() => {
-//     if (!form.department) { setDesignations([]); return; }
-//     const matched = departments.find(d => d.name === form.department);
-//     if (matched?._id) {
-//       setLoadingDesigs(true);
-//       fetch(`${API_BASE}/api/departments/${matched._id}`)
-//         .then(r => r.json())
-//         .then(data => {
-//           const dept = data?.data || data || {};
-//           const desigs = (dept.designations || []).filter(d => d.status === "active");
-//           setDesignations(desigs);
-//         })
-//         .catch(() => setDesignations([]))
-//         .finally(() => setLoadingDesigs(false));
-//     } else {
-//       setDesignations([]);
-//     }
-//   }, [form.department, departments]);
-
-//   const showToast = (msg, type = "success") => {
-//     setToast({ msg, type });
-//     setTimeout(() => setToast(null), 3000);
-//   };
-
-//   const handleChange = (field, value) => {
-//     setForm(prev => {
-//       const updated = { ...prev, [field]: value };
-//       if (field === "department") updated.designation = "";
-//       return updated;
-//     });
-//     setChanged(true);
-//   };
-
-//   const gross      = ["basic","hra","da","ta","other_allowance"].reduce((s,k) => s + (parseFloat(form[k])||0), 0);
-//   const deductions = ["pf_deduction","esi_deduction","pt"].reduce((s,k) => s + (parseFloat(form[k])||0), 0);
-//   const net        = gross - deductions;
-
-//   const handleSave = async () => {
-//     setSaving(true);
-//     try {
-//       const payload = {
-//         name:            form.name,
-//         email:           form.email,
-//         mobile:          form.mobile,
-//         employeeId:      form.employeeId,
-//         department:      form.department,
-//         designation:     form.designation,
-//         employment_type: form.employment_type,
-//         date_of_joining: form.date_of_joining,
-//         essl_id:         form.essl_id,
-//         salary: {
-//           basic:           parseFloat(form.basic)           || 0,
-//           hra:             parseFloat(form.hra)             || 0,
-//           da:              parseFloat(form.da)              || 0,
-//           ta:              parseFloat(form.ta)              || 0,
-//           other_allowance: parseFloat(form.other_allowance) || 0,
-//           pf_deduction:    parseFloat(form.pf_deduction)    || 0,
-//           esi_deduction:   parseFloat(form.esi_deduction)   || 0,
-//           pt:              parseFloat(form.pt)              || 0,
-//           gross, net,
-//         },
-//       };
-//       const res  = await fetch(`${API_BASE}/api/hr/activation/update/${employee._id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
-//       const data = await res.json();
-//       if (data.success) {
-//         showToast("Employee info saved successfully ✓");
-//         setChanged(false);
-//         if (onSaveSuccess) onSaveSuccess(data.data);
-//       } else {
-//         showToast(data.message || "Save failed", "error");
-//       }
-//     } catch (err) {
-//       console.error(err);
-//       showToast("Something went wrong", "error");
-//     } finally {
-//       setSaving(false);
-//     }
-//   };
-
-//   const inputStyle  = { width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:8, fontSize:13, outline:"none", background:"#fff", boxSizing:"border-box", color:"#1a1a2e", transition:"border-color 0.15s" };
-//   const selectStyle = { ...inputStyle, cursor:"pointer", appearance:"auto" };
-//   const labelStyle  = { fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4, display:"block" };
-
-//   const sectionTitle = (title) => (
-//     <p style={{ margin:"0 0 10px", fontSize:12, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", paddingBottom:6, borderBottom:"1.5px solid #f0f0f0" }}>{title}</p>
-//   );
-
-//   const Field = ({ label, field, type="text", placeholder="" }) => (
-//     <div>
-//       <label style={labelStyle}>{label}</label>
-//       <input type={type} value={form[field]} placeholder={placeholder} onChange={e => handleChange(field, e.target.value)}
-//         onFocus={e => e.target.style.borderColor="#2563eb"} onBlur={e => e.target.style.borderColor="#e5e7eb"} style={inputStyle} />
-//     </div>
-//   );
-
-//   const AmountField = ({ label, field }) => (
-//     <div>
-//       <label style={labelStyle}>{label}</label>
-//       <div style={{ position:"relative" }}>
-//         <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"#9ca3af", fontWeight:600 }}>₹</span>
-//         <input type="number" value={form[field]} placeholder="0" onChange={e => handleChange(field, e.target.value)}
-//           onFocus={e => e.target.style.borderColor="#2563eb"} onBlur={e => e.target.style.borderColor="#e5e7eb"}
-//           style={{ ...inputStyle, paddingLeft:24 }} />
-//       </div>
-//     </div>
-//   );
-
-//   const deptOptions = () => {
-//     const names = departments.map(d => d.name);
-//     if (form.department && !names.includes(form.department)) return [form.department, ...names];
-//     return names;
-//   };
-
-//   const desigOptions = () => {
-//     const titles = designations.map(d => d.title);
-//     if (form.designation && !titles.includes(form.designation)) return [form.designation, ...titles];
-//     return titles;
-//   };
-
-//   return (
-//     <div style={{ display:"flex", flexDirection:"column", gap:20, paddingBottom:8 }}>
-//       {toast && (
-//         <div style={{ background:toast.type==="error"?"#fef2f2":"#f0fdf4", border:`1px solid ${toast.type==="error"?"#fecaca":"#86efac"}`, color:toast.type==="error"?"#dc2626":"#16a34a", padding:"10px 14px", borderRadius:8, fontSize:13, fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
-//           {toast.type==="error"?"✕":"✓"} {toast.msg}
-//         </div>
-//       )}
-
-//       {/* Basic Info */}
-//       <div>
-//         {sectionTitle("Basic Information")}
-//         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:12 }}>
-//           <Field label="Full Name"   field="name"       placeholder="Employee name" />
-//           <Field label="Email"       field="email"      type="email" placeholder="email@company.com" />
-//           <Field label="Mobile"      field="mobile"     type="tel"   placeholder="+91 XXXXX XXXXX" />
-//           <Field label="Employee ID" field="employeeId" placeholder="EMP001" />
-//         </div>
-//       </div>
-
-//       {/* Employment Details */}
-//       <div>
-//         {sectionTitle("Employment Details")}
-//         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:12 }}>
-
-//           {/* Department — dynamic dropdown */}
-//           <div>
-//             <label style={labelStyle}>
-//               Department
-//               {loadingDepts && <span style={{ marginLeft:5, fontSize:10, color:"#9ca3af" }}>(loading…)</span>}
-//             </label>
-//             <select
-//               value={form.department}
-//               onChange={e => handleChange("department", e.target.value)}
-//               onFocus={e => e.target.style.borderColor="#2563eb"}
-//               onBlur={e  => e.target.style.borderColor="#e5e7eb"}
-//               style={selectStyle}
-//             >
-//               <option value="">Select Department</option>
-//               {deptOptions().map(name => (
-//                 <option key={name} value={name}>{name}</option>
-//               ))}
-//             </select>
-//           </div>
-
-//           {/* Designation — dynamic dropdown based on selected department */}
-//           <div>
-//             <label style={labelStyle}>
-//               Designation
-//               {loadingDesigs && <span style={{ marginLeft:5, fontSize:10, color:"#9ca3af" }}>(loading…)</span>}
-//             </label>
-//             <select
-//               value={form.designation}
-//               onChange={e => handleChange("designation", e.target.value)}
-//               onFocus={e => e.target.style.borderColor="#2563eb"}
-//               onBlur={e  => e.target.style.borderColor="#e5e7eb"}
-//               style={selectStyle}
-//               disabled={!form.department}
-//             >
-//               <option value="">
-//                 {!form.department
-//                   ? "Select department first"
-//                   : designations.length === 0 && !loadingDesigs
-//                     ? "No designations found"
-//                     : "Select Designation"}
-//               </option>
-//               {desigOptions().map(title => (
-//                 <option key={title} value={title}>{title}</option>
-//               ))}
-//             </select>
-//             {!form.department && (
-//               <p style={{ margin:"4px 0 0", fontSize:10, color:"#9ca3af" }}>
-//                 Choose a department to see designations
-//               </p>
-//             )}
-//           </div>
-
-//           {/* ✅ FIX: Employment Type — always reads from form.employment_type which is synced from activation */}
-//           <div>
-//             <label style={labelStyle}>Employment Type</label>
-//             <select
-//               value={form.employment_type}
-//               onChange={e => handleChange("employment_type", e.target.value)}
-//               onFocus={e => e.target.style.borderColor="#2563eb"}
-//               onBlur={e  => e.target.style.borderColor="#e5e7eb"}
-//               style={selectStyle}
-//             >
-//               {EMP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-//             </select>
-//           </div>
-
-//           <Field label="Date of Joining" field="date_of_joining" type="date" />
-
-//           {/* eSSL Device ID */}
-//           <div>
-//             <label style={labelStyle}>eSSL Device ID</label>
-//             <input
-//               type="text"
-//               value={form.essl_id}
-//               placeholder="MB20 User ID (e.g. 142)"
-//               onChange={e => handleChange("essl_id", e.target.value)}
-//               onFocus={e => e.target.style.borderColor="#2563eb"}
-//               onBlur={e  => e.target.style.borderColor="#e5e7eb"}
-//               style={{ ...inputStyle, fontFamily:"monospace" }}
-//             />
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Salary */}
-//       <div>
-//         {sectionTitle("Salary Structure")}
-//         <p style={{ margin:"0 0 10px", fontSize:12, color:"#6b7280" }}>Earnings</p>
-//         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:10, marginBottom:14 }}>
-//           <AmountField label="Basic"           field="basic" />
-//           <AmountField label="HRA"             field="hra" />
-//           <AmountField label="DA"              field="da" />
-//           <AmountField label="TA"              field="ta" />
-//           <AmountField label="Other Allowance" field="other_allowance" />
-//         </div>
-//         <p style={{ margin:"0 0 10px", fontSize:12, color:"#6b7280" }}>Deductions</p>
-//         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:10, marginBottom:14 }}>
-//           <AmountField label="PF Deduction"    field="pf_deduction" />
-//           <AmountField label="ESI Deduction"   field="esi_deduction" />
-//           <AmountField label="Professional Tax" field="pt" />
-//         </div>
-//         <div style={{ display:"flex", gap:10, flexWrap:"wrap", background:"#f8fafc", border:"1px solid #e5e7eb", borderRadius:10, padding:"12px 16px" }}>
-//           {[
-//             { label:"Gross Salary",     value:gross,      color:"#16a34a", bg:"#f0fdf4", border:"#86efac" },
-//             { label:"Total Deductions", value:deductions, color:"#dc2626", bg:"#fef2f2", border:"#fecaca" },
-//             { label:"Net Salary",       value:net,        color:"#2563eb", bg:"#eff6ff", border:"#bfdbfe" },
-//           ].map((s,i) => (
-//             <div key={i} style={{ flex:1, minWidth:120, textAlign:"center", background:s.bg, border:`1px solid ${s.border}`, borderRadius:8, padding:"8px 12px" }}>
-//               <p style={{ margin:0, fontSize:10, fontWeight:700, color:s.color, textTransform:"uppercase", letterSpacing:"0.05em" }}>{s.label}</p>
-//               <p style={{ margin:"2px 0 0", fontSize:16, fontWeight:800, color:s.color }}>₹{s.value.toLocaleString("en-IN")}</p>
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-
-//       <div style={{ display:"flex", justifyContent:"flex-end", paddingTop:4 }}>
-//         <button onClick={handleSave} disabled={saving || !changed} style={{ display:"flex", alignItems:"center", gap:7, padding:"10px 22px", border:"none", borderRadius:9, background:saving||!changed?"#9ca3af":"#2563eb", color:"#fff", fontWeight:700, fontSize:14, cursor:saving||!changed?"not-allowed":"pointer", boxShadow:saving||!changed?"none":"0 4px 12px rgba(37,99,235,0.35)", transition:"all 0.2s" }}>
-//           <SaveIcon />
-//           {saving ? "Saving..." : "Save Changes"}
-//         </button>
-//       </div>
-//     </div>
-//   );
-// };
-// ─── Edit Info Tab ────────────────────────────────────────────────────────────
-// PASTE THIS to replace your existing EditInfoTab component entirely
 const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
   const emp = activation?.employment || {};
 
@@ -734,12 +416,10 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
   const [toast,   setToast]   = useState(null);
   const [changed, setChanged] = useState(false);
 
-  // ✅ FIX: departments now holds full objects (with designations array inside)
   const [departments,   setDepartments]   = useState([]);
   const [designations,  setDesignations]  = useState([]);
   const [loadingDepts,  setLoadingDepts]  = useState(true);
 
-  // Re-sync form from activation when it loads/changes
   useEffect(() => {
     if (activation?.employment) {
       const actEmp = activation.employment;
@@ -770,35 +450,26 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
     }
   }, [activation]);
 
-  // ✅ FIX 1: Use /api/departments/active — this endpoint returns designations[]
-  //           inside each department object. No second fetch needed.
   useEffect(() => {
     setLoadingDepts(true);
     fetch(`${API_BASE}/api/departments/active`)
       .then(r => r.json())
       .then(data => {
         const list = data?.data || data || [];
-        setDepartments(list); // list already has .designations[]
+        setDepartments(list);
       })
       .catch(() => {})
       .finally(() => setLoadingDepts(false));
   }, []);
 
-  // ✅ FIX 2: When department changes, pull designations directly from
-  //           the already-fetched departments list. Zero extra API calls.
   useEffect(() => {
     if (!form.department || departments.length === 0) {
       setDesignations([]);
       return;
     }
-    const matched = departments.find(
-      d => d.name === form.department
-    );
+    const matched = departments.find(d => d.name === form.department);
     if (matched) {
-      // Only show active designations in the dropdown
-      const active = (matched.designations || []).filter(
-        d => d.status === "active"
-      );
+      const active = (matched.designations || []).filter(d => d.status === "active");
       setDesignations(active);
     } else {
       setDesignations([]);
@@ -813,7 +484,6 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
   const handleChange = (field, value) => {
     setForm(prev => {
       const updated = { ...prev, [field]: value };
-      // Reset designation whenever department changes
       if (field === "department") updated.designation = "";
       return updated;
     });
@@ -903,7 +573,6 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
     </div>
   );
 
-  // ✅ If employee's current dept isn't in active list, still show it
   const deptOptions = () => {
     const names = departments.map(d => d.name);
     if (form.department && !names.includes(form.department))
@@ -911,7 +580,6 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
     return names;
   };
 
-  // ✅ If employee's current designation isn't in active list, still show it
   const desigOptions = () => {
     const titles = designations.map(d => d.title);
     if (form.designation && !titles.includes(form.designation))
@@ -943,7 +611,6 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
         {sectionTitle("Employment Details")}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:12 }}>
 
-          {/* ✅ Department dropdown */}
           <div>
             <label style={labelStyle}>
               Department
@@ -963,12 +630,8 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
             </select>
           </div>
 
-          {/* ✅ Designation dropdown — auto-populated from selected dept */}
           <div>
-            <label style={labelStyle}>
-              Designation
-              {/* No loading spinner needed — sync operation now */}
-            </label>
+            <label style={labelStyle}>Designation</label>
             <select
               value={form.designation}
               onChange={e => handleChange("designation", e.target.value)}
@@ -995,7 +658,6 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
             )}
           </div>
 
-          {/* Employment Type */}
           <div>
             <label style={labelStyle}>Employment Type</label>
             <select
@@ -1011,7 +673,6 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
 
           <Field label="Date of Joining" field="date_of_joining" type="date" />
 
-          {/* eSSL Device ID */}
           <div>
             <label style={labelStyle}>eSSL Device ID</label>
             <input
@@ -1112,7 +773,6 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
         essl_id: updatedEmp.essl_id ?? prev.essl_id,
       }));
       if (onEmployeeUpdate) onEmployeeUpdate(updatedEmp);
-      // ✅ FIX: Re-fetch activation after save so employment_type syncs on next open
       fetch(`${API_BASE}/api/hr/activation/${empData._id}`)
         .then(r => r.json())
         .then(data => {
@@ -1256,6 +916,7 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
                                 docType={doc.type}
                                 label={doc.type}
                                 fileUrl={uploaded?.fileUrl || null}
+                                docId={uploaded?._id || null}
                                 required={doc.required}
                                 employeeId={empData._id}
                                 onRefresh={fetchDocs}
@@ -1333,6 +994,7 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
                         docType={type}
                         label={type}
                         fileUrl={doc?.fileUrl || null}
+                        docId={doc?._id || null}
                         required={false}
                         employeeId={empData._id}
                         onRefresh={fetchDocs}

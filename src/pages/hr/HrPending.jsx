@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { getSecureUrl } from "../../utils/secureDoc";
 
 // ✅ Text-only doc types (not files — just plain values)
 const TEXT_DOCS = ["CGPA", "PF Number", "ESI Number", "PG CGPA"];
@@ -281,8 +282,7 @@ export default function HrPending() {
                         ) : isPDF(fileUrl) ? (
                           <button
                             className="btn btn-outline-primary btn-sm w-100"
-                            onClick={() => openPreview(fileUrl, doc.docType)}
-                          >
+onClick={() => openPreview(fileUrl, doc.docType)}                         >
                             📄 View PDF
                           </button>
 
@@ -292,8 +292,8 @@ export default function HrPending() {
                             alt="doc"
                             className="img-fluid rounded"
                             style={{ height: "100px", objectFit: "cover", cursor: "pointer" }}
-                            onClick={() => openPreview(fileUrl, doc.docType)}
-                          />
+onClick={() => openPreview(fileUrl, doc.docType)}                   
+       />
                         )}
 
                       </div>
