@@ -6,6 +6,10 @@ import TechnicianCard from "./TechnicianCard";
 import PosterSidebar from "./PosterSidebar";
 import FilterPanel from "./FilterPanel";
 
+
+
+
+
 export default function TechnicianBoard() {
   const [technicians, setTechnicians] = useState([]);
   const [total,   setTotal]   = useState(0);
