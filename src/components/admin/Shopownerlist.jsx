@@ -27,10 +27,11 @@ export default function ShopOwnerList() {
     try {
       const params = { ...filters, page, limit: 20 };
       Object.keys(params).forEach((k) => !params[k] && delete params[k]);
-      const { data: res } = await axios.get("/api/shop-owner", { params });
-      setData(res.data || res);
-      setTotal(res.total || res.length || 0);
-      setPages(res.pages || 1);
+   const { data: res } = await axios.get("/api/shop-owner", { params });
+const list = Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : [];
+setData(list);
+setTotal(res.total || list.length || 0);
+setPages(res.pages || 1);
     } catch { setData([]); }
     setLoading(false);
   }, [filters, page]);

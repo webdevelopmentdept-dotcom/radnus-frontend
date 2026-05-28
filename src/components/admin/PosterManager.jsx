@@ -5,12 +5,11 @@ export default function PosterManager() {
   const [posters, setPosters] = useState([]);
   const [form, setForm] = useState({ title: "", edition: "", image: null });
   const [uploading, setUploading] = useState(false);
-
-  const fetchPosters = async () => {
-    const { data } = await axios.get("/api/posters");
-    setPosters(data);
-  };
-
+const fetchPosters = async () => {
+  const { data } = await axios.get("/api/posters");
+  const list = Array.isArray(data) ? data : Array.isArray(data.data) ? data.data : [];
+  setPosters(list);
+};
   useEffect(() => { fetchPosters(); }, []);
 
   const handleUpload = async () => {
