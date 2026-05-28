@@ -47,7 +47,7 @@ export default function AdminSidebar() {
         { name: "Applicants", path: "/admin/applicants", icon: "bi-people-fill" },
       ],
     },
-    {
+ {
   module: "Radnus Connect",
   items: [
     {
@@ -59,10 +59,14 @@ export default function AdminSidebar() {
       name: "Technician List",
       path: "/admin/radnus-connect/technicians",
       icon: "bi-person-workspace"
+    },
+    {
+      name: "Poster Manager",
+      path: "/admin/radnus-connect/posters",
+      icon: "bi-images"
     }
   ],
 },
-
     {
       module: "Channel Partner",
       items: [

@@ -123,7 +123,9 @@ import AdminUpdates from "./pages/admin/AdminUpdates";
 import CourseManagement from "./pages/admin/CourseManagement";
 import ShopOwnerList from "./pages/admin/ShopOwnerList";
 import TechnicianList from "./pages/admin/TechnicianList";
-
+import JobBoard from "./components/radnusconnect/JobBoard";
+import TechnicianBoard from "./components/radnusconnect/TechnicianBoard";
+import PosterManager from "./components/admin/PosterManager";
 /* Channel */
 import ChannelDashboard from "./pages/Channel/ChannelDashboard";
 import DashboardOverview from "./pages/Channel/DashboardOverview";
@@ -160,6 +162,9 @@ function App() {
       location.pathname.toLowerCase() !== "/channel/login") ||
     location.pathname.startsWith("/radnus-connect/technician") ||
     location.pathname.startsWith("/radnus-connect/shop-owner");
+    location.pathname.startsWith("/radnus-connect/jobs") ||
+location.pathname.startsWith("/radnus-connect/find-technician")
+
 
   return (
     <>
@@ -323,6 +328,7 @@ function App() {
           <Route path="advance-records" element={<AdvanceRecords />} />
           <Route path="courses" element={<CourseManagement />} />
           <Route path="settings" element={<SystemSettings />} />
+          <Route path="radnus-connect/posters" element={<PosterManager />} />
           <Route path="updates" element={<AdminUpdates />} />
           <Route
             path="radnus-connect/shop-owners"
@@ -349,6 +355,8 @@ function App() {
         <Route path="/radnus-connect" element={<RadnusConnectHome />} />
         <Route path="/radnus-connect/technician" element={<TechnicianForm />} />
         <Route path="/radnus-connect/shop-owner" element={<ShopOwnerForm />} />
+        <Route path="/radnus-connect/jobs" element={<JobBoard />} />
+<Route path="/radnus-connect/find-technician" element={<TechnicianBoard />} />
       </Routes>
 
       {!hideHeaderFooter && <RadnusFooter />}

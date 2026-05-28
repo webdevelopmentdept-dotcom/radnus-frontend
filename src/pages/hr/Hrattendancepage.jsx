@@ -9,19 +9,25 @@ import {
   CircleDot, MinusCircle, LogIn, LogOut,
 } from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
-const getToken   = () => localStorage.getItem("hrToken") || localStorage.getItem("token") || sessionStorage.getItem("hrToken");
-const authHeader = () => ({ Authorization: `Bearer ${getToken()}` });
-const pad   = (n) => String(n).padStart(2, "0");
-const fmt   = (d) => d ? new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "—";
-const fmtD  = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
-const todayStr = () => new Date().toISOString().split("T")[0];
+// ─── MonthlyTab import ────────────────────────────────────────────────────────
+import MonthlyTab from "./Monthlytab";
 
-const SHIFT_END_HOUR   = 19;
-const SHIFT_END_MINUTE = 0;
-const SHIFT_END_TOTAL  = SHIFT_END_HOUR * 60 + SHIFT_END_MINUTE;
+// ═══════════════════════════════════════════
+//  SHARED CONSTANTS (exported for MonthlyTab)
+// ═══════════════════════════════════════════
+export const API_BASE    = import.meta.env.VITE_API_BASE_URL;
+export const getToken    = () => localStorage.getItem("hrToken") || localStorage.getItem("token") || sessionStorage.getItem("hrToken");
+export const authHeader  = () => ({ Authorization: `Bearer ${getToken()}` });
+export const pad         = (n) => String(n).padStart(2, "0");
+export const fmt         = (d) => d ? new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "—";
+export const fmtD        = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+export const todayStr    = () => new Date().toISOString().split("T")[0];
 
-const STATUS_META = {
+// export const SHIFT_END_HOUR   = 19;
+// export const SHIFT_END_MINUTE = 0;
+// export const SHIFT_END_TOTAL  = SHIFT_END_HOUR * 60 + SHIFT_END_MINUTE;
+
+export const STATUS_META = {
   present:  { label: "Present",  color: "#16a34a", bg: "#dcfce7", border: "#bbf7d0" },
   absent:   { label: "Absent",   color: "#dc2626", bg: "#fee2e2", border: "#fecaca" },
   late:     { label: "Late",     color: "#d97706", bg: "#fef9c3", border: "#fde68a" },
@@ -31,8 +37,8 @@ const STATUS_META = {
   weekend:  { label: "Weekend",  color: "#94a3b8", bg: "#f1f5f9", border: "#e2e8f0" },
 };
 
-// ─── Punch helpers ────────────────────────────────────────────────────────────
-const getFirstIn = (r) => {
+// ─── Punch helpers (exported) ─────────────────────────────────────────────────
+export const getFirstIn = (r) => {
   if (r.punches?.length) {
     const first = r.punches.find(p => p.type === "in");
     return first?.time || null;
@@ -40,7 +46,7 @@ const getFirstIn = (r) => {
   return r.checkIn || r.first_in || null;
 };
 
-const getLastOut = (r) => {
+export const getLastOut = (r) => {
   if (r.punches?.length) {
     const sorted = [...r.punches].sort((a, b) => new Date(a.time) - new Date(b.time));
     const outs = sorted.filter(p => p.type === "out");
@@ -53,7 +59,7 @@ const getLastOut = (r) => {
   return r.checkOut || r.last_out || null;
 };
 
-const hasMissingOut = (r, dateStr) => {
+export const hasMissingOut = (r, dateStr) => {
   const firstIn = getFirstIn(r);
   const lastOut = getLastOut(r);
   if (!firstIn) return false;
@@ -63,34 +69,79 @@ const hasMissingOut = (r, dateStr) => {
   return true;
 };
 
-// ─── Time calculations ────────────────────────────────────────────────────────
-const calcLateMinutes = (checkIn) => {
+// ─── Time calculations (exported) ────────────────────────────────────────────
+// export const SHIFT_START_TOTAL = 10 * 60;
+// export const LUNCH_START_TOTAL = 13 * 60 + 30;
+// export const LUNCH_END_TOTAL   = 14 * 60 + 30;
+
+// export const calcLateMinutes = (checkIn) => {
+//   if (!checkIn) return 0;
+//   const d     = new Date(checkIn);
+//   const total = d.getHours() * 60 + d.getMinutes();
+//   if (total >= LUNCH_START_TOTAL && total <= LUNCH_END_TOTAL) return 0;
+//   return Math.max(total - SHIFT_START_TOTAL, 0);
+// };
+
+// export const calcEarlyOut = (checkOut) => {
+//   if (!checkOut) return 0;
+//   const d = new Date(checkOut);
+//   const total = d.getHours() * 60 + d.getMinutes();
+//   return Math.max(SHIFT_END_TOTAL - total, 0);
+// };
+
+// export const calcOvertime = (checkOut) => {
+//   if (!checkOut) return 0;
+//   const d = new Date(checkOut);
+//   const total = d.getHours() * 60 + d.getMinutes();
+//   return Math.max(total - SHIFT_END_TOTAL, 0);
+// };
+
+export const LUNCH_START_TOTAL = 13 * 60 + 30;
+export const LUNCH_END_TOTAL   = 14 * 60 + 30;
+
+// Parse shift string → start minutes  e.g. "General (10:00 – 19:00)" → 600
+export const parseShiftStartFE = (shiftStr) => {
+  if (!shiftStr) return 10 * 60;
+  const match = shiftStr.match(/(\d{1,2}):(\d{2})\s*[–\-]/);
+  if (match) return parseInt(match[1]) * 60 + parseInt(match[2]);
+  return 10 * 60;
+};
+
+// Parse shift string → end minutes
+export const parseShiftEndFE = (shiftStr) => {
+  if (!shiftStr) return 19 * 60;
+  const matches = [...shiftStr.matchAll(/(\d{1,2}):(\d{2})/g)];
+  if (matches.length >= 2) return parseInt(matches[1][1]) * 60 + parseInt(matches[1][2]);
+  return 19 * 60;
+};
+
+export const calcLateMinutes = (checkIn, shiftStr = "") => {
   if (!checkIn) return 0;
-  return 0;
+  const total = new Date(checkIn).getHours() * 60 + new Date(checkIn).getMinutes();
+  if (total >= LUNCH_START_TOTAL && total <= LUNCH_END_TOTAL) return 0;
+  return Math.max(total - parseShiftStartFE(shiftStr), 0);
 };
 
-const calcEarlyOut = (checkOut) => {
+export const calcEarlyOut = (checkOut, shiftStr = "") => {
   if (!checkOut) return 0;
-  const d = new Date(checkOut);
-  const total = d.getHours() * 60 + d.getMinutes();
-  return Math.max(SHIFT_END_TOTAL - total, 0);
+  const total = new Date(checkOut).getHours() * 60 + new Date(checkOut).getMinutes();
+  return Math.max(parseShiftEndFE(shiftStr) - total, 0);
 };
 
-const calcOvertime = (checkOut) => {
+export const calcOvertime = (checkOut, shiftStr = "") => {
   if (!checkOut) return 0;
-  const d = new Date(checkOut);
-  const total = d.getHours() * 60 + d.getMinutes();
-  return Math.max(total - SHIFT_END_TOTAL, 0);
+  const total = new Date(checkOut).getHours() * 60 + new Date(checkOut).getMinutes();
+  return Math.max(total - parseShiftEndFE(shiftStr), 0);
 };
 
-const fmtMins = (mins) => {
+export const fmtMins = (mins) => {
   if (!mins) return "—";
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return h > 0 ? `${h}h ${pad(m)}m` : `${m}m`;
 };
 
-const workHrsFromPunches = (r) => {
+export const workHrsFromPunches = (r) => {
   const firstIn = getFirstIn(r);
   const lastOut = getLastOut(r);
   if (!firstIn) return "—";
@@ -107,8 +158,8 @@ const workHrsFromPunches = (r) => {
   return `${h}h ${pad(m)}m`;
 };
 
-// ─── Shared styles ────────────────────────────────────────────────────────────
-const S = {
+// ─── Shared styles (exported) ─────────────────────────────────────────────────
+export const S = {
   card: {
     background: "#fff",
     border: "1px solid #e8eaed",
@@ -162,18 +213,18 @@ const S = {
     background: "#fafafa",
   },
   tableCell: {
-  padding: "0 14px",
-  borderBottom: "1px solid #f3f4f6",
-  fontSize: 13,
-  height: 56,
-  verticalAlign: "middle",
-},
+    padding: "0 14px",
+    borderBottom: "1px solid #f3f4f6",
+    fontSize: 13,
+    height: 56,
+    verticalAlign: "middle",
+  },
 };
 
 // ═══════════════════════════════════════════
-//  STAT STRIP — replaces the big colored cards
+//  STAT STRIP (exported)
 // ═══════════════════════════════════════════
-function StatStrip({ stats, activeFlag, onFlagClick }) {
+export function StatStrip({ stats, activeFlag, onFlagClick }) {
   return (
     <div style={{ ...S.card, display: "flex", marginBottom: 16 }}>
       {stats.map((c, idx) => {
@@ -206,9 +257,9 @@ function StatStrip({ stats, activeFlag, onFlagClick }) {
 }
 
 // ═══════════════════════════════════════════
-//  PUNCH TIMELINE
+//  PUNCH TIMELINE (exported)
 // ═══════════════════════════════════════════
-function PunchTimeline({ punches }) {
+export function PunchTimeline({ punches }) {
   if (!punches?.length) {
     return (
       <div style={{ textAlign: "center", padding: "16px 0", color: "#9ca3af", fontSize: 13 }}>
@@ -359,14 +410,45 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
           </div>
 
           {/* Punch History */}
-          {punches.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
-                <Activity size={11} /> Punch History ({punches.length})
-              </div>
-              <PunchTimeline punches={punches} />
-            </div>
-          )}
+          {punches.length > 0 && (() => {
+            const LUNCH_START = 13 * 60 + 30;
+            const LUNCH_END   = 14 * 60 + 30;
+
+            const normalPunches = punches.filter(p => {
+              const t = new Date(p.time);
+              const m = t.getHours() * 60 + t.getMinutes();
+              return !(m >= LUNCH_START && m <= LUNCH_END);
+            });
+
+            const breakPunches = punches.filter(p => {
+              const t = new Date(p.time);
+              const m = t.getHours() * 60 + t.getMinutes();
+              return m >= LUNCH_START && m <= LUNCH_END;
+            });
+
+            return (
+              <>
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+                    <Activity size={11} /> Punch History ({normalPunches.length})
+                  </div>
+                  <PunchTimeline punches={normalPunches.length ? normalPunches : punches} />
+                </div>
+
+                {breakPunches.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+                      🍽️ Break Time Punches ({breakPunches.length})
+                    </div>
+                    <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#92400e", marginBottom: 6 }}>
+                      1:30 PM – 2:30 PM break window
+                    </div>
+                    <PunchTimeline punches={breakPunches} />
+                  </div>
+                )}
+              </>
+            );
+          })()}
 
           {/* Flags */}
           {(lateMinutes > 0 || earlyOutMins > 0 || overtimeMins > 0 || missingPunch) && (
@@ -413,10 +495,17 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
             ) : monthSummary ? (
               <>
                 <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                  <StatBox label="Present"  value={monthSummary.present}  color="#16a34a" bg="#dcfce7" />
-                  <StatBox label="Absent"   value={monthSummary.absent}   color="#dc2626" bg="#fee2e2" />
-                  <StatBox label="Late"     value={monthSummary.late}     color="#d97706" bg="#fef9c3" />
-                  <StatBox label="On Leave" value={monthSummary.on_leave} color="#0891b2" bg="#e0f2fe" />
+                  {[
+                    { label: "Present",  value: monthSummary.present,  color: "#16a34a", bg: "#dcfce7" },
+                    { label: "Absent",   value: monthSummary.absent,   color: "#dc2626", bg: "#fee2e2" },
+                    { label: "Late",     value: monthSummary.late,     color: "#d97706", bg: "#fef9c3" },
+                    { label: "On Leave", value: monthSummary.on_leave, color: "#0891b2", bg: "#e0f2fe" },
+                  ].map(c => (
+                    <div key={c.label} style={{ background: c.bg, borderRadius: 8, padding: "10px 8px", textAlign: "center", flex: 1 }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: c.color }}>{c.value ?? "—"}</div>
+                      <div style={{ fontSize: 10, fontWeight: 600, color: c.color, opacity: 0.85, marginTop: 3 }}>{c.label}</div>
+                    </div>
+                  ))}
                 </div>
                 <div style={{ background: "#f9fafb", borderRadius: 8, padding: "10px 12px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
@@ -472,6 +561,13 @@ function ShiftSelector({ value, onChange }) {
 
   useEffect(() => { loadShifts(); }, []);
 
+useEffect(() => {
+  if (shifts.length > 0 && value && !selectedObj) {
+    const match = shifts.find(s => s.name === value);
+    if (match) onChange(shiftLabel(match));
+  }
+}, [shifts, value]);
+
   const loadShifts = async () => {
     setLoading(true);
     try {
@@ -483,7 +579,9 @@ function ShiftSelector({ value, onChange }) {
   };
 
   const shiftLabel  = (s) => `${s.name} (${s.startTime} – ${s.endTime})`;
-  const selectedObj = shifts.find(s => shiftLabel(s) === value) || null;
+const selectedObj = shifts.find(s => 
+  shiftLabel(s) === value || s.name === value
+) || null;
 
   const handleSelect = (s) => { onChange(shiftLabel(s)); setOpen(false); };
 
@@ -633,6 +731,101 @@ function ShiftSelector({ value, onChange }) {
   );
 }
 
+function ShiftInlineEditor({ value, onChange, employeeId }) {
+  const [editing, setEditing] = useState(false);
+
+  // Parse existing shift string or default
+  const parseTime = (shiftStr, part) => {
+    if (!shiftStr) return part === "start" ? "09:45" : "19:00";
+    const matches = [...shiftStr.matchAll(/(\d{1,2}):(\d{2})/g)];
+    if (part === "start" && matches[0]) return `${String(matches[0][1]).padStart(2,"0")}:${matches[0][2]}`;
+    if (part === "end"   && matches[1]) return `${String(matches[1][1]).padStart(2,"0")}:${matches[1][2]}`;
+    return part === "start" ? "09:45" : "19:00";
+  };
+
+  const [startTime, setStartTime] = useState(() => parseTime(value, "start"));
+  const [endTime,   setEndTime]   = useState(() => parseTime(value, "end"));
+  const [saving,    setSaving]    = useState(false);
+
+  const shiftName = value
+    ? value.split("(")[0].trim()
+    : "General";
+
+  const displayStr = value || `General (${startTime} – ${endTime})`;
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const newShiftStr = `${shiftName} (${startTime} – ${endTime})`;
+      // Save to employee record
+      await axios.put(
+  `${API_BASE}/api/hr/employees/${employeeId}/shift`,
+  { shift: `${shiftName} (${startTime} – ${endTime})` },
+  { headers: authHeader() }
+);
+onChange(newShiftStr);
+      
+      setEditing(false);
+    } catch {
+      alert("Failed to save shift");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inp = {
+    border: "1px solid #e5e7eb", borderRadius: 7,
+    padding: "7px 10px", fontSize: 13,
+    outline: "none", fontFamily: "inherit",
+    background: "#f9fafb", width: "100%",
+    boxSizing: "border-box",
+  };
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+        <label style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Shift</label>
+        {!editing && (
+          <button type="button" onClick={() => setEditing(true)}
+            style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+            Change Timing
+          </button>
+        )}
+      </div>
+
+      {!editing ? (
+        <div style={{ background: "#f1f5f9", borderRadius: 8, padding: "9px 12px", fontSize: 13, fontWeight: 700, color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
+          <Clock size={13} color="#6b7280" />
+          {displayStr}
+        </div>
+      ) : (
+        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>Start Time</label>
+              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} style={inp} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>End Time</label>
+              <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} style={inp} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button type="button" onClick={() => setEditing(false)}
+              style={{ flex: 1, padding: "6px 0", borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+              Cancel
+            </button>
+            <button type="button" onClick={handleSave} disabled={saving}
+              style={{ flex: 2, padding: "6px 0", borderRadius: 7, background: "#111827", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+              {saving ? "Saving..." : "Save Timing"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════
 //  HR MARK MODAL
 // ═══════════════════════════════════════════
@@ -642,12 +835,12 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
   const noTimeStatus = ["absent", "leave", "holiday", "weekend"];
 
   const [form, setForm] = useState({
-    status:   existing?.status || "present",
-    checkIn:  existingFirstIn ? new Date(existingFirstIn).toTimeString().slice(0, 5) : "10:00",
-    checkOut: existingLastOut ? new Date(existingLastOut).toTimeString().slice(0, 5) : "",
-    shift:    existing?.shift  || "",
-    remark:   existing?.remark || "",
-  });
+  status:   existing?.status || "present",
+  checkIn:  existingFirstIn ? new Date(existingFirstIn).toTimeString().slice(0, 5) : "10:00",
+  checkOut: existingLastOut ? new Date(existingLastOut).toTimeString().slice(0, 5) : "",
+  shift: existing?.shift || employee?.shift || "",
+  remark:   existing?.remark || "",
+});
   const [saving, setSaving] = useState(false);
   const isNoTime = noTimeStatus.includes(form.status);
 
@@ -681,7 +874,6 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000 }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 14, padding: 24, width: "90%", maxWidth: 440, boxShadow: "0 12px 40px rgba(0,0,0,0.15)", maxHeight: "90vh", overflowY: "auto" }}>
 
-        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
           <div>
             <h5 style={{ margin: 0, fontWeight: 700, fontSize: 15 }}>Mark Attendance</h5>
@@ -694,7 +886,6 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
           </button>
         </div>
 
-        {/* Status Buttons */}
         <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 7 }}>Status</label>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
           {Object.entries(STATUS_META)
@@ -718,8 +909,13 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
           </div>
         )}
 
-        {!isNoTime && <ShiftSelector value={form.shift} onChange={(val) => setForm(f => ({ ...f, shift: val }))} />}
-
+{!isNoTime && (
+  <ShiftInlineEditor
+    value={form.shift}
+    onChange={(val) => setForm(f => ({ ...f, shift: val }))}
+    employeeId={employee._id}
+  />
+)}
         <div style={{ marginBottom: 18 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 4 }}>HR Remark</label>
           <textarea rows={2} placeholder="Optional..." value={form.remark} onChange={e => setForm(f => ({ ...f, remark: e.target.value }))} style={{ ...inp, resize: "vertical" }} />
@@ -782,14 +978,14 @@ function DailyTab() {
   const departments = ["all", ...new Set(data.map(r => r.employee?.department).filter(Boolean))];
 
   const enriched = data.map(r => ({
-    ...r,
-    _firstIn:     getFirstIn(r),
-    _lastOut:     getLastOut(r),
-    lateMinutes:  calcLateMinutes(getFirstIn(r)),
-    earlyOutMins: getFirstIn(r) && !getLastOut(r) ? 0 : calcEarlyOut(getLastOut(r)),
-    overtimeMins: calcOvertime(getLastOut(r)),
-    missingPunch: hasMissingOut(r, date),
-  }));
+  ...r,
+  _firstIn:     getFirstIn(r),
+  _lastOut:     getLastOut(r),
+  lateMinutes:  calcLateMinutes(getFirstIn(r), r.shift || ""),
+  earlyOutMins: getFirstIn(r) && !getLastOut(r) ? 0 : calcEarlyOut(getLastOut(r), r.shift || ""),
+  overtimeMins: calcOvertime(getLastOut(r), r.shift || ""),
+  missingPunch: hasMissingOut(r, date),
+}));
 
   const filtered = enriched.filter(r => {
     const matchS    = !search || (r.employee?.name || "").toLowerCase().includes(search.toLowerCase()) || (r.employee?.employeeId || r.employee?.employee_code || "").toLowerCase().includes(search.toLowerCase());
@@ -824,13 +1020,11 @@ function DailyTab() {
     { label: "On Leave",      value: s.leave,        color: "#0891b2" },
     { label: "Half Day",      value: s.halfDay,      color: "#7c3aed" },
     { label: "Missing Punch", value: s.missingPunch, color: "#b91c1c", flag: "missing_punch" },
-    { label: "Overtime",      value: s.overtime,     color: "#047857", flag: "overtime" },
     { label: "Early Out",     value: s.earlyOut,     color: "#9333ea", flag: "early_out" },
   ];
 
   return (
     <div>
-      {/* Toast */}
       {toast && (
         <div style={{ position: "fixed", top: 20, right: 24, zIndex: 10001, background: toast.type === "error" ? "#ef4444" : "#16a34a", color: "#fff", padding: "10px 18px", borderRadius: 8, fontWeight: 700, fontSize: 13, boxShadow: "0 4px 16px rgba(0,0,0,0.15)", display: "flex", alignItems: "center", gap: 7 }}>
           {toast.type === "error" ? <AlertCircle size={14} /> : <CheckCircle size={14} />}{toast.msg}
@@ -845,10 +1039,9 @@ function DailyTab() {
         <HRMarkModal employee={markModal.employee} date={date} existing={markModal.existing} onSave={(type, msg) => { setMarkModal(null); showToast(type, msg); fetchData(); }} onClose={() => setMarkModal(null)} />
       )}
 
-      {/* ── Stat Strip (replaces big colored cards) ── */}
       <StatStrip stats={dailyStats} activeFlag={flagFilter} onFlagClick={(flag) => setFlagFilter(prev => prev === flag ? "all" : flag)} />
 
-      {/* ── Filters ── */}
+      {/* Filters */}
       <div style={S.filterWrap}>
         <div style={S.filterInput}>
           <CalendarCheck size={13} color="#9ca3af" />
@@ -876,13 +1069,12 @@ function DailyTab() {
         </button>
       </div>
 
-      {/* ── Flag filter pills ── */}
+      {/* Flag filter pills */}
       <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
         {[
           { id: "all",           label: "All",           icon: <Users size={11} /> },
           { id: "late",          label: "Late Arrivals", icon: <Clock size={11} /> },
           { id: "early_out",     label: "Early Out",     icon: <ArrowRightFromLine size={11} /> },
-          { id: "overtime",      label: "Overtime",      icon: <Zap size={11} /> },
           { id: "missing_punch", label: "Missing Punch", icon: <AlertCircle size={11} /> },
         ].map(f => (
           <button key={f.id} onClick={() => setFlagFilter(f.id)} style={{ padding: "4px 12px", borderRadius: 20, border: `1px solid ${flagFilter === f.id ? "#111827" : "#e5e7eb"}`, background: flagFilter === f.id ? "#111827" : "#fff", color: flagFilter === f.id ? "#fff" : "#6b7280", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
@@ -891,7 +1083,7 @@ function DailyTab() {
         ))}
       </div>
 
-      {/* ── Table ── */}
+      {/* Table */}
       <div style={S.card}>
         <div style={{ padding: "11px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontWeight: 700, fontSize: 13, color: "#111827" }}>
@@ -927,7 +1119,6 @@ function DailyTab() {
                   const flags = [];
                   if (r.lateMinutes > 0)  flags.push({ label: `Late ${fmtMins(r.lateMinutes)}`,   color: "#d97706", bg: "#fef9c3" });
                   if (r.earlyOutMins > 0) flags.push({ label: `Early ${fmtMins(r.earlyOutMins)}`, color: "#9333ea", bg: "#faf5ff" });
-                  if (r.overtimeMins > 0) flags.push({ label: `OT ${fmtMins(r.overtimeMins)}`,    color: "#047857", bg: "#ecfdf5" });
                   if (r.missingPunch)     flags.push({ label: "No Out",                             color: "#b91c1c", bg: "#fff1f2" });
 
                   return (
@@ -966,7 +1157,7 @@ function DailyTab() {
                             : "—"}
                       </td>
 
-                      <td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>{typeof hrs === "string" ? hrs : hrs}</td>
+                      <td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>{hrs}</td>
 
                       <td style={S.tableCell}>
                         {punchCount > 0 ? (
@@ -1009,487 +1200,6 @@ function DailyTab() {
 }
 
 // ═══════════════════════════════════════════
-//  EMPLOYEE MONTH DETAIL MODAL
-// ═══════════════════════════════════════════
-function EmployeeMonthModal({ employee, year, month, onClose }) {
-  const [records, setRecords] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState(null);
-
-  const monthName = new Date(year, month - 1).toLocaleString("en-IN", { month: "long" });
-  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  useEffect(() => {
-    if (!employee?._id) return;
-    setLoading(true);
-    axios
-      .get(`${API_BASE}/api/attendance/monthly/${employee._id}?year=${year}&month=${month}`, { headers: authHeader() })
-      .then((res) => {
-        const raw = res.data?.data || [];
-        const daysInMonth = new Date(year, month, 0).getDate();
-        const filled = [];
-        let presentCount = 0, lateCount = 0, absentCount = 0, otCount = 0, leaveCount = 0, halfCount = 0;
-
-        for (let d = 1; d <= daysInMonth; d++) {
-          const dateStr   = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-          const dayOfWeek = new Date(year, month - 1, d).getDay();
-          const isWeekend = dayOfWeek === 0;
-          const rec       = raw.find((r) => r.date === dateStr);
-
-          if (isWeekend) { filled.push({ date: dateStr, dayOfWeek, status: "weekend", isWeekend: true }); continue; }
-
-          if (rec) {
-            let firstIn = rec.first_in || rec.checkIn || null;
-            let lastOut = rec.last_out || rec.checkOut || null;
-            if (!firstIn && rec.punches?.length) {
-              const ins = rec.punches.filter(p => p.type === "in").sort((a, b) => new Date(a.time) - new Date(b.time));
-              firstIn = ins[0]?.time || null;
-            }
-            if (!lastOut && rec.punches?.length) {
-              const outs = rec.punches.filter(p => p.type === "out").sort((a, b) => new Date(b.time) - new Date(a.time));
-              lastOut = outs[0]?.time || null;
-            }
-            let workHrs = "—";
-            if (rec.work_hours && typeof rec.work_hours === "number" && rec.work_hours > 0) {
-              const h = Math.floor(rec.work_hours);
-              const m = Math.round((rec.work_hours - h) * 60);
-              workHrs = `${h}h ${pad(m)}m`;
-            } else if (firstIn && lastOut) {
-              const diff = (new Date(lastOut) - new Date(firstIn)) / 3600000;
-              workHrs = `${Math.floor(diff)}h ${pad(Math.round((diff % 1) * 60))}m`;
-            } else if (firstIn && !lastOut) {
-              workHrs = "Ongoing";
-            }
-            if      (rec.status === "present")  presentCount++;
-            else if (rec.status === "late")     lateCount++;
-            else if (rec.status === "leave")    leaveCount++;
-            else if (rec.status === "half_day") halfCount++;
-            else if (rec.status === "absent")   absentCount++;
-            if ((rec.overtime_minutes || 0) > 0) otCount++;
-            filled.push({ date: dateStr, dayOfWeek, status: rec.status, firstIn, lastOut, workHrs, lateMin: rec.late_minutes || 0, otMin: rec.overtime_minutes || 0, remark: rec.remark || "" });
-          } else {
-            absentCount++;
-            filled.push({ date: dateStr, dayOfWeek, status: "absent", firstIn: null, lastOut: null, workHrs: "—", lateMin: 0, otMin: 0 });
-          }
-        }
-        setSummary({ presentCount, lateCount, absentCount, otCount, leaveCount, halfCount });
-        setRecords(filled);
-      })
-      .catch(() => { setRecords([]); setSummary(null); })
-      .finally(() => setLoading(false));
-  }, [employee?._id, year, month]);
-
-  const statusStyle = (status) => {
-    const map = {
-      present:  { color: "#16a34a", bg: "#dcfce7", label: "Present"  },
-      late:     { color: "#d97706", bg: "#fef9c3", label: "Late"     },
-      absent:   { color: "#dc2626", bg: "#fee2e2", label: "Absent"   },
-      half_day: { color: "#7c3aed", bg: "#f5f3ff", label: "Half Day" },
-      leave:    { color: "#0891b2", bg: "#e0f2fe", label: "On Leave" },
-      weekend:  { color: "#94a3b8", bg: "#f1f5f9", label: "Weekend"  },
-      holiday:  { color: "#be185d", bg: "#fce7f3", label: "Holiday"  },
-    };
-    return map[status] || map.absent;
-  };
-
-  return (
-    <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 10000 }} />
-      <div style={{ position: "fixed", inset: 0, zIndex: 10001, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, pointerEvents: "none" }}>
-        <div style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 820, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 16px 48px rgba(0,0,0,0.18)", pointerEvents: "all" }}>
-
-          {/* Header */}
-          <div style={{ background: "#111827", borderRadius: "16px 16px 0 0", padding: "18px 22px", flexShrink: 0 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 44, height: 44, background: "#374151", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 18, flexShrink: 0 }}>
-                  {(employee?.name || "?").charAt(0)}
-                </div>
-                <div>
-                  <div style={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>{employee?.name || "—"}</div>
-                  <div style={{ color: "#9ca3af", fontSize: 12, marginTop: 2 }}>{employee?.employeeId || "—"} · {employee?.department || "—"}</div>
-                  <div style={{ color: "#6b7280", fontSize: 12, marginTop: 1, fontWeight: 600 }}>📅 {monthName} {year} — Full Month Report</div>
-                </div>
-              </div>
-              <button onClick={onClose} style={{ background: "#374151", border: "none", width: 30, height: 30, borderRadius: 7, cursor: "pointer", color: "#9ca3af", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <X size={14} />
-              </button>
-            </div>
-            {summary && (
-              <div style={{ display: "flex", gap: 6, marginTop: 14, flexWrap: "wrap" }}>
-                {[
-                  { label: "Present",  value: summary.presentCount, color: "#4ade80" },
-                  { label: "Late",     value: summary.lateCount,    color: "#fbbf24" },
-                  { label: "Absent",   value: summary.absentCount,  color: "#f87171" },
-                  { label: "Leave",    value: summary.leaveCount,   color: "#38bdf8" },
-                  { label: "Half Day", value: summary.halfCount,    color: "#a78bfa" },
-                  { label: "OT Days",  value: summary.otCount,      color: "#34d399" },
-                ].map(c => (
-                  <div key={c.label} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "3px 12px", display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: c.color }}>{c.value}</span>
-                    <span style={{ fontSize: 11, color: "#9ca3af" }}>{c.label}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Body */}
-          <div style={{ flex: 1, overflowY: "auto" }}>
-            {loading ? (
-              <div style={{ textAlign: "center", padding: "48px 0", color: "#9ca3af", fontSize: 13 }}>Loading attendance data...</div>
-            ) : records.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "48px 0", color: "#9ca3af", fontSize: 13 }}>No records found for this month.</div>
-            ) : (
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                  <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
-                    <tr>
-                      {["Date", "Day", "Status", "Check In", "Check Out", "Work Hrs", "Late", "Overtime"].map(h => (
-                        <th key={h} style={S.tableHead}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {records.map((row, idx) => {
-                      const st    = statusStyle(row.status);
-                      const isWkd = row.isWeekend;
-                      return (
-                        <tr key={idx}
-                          style={{ background: isWkd ? "#f8fafc" : "transparent", opacity: isWkd ? 0.5 : 1 }}
-                          onMouseEnter={e => { if (!isWkd) e.currentTarget.style.background = "#f9fafb"; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = isWkd ? "#f8fafc" : "transparent"; }}>
-                          <td style={{ ...S.tableCell, fontWeight: 700, color: "#111827", whiteSpace: "nowrap" }}>{new Date(row.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</td>
-                          <td style={{ ...S.tableCell, color: "#6b7280", fontSize: 12 }}>{DAY_NAMES[row.dayOfWeek]}</td>
-                          <td style={S.tableCell}><span style={S.pill(st.color, st.bg)}>{st.label}</span></td>
-                          <td style={{ ...S.tableCell, fontWeight: 700, color: "#16a34a", fontFamily: "monospace" }}>
-                            {row.firstIn ? new Date(row.firstIn).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : <span style={{ color: "#d1d5db" }}>—</span>}
-                          </td>
-                          <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
-                            {row.lastOut
-                              ? <span style={{ color: "#dc2626" }}>{new Date(row.lastOut).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
-                              : row.firstIn
-                                ? <span style={{ color: "#f59e0b", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}><AlertCircle size={11} /> No Out</span>
-                                : <span style={{ color: "#d1d5db" }}>—</span>}
-                          </td>
-                          <td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>{row.workHrs || "—"}</td>
-                          <td style={S.tableCell}>
-                            {row.lateMin > 0 ? <span style={{ background: "#fef9c3", color: "#d97706", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(row.lateMin)}</span> : <span style={{ color: "#d1d5db" }}>—</span>}
-                          </td>
-                          <td style={S.tableCell}>
-                            {row.otMin > 0 ? <span style={{ background: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(row.otMin)}</span> : <span style={{ color: "#d1d5db" }}>—</span>}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div style={{ padding: "12px 22px", borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "flex-end", background: "#fafafa", borderRadius: "0 0 16px 16px", flexShrink: 0 }}>
-            <button onClick={onClose} style={{ ...S.actionBtn(true), padding: "9px 24px", borderRadius: 8, fontSize: 13 }}>Close</button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-// ═══════════════════════════════════════════
-//  MONTHLY TAB
-// ═══════════════════════════════════════════
-function MonthlyTab() {
-  const [year,       setYear]       = useState(new Date().getFullYear());
-  const [month,      setMonth]      = useState(new Date().getMonth() + 1);
-  const [data,       setData]       = useState([]);
-  const [loading,    setLoading]    = useState(false);
-  const [exporting,  setExporting]  = useState(false);
-  const [search,     setSearch]     = useState("");
-  const [sortKey,    setSortKey]    = useState("name");
-  const [sortDir,    setSortDir]    = useState("asc");
-  const [toast,      setToast]      = useState(null);
-  const [monthModal, setMonthModal] = useState(null);
-
-  useEffect(() => { fetchData(); }, [year, month]);
-
-  const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [monthlyRes, approvedRes] = await Promise.all([
-        axios.get(`${API_BASE}/api/attendance/monthly-report?year=${year}&month=${month}`, { headers: authHeader() }),
-        axios.get(`${API_BASE}/api/hr/approved`, { headers: authHeader() }).catch(() => ({ data: [] })),
-      ]);
-      const monthlyData  = monthlyRes.data?.data || [];
-      const approvedList = Array.isArray(approvedRes.data) ? approvedRes.data : (approvedRes.data?.data || []);
-      const monthlyIds   = new Set(monthlyData.map(r => r._id || r.employee_id).filter(Boolean));
-      const approvedNotInMonthly = approvedList
-        .filter(emp => !monthlyIds.has(emp._id))
-        .map(emp => ({
-          _id: emp._id, name: emp.name, employeeId: emp.employeeId || emp.employee_id || emp.empId || "",
-          employee_code: emp.employeeId || emp.employee_id || emp.empId || "",
-          department: emp.department || emp.dept || "", designation: emp.designation || emp.role || "",
-          work_days: 0, present: 0, late: 0, half_day: 0, on_leave: 0, absent: 0,
-          overtime_days: 0, avg_work_hours: "—", avg_work_hours_num: 0,
-          total_late_minutes: 0, attendance_pct: 0, _fromApproved: true,
-        }));
-      setData([...monthlyData, ...approvedNotInMonthly]);
-    } catch {
-      showToast("error", "Failed to load");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleExport = async () => {
-    setExporting(true);
-    try {
-      const res = await axios.get(`${API_BASE}/api/attendance/export?year=${year}&month=${month}`, { headers: authHeader(), responseType: "blob" });
-      const url  = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement("a");
-      link.href  = url;
-      link.setAttribute("download", `Attendance_${month}_${year}.xlsx`);
-      document.body.appendChild(link); link.click(); link.remove();
-      showToast("success", "Excel exported!");
-    } catch { showToast("error", "Export failed"); }
-    finally { setExporting(false); }
-  };
-
-  const toggleSort = (key) => {
-    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortKey(key); setSortDir("asc"); }
-  };
-
-  const filtered = data
-    .filter(r => !search || r.name?.toLowerCase().includes(search.toLowerCase()) || (r.employeeId || r.employee_code || "").toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => {
-      const va = a[sortKey] ?? 0;
-      const vb = b[sortKey] ?? 0;
-      return sortDir === "asc" ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
-    });
-
-  const totalPresent  = data.reduce((s, r) => s + (r.present       || 0), 0);
-  const totalAbsent   = data.reduce((s, r) => s + (r.absent        || 0), 0);
-  const totalLate     = data.reduce((s, r) => s + (r.late          || 0), 0);
-  const totalOT       = data.reduce((s, r) => s + (r.overtime_days || 0), 0);
-  const avgAttendance = data.length ? Math.round(data.reduce((s, r) => s + (r.attendance_pct || 0), 0) / data.length) : 0;
-
-  const monthlyStats = [
-    { label: "Employees",      value: data.length,         color: "#111827" },
-    { label: "Total Present",  value: totalPresent,        color: "#16a34a" },
-    { label: "Total Absent",   value: totalAbsent,         color: "#dc2626" },
-    { label: "Total Late",     value: totalLate,           color: "#d97706" },
-    { label: "OT Days",        value: totalOT,             color: "#047857" },
-    { label: "Avg Attendance", value: `${avgAttendance}%`, color: "#2563eb" },
-  ];
-
-  const SortTh = ({ label, k }) => (
-    <th onClick={() => toggleSort(k)} style={{ ...S.tableHead, cursor: "pointer", userSelect: "none", color: sortKey === k ? "#111827" : "#9ca3af" }}>
-      {label} {sortKey === k ? (sortDir === "asc" ? "↑" : "↓") : ""}
-    </th>
-  );
-
-  return (
-    <div>
-      {toast && (
-        <div style={{ position: "fixed", top: 20, right: 24, zIndex: 9999, background: toast.type === "error" ? "#ef4444" : "#16a34a", color: "#fff", padding: "10px 18px", borderRadius: 8, fontWeight: 700, fontSize: 13, boxShadow: "0 4px 16px rgba(0,0,0,0.15)", display: "flex", alignItems: "center", gap: 7 }}>
-          {toast.type === "error" ? <AlertCircle size={14} /> : <CheckCircle size={14} />}{toast.msg}
-        </div>
-      )}
-
-      {monthModal && (
-        <EmployeeMonthModal employee={monthModal.employee} year={year} month={month} onClose={() => setMonthModal(null)} />
-      )}
-
-      {/* ── Stat Strip ── */}
-      <StatStrip stats={monthlyStats} activeFlag={null} onFlagClick={() => {}} />
-
-      {/* ── Filters ── */}
-      <div style={S.filterWrap}>
-        <div style={S.filterInput}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af" }}>Month</span>
-          <select value={month} onChange={e => setMonth(Number(e.target.value))} style={{ ...S.input, fontWeight: 600 }}>
-            {Array.from({ length: 12 }, (_, i) => (
-              <option key={i + 1} value={i + 1}>{new Date(2000, i).toLocaleString("en-IN", { month: "long" })}</option>
-            ))}
-          </select>
-        </div>
-        <div style={S.filterInput}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af" }}>Year</span>
-          <select value={year} onChange={e => setYear(Number(e.target.value))} style={{ ...S.input, fontWeight: 600 }}>
-            {[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-        </div>
-        <div style={{ ...S.filterInput, flex: 1, minWidth: 150 }}>
-          <Search size={13} color="#9ca3af" />
-          <input placeholder="Search employee..." value={search} onChange={e => setSearch(e.target.value)} style={S.input} />
-        </div>
-        <button onClick={fetchData} style={{ ...S.actionBtn(true), padding: "7px 14px", borderRadius: 8, fontSize: 13 }}>
-          <RefreshCw size={12} />Refresh
-        </button>
-        <button onClick={handleExport} disabled={exporting} style={{ ...S.actionBtn(true), padding: "7px 14px", borderRadius: 8, fontSize: 13, background: "#16a34a", marginLeft: "auto" }}>
-          <Download size={12} />{exporting ? "Exporting..." : "Export Excel"}
-        </button>
-      </div>
-
-      {/* ── Table ── */}
-      <div style={S.card}>
-        <div style={{ padding: "11px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontWeight: 700, fontSize: 13, color: "#111827" }}>
-            {new Date(year, month - 1).toLocaleString("en-IN", { month: "long" })} {year} — Summary
-          </span>
-          <span style={{ fontSize: 12, color: "#9ca3af" }}>{filtered.length} employees</span>
-        </div>
-
-        {loading ? (
-          <div style={{ textAlign: "center", padding: "40px 0" }}><div className="spinner-border text-dark" role="status" /></div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-                <tr>
-                  <th style={S.tableHead}>#</th>
-                  <SortTh label="Employee"    k="name" />
-                  <SortTh label="Code"        k="employeeId" />
-                  <SortTh label="Dept"        k="department" />
-                  <SortTh label="Work Days"   k="work_days" />
-                  <SortTh label="Present"     k="present" />
-                  <SortTh label="Late"        k="late" />
-                  <SortTh label="Half Day"    k="half_day" />
-                  <SortTh label="On Leave"    k="on_leave" />
-                  <SortTh label="Absent"      k="absent" />
-                  <SortTh label="OT Days"     k="overtime_days" />
-                  <SortTh label="Avg Hrs"     k="avg_work_hours_num" />
-                  <SortTh label="Attendance%" k="attendance_pct" />
-                  <th style={S.tableHead}>Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr><td colSpan={14} style={{ textAlign: "center", padding: "40px 0", color: "#d1d5db" }}>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
-                      <Activity size={32} color="#e5e7eb" />
-                      <span style={{ fontSize: 13 }}>No data for this period</span>
-                    </div>
-                  </td></tr>
-                ) : filtered.map((r, i) => {
-                  const pct    = r.attendance_pct || 0;
-                  const pctClr = pct >= 90 ? "#16a34a" : pct >= 75 ? "#d97706" : "#dc2626";
-                  const pctBg  = pct >= 90 ? "#dcfce7" : pct >= 75 ? "#fef9c3" : "#fee2e2";
-                  const isEven = i % 2 === 0;
-                  return (
-                    <tr key={i}
-                      style={{ background: isEven ? "#fafafa" : "#fff", transition: "background 0.12s" }}
-                      onMouseEnter={e => e.currentTarget.style.background = "#f0f4ff"}
-                      onMouseLeave={e => e.currentTarget.style.background = isEven ? "#fafafa" : "#fff"}>
-
-                      {/* # */}
-                      <td style={{ ...S.tableCell, color: "#c4c9d4", fontWeight: 600, width: 36, textAlign: "center" }}>{i + 1}</td>
-
-                      {/* Employee — bigger avatar + sub code */}
-                      <td style={S.tableCell}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 36, height: 36, background: "#111827", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 13, flexShrink: 0, letterSpacing: 0.5 }}>
-                            {(r.name || "?").charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 700, color: "#111827", fontSize: 13, lineHeight: 1.3 }}>{r.name}</div>
-                            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{r.employeeId || r.employee_code || "—"}</div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Dept — chip style */}
-                      <td style={S.tableCell}>
-                        {r.department
-                          ? <span style={{ background: "#f1f5f9", color: "#475569", fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 20, whiteSpace: "nowrap", border: "1px solid #e2e8f0" }}>{r.department}</span>
-                          : <span style={{ color: "#d1d5db" }}>—</span>}
-                      </td>
-
-                      {/* Work Days */}
-                      <td style={{ ...S.tableCell, fontWeight: 700, color: "#374151", textAlign: "center" }}>{r.work_days}</td>
-
-                      {/* Present — green badge */}
-                      <td style={{ ...S.tableCell, textAlign: "center" }}>
-                        <span style={{ background: "#dcfce7", color: "#16a34a", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, display: "inline-block" }}>{r.present}</span>
-                      </td>
-
-                      {/* Late — badge + hours below, no layout break */}
-                      <td style={{ ...S.tableCell, textAlign: "center" }}>
-                        {r.late > 0 ? (
-                          <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                            <span style={{ background: "#fef9c3", color: "#d97706", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, border: "1px solid #fde68a" }}>{r.late}</span>
-                            {r.total_late_minutes > 0 && <span style={{ fontSize: 10, color: "#b45309", fontWeight: 600 }}>{fmtMins(r.total_late_minutes)}</span>}
-                          </div>
-                        ) : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
-                      </td>
-
-                      {/* Half Day */}
-                      <td style={{ ...S.tableCell, textAlign: "center" }}>
-                        {r.half_day > 0
-                          ? <span style={{ background: "#f5f3ff", color: "#7c3aed", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, display: "inline-block" }}>{r.half_day}</span>
-                          : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
-                      </td>
-
-                      {/* On Leave */}
-                      <td style={{ ...S.tableCell, textAlign: "center" }}>
-                        {r.on_leave > 0
-                          ? <span style={{ background: "#e0f2fe", color: "#0891b2", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, display: "inline-block" }}>{r.on_leave}</span>
-                          : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
-                      </td>
-
-                      {/* Absent */}
-                      <td style={{ ...S.tableCell, textAlign: "center" }}>
-                        {r.absent > 0
-                          ? <span style={{ background: "#fee2e2", color: "#dc2626", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, display: "inline-block" }}>{r.absent}</span>
-                          : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
-                      </td>
-
-                      {/* OT Days */}
-                      <td style={{ ...S.tableCell, textAlign: "center" }}>
-                        {r.overtime_days > 0
-                          ? <span style={{ background: "#ecfdf5", color: "#047857", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, display: "inline-block" }}>{r.overtime_days}</span>
-                          : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
-                      </td>
-
-                      {/* Avg Hrs */}
-                      <td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700, textAlign: "center" }}>{r.avg_work_hours || "—"}</td>
-
-                      {/* Attendance % */}
-                      <td style={{ ...S.tableCell, minWidth: 120 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                          <div style={{ flex: 1, height: 5, background: "#e5e7eb", borderRadius: 3 }}>
-                            <div style={{ width: `${pct}%`, height: "100%", background: pctClr, borderRadius: 3, transition: "width 0.4s ease" }} />
-                          </div>
-                          <span style={{ ...S.pill(pctClr, pctBg), minWidth: 44, justifyContent: "center" }}>{pct}%</span>
-                        </div>
-                      </td>
-
-                      {/* Details */}
-                      <td style={{ ...S.tableCell, textAlign: "center" }}>
-                        <button
-                          onClick={() => setMonthModal({ employee: { _id: r._id, name: r.name, employeeId: r.employeeId || r.employee_code || "", department: r.department || "" } })}
-                          style={S.actionBtn(false)}>
-                          <Eye size={11} /> View
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════
 //  MAIN PAGE
 // ═══════════════════════════════════════════
 export default function HRAttendancePage() {
@@ -1503,13 +1213,11 @@ export default function HRAttendancePage() {
   return (
     <div style={{ padding: "20px 24px", background: "#f4f6fb", minHeight: "100vh" }}>
 
-      {/* Page header */}
       <div style={{ marginBottom: 18 }}>
         <h4 style={{ fontWeight: 700, color: "#111827", margin: 0, fontSize: 17 }}>Attendance Management</h4>
         <p style={{ color: "#9ca3af", fontSize: 13, marginTop: 3, margin: "3px 0 0" }}>View, manage and export employee attendance</p>
       </div>
 
-      {/* Tab switcher */}
       <div style={{ display: "flex", gap: 3, marginBottom: 18, background: "#fff", borderRadius: 9, padding: 3, border: "1px solid #e8eaed", width: "fit-content" }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ padding: "7px 18px", borderRadius: 7, border: "none", fontFamily: "inherit", fontWeight: 700, fontSize: 13, cursor: "pointer", transition: "all 0.15s", background: activeTab === t.id ? "#111827" : "transparent", color: activeTab === t.id ? "#fff" : "#9ca3af", display: "inline-flex", alignItems: "center", gap: 6 }}>
