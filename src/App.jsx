@@ -123,9 +123,6 @@ import AdminUpdates from "./pages/admin/AdminUpdates";
 import CourseManagement from "./pages/admin/CourseManagement";
 import ShopOwnerList from "./pages/admin/ShopOwnerList";
 import TechnicianList from "./pages/admin/TechnicianList";
-
-import TechnicianBoard from "./components/radnusconnect/TechnicianBoard";
-import PosterManager from "./components/admin/PosterManager";
 /* Channel */
 import ChannelDashboard from "./pages/Channel/ChannelDashboard";
 import DashboardOverview from "./pages/Channel/DashboardOverview";
@@ -140,6 +137,8 @@ import RadnusConnectHome from "./components/radnusconnect/RadnusConnectHome";
 import TechnicianForm from "./components/radnusconnect/TechnicianForm";
 import ShopOwnerForm from "./components/radnusconnect/ShopOwnerForm";
 import JobBoard from "./components/radnusconnect/Jobboard";
+import TechnicianBoard from "./components/radnusconnect/TechnicianBoard";
+import PosterManager from "./components/admin/PosterManager";
 
 /* 🔐 EMPLOYEE PROTECTED ROUTE */
 const EmployeeProtectedRoute = ({ children }) => {
