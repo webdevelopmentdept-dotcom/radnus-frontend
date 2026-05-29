@@ -10,6 +10,9 @@ function ShopOwnerForm() {
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
+
+
+  
   // ✅ FULL INITIAL STATE (IMPORTANT)
   const [form, setForm] = useState({
 
