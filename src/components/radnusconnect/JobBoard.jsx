@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { FiArrowLeft, FiBriefcase } from "react-icons/fi";
-import JobCard from "./JobCard";
+import JobCard from "./Jobcard";
 import PosterSidebar from "./PosterSidebar";
 import FilterPanel from "./FilterPanel";
 
