@@ -6,6 +6,8 @@ import JobCard from "./Jobcard";
 import PosterSidebar from "./PosterSidebar";
 import FilterPanel from "./FilterPanel";
 
+
+
 const API = import.meta.env.VITE_API_BASE_URL;
 
 export default function JobBoard() {
