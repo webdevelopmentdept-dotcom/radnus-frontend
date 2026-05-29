@@ -15,10 +15,10 @@ const Badges = ({ items }) => (
   <div className="d-flex flex-wrap gap-1">
     {items?.length
       ? items.map((v, i) => (
-          <span key={i} className="badge bg-secondary">
-            {v}
-          </span>
-        ))
+        <span key={i} className="badge bg-secondary">
+          {v}
+        </span>
+      ))
       : "-"}
   </div>
 );
@@ -37,10 +37,12 @@ export default function TechnicianList() {
   /* 📥 FETCH */
   useEffect(() => {
     fetch(`${API}/api/technician`)
-      .then((res) => res.json())
+      .then((res) => res.json())        // ✅ இந்த line missing!
+
       .then((data) => {
-        setList(data);
-        setFiltered(data);
+        const result = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
+        setList(result);
+        setFiltered(result);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -78,9 +80,9 @@ export default function TechnicianList() {
       JobType: i.jobType,
       PaymentType: i.paymentType,
       ExpectedSalary:
-  i.paymentType && i.expectedSalary
-    ? `${i.paymentType} - ${i.expectedSalary}`
-    : "",
+        i.paymentType && i.expectedSalary
+          ? `${i.paymentType} - ${i.expectedSalary}`
+          : "",
 
       WorkLocation: i.workLocation,
       JoinReady: i.joinReady,
@@ -105,23 +107,23 @@ export default function TechnicianList() {
   };
 
   /* 🗑 DELETE */
- const deleteTechnician = async (id) => {
-  if (!window.confirm("Delete this technician?")) return;
+  const deleteTechnician = async (id) => {
+    if (!window.confirm("Delete this technician?")) return;
 
-  try {
-    const res = await fetch(`${API}/api/technician/${id}`, {
-      method: "DELETE",
-    });
+    try {
+      const res = await fetch(`${API}/api/technician/${id}`, {
+        method: "DELETE",
+      });
 
-    if (!res.ok) throw new Error("Delete failed");
+      if (!res.ok) throw new Error("Delete failed");
 
-    setList((prev) => prev.filter((i) => i._id !== id));
-    setFiltered((prev) => prev.filter((i) => i._id !== id));
-  } catch (err) {
-    alert("Delete failed");
-    console.error(err);
-  }
-};
+      setList((prev) => prev.filter((i) => i._id !== id));
+      setFiltered((prev) => prev.filter((i) => i._id !== id));
+    } catch (err) {
+      alert("Delete failed");
+      console.error(err);
+    }
+  };
 
 
   if (loading) return <div className="p-4">Loading…</div>;
@@ -129,65 +131,65 @@ export default function TechnicianList() {
   return (
     <div className="container-fluid p-4">
       {/* HEADER */}
-    {/* PAGE HEADER */}
-<div className="container-fluid mt-4 pb-3">
-  <div className="d-flex align-items-center mb-4">
-   <img
-  src="https://img.icons8.com/color/48/maintenance.png"
-  alt="Technician"
-  style={{ width: "38px", marginRight: "12px" }}
-/>
+      {/* PAGE HEADER */}
+      <div className="container-fluid mt-4 pb-3">
+        <div className="d-flex align-items-center mb-4">
+          <img
+            src="https://img.icons8.com/color/48/maintenance.png"
+            alt="Technician"
+            style={{ width: "38px", marginRight: "12px" }}
+          />
 
-    <h2 className="fw-bold text-primary m-0">
-      Technician Management
-    </h2>
-  </div>
+          <h2 className="fw-bold text-primary m-0">
+            Technician Management
+          </h2>
+        </div>
 
-  {/* SEARCH + FILTER BAR */}
-  <div className="row g-3 align-items-center mb-4">
-    {/* DISTRICT FILTER */}
-    <div className="col-md-3">
-      <select
-        className="form-select shadow-sm"
-        value={district}
-        onChange={(e) => setDistrict(e.target.value)}
-        style={{ height: "45px", borderRadius: "10px" }}
-      >
-        <option value="">All Districts</option>
-        {Object.keys(tnDistrictData).map((d) => (
-          <option key={d} value={d}>
-            {d}
-          </option>
-        ))}
-      </select>
-    </div>
+        {/* SEARCH + FILTER BAR */}
+        <div className="row g-3 align-items-center mb-4">
+          {/* DISTRICT FILTER */}
+          <div className="col-md-3">
+            <select
+              className="form-select shadow-sm"
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+              style={{ height: "45px", borderRadius: "10px" }}
+            >
+              <option value="">All Districts</option>
+              {Object.keys(tnDistrictData).map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </div>
 
-    {/* TECHNICIAN SEARCH */}
-    <div className="col-md-4">
-      <input
-        type="text"
-        className="form-control shadow-sm"
-        placeholder="🔍 Search by technician name..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{ height: "45px", borderRadius: "10px" }}
-      />
-    </div>
+          {/* TECHNICIAN SEARCH */}
+          <div className="col-md-4">
+            <input
+              type="text"
+              className="form-control shadow-sm"
+              placeholder="🔍 Search by technician name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ height: "45px", borderRadius: "10px" }}
+            />
+          </div>
 
-    {/* EXPORT BUTTON */}
-    <div className="col-md-5 text-end">
-      <button
-        className="btn btn-success px-4"
-        onClick={exportExcel}
-        style={{ height: "45px", borderRadius: "10px" }}
-      >
-        ⬇ Export Excel
-      </button>
-    </div>
-  </div>
-</div>
+          {/* EXPORT BUTTON */}
+          <div className="col-md-5 text-end">
+            <button
+              className="btn btn-success px-4"
+              onClick={exportExcel}
+              style={{ height: "45px", borderRadius: "10px" }}
+            >
+              ⬇ Export Excel
+            </button>
+          </div>
+        </div>
+      </div>
 
-     
+
 
       {/* TABLE */}
       <div className="table-responsive shadow rounded bg-white">
@@ -223,10 +225,10 @@ export default function TechnicianList() {
                   <td>{i.experience}</td>
                   <td>{i.jobType}</td>
                   <td>
-  {i.paymentType && i.expectedSalary
-    ? `${i.paymentType} - ₹${i.expectedSalary}`
-    : "-"}
-</td>
+                    {i.paymentType && i.expectedSalary
+                      ? `${i.paymentType} - ₹${i.expectedSalary}`
+                      : "-"}
+                  </td>
 
                   <td>{i.workLocation}</td>
                   <td className="d-flex gap-2">
@@ -290,15 +292,15 @@ export default function TechnicianList() {
                     <div className="col-md-4"><Info label="Job Type" value={selected.jobType} /></div>
                     <div className="col-md-4"><Info label="Payment Type" value={selected.paymentType} /></div>
                     <div className="col-md-4">
-  <Info
-    label="Expected Salary"
-    value={
-      selected.paymentType && selected.expectedSalary
-        ? `${selected.paymentType} - ₹${selected.expectedSalary}`
-        : "-"
-    }
-  />
-</div>
+                      <Info
+                        label="Expected Salary"
+                        value={
+                          selected.paymentType && selected.expectedSalary
+                            ? `${selected.paymentType} - ₹${selected.expectedSalary}`
+                            : "-"
+                        }
+                      />
+                    </div>
 
                     <div className="col-md-4"><Info label="Work Location" value={selected.workLocation} /></div>
                     <div className="col-md-4"><Info label="Join Ready" value={selected.joinReady} /></div>
@@ -341,9 +343,9 @@ export default function TechnicianList() {
                         value={
                           selected.createdAt
                             ? new Date(selected.createdAt).toLocaleString("en-IN", {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                              })
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })
                             : "-"
                         }
                       />
@@ -354,9 +356,9 @@ export default function TechnicianList() {
                         value={
                           selected.updatedAt
                             ? new Date(selected.updatedAt).toLocaleString("en-IN", {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                              })
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })
                             : "-"
                         }
                       />

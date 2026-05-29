@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { FiRefreshCw, FiDownload, FiStar, FiTrash2, FiEye } from "react-icons/fi";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const JOB_STATUSES = ["Pending", "Open", "In Process", "Completed", "Archived"];
 
 const STATUS_COLORS = {
@@ -13,13 +15,13 @@ const STATUS_COLORS = {
 };
 
 export default function ShopOwnerList() {
-  const [data,    setData]    = useState([]);
-  const [total,   setTotal]   = useState(0);
-  const [page,    setPage]    = useState(1);
-  const [pages,   setPages]   = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ status: "", district: "", search: "" });
-  const [selected, setSelected] = useState(null); // for detail modal
+  const [data,     setData]     = useState([]);
+  const [total,    setTotal]    = useState(0);
+  const [page,     setPage]     = useState(1);
+  const [pages,    setPages]    = useState(1);
+  const [loading,  setLoading]  = useState(true);
+  const [filters,  setFilters]  = useState({ status: "", district: "", search: "" });
+  const [selected, setSelected] = useState(null);
   const [history,  setHistory]  = useState([]);
 
   const fetchData = useCallback(async () => {
@@ -27,52 +29,47 @@ export default function ShopOwnerList() {
     try {
       const params = { ...filters, page, limit: 20 };
       Object.keys(params).forEach((k) => !params[k] && delete params[k]);
-   const { data: res } = await axios.get("/api/shop-owner", { params });
-const list = Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : [];
-setData(list);
-setTotal(res.total || list.length || 0);
-setPages(res.pages || 1);
+      const { data: res } = await axios.get(`${API}/api/shop-owner`, { params });
+      console.log("API Response:", res);
+      const list = Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : [];
+      setData(list);
+      setTotal(res.total || list.length || 0);
+      setPages(res.pages || 1);
     } catch { setData([]); }
     setLoading(false);
   }, [filters, page]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  /* ── Status update ── */
   const updateStatus = async (id, status, note = "") => {
     try {
-      await axios.put(`/api/shop-owner/status/${id}`, { status, note });
+      await axios.put(`${API}/api/shop-owner/status/${id}`, { status, note });
       fetchData();
     } catch { alert("Failed to update status"); }
   };
 
-  /* ── Toggle featured ── */
   const toggleFeatured = async (id) => {
-    await axios.patch(`/api/shop-owner/featured/${id}`);
+    await axios.patch(`${API}/api/shop-owner/featured/${id}`);
     fetchData();
   };
 
-  /* ── Soft delete (archive) ── */
   const archiveRecord = async (id) => {
     if (!window.confirm("Archive this record? It will be hidden from public.")) return;
     await updateStatus(id, "Archived", "Archived by admin");
   };
 
-  /* ── Permanent delete ── */
   const deleteRecord = async (id) => {
     if (!window.confirm("⚠️ PERMANENTLY delete this record? This cannot be undone.")) return;
-    await axios.delete(`/api/shop-owner/${id}`);
+    await axios.delete(`${API}/api/shop-owner/${id}`);
     fetchData();
   };
 
-  /* ── View history ── */
   const viewHistory = async (record) => {
     setSelected(record);
-    const { data: h } = await axios.get(`/api/shop-owner/history/${record._id}`);
+    const { data: h } = await axios.get(`${API}/api/shop-owner/history/${record._id}`);
     setHistory(h);
   };
 
-  /* ── Excel export ── */
   const exportExcel = () => {
     const rows = data.map((d) => [
       d.shopName, d.ownerName, d.mobile, d.district, d.taluk,
@@ -97,15 +94,8 @@ setPages(res.pages || 1);
     a.click();
   };
 
-  /* ── Counts per status ── */
-  const counts = JOB_STATUSES.reduce((acc, s) => {
-    acc[s] = data.filter((d) => (d.jobStatus || d.status) === s).length;
-    return acc;
-  }, {});
-
   return (
     <div>
-      {/* ── Header ── */}
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
           <h5 className="fw-bold mb-0">Shop Owner Requirements</h5>
@@ -121,7 +111,6 @@ setPages(res.pages || 1);
         </div>
       </div>
 
-      {/* ── Status filter tabs ── */}
       <div className="d-flex gap-2 mb-3 flex-wrap">
         <button
           className={`btn btn-sm rounded-pill ${!filters.status ? "btn-dark" : "btn-outline-secondary"}`}
@@ -148,7 +137,6 @@ setPages(res.pages || 1);
         })}
       </div>
 
-      {/* ── Search & District filter ── */}
       <div className="row g-2 mb-3">
         <div className="col-md-5">
           <input
@@ -168,7 +156,6 @@ setPages(res.pages || 1);
         </div>
       </div>
 
-      {/* ── Table ── */}
       {loading ? (
         <div className="text-center py-5">
           <div className="spinner-border text-danger" />
@@ -196,7 +183,7 @@ setPages(res.pages || 1);
                     No records found
                   </td>
                 </tr>
-              ) : data.map((row) => {
+              ) : (Array.isArray(data) ? data : []).map((row) => {
                 const curStatus = row.jobStatus || row.status || "Pending";
                 const s = STATUS_COLORS[curStatus] || {};
                 return (
@@ -223,8 +210,6 @@ setPages(res.pages || 1);
                     <td className="text-muted">
                       {new Date(row.createdAt).toLocaleDateString("en-IN")}
                     </td>
-
-                    {/* Status dropdown */}
                     <td>
                       <select
                         className="form-select form-select-sm rounded-3"
@@ -244,44 +229,34 @@ setPages(res.pages || 1);
                         ))}
                       </select>
                     </td>
-
-                    {/* Featured toggle */}
                     <td className="text-center">
                       <button
                         className="btn btn-sm p-1"
                         onClick={() => toggleFeatured(row._id)}
-                        title={row.featured ? "Remove featured" : "Mark as featured"}
                         style={{ fontSize: 18 }}
                       >
-                        <FiStar
-                          style={{
-                            fill: row.featured ? "#f59e0b" : "none",
-                            color: row.featured ? "#f59e0b" : "#ccc",
-                          }}
-                        />
+                        <FiStar style={{
+                          fill: row.featured ? "#f59e0b" : "none",
+                          color: row.featured ? "#f59e0b" : "#ccc",
+                        }} />
                       </button>
                     </td>
-
-                    {/* Actions */}
                     <td className="text-center">
                       <div className="d-flex gap-1 justify-content-center">
                         <button
                           className="btn btn-sm btn-outline-secondary rounded-2 p-1"
-                          title="View History"
                           onClick={() => viewHistory(row)}
                         >
                           <FiEye size={13} />
                         </button>
                         <button
                           className="btn btn-sm btn-outline-warning rounded-2 p-1"
-                          title="Archive"
                           onClick={() => archiveRecord(row._id)}
                         >
                           📦
                         </button>
                         <button
                           className="btn btn-sm btn-outline-danger rounded-2 p-1"
-                          title="Delete permanently"
                           onClick={() => deleteRecord(row._id)}
                         >
                           <FiTrash2 size={13} />
@@ -296,22 +271,22 @@ setPages(res.pages || 1);
         </div>
       )}
 
-      {/* Pagination */}
       {pages > 1 && (
         <div className="d-flex justify-content-center gap-2 mt-3">
           <button className="btn btn-sm btn-outline-secondary" disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}>← Prev</button>
-          {Array.from({ length: pages }, (_, i) => i + 1).filter((p) => Math.abs(p - page) < 3).map((p) => (
-            <button key={p}
-              className={`btn btn-sm rounded-3 ${p === page ? "btn-danger" : "btn-outline-secondary"}`}
-              onClick={() => setPage(p)}>{p}</button>
-          ))}
+          {Array.from({ length: pages }, (_, i) => i + 1)
+            .filter((p) => Math.abs(p - page) < 3)
+            .map((p) => (
+              <button key={p}
+                className={`btn btn-sm rounded-3 ${p === page ? "btn-danger" : "btn-outline-secondary"}`}
+                onClick={() => setPage(p)}>{p}</button>
+            ))}
           <button className="btn btn-sm btn-outline-secondary" disabled={page === pages}
             onClick={() => setPage((p) => p + 1)}>Next →</button>
         </div>
       )}
 
-      {/* ── History Modal ── */}
       {selected && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
@@ -332,11 +307,8 @@ setPages(res.pages || 1);
             ) : (
               <div className="d-flex flex-column gap-2">
                 {history.map((h, i) => (
-                  <div
-                    key={i}
-                    className="rounded-3 p-2 px-3"
-                    style={{ background: "#f8f9fa", fontSize: 13 }}
-                  >
+                  <div key={i} className="rounded-3 p-2 px-3"
+                    style={{ background: "#f8f9fa", fontSize: 13 }}>
                     <div className="d-flex justify-content-between">
                       <span>
                         <span className="text-muted">{h.fromStatus || "—"}</span>

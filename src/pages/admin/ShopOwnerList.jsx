@@ -40,17 +40,18 @@ export default function ShopOwnerList() {
   useEffect(() => {
     fetch(`${API}/api/shop-owner`)
       .then((res) => res.json())
-      .then((data) => {
-        setList(data);
-        setFiltered(data);
-        setLoading(false);
-      })
+     .then((data) => {
+  const result = Array.isArray(data.data) ? data.data : [];
+  setList(result);
+  setFiltered(result);
+  setLoading(false);
+})
       .catch(() => setLoading(false));
   }, []);
 
   /* 🔍 FILTER */
 useEffect(() => {
-  let data = [...list];
+  let data = Array.isArray(list) ? [...list] : [];
 
   // District filter
   if (district) {

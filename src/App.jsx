@@ -109,8 +109,6 @@ import DeptGradeSalary from "./pages/hr/DeptGradeSalary";
 import HRAnnouncements from "./pages/hr/Hrannouncements";
 import EsslEmployeeManager from "./pages/hr/EsslEmployeeManager";
 
-
-
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -136,7 +134,7 @@ import PartnerProfile from "./pages/Channel/ProfilePartner";
 import RadnusConnectHome from "./components/radnusconnect/RadnusConnectHome";
 import TechnicianForm from "./components/radnusconnect/TechnicianForm";
 import ShopOwnerForm from "./components/radnusconnect/ShopOwnerForm";
-import JobBoard from "./components/radnusconnect/Jobboard";
+import JobBoard from "./components/radnusconnect/JobBoard";
 import TechnicianBoard from "./components/radnusconnect/TechnicianBoard";
 import PosterManager from "./components/admin/PosterManager";
 
