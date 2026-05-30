@@ -160,7 +160,7 @@ export default function PosterManager() {
             <div key={p._id} className="col">
               <div className={`card border-0 shadow-sm rounded-3 overflow-hidden ${!p.isActive ? "opacity-50" : ""}`}>
                 <img
-                  src={`${API}${p.imageUrl}`}
+                  src={p.imageUrl}
                   alt={p.title}
                   style={{ width: "100%", height: 160, objectFit: "cover" }}
                 />

@@ -7,6 +7,10 @@ export default function PosterSidebar({ type = "jobs" }) {
   const [posters, setPosters] = useState([]);
   const [active,  setActive]  = useState(0);
   const [enlarged, setEnlarged] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef(null);
   const intervalRef = useRef(null);
 
   useEffect(() => {
@@ -35,6 +39,55 @@ export default function PosterSidebar({ type = "jobs" }) {
     }, 5000);
   };
 
+  const openEnlarged = (url) => {
+    setEnlarged(url);
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  const closeEnlarged = () => {
+    setEnlarged(null);
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  const handleWheel = (e) => {
+    e.preventDefault();
+    setZoom((prev) => Math.min(4, Math.max(1, prev - e.deltaY * 0.001)));
+  };
+
+  const handleMouseDown = (e) => {
+    if (zoom <= 1) return;
+    setDragging(true);
+    dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+  };
+
+  const handleMouseMove = (e) => {
+    if (!dragging) return;
+    setPan({
+      x: e.clientX - dragStart.current.x,
+      y: e.clientY - dragStart.current.y,
+    });
+  };
+
+  const handleMouseUp = () => setDragging(false);
+
+  // Touch pinch zoom
+  const lastDist = useRef(null);
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (lastDist.current) {
+        const delta = dist - lastDist.current;
+        setZoom((prev) => Math.min(4, Math.max(1, prev + delta * 0.01)));
+      }
+      lastDist.current = dist;
+    }
+  };
+  const handleTouchEnd = () => { lastDist.current = null; };
+
   if (posters.length === 0) return null;
 
   const current = posters[active] || {};
@@ -61,17 +114,18 @@ export default function PosterSidebar({ type = "jobs" }) {
           className="rounded-4 overflow-hidden"
           style={{
             boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-            cursor: "pointer",
+            cursor: "zoom-in",
             border: "2px solid #f5e0e0",
             transition: "transform 0.3s ease",
             background: "#fff",
           }}
-          onClick={() => setEnlarged(`${API}${current.imageUrl}`)}
+          onClick={() => openEnlarged(current.imageUrl)}
           onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.01)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
         >
+          {/* ✅ FIX 1: ${API} prefix எடுத்தோம் */}
           <img
-            src={`${API}${current.imageUrl}`}
+            src={current.imageUrl}
             alt={current.title || "Poster"}
             style={{ width: "100%", display: "block" }}
           />
@@ -116,7 +170,7 @@ export default function PosterSidebar({ type = "jobs" }) {
             {posters.map((p, i) => (
               <img
                 key={i}
-                src={`${API}${p.imageUrl}`}
+                src={p.imageUrl} // ✅ FIX 2: ${API} prefix எடுத்தோம்
                 alt={p.title || "Poster"}
                 onClick={() => goTo(i)}
                 style={{
@@ -135,17 +189,18 @@ export default function PosterSidebar({ type = "jobs" }) {
         )}
 
         <p className="text-muted mt-2" style={{ fontSize: 11, textAlign: "center" }}>
-          Click poster to enlarge
+          🔍 Click poster to zoom
         </p>
       </div>
 
+      {/* ✅ FIX 3: Zoom modal */}
       {enlarged && (
         <div
-          onClick={() => setEnlarged(null)}
+          onClick={closeEnlarged}
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.88)",
+            background: "rgba(0,0,0,0.92)",
             zIndex: 99999,
             display: "flex",
             alignItems: "center",
@@ -153,18 +208,39 @@ export default function PosterSidebar({ type = "jobs" }) {
             padding: 20,
           }}
         >
-          <img
-            src={enlarged}
-            alt="Poster"
+          {/* Zoom controls */}
+          <div
             style={{
-              maxWidth: "90vw",
-              maxHeight: "90vh",
-              borderRadius: 16,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+              position: "absolute",
+              bottom: 30,
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              gap: 12,
+              zIndex: 100001,
             }}
-          />
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setZoom((z) => Math.max(1, z - 0.5))}
+              style={zoomBtnStyle}
+            >−</button>
+            <span style={{ color: "#fff", lineHeight: "36px", fontSize: 13 }}>
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              onClick={() => setZoom((z) => Math.min(4, z + 0.5))}
+              style={zoomBtnStyle}
+            >+</button>
+            <button
+              onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
+              style={{ ...zoomBtnStyle, background: "#555" }}
+            >Reset</button>
+          </div>
+
+          {/* Close button */}
           <button
-            onClick={() => setEnlarged(null)}
+            onClick={closeEnlarged}
             style={{
               position: "absolute",
               top: 20,
@@ -180,12 +256,74 @@ export default function PosterSidebar({ type = "jobs" }) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              zIndex: 100001,
+            }}
+          >✕</button>
+
+          {/* Zoomable image container */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={{
+              overflow: "hidden",
+              cursor: zoom > 1 ? (dragging ? "grabbing" : "grab") : "zoom-in",
+              borderRadius: 16,
+              maxWidth: "85vw",
+              maxHeight: "85vh",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            ✕
-          </button>
+            <img
+              src={enlarged} // ✅ FIX 4: already clean URL, no prefix needed
+              alt="Poster"
+              draggable={false}
+              style={{
+                maxWidth: "85vw",
+                maxHeight: "85vh",
+                borderRadius: 16,
+                boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+                transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+                transition: dragging ? "none" : "transform 0.2s ease",
+                userSelect: "none",
+              }}
+            />
+          </div>
+
+          <p style={{
+            position: "absolute",
+            top: 20,
+            left: "50%",
+            transform: "translateX(-50%)",
+            color: "rgba(255,255,255,0.6)",
+            fontSize: 12,
+            whiteSpace: "nowrap",
+          }}>
+            🖱️ Scroll to zoom · Drag to pan · Pinch on mobile
+          </p>
         </div>
       )}
     </>
   );
 }
+
+const zoomBtnStyle = {
+  background: "#d61f26",
+  color: "#fff",
+  border: "none",
+  borderRadius: 8,
+  width: 36,
+  height: 36,
+  fontSize: 18,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};

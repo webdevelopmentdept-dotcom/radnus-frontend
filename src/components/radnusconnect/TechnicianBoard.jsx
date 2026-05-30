@@ -23,7 +23,7 @@ export default function TechnicianBoard() {
     try {
       const params = { ...filters, page, limit: 12 };
       Object.keys(params).forEach((k) => !params[k] && delete params[k]);
-      const { data } = await axios.get(`${API}/api/connect/technicians`, { params });
+      const { data } = await axios.get(`${API}/api/technician/public`, { params });
       setTechnicians(Array.isArray(data.technicians) ? data.technicians : []);
       setTotal(data.total || 0);
       setPages(data.pages || 1);
