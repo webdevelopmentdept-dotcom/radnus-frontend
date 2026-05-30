@@ -134,7 +134,7 @@ import PartnerProfile from "./pages/Channel/ProfilePartner";
 import RadnusConnectHome from "./components/radnusconnect/RadnusConnectHome";
 import TechnicianForm from "./components/radnusconnect/TechnicianForm";
 import ShopOwnerForm from "./components/radnusconnect/ShopOwnerForm";
-import JobBoard from "./components/radnusconnect/Jobboard";
+import JobBoard from "./components/radnusconnect/JobBoard";
 import TechnicianBoard from "./components/radnusconnect/Technicianboard";
 import PosterManager from "./components/admin/PosterManager";
 
