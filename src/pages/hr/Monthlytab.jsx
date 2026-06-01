@@ -37,7 +37,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
         for (let d = 1; d <= daysInMonth; d++) {
           const dateStr   = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
           const dayOfWeek = new Date(year, month - 1, d).getDay();
-          const isWeekend = dayOfWeek === 0;
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
           const rec       = raw.find((r) => r.date === dateStr);
 
           if (isWeekend) { filled.push({ date: dateStr, dayOfWeek, status: "weekend", isWeekend: true }); continue; }
