@@ -1123,6 +1123,8 @@ function DailyTab() {
                   if (r.earlyOutMins > 0) flags.push({ label: `Early ${fmtMins(r.earlyOutMins)}`, color: "#9333ea", bg: "#faf5ff" });
                   if (r.missingPunch)     flags.push({ label: "No Out",                             color: "#b91c1c", bg: "#fff1f2" });
 
+
+                  
                   return (
                     <tr key={i}
                       style={{ background: r.missingPunch ? "#fffbfb" : "transparent" }}
