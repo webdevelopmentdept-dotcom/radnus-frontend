@@ -4,10 +4,12 @@ import axios from "axios";
 const API = import.meta.env.VITE_API_BASE_URL;
 
 export default function PosterManager() {
-  const [posters, setPosters]   = useState([]);
-  const [tab, setTab]           = useState("jobs");
-  const [form, setForm]         = useState({ title: "", edition: "", image: null, type: "jobs" });
-  const [uploading, setUploading] = useState(false);
+  const [posters, setPosters]       = useState([]);
+  const [tab, setTab]               = useState("jobs");
+  const [form, setForm]             = useState({ title: "", edition: "", image: null, type: "jobs" });
+  const [uploading, setUploading]   = useState(false);
+  const [reuploadId, setReuploadId] = useState(null);
+  const [reuploadFile, setReuploadFile] = useState(null);
 
   const fetchPosters = async () => {
     try {
@@ -58,6 +60,25 @@ export default function PosterManager() {
       fetchPosters();
     } catch (err) {
       alert("Upload failed: " + (err.response?.data?.message || err.message));
+    }
+    setUploading(false);
+  };
+
+  const handleReupload = async (id) => {
+    if (!reuploadFile) return alert("Please select a new image");
+    setUploading(true);
+    try {
+      const compressed = await compressImage(reuploadFile);
+      const fd = new FormData();
+      fd.append("image", compressed);
+      await axios.put(`${API}/api/posters/${id}`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setReuploadId(null);
+      setReuploadFile(null);
+      fetchPosters();
+    } catch (err) {
+      alert("Re-upload failed: " + (err.response?.data?.message || err.message));
     }
     setUploading(false);
   };
@@ -193,6 +214,41 @@ export default function PosterManager() {
                       ✕
                     </button>
                   </div>
+
+                  {/* Re-upload toggle button */}
+                  <div className="mt-1">
+                    <button
+                      className="btn btn-sm btn-outline-primary w-100"
+                      style={{ fontSize: 11 }}
+                      onClick={() => {
+                        setReuploadId(reuploadId === p._id ? null : p._id);
+                        setReuploadFile(null);
+                      }}
+                    >
+                      🔄 Re-upload
+                    </button>
+                  </div>
+
+                  {/* Inline file picker — shows only for this card */}
+                  {reuploadId === p._id && (
+                    <div className="mt-2">
+                      <input
+                        type="file"
+                        className="form-control form-control-sm mb-1"
+                        accept="image/*"
+                        onChange={e => setReuploadFile(e.target.files[0])}
+                      />
+                      <button
+                        className="btn btn-sm btn-danger w-100"
+                        style={{ fontSize: 11 }}
+                        disabled={uploading || !reuploadFile}
+                        onClick={() => handleReupload(p._id)}
+                      >
+                        {uploading ? "Uploading..." : "Confirm Re-upload"}
+                      </button>
+                    </div>
+                  )}
+
                 </div>
               </div>
             </div>

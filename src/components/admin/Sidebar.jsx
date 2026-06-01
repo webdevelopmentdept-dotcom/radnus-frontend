@@ -6,8 +6,10 @@ export default function AdminSidebar() {
   const location = useLocation();
   const [hover, setHover] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
   const [theme, setTheme] = useState("dark");
+
+  // ✅ Role check
+  const role = localStorage.getItem("admin-role");
 
   // APPLY THEME ONLY IN ADMIN
   useEffect(() => {
@@ -15,26 +17,15 @@ export default function AdminSidebar() {
     setTheme(saved);
 
     if (location.pathname.startsWith("/admin")) {
-      document.body.classList.remove(
-        "bg-dark",
-        "bg-light",
-        "text-light",
-        "text-dark"
-      );
-
+      document.body.classList.remove("bg-dark", "bg-light", "text-light", "text-dark");
       document.body.classList.add(saved === "dark" ? "bg-dark" : "bg-light");
       document.body.classList.add(saved === "dark" ? "text-light" : "text-dark");
     } else {
-      document.body.classList.remove(
-        "bg-dark",
-        "bg-light",
-        "text-light",
-        "text-dark"
-      );
+      document.body.classList.remove("bg-dark", "bg-light", "text-light", "text-dark");
     }
   }, [location.pathname]);
 
-  const menu = [
+  const allMenu = [
     {
       module: "Main",
       items: [
@@ -47,26 +38,14 @@ export default function AdminSidebar() {
         { name: "Applicants", path: "/admin/applicants", icon: "bi-people-fill" },
       ],
     },
- {
-  module: "Radnus Connect",
-  items: [
     {
-      name: "Shop Owner List",
-      path: "/admin/radnus-connect/shop-owners",
-      icon: "bi-shop-window"
+      module: "Radnus Connect",
+      items: [
+        { name: "Shop Owner List", path: "/admin/radnus-connect/shop-owners", icon: "bi-shop-window" },
+        { name: "Technician List", path: "/admin/radnus-connect/technicians", icon: "bi-person-workspace" },
+        { name: "Poster Manager", path: "/admin/radnus-connect/posters", icon: "bi-images" },
+      ],
     },
-    {
-      name: "Technician List",
-      path: "/admin/radnus-connect/technicians",
-      icon: "bi-person-workspace"
-    },
-    {
-      name: "Poster Manager",
-      path: "/admin/radnus-connect/posters",
-      icon: "bi-images"
-    }
-  ],
-},
     {
       module: "Channel Partner",
       items: [
@@ -90,8 +69,15 @@ export default function AdminSidebar() {
     },
   ];
 
+  // ✅ Employee-க்கு Radnus Connect மட்டும்
+  const menu = role === "employee"
+    ? allMenu.filter((section) => section.module === "Radnus Connect")
+    : allMenu;
+
+  // ✅ Logout - role clear பண்ணு
   const handleLogout = () => {
     localStorage.removeItem("admin-theme");
+    localStorage.removeItem("admin-role");
     window.location.replace("/login");
   };
 
@@ -147,25 +133,20 @@ export default function AdminSidebar() {
           ></i>
         </div>
 
-        <h4 className="mb-4">Admin</h4>
+        <h4 className="mb-4">{role === "employee" ? "Employee" : "Admin"}</h4>
 
         {menu.map((section, s) => (
           <div key={s}>
             <p className="text-secondary small">{section.module}</p>
-
             {section.items.map((item, i) => (
               <Link key={i} to={item.path} style={{ textDecoration: "none" }}>
                 <div
                   className="d-flex align-items-center p-2 rounded mb-1"
                   style={{
-                    background:
-                      location.pathname === item.path ? "#222" : "transparent",
-                    color:
-                      location.pathname === item.path
-                        ? "#ff4d4d"
-                        : theme === "dark"
-                        ? "#fff"
-                        : "#000",
+                    background: location.pathname === item.path ? "#222" : "transparent",
+                    color: location.pathname === item.path
+                      ? "#ff4d4d"
+                      : theme === "dark" ? "#fff" : "#000",
                   }}
                 >
                   <i className={`bi ${item.icon} fs-5`}></i>
@@ -189,164 +170,147 @@ export default function AdminSidebar() {
         </div>
       </div>
 
-  {/* DESKTOP SIDEBAR – PREMIUM GLASS UI */}
-<div
-  className={`d-none d-md-flex flex-column justify-content-between ${
-    theme === "dark" ? "text-light" : "text-dark"
-  }`}
-  style={{
-    width: hover ? "230px" : "72px",
-    height: "100vh",
-    transition: "0.35s",
-    position: "fixed",
-    top: 0,
-    left: 0,
-    zIndex: 3000,
-    padding: "14px 10px",
-    background: theme === "dark"
-      ? "rgba(20,20,20,0.80)"
-      : "rgba(255,255,255,0.55)",
-    backdropFilter: "blur(14px)",
-    borderRight: theme === "dark"
-      ? "1px solid rgba(255,255,255,0.08)"
-      : "1px solid rgba(0,0,0,0.08)",
-    boxShadow: theme === "dark"
-      ? "4px 0 22px rgba(0,0,0,0.45)"
-      : "4px 0 22px rgba(0,0,0,0.12)",
-    borderRadius: "0 14px 14px 0"
-  }}
-  onMouseEnter={() => setHover(true)}
-  onMouseLeave={() => setHover(false)}
->
-  {/* TOP LOGO SECTION */}
-  <div style={{ marginBottom: "20px", paddingLeft: hover ? "6px" : "0" }}>
-    <div
-      className="d-flex align-items-center"
-      style={{
-        padding: "10px 8px",
-        borderRadius: "12px",
-        background: theme === "dark"
-          ? "rgba(255,255,255,0.05)"
-          : "rgba(0,0,0,0.05)",
-        boxShadow: theme === "dark"
-          ? "0 3px 10px rgba(0,0,0,0.35)"
-          : "0 3px 10px rgba(0,0,0,0.10)",
-        transition: "0.3s"
-      }}
-    >
-      <i className="bi bi-grid-fill fs-4"></i>
-      {hover && (
-        <h5 className="ms-2 mb-0 fw-bold" style={{ letterSpacing: "0.5px" }}>
-          Admin
-        </h5>
-      )}
-    </div>
-  </div>
-
-  {/* MENU SECTION */}
-  <div
-  style={{
-    flexGrow: 1,
-    overflowY: "auto",
-    scrollbarWidth: "none",          // Firefox hide
-    msOverflowStyle: "none",         // IE/Edge hide
-  }}
-  className="hide-scrollbar"
->
-
-  
-    {menu.map((section, idx) => (
-      <div key={idx} className="mb-2">
-        {/* Section Label */}
-        {hover && (
-          <p
-            className="text-uppercase mb-2"
+      {/* DESKTOP SIDEBAR */}
+      <div
+        className={`d-none d-md-flex flex-column justify-content-between ${
+          theme === "dark" ? "text-light" : "text-dark"
+        }`}
+        style={{
+          width: hover ? "230px" : "72px",
+          height: "100vh",
+          transition: "0.35s",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          zIndex: 3000,
+          padding: "14px 10px",
+          background: theme === "dark"
+            ? "rgba(20,20,20,0.80)"
+            : "rgba(255,255,255,0.55)",
+          backdropFilter: "blur(14px)",
+          borderRight: theme === "dark"
+            ? "1px solid rgba(255,255,255,0.08)"
+            : "1px solid rgba(0,0,0,0.08)",
+          boxShadow: theme === "dark"
+            ? "4px 0 22px rgba(0,0,0,0.45)"
+            : "4px 0 22px rgba(0,0,0,0.12)",
+          borderRadius: "0 14px 14px 0",
+        }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
+        {/* TOP LOGO SECTION */}
+        <div style={{ marginBottom: "20px", paddingLeft: hover ? "6px" : "0" }}>
+          <div
+            className="d-flex align-items-center"
             style={{
-              fontSize: "12px",
-              letterSpacing: "0.7px",
-              fontWeight: "600",
-              opacity: 0.55,
-              marginLeft: "6px"
+              padding: "10px 8px",
+              borderRadius: "12px",
+              background: theme === "dark"
+                ? "rgba(255,255,255,0.05)"
+                : "rgba(0,0,0,0.05)",
+              boxShadow: theme === "dark"
+                ? "0 3px 10px rgba(0,0,0,0.35)"
+                : "0 3px 10px rgba(0,0,0,0.10)",
+              transition: "0.3s",
             }}
           >
-            {section.module}
-          </p>
-        )}
+            <i className="bi bi-grid-fill fs-4"></i>
+            {hover && (
+              <h5 className="ms-2 mb-0 fw-bold" style={{ letterSpacing: "0.5px" }}>
+                {role === "employee" ? "Employee" : "Admin"}
+              </h5>
+            )}
+          </div>
+        </div>
 
-        {/* Items */}
-        {section.items.map((item, i) => {
-          const active = location.pathname === item.path;
-
-          return (
-            <Link key={i} to={item.path} style={{ textDecoration: "none" }}>
-              <div
-                className="d-flex align-items-center"
-                style={{
-                  padding: hover ? "10px 12px" : "10px 8px",
-                  marginBottom: "6px",
-                  borderRadius: "12px",
-                  cursor: "pointer",
-                  transition: "0.3s",
-                  background: active
-                    ? theme === "dark"
-                      ? "linear-gradient(135deg, #ff4d4d, #b30000)"
-                      : "linear-gradient(135deg, #ffe0e0, #ffb3b3)"
-                    : "transparent",
-                  color: active
-                    ? theme === "dark"
-                      ? "#fff"
-                      : "#b30000"
-                    : theme === "dark"
-                    ? "#e5e5e5"
-                    : "#222",
-                  boxShadow: active
-                    ? "0 4px 12px rgba(0,0,0,0.25)"
-                    : "none"
-                }}
-              >
-                <i
-                  className={`bi ${item.icon}`}
+        {/* MENU SECTION */}
+        <div
+          style={{
+            flexGrow: 1,
+            overflowY: "auto",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
+          className="hide-scrollbar"
+        >
+          {menu.map((section, idx) => (
+            <div key={idx} className="mb-2">
+              {hover && (
+                <p
+                  className="text-uppercase mb-2"
                   style={{
-                    fontSize: "1.15rem",
-                    minWidth: "26px",
-                    textAlign: "center"
+                    fontSize: "12px",
+                    letterSpacing: "0.7px",
+                    fontWeight: "600",
+                    opacity: 0.55,
+                    marginLeft: "6px",
                   }}
-                ></i>
+                >
+                  {section.module}
+                </p>
+              )}
 
-                {hover && (
-                  <span style={{ fontSize: "15px", marginLeft: "10px" }}>
-                    {item.name}
-                  </span>
-                )}
-              </div>
-            </Link>
-          );
-        })}
+              {section.items.map((item, i) => {
+                const active = location.pathname === item.path;
+                return (
+                  <Link key={i} to={item.path} style={{ textDecoration: "none" }}>
+                    <div
+                      className="d-flex align-items-center"
+                      style={{
+                        padding: hover ? "10px 12px" : "10px 8px",
+                        marginBottom: "6px",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        transition: "0.3s",
+                        background: active
+                          ? theme === "dark"
+                            ? "linear-gradient(135deg, #ff4d4d, #b30000)"
+                            : "linear-gradient(135deg, #ffe0e0, #ffb3b3)"
+                          : "transparent",
+                        color: active
+                          ? theme === "dark" ? "#fff" : "#b30000"
+                          : theme === "dark" ? "#e5e5e5" : "#222",
+                        boxShadow: active ? "0 4px 12px rgba(0,0,0,0.25)" : "none",
+                      }}
+                    >
+                      <i
+                        className={`bi ${item.icon}`}
+                        style={{ fontSize: "1.15rem", minWidth: "26px", textAlign: "center" }}
+                      ></i>
+                      {hover && (
+                        <span style={{ fontSize: "15px", marginLeft: "10px" }}>
+                          {item.name}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* LOGOUT BUTTON */}
+        <div
+          className="d-flex align-items-center p-2 rounded"
+          style={{
+            cursor: "pointer",
+            marginBottom: "10px",
+            background: "rgba(255,0,0,0.10)",
+            borderRadius: "12px",
+            transition: "0.3s",
+          }}
+          onClick={handleLogout}
+        >
+          <i className="bi bi-box-arrow-right fs-5 text-danger"></i>
+          {hover && (
+            <span className="ms-2 fw-semibold" style={{ color: "#dc3545" }}>
+              Logout
+            </span>
+          )}
+        </div>
       </div>
-    ))}
-  </div>
-
-  {/* LOGOUT BUTTON */}
-  <div
-    className="d-flex align-items-center p-2 rounded"
-    style={{
-      cursor: "pointer",
-      marginBottom: "10px",
-      background: "rgba(255,0,0,0.10)",
-      borderRadius: "12px",
-      transition: "0.3s",
-    }}
-    onClick={handleLogout}
-  >
-    <i className="bi bi-box-arrow-right fs-5 text-danger"></i>
-    {hover && (
-      <span className="ms-2 fw-semibold" style={{ color: "#dc3545" }}>
-        Logout
-      </span>
-    )}
-  </div>
-</div>
-
 
       {/* SPACER FOR DESKTOP */}
       <div

@@ -31,7 +31,10 @@ export default function AdminLogin() {
         return;
       }
 
+      // ✅ Role save பண்ணு
+      localStorage.setItem("admin-role", data.role);
       navigate("/admin");
+
     } catch (err) {
       setError("Server error, try again.");
     } finally {
