@@ -36,7 +36,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
 
         for (let d = 1; d <= daysInMonth; d++) {
           const dateStr   = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-          const dayOfWeek = new Date(year, month - 1, d).getDay();
+          const dayOfWeek = new Date(`${year}-${String(month).padStart(2,"0")}-${String(d).padStart(2,"0")}T12:00:00`).getDay();
           const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
           const rec       = raw.find((r) => r.date === dateStr);
 
@@ -64,8 +64,8 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
             } else if (firstIn && !lastOut) {
               workHrs = "Ongoing";
             }
-            if      (rec.status === "present")  presentCount++;
-            else if (rec.status === "late")     lateCount++;
+            if (rec.status === "present" || rec.status === "late") presentCount++;
+            if (rec.status === "late" || (rec.late_minutes || 0) > 0) lateCount++;
             else if (rec.status === "leave")    leaveCount++;
             else if (rec.status === "half_day") halfCount++;
             else if (rec.status === "absent")   absentCount++;

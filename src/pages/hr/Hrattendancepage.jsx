@@ -302,7 +302,8 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
   const [loadingMonth, setLoadingMonth] = useState(false);
 
   const emp      = record?.employee;
-  const meta     = STATUS_META[record?.status] || STATUS_META.absent;
+  const displayStatus = record?.status === "late" ? "present" : record?.status;
+  const meta = STATUS_META[displayStatus] || STATUS_META.absent;
   const firstIn  = getFirstIn(record);
   const lastOut  = getLastOut(record);
   const punches  = record?.punches || (
@@ -1113,7 +1114,8 @@ function DailyTab() {
                     </div>
                   </td></tr>
                 ) : filtered.map((r, i) => {
-                  const meta       = STATUS_META[r.status] || STATUS_META.absent;
+                  const displayStatus = r.status === "late" ? "present" : r.status;
+                  const meta = STATUS_META[displayStatus] || STATUS_META.absent;
                   const hrs        = workHrsFromPunches(r);
                   const punchCount = r.punches?.length || (r.checkIn ? (r.checkOut ? 2 : 1) : 0);
                   const flags = [];
