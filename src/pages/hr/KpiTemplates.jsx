@@ -125,13 +125,41 @@ export default function KpiTemplates() {
     fetchDepts();
   }, []);
 
-  const fetchPrograms = async () => {
-    try {
-      const res  = await fetch(PROGRAM_API);
-      const data = await res.json();
-      if (data.success) setPrograms(data.data);
-    } catch { setPrograms([]); }
-  };
+  // KpiTemplates.jsx - Replace fetchPrograms()
+
+const fetchPrograms = async () => {
+  try {
+    // Instead of fetching from /api/programs, extract from all templates
+    const res = await fetch(KPI_API);
+    const data = await res.json();
+    
+    if (data.success) {
+      // Extract unique programs from all templates' kpi_items
+      const allPrograms = [];
+      const seenNames = new Set();
+      
+      data.data.forEach(template => {
+        template.kpi_items?.forEach(item => {
+          item.program_targets?.forEach(pt => {
+            if (pt.program_name && !seenNames.has(pt.program_name.toLowerCase())) {
+              seenNames.add(pt.program_name.toLowerCase());
+              allPrograms.push({
+                _id: pt.program_id || `prog_${pt.program_name}`,
+                name: pt.program_name
+              });
+            }
+          });
+        });
+      });
+      
+      console.log("Extracted programs:", allPrograms); // Debug
+      setPrograms(allPrograms);
+    }
+  } catch (err) {
+    console.error("Programs fetch error:", err);
+    setPrograms([]);
+  }
+};
 
   const fetchTemplates = async () => {
     try {
@@ -352,8 +380,8 @@ export default function KpiTemplates() {
                     <p style={{ margin: "4px 0 0", color: "#bfdbfe", fontSize: 13 }}>{t.role} · {t.department}</p>
                   </div>
                   <span style={{ background: "rgba(255,255,255,0.2)", color: "#fff", padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
-                    {t.kpi_items?.length || 0} KPIs
-                  </span>
+  {t.kpi_items?.length || 0} KPIs · v{t.version || 1}
+</span>
                 </div>
               </div>
               <div style={{ padding: "16px 20px" }}>
