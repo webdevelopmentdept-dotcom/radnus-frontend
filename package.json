@@ -21,6 +21,7 @@
     "canvas-confetti": "^1.9.4",
     "chart.js": "^4.5.1",
     "cors": "^2.8.5",
+    "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.34.3",
     "gsap": "^3.13.0",

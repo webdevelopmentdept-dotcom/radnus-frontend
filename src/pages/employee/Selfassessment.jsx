@@ -81,6 +81,8 @@ export default function SelfAssessment() {
       setEmployee(empRes.data);
 
       const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/${employeeId}`);
+      // const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/pending/${employeeId}`);
+
       if (assignRes.data.success && assignRes.data.data) {
         const assign = assignRes.data.data;
         setAssignment(assign);

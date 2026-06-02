@@ -31,10 +31,7 @@ const ownerStyles = {
   hr:      { bg: "#fffbeb", color: "#d97706", label: "HR"              },
 };
 
-// HR-ஆல் fill பண்ணணும்னு சொன்னாலே மட்டும் HR edit பண்ணலாம்
-// மத்தவை (self/manager/md) → employee self value காட்டு, readonly
 const isHREditable = (item) => (item.owner_role || "self") === "hr";
-// ───────────────────────────────────────────────────────────────
 
 const STYLES = `
   .pr-page { padding: 28px 32px; }
@@ -124,7 +121,6 @@ export default function PerformanceReviews() {
     setSelectedAssessment(assessment);
     setIncentiveResult(null);
 
-    // ── CHANGE: owner_role include பண்றோம், hr KPI மட்டும் editable ──
     const items = assessment.items.map(item => ({
       kpi_item_id:  item.kpi_item_id,
       kpi_name:     item.kpi_name,
@@ -134,7 +130,6 @@ export default function PerformanceReviews() {
       owner_role:   item.owner_role || "self",
       self_value:   item.self_value,
       self_comment: item.self_comment || "",
-      // hr KPI → blank (HR enters now), others → pre-fill with employee's self value
       actual_value: (item.owner_role || "self") === "hr" ? "" : item.self_value,
     }));
     setReviewForm({ items, hr_comment: "" });
@@ -198,11 +193,18 @@ export default function PerformanceReviews() {
     };
   };
 
+  // ── EXCEL EXPORT FUNCTION ────────────────────────────────────
+ const exportEmployeeExcel = (assignmentId) => {
+  const assignment = allAssignments.find(a => a._id === assignmentId);
+  if (!assignment) return;
+  window.open(`${API_BASE}/api/export-excel/${assignmentId}`, "_blank");
+};
+  // ─────────────────────────────────────────────────────────────
+
   const handleSubmitReview = async () => {
     if (!reviewForm.hr_comment.trim())
       return showToast("Please add HR feedback comment", "error");
 
-    // ── CHANGE: HR KPI-கள் மட்டும் validate, மத்தவை skip ──
     const hrItems = reviewForm.items.filter(i => isHREditable(i));
     if (hrItems.some(i => i.actual_value === "" || i.actual_value === null || i.actual_value === undefined))
       return showToast("Please fill all HR-owned KPI values", "error");
@@ -601,7 +603,23 @@ export default function PerformanceReviews() {
                       {selectedAssignmentData?.employee_id?.name}'s Logs
                       <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 400, color: "#6b7280" }}>({filteredLogs.length} entries)</span>
                     </h3>
-                    <span style={{ background: "#f3f4f6", padding: "4px 12px", borderRadius: 6, fontSize: 13, fontWeight: 600, color: "#374151" }}>{selectedAssignmentData?.period}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ background: "#f3f4f6", padding: "4px 12px", borderRadius: 6, fontSize: 13, fontWeight: 600, color: "#374151" }}>{selectedAssignmentData?.period}</span>
+                      {/* ── EXPORT BUTTON ── */}
+                      <button
+                        onClick={() => exportEmployeeExcel(selectedEmployeeLog)}
+                        disabled={!employeeLogs.length}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 6,
+                          padding: "7px 14px", border: "none", borderRadius: 8,
+                          background: employeeLogs.length ? "#16a34a" : "#d1d5db",
+                          color: "#fff", fontWeight: 700, fontSize: 13,
+                          cursor: employeeLogs.length ? "pointer" : "not-allowed",
+                        }}
+                      >
+                        ⬇️ Export Excel
+                      </button>
+                    </div>
                   </div>
                   {Object.keys(logsByDate).sort((a, b) => b.localeCompare(a)).map(date => (
                     <div key={date} style={{ marginBottom: 16 }}>
@@ -782,7 +800,6 @@ export default function PerformanceReviews() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 2 }}>
                           <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#1f2937", wordBreak: "break-word" }}>{item.kpi_name}</p>
-                          {/* ── Owner badge ── */}
                           <span style={{
                             display: "inline-flex", alignItems: "center", gap: 4,
                             fontSize: 10, fontWeight: 700, padding: "2px 8px",
@@ -810,7 +827,6 @@ export default function PerformanceReviews() {
                         {item.self_comment && <p style={{ margin: "6px 0 0", fontSize: 12, color: "#374151", fontStyle: "italic" }}>"{item.self_comment}"</p>}
                       </div>
 
-                      {/* HR Actual Value — editable only if owner_role === "hr" */}
                       {hrEditable ? (
                         <div style={{ background: "#fff", borderRadius: 8, padding: "10px 14px", border: "2px solid #d97706" }}>
                           <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "#d97706", textTransform: "uppercase" }}>
@@ -832,7 +848,6 @@ export default function PerformanceReviews() {
                           </p>
                         </div>
                       ) : (
-                        /* ── Read-only: self/manager/md filled by employee ── */
                         <div style={{ background: "#f3f4f6", borderRadius: 8, padding: "10px 14px", border: "1px solid #e5e7eb", opacity: 0.85 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                             <Lock size={12} color="#9ca3af" />
@@ -850,7 +865,6 @@ export default function PerformanceReviews() {
                       )}
                     </div>
 
-                    {/* Progress bar */}
                     {item.actual_value && (
                       <div style={{ background: "#e5e7eb", borderRadius: 99, height: 8, overflow: "hidden" }}>
                         <div style={{ width: `${Math.min(actualPct, 100)}%`, height: "100%", background: actualColor, borderRadius: 99, transition: "width 0.4s ease" }} />
