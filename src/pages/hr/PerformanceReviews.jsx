@@ -31,7 +31,8 @@ const ownerStyles = {
   hr:      { bg: "#fffbeb", color: "#d97706", label: "HR"              },
 };
 
-const isHREditable = (item) => (item.owner_role || "self") === "hr";
+// const isHREditable = (item) => (item.owner_role || "self") === "hr";
+const isHREditable = (item) => true;
 
 const STYLES = `
   .pr-page { padding: 28px 32px; }
@@ -117,23 +118,32 @@ export default function PerformanceReviews() {
 
   const isReviewed = (id) => completedReviews.some(r => r.self_assessment_id === id);
 
-  const openReview = (assessment) => {
-    setSelectedAssessment(assessment);
-    setIncentiveResult(null);
+const openReview = (assessment) => {
+  setSelectedAssessment(assessment);
+  setIncentiveResult(null);
 
-    const items = assessment.items.map(item => ({
-      kpi_item_id:  item.kpi_item_id,
-      kpi_name:     item.kpi_name,
-      target:       item.target,
-      unit:         item.unit,
-      weight:       item.weight || 0,
-      owner_role:   item.owner_role || "self",
-      self_value:   item.self_value,
+  const items = assessment.items.map(item => {
+    // ✅ FIXED: Prioritize hr_value, then self_value, then empty
+    const actualValue = item.hr_value !== undefined && item.hr_value !== null && item.hr_value !== ""
+      ? item.hr_value 
+      : (item.self_value !== undefined && item.self_value !== null ? item.self_value : "");
+    
+    return {
+      kpi_item_id: item.kpi_item_id,
+      kpi_name: item.kpi_name,
+      target: item.target,
+      unit: item.unit,
+      weight: item.weight || 0,
+      owner_role: item.owner_role || "self",
+      self_value: item.self_value,
       self_comment: item.self_comment || "",
-      actual_value: (item.owner_role || "self") === "hr" ? "" : item.self_value,
-    }));
-    setReviewForm({ items, hr_comment: "" });
-  };
+      actual_value: actualValue,  // ✅ Now correctly uses hr_value or self_value
+      hr_comment: item.hr_comment || ""
+    };
+  });
+  
+  setReviewForm({ items, hr_comment: "" });
+};
 
   const handleActualChange = (idx, value) => {
     setReviewForm(f => {
@@ -201,29 +211,54 @@ export default function PerformanceReviews() {
 };
   // ─────────────────────────────────────────────────────────────
 
-  const handleSubmitReview = async () => {
+const handleSubmitReview = async () => {
     if (!reviewForm.hr_comment.trim())
       return showToast("Please add HR feedback comment", "error");
 
-    const hrItems = reviewForm.items.filter(i => isHREditable(i));
+    const hrItems = reviewForm.items; // All items need actual_value
     if (hrItems.some(i => i.actual_value === "" || i.actual_value === null || i.actual_value === undefined))
-      return showToast("Please fill all HR-owned KPI values", "error");
+      return showToast("Please fill all KPI actual values", "error");
 
     setSaving(true);
     try {
       const finalScore = calcLiveScore();
+
+      // ✅ DEBUG: Check values before sending
+      console.log("=== BEFORE SUBMIT ===");
+      reviewForm.items.forEach((item, i) => {
+        console.log(`${item.kpi_name}: actual_value="${item.actual_value}" (type: ${typeof item.actual_value}), self_value=${item.self_value}`);
+      });
 
       const reviewPayload = {
         employee_id:        selectedAssessment.employee_id._id || selectedAssessment.employee_id,
         assignment_id:      selectedAssessment.assignment_id?._id || selectedAssessment.assignment_id,
         self_assessment_id: selectedAssessment._id,
         period:             selectedAssessment.period,
-        kpi_breakdown:      reviewForm.items.map(i => ({
-          ...i,
-          actual_value: parseFloat(i.actual_value) || parseFloat(i.self_value) || 0
-        })),
+        kpi_breakdown: reviewForm.items.map(i => {
+          // ✅ FIX: Properly convert to number, don't fallback to self_value
+          const actualVal = i.actual_value !== "" && i.actual_value !== null && i.actual_value !== undefined 
+            ? Number(i.actual_value) 
+            : Number(i.self_value) || 0;
+          
+          return {
+            kpi_item_id: i.kpi_item_id,
+            kpi_name: i.kpi_name,
+            target: i.target,
+            unit: i.unit,
+            weight: i.weight,
+            owner_role: i.owner_role || "self",
+            self_value: i.self_value,
+            self_comment: i.self_comment || "",
+            actual_value: actualVal,  // ✅ HR value only!
+            hr_comment: i.hr_comment || ""
+          };
+        }),
         hr_comment: reviewForm.hr_comment,
       };
+
+      // ✅ DEBUG: Check payload
+      console.log("=== PAYLOAD ===", JSON.stringify(reviewPayload.kpi_breakdown, null, 2));
+
       const reviewRes = await axios.post(`${API_BASE}/api/performance-reviews`, reviewPayload);
       if (!reviewRes.data.success) {
         showToast(reviewRes.data.message || "Review submit failed", "error");
@@ -828,25 +863,23 @@ export default function PerformanceReviews() {
                       </div>
 
                       {hrEditable ? (
-                        <div style={{ background: "#fff", borderRadius: 8, padding: "10px 14px", border: "2px solid #d97706" }}>
-                          <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "#d97706", textTransform: "uppercase" }}>
-                            🧾 HR Actual Value *
-                          </p>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <input
-                              type="number"
-                              value={item.actual_value}
-                              onChange={e => handleActualChange(idx, e.target.value)}
-                              min="0"
-                              placeholder={`Enter actual (target: ${item.target})`}
-                              style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 15, fontWeight: 700, color: actualColor, outline: "none", boxSizing: "border-box" }}
-                            />
-                            <span style={{ fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>{item.unit}</span>
-                          </div>
-                          <p style={{ margin: "5px 0 0", fontSize: 11, color: "#d97706" }}>
-                            ✏️ HR fills this — employee cannot edit
-                          </p>
-                        </div>
+                     // Remove the ternary, always show HR editable input
+<div style={{ background: "#fff", borderRadius: 8, padding: "10px 14px", border: "2px solid #d97706" }}>
+  <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "#d97706", textTransform: "uppercase" }}>
+    🧾 HR Actual Value *
+  </p>
+  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <input
+      type="number"
+      value={item.actual_value}
+      onChange={e => handleActualChange(idx, e.target.value)}
+      min="0"
+      placeholder={`Enter actual (target: ${item.target})`}
+      style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 15, fontWeight: 700, color: actualColor, outline: "none", boxSizing: "border-box" }}
+    />
+    <span style={{ fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>{item.unit}</span>
+  </div>
+</div>
                       ) : (
                         <div style={{ background: "#f3f4f6", borderRadius: 8, padding: "10px 14px", border: "1px solid #e5e7eb", opacity: 0.85 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
