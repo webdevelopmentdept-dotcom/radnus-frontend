@@ -138,37 +138,53 @@ function ActionDropdown({ assignment, onView, onEdit, onCancel, onDelete }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
+  const dropdownRef = useRef(null); 
 
-  useEffect(() => {
-    if (!open) return;
-    const close = (e) => {
-      if (btnRef.current && !btnRef.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
+//   useEffect(() => {
+//     if (!open) return;
+//     const close = (e) => {
+//   if (btnRef.current && !btnRef.current.contains(e.target)) setOpen(false);
+// };
+// document.addEventListener("mousedown", close);
+// return () => document.removeEventListener("mousedown", close);
+//     return () => document.removeEventListener("mousedown", close);
+//   }, [open]);
 
-  const handleOpen = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setPos({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.right + window.scrollX - 160, // align right edge
-      });
+useEffect(() => {
+  if (!open) return;
+  const close = (e) => {
+    if (
+      btnRef.current && !btnRef.current.contains(e.target) &&
+      dropdownRef.current && !dropdownRef.current.contains(e.target)
+    ) {
+      setOpen(false);
     }
-    setOpen(o => !o);
   };
+  setTimeout(() => document.addEventListener("mousedown", close), 0);
+  return () => document.removeEventListener("mousedown", close);
+}, [open]);
 
+ const handleOpen = () => {
+  if (btnRef.current) {
+    const rect = btnRef.current.getBoundingClientRect();
+    setPos({
+      top: rect.bottom + 4,
+      left: rect.right - 160,
+    });
+  }
+  setOpen(o => !o);
+};
   const isActive = assignment.status === "active";
 
   const menu = open && createPortal(
     <div
-      className="ak-portal-dropdown"
-      style={{ top: pos.top, left: pos.left }}
-      onMouseDown={e => e.stopPropagation()}
-    >
+  className="ak-portal-dropdown"
+  ref={dropdownRef}
+  style={{ top: pos.top, left: pos.left }}
+  onMouseDown={e => e.stopPropagation()}
+>
       <button className="ak-dropdown-item" style={{ color: "#2563eb" }}
-        onClick={() => { onView(assignment); setOpen(false); }}>
+        onClick={() => { setOpen(false); setTimeout(() => onView(assignment), 50); }}>
         <Eye size={14} color="#2563eb" /> View
       </button>
       <hr className="ak-dropdown-divider" />
