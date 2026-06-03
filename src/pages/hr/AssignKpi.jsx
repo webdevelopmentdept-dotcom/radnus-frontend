@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import axios from "axios";
 import {
   ClipboardList, CheckCircle2, Flag, Inbox, AlertTriangle,
-  Trash2, ClipboardCheck, BarChart2
+  Trash2, BarChart2, MoreHorizontal, Eye, Pencil, XCircle
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -23,7 +24,7 @@ const STYLES = `
   .ak-modal-footer button { width: auto; }
   .ak-tpl-row { flex-direction: row; justify-content: space-between; }
   .ak-tpl-row-right { flex-direction: row; gap: 12px; }
-  .ak-table-wrap { display: block !important; }
+  .ak-table-wrap { display: block !important; overflow-x: auto; }
   .ak-card-list { display: none !important; }
 
   .ak-main-table {
@@ -56,11 +57,60 @@ const STYLES = `
   }
   .ak-main-table tbody tr:nth-child(even) td { background: #fafafa; }
   .ak-main-table tbody tr:hover td { background: #f0f6ff; }
-  .ak-action-btns {
+
+  .ak-dots-btn {
+    background: none;
+    border: 1px solid #e5e7eb;
+    border-radius: 7px;
+    width: 32px;
+    height: 32px;
     display: flex;
-    gap: 5px;
-    flex-wrap: nowrap;
     align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #6b7280;
+    transition: background 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+  .ak-dots-btn:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    color: #1a1a2e;
+  }
+  .ak-portal-dropdown {
+    position: fixed;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.16);
+    min-width: 160px;
+    z-index: 99999;
+    overflow: hidden;
+    animation: ak-dropdown-in 0.13s ease;
+  }
+  @keyframes ak-dropdown-in {
+    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .ak-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 15px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    transition: background 0.1s;
+  }
+  .ak-dropdown-item:hover { background: #f8fafc; }
+  .ak-dropdown-divider {
+    border: none;
+    border-top: 1px solid #f3f4f6;
+    margin: 3px 0;
   }
 
   @media (max-width: 768px) {
@@ -76,13 +126,80 @@ const STYLES = `
     .ak-table-wrap { display: none !important; }
     .ak-card-list { display: flex !important; flex-direction: column; gap: 12px; padding: 12px 16px; }
   }
-
   @media (max-width: 480px) {
     .ak-stats { grid-template-columns: 1fr !important; }
     .ak-period-grid { grid-template-columns: 1fr !important; }
     .ak-period-btns button { flex: 1; }
   }
 `;
+
+// ── Portal Dropdown ──────────────────────────────────────────────────────────
+function ActionDropdown({ assignment, onView, onEdit, onCancel, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => {
+      if (btnRef.current && !btnRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  const handleOpen = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.right + window.scrollX - 160, // align right edge
+      });
+    }
+    setOpen(o => !o);
+  };
+
+  const isActive = assignment.status === "active";
+
+  const menu = open && createPortal(
+    <div
+      className="ak-portal-dropdown"
+      style={{ top: pos.top, left: pos.left }}
+      onMouseDown={e => e.stopPropagation()}
+    >
+      <button className="ak-dropdown-item" style={{ color: "#2563eb" }}
+        onClick={() => { onView(assignment); setOpen(false); }}>
+        <Eye size={14} color="#2563eb" /> View
+      </button>
+      <hr className="ak-dropdown-divider" />
+      <button className="ak-dropdown-item" style={{ color: "#374151" }}
+        onClick={() => { onEdit(assignment); setOpen(false); }}>
+        <Pencil size={14} color="#374151" /> Edit
+      </button>
+      {isActive && (
+        <button className="ak-dropdown-item" style={{ color: "#d97706" }}
+          onClick={() => { onCancel(assignment._id); setOpen(false); }}>
+          <XCircle size={14} color="#d97706" /> Cancel
+        </button>
+      )}
+      <hr className="ak-dropdown-divider" />
+      <button className="ak-dropdown-item" style={{ color: "#ef4444" }}
+        onClick={() => { onDelete(assignment._id); setOpen(false); }}>
+        <Trash2 size={14} color="#ef4444" /> Delete
+      </button>
+    </div>,
+    document.body
+  );
+
+  return (
+    <>
+      <button className="ak-dots-btn" ref={btnRef} onClick={handleOpen} title="Actions">
+        <MoreHorizontal size={16} />
+      </button>
+      {menu}
+    </>
+  );
+}
 
 export default function AssignKpi() {
   const [employees, setEmployees]           = useState([]);
@@ -96,6 +213,11 @@ export default function AssignKpi() {
   const [cancelConfirm, setCancelConfirm]   = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [editingAssignment, setEditingAssignment] = useState(null);
+  const [viewAssignment, setViewAssignment] = useState(null);
+  const [viewMonthVersion, setViewMonthVersion] = useState(null);
+
+  const [monthVersions, setMonthVersions] = useState([]);
+  const [selectedMonthVersion, setSelectedMonthVersion] = useState(null);
 
   const [form, setForm] = useState({
     employee_id: "", template_id: "", period_type: "monthly",
@@ -130,67 +252,102 @@ export default function AssignKpi() {
     return `Annual ${form.year}`;
   };
 
-  const handleTemplateChange = (id) => {
+  const handleTemplateChange = async (id) => {
     setForm(f => ({ ...f, template_id: id }));
-    setSelectedTemplate(templates.find(t => t._id === id) || null);
+    const tpl = templates.find(t => t._id === id) || null;
+    setSelectedTemplate(tpl);
+    setSelectedMonthVersion(null);
+    setMonthVersions([]);
+    if (tpl) {
+      try {
+        const res = await axios.get(`${API_BASE}/api/kpi-monthly-versions?template_id=${id}`);
+        if (res.data.success) setMonthVersions(res.data.data);
+      } catch (err) {
+        console.error("Failed to fetch month versions", err);
+        setMonthVersions([]);
+      }
+    }
   };
 
-  const handleEdit = (a) => {
+  const handleMonthVersionChange = (versionId) => {
+    if (!versionId) {
+      setSelectedMonthVersion(null);
+      setForm(f => ({ ...f, monthly_version_id: "" }));
+      return;
+    }
+    const version = monthVersions.find(v => v._id === versionId);
+    setSelectedMonthVersion(version || null);
+    setForm(f => ({ ...f, monthly_version_id: versionId }));
+  };
+
+const handleEdit = (a) => {
     setEditingAssignment(a);
     const period = a.period || "";
     let period_type = a.period_type || "monthly";
-    let month = "March", year = "2026", quarter = "Q1";
+    let monthValue = "March", year = "2026", quarter = "Q1";
     if (period_type === "monthly") {
       const parts = period.split(" ");
-      month = parts[0] || "March";
-      year  = parts[1] || "2026";
+      monthValue = parts[0] || "March";
+      year = parts[1] || "2026";
     } else if (period_type === "quarterly") {
       const parts = period.split(" ");
       quarter = parts[0] || "Q1";
-      year    = parts[1] || "2026";
+      year = parts[1] || "2026";
     } else {
       year = period.replace("Annual ", "") || "2026";
     }
     const tplId = a.template_id?._id || "";
+    
+    // ✅ FIX: Check both monthly_version_id and month_version_id
+    const monthVersionId = a.monthly_version_id?._id || a.month_version_id?._id || "";
+    
     setForm({
       employee_id: a.employee_id?._id || "",
       template_id: tplId,
+      monthly_version_id: monthVersionId,
       period_type,
-      month,
+      month: monthValue,
       year,
       quarter,
       notes: a.notes || ""
     });
-    setSelectedTemplate(templates.find(t => t._id === tplId) || null);
+    const tpl = templates.find(t => t._id === tplId) || null;
+    setSelectedTemplate(tpl);
+    if (tplId) {
+      axios.get(`${API_BASE}/api/kpi-monthly-versions?template_id=${tplId}`)
+        .then(res => {
+          if (res.data.success) {
+            setMonthVersions(res.data.data);
+            if (monthVersionId) {
+              const v = res.data.data.find(v => v._id === monthVersionId);
+              setSelectedMonthVersion(v || null);
+            }
+          }
+        })
+        .catch(() => setMonthVersions([]));
+    }
     setShowModal(true);
-  };
+};
 
   const handleSubmit = async () => {
     if (!form.employee_id || !form.template_id)
       return showToast("Please select employee and template", "error");
-
-    // ✅ Notes is now mandatory
     if (!form.notes?.trim())
       return showToast("Notes / Instructions are required", "error");
-
     setSaving(true);
-
-    // ✅ Capture ID before any async operation to prevent stale closure bug
     const assignId = editingAssignment?._id;
-
     try {
       const payload = {
         employee_id: form.employee_id,
         template_id: form.template_id,
+        monthly_version_id: form.monthly_version_id || null,
         period: getPeriodLabel(),
         period_type: form.period_type,
         notes: form.notes.trim()
       };
-
       const res = assignId
         ? await axios.put(`${API_BASE}/api/kpi-assignments/${assignId}`, payload)
         : await axios.post(`${API_BASE}/api/kpi-assignments`, payload);
-
       if (res.data.success) {
         showToast(assignId ? "Assignment updated!" : "KPI assigned successfully!");
         closeModal();
@@ -221,6 +378,28 @@ export default function AssignKpi() {
     setDeleteConfirm(null);
   };
 
+  // ✅ NEW: View modal-க்கு month version fetch பண்ணுங்க
+const openView = async (assignment) => {
+  setViewAssignment(assignment);
+  setViewMonthVersion(null); // reset
+  
+  // If assignment has month_version_id, fetch its data
+  if (assignment.monthly_version_id?._id || assignment.month_version_id?._id) {
+    try {
+      const monthVerId = assignment.monthly_version_id?._id || assignment.month_version_id?._id;
+      const templateId = assignment.template_id?._id || assignment.template_id;
+      
+      const res = await axios.get(`${API_BASE}/api/kpi-monthly-versions?template_id=${templateId}`);
+      if (res.data.success) {
+        const version = res.data.data.find(v => v._id === monthVerId);
+        setViewMonthVersion(version || null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch month version for view", err);
+    }
+  }
+};
+
   const getStatusStyle = (status) => {
     if (status === "active")    return { color: "#16a34a", bg: "#f0fdf4" };
     if (status === "completed") return { color: "#2563eb", bg: "#eff6ff" };
@@ -239,12 +418,11 @@ export default function AssignKpi() {
   };
 
   const STATS = [
-    { label: "Total Assignments", value: assignments.length,                                    color: "#2563eb", bg: "#eff6ff", Icon: ClipboardList },
+    { label: "Total Assignments", value: assignments.length,                                       color: "#2563eb", bg: "#eff6ff", Icon: ClipboardList },
     { label: "Active",            value: assignments.filter(a => a.status === "active").length,    color: "#16a34a", bg: "#f0fdf4", Icon: CheckCircle2  },
     { label: "Completed",         value: assignments.filter(a => a.status === "completed").length, color: "#d97706", bg: "#fffbeb", Icon: Flag          },
   ];
 
-  // Owner role badge
   const ownerBadge = (role) => {
     const map = {
       self:    { label: "Self",    color: "#16a34a", bg: "#f0fdf4" },
@@ -316,7 +494,7 @@ export default function AssignKpi() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="ak-table-wrap" style={{ overflowX: "auto" }}>
+            <div className="ak-table-wrap">
               <table className="ak-main-table">
                 <colgroup>
                   <col style={{ width: "52px" }} />
@@ -326,7 +504,7 @@ export default function AssignKpi() {
                   <col style={{ width: "115px" }} />
                   <col style={{ width: "115px" }} />
                   <col style={{ width: "105px" }} />
-                  <col style={{ width: "170px" }} />
+                  <col style={{ width: "70px" }} />
                 </colgroup>
                 <thead>
                   <tr>
@@ -359,6 +537,11 @@ export default function AssignKpi() {
                         </td>
                         <td>
                           <span style={{ background: "#f3f4f6", color: "#374151", fontWeight: 600, padding: "4px 10px", borderRadius: 6, fontSize: 12, whiteSpace: "nowrap" }}>{a.period}</span>
+                          {a.monthly_version_id && (
+                            <span style={{ marginLeft: 6, background: "#dcfce7", color: "#16a34a", fontWeight: 600, padding: "2px 8px", borderRadius: 4, fontSize: 10, whiteSpace: "nowrap" }}>
+                              📅 {a.monthly_version_id.month}
+                            </span>
+                          )}
                         </td>
                         <td style={{ color: "#6b7280", fontSize: 12 }}>
                           {new Date(a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
@@ -366,14 +549,14 @@ export default function AssignKpi() {
                         <td>
                           <span style={{ background: st.bg, color: st.color, fontWeight: 700, padding: "4px 12px", borderRadius: 20, fontSize: 11, textTransform: "capitalize", whiteSpace: "nowrap" }}>{a.status}</span>
                         </td>
-                        <td>
-                          <div className="ak-action-btns">
-                            <button onClick={() => handleEdit(a)} style={{ background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", borderRadius: 6, padding: "4px 11px", fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>Edit</button>
-                            {a.status === "active" && (
-                              <button onClick={() => setCancelConfirm(a._id)} style={{ background: "#fff7ed", color: "#d97706", border: "1px solid #fed7aa", borderRadius: 6, padding: "4px 11px", fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>Cancel</button>
-                            )}
-                            <button onClick={() => setDeleteConfirm(a._id)} style={{ background: "#fff5f5", color: "#ef4444", border: "1px solid #fecaca", borderRadius: 6, padding: "4px 11px", fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>Delete</button>
-                          </div>
+                        <td style={{ textAlign: "center", overflow: "visible" }}>
+                          <ActionDropdown
+                            assignment={a}
+                            onView={openView} 
+                            onEdit={handleEdit}
+                            onCancel={setCancelConfirm}
+                            onDelete={setDeleteConfirm}
+                          />
                         </td>
                       </tr>
                     );
@@ -384,7 +567,7 @@ export default function AssignKpi() {
 
             {/* Mobile Cards */}
             <div className="ak-card-list">
-              {assignments.map((a, i) => {
+              {assignments.map((a) => {
                 const st = getStatusStyle(a.status);
                 return (
                   <div key={a._id} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px", background: "#fff" }}>
@@ -398,9 +581,17 @@ export default function AssignKpi() {
                           <p style={{ margin: 0, fontSize: 11, color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 180 }}>{a.employee_id?.email || ""}</p>
                         </div>
                       </div>
-                      <span style={{ background: st.bg, color: st.color, fontWeight: 700, padding: "4px 10px", borderRadius: 20, fontSize: 11, textTransform: "capitalize", flexShrink: 0 }}>{a.status}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ background: st.bg, color: st.color, fontWeight: 700, padding: "4px 10px", borderRadius: 20, fontSize: 11, textTransform: "capitalize", flexShrink: 0 }}>{a.status}</span>
+                        <ActionDropdown
+                          assignment={a}
+                          onView={openView} 
+                          onEdit={handleEdit}
+                          onCancel={setCancelConfirm}
+                          onDelete={setDeleteConfirm}
+                        />
+                      </div>
                     </div>
-
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px", fontSize: 13, marginBottom: 10 }}>
                       <div>
                         <span style={{ color: "#9ca3af", fontSize: 11, fontWeight: 600, textTransform: "uppercase" }}>Department</span>
@@ -424,14 +615,6 @@ export default function AssignKpi() {
                         </p>
                       </div>
                     </div>
-
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => handleEdit(a)} style={{ flex: 1, padding: "8px 0", background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Edit</button>
-                      {a.status === "active" && (
-                        <button onClick={() => setCancelConfirm(a._id)} style={{ flex: 1, padding: "8px 0", background: "#fff7ed", color: "#d97706", border: "1px solid #fed7aa", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                      )}
-                      <button onClick={() => setDeleteConfirm(a._id)} style={{ flex: 1, padding: "8px 0", background: "#fff5f5", color: "#ef4444", border: "1px solid #fecaca", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Delete</button>
-                    </div>
                   </div>
                 );
               })}
@@ -440,7 +623,95 @@ export default function AssignKpi() {
         )}
       </div>
 
-      {/* Assign / Edit Modal */}
+      {/* ── View Modal ── */}
+      {viewAssignment && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", zIndex: 1 }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>Assignment Details</h3>
+              <button onClick={() => { setViewAssignment(null); setViewMonthVersion(null); }}  style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#6b7280" }}>✕</button>
+            </div>
+            <div style={{ padding: "20px 24px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, background: "#f8fafc", borderRadius: 10, padding: "14px" }}>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#2563eb", fontSize: 18, flexShrink: 0 }}>
+                  {viewAssignment.employee_id?.name?.charAt(0) || "?"}
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 700, color: "#1a1a2e", fontSize: 15 }}>{viewAssignment.employee_id?.name || "Unknown"}</p>
+                  <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{viewAssignment.employee_id?.email || ""}</p>
+                  <p style={{ margin: "2px 0 0", fontSize: 12, color: "#6b7280" }}>{viewAssignment.employee_id?.designation} — {viewAssignment.employee_id?.department}</p>
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px", marginBottom: 20 }}>
+                {[
+                  { label: "Template",    value: viewAssignment.template_id?.template_name || "—" },
+                  { label: "Role",        value: viewAssignment.template_id?.role || "—" },
+                  { label: "Period",      value: viewAssignment.period },
+                  { label: "Period Type", value: viewAssignment.period_type },
+                  { label: "Status",      value: viewAssignment.status, badge: true },
+                  { label: "Assigned On", value: new Date(viewAssignment.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) },
+                ].map((item, i) => {
+                  const st = getStatusStyle(viewAssignment.status);
+                  return (
+                    <div key={i}>
+                      <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", marginBottom: 3 }}>{item.label}</p>
+                      {item.badge
+                        ? <span style={{ background: st.bg, color: st.color, fontWeight: 700, padding: "3px 12px", borderRadius: 20, fontSize: 12, textTransform: "capitalize" }}>{item.value}</span>
+                        : <p style={{ margin: 0, fontWeight: 600, color: "#1a1a2e", fontSize: 13, textTransform: item.label === "Period Type" ? "capitalize" : "none" }}>{item.value}</p>
+                      }
+                    </div>
+                  );
+                })}
+              </div>
+              {viewAssignment.notes && (
+                <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "12px 14px", marginBottom: 16 }}>
+                  <p style={{ margin: "0 0 4px", fontSize: 11, color: "#92400e", fontWeight: 700, textTransform: "uppercase" }}>Notes / Instructions</p>
+                  <p style={{ margin: 0, fontSize: 13, color: "#78350f", lineHeight: 1.6 }}>{viewAssignment.notes}</p>
+                </div>
+              )}
+              {/* ✅ FIX: Use viewMonthVersion.kpi_items if available */}
+{(viewMonthVersion?.kpi_items || viewAssignment.template_id?.kpi_items)?.length > 0 && (
+  <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: 14 }}>
+    
+    {/* Month version badge */}
+    {viewMonthVersion && (
+      <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 8, padding: "10px 12px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+        <CheckCircle2 size={14} color="#16a34a" />
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#16a34a" }}>
+          📅 Using {viewMonthVersion.month} Version — Specific Targets
+        </span>
+      </div>
+    )}
+    
+    <p style={{ margin: "0 0 10px", fontWeight: 700, fontSize: 13, color: "#0369a1" }}>
+      KPI Items — {(viewMonthVersion?.kpi_items || viewAssignment.template_id?.kpi_items).length} total
+    </p>
+    
+    {(viewMonthVersion?.kpi_items || viewAssignment.template_id?.kpi_items).map((item, i) => (
+      <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #e0f2fe", fontSize: 13, gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ color: "#1e40af", fontWeight: 500, display: "block", wordBreak: "break-word" }}>{item.kpi_name}</span>
+          {item.owner_role && item.owner_role !== "self" && (
+            <span style={{ marginTop: 2, display: "inline-block" }}>{ownerBadge(item.owner_role)}</span>
+          )}
+        </div>
+        <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+          <span style={{ color: "#6b7280" }}>Target: {item.target} {item.unit}</span>
+          <span style={{ fontWeight: 700, color: "#0369a1" }}>{item.weight}%</span>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+              <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
+                <button onClick={() => { setViewAssignment(null); setViewMonthVersion(null); }} style={{ padding: "10px 28px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Assign / Edit Modal ── */}
       {showModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 580, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
@@ -450,9 +721,7 @@ export default function AssignKpi() {
               </h3>
               <button onClick={closeModal} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#6b7280" }}>✕</button>
             </div>
-
             <div style={{ padding: "20px 24px" }}>
-              {/* Step 1 */}
               <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>1. Select Employee *</label>
                 <select value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))} style={inputStyle}>
@@ -463,8 +732,6 @@ export default function AssignKpi() {
                 </select>
                 <p style={{ margin: "5px 0 0", fontSize: 12, color: "#9ca3af" }}>Only active employees are shown</p>
               </div>
-
-              {/* Step 2 */}
               <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>2. Select KPI Template *</label>
                 <select value={form.template_id} onChange={e => handleTemplateChange(e.target.value)} style={inputStyle}>
@@ -474,8 +741,6 @@ export default function AssignKpi() {
                   ))}
                 </select>
               </div>
-
-              {/* Template Preview */}
               {selectedTemplate && (
                 <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: 16, marginBottom: 20 }}>
                   <p style={{ margin: "0 0 10px", fontWeight: 700, fontSize: 13, color: "#0369a1", display: "flex", alignItems: "center", gap: 6 }}>
@@ -486,11 +751,8 @@ export default function AssignKpi() {
                     <div key={i} className="ak-tpl-row" style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #e0f2fe", fontSize: 13, gap: 8 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <span style={{ color: "#1e40af", fontWeight: 500, display: "block", wordBreak: "break-word" }}>{item.kpi_name}</span>
-                        {/* ✅ Show owner_role badge */}
                         {item.owner_role && item.owner_role !== "self" && (
-                          <span style={{ marginTop: 2, display: "inline-block" }}>
-                            {ownerBadge(item.owner_role)}
-                          </span>
+                          <span style={{ marginTop: 2, display: "inline-block" }}>{ownerBadge(item.owner_role)}</span>
                         )}
                       </div>
                       <div className="ak-tpl-row-right" style={{ display: "flex", gap: 12, flexShrink: 0, alignItems: "center" }}>
@@ -501,8 +763,42 @@ export default function AssignKpi() {
                   ))}
                 </div>
               )}
-
-              {/* Step 3 */}
+              {selectedTemplate && (
+                <>
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={labelStyle}>Select Month Version (Optional)</label>
+                    <select value={form.monthly_version_id || ""} onChange={e => handleMonthVersionChange(e.target.value)} style={inputStyle}>
+                      <option value="">Use Template Default</option>
+                      {monthVersions.map(v => (
+                        <option key={v._id} value={v._id}>{v.month} — {v.month_status} ({v.kpi_items?.length} KPIs)</option>
+                      ))}
+                    </select>
+                    <p style={{ margin: "5px 0 0", fontSize: 12, color: "#9ca3af" }}>
+                      {monthVersions.length === 0
+                        ? "No month versions created yet. Go to KPI Templates → 📅 Months to create one."
+                        : "Select a month version to use its specific targets instead of template defaults."
+                      }
+                    </p>
+                  </div>
+                  {selectedMonthVersion && (
+                    <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 10, padding: 16, marginBottom: 20 }}>
+                      <p style={{ margin: "0 0 10px", fontWeight: 700, fontSize: 13, color: "#16a34a", display: "flex", alignItems: "center", gap: 6 }}>
+                        <CheckCircle2 size={14} color="#16a34a" />
+                        Using {selectedMonthVersion.month} Version — Specific Targets
+                      </p>
+                      {selectedMonthVersion.kpi_items?.map((item, i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #dcfce7", fontSize: 13 }}>
+                          <span style={{ color: "#166534", fontWeight: 500 }}>{item.kpi_name}</span>
+                          <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
+                            <span style={{ color: "#6b7280" }}>Target: {item.target} {item.unit}</span>
+                            <span style={{ fontWeight: 700, color: "#16a34a" }}>{item.weight}%</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
               <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>3. Review Period *</label>
                 <div className="ak-period-btns" style={{ display: "flex", gap: 8, marginBottom: 10 }}>
@@ -540,8 +836,6 @@ export default function AssignKpi() {
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{getPeriodLabel()}</span>
                 </div>
               </div>
-
-              {/* Step 4 — Notes MANDATORY */}
               <div style={{ marginBottom: 24 }}>
                 <label style={labelStyle}>
                   4. Notes / Instructions *
@@ -552,20 +846,12 @@ export default function AssignKpi() {
                   onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                   placeholder="Special instructions or targets for this employee (required)..."
                   rows={3}
-                  style={{
-                    ...inputStyle,
-                    resize: "vertical",
-                    borderColor: !form.notes?.trim() && form.notes !== undefined ? "#fca5a5" : "#d1d5db"
-                  }}
+                  style={{ ...inputStyle, resize: "vertical", borderColor: !form.notes?.trim() && form.notes !== undefined ? "#fca5a5" : "#d1d5db" }}
                 />
                 {!form.notes?.trim() && (
-                  <p style={{ margin: "4px 0 0", fontSize: 12, color: "#f59e0b" }}>
-                    ⚠ Instructions are required before saving
-                  </p>
+                  <p style={{ margin: "4px 0 0", fontSize: 12, color: "#f59e0b" }}>⚠ Instructions are required before saving</p>
                 )}
               </div>
-
-              {/* Footer */}
               <div className="ak-modal-footer" style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
                 <button onClick={closeModal} style={{ padding: "10px 24px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
                 <button onClick={handleSubmit} disabled={saving} style={{ padding: "10px 28px", border: "none", borderRadius: 8, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 14 }}>
@@ -577,13 +863,11 @@ export default function AssignKpi() {
         </div>
       )}
 
-      {/* Cancel Confirm Modal */}
+      {/* Cancel Confirm */}
       {cancelConfirm && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div style={{ background: "#fff", borderRadius: 12, padding: 28, maxWidth: 360, width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-              <AlertTriangle size={36} color="#d97706" />
-            </div>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><AlertTriangle size={36} color="#d97706" /></div>
             <h3 style={{ margin: "0 0 8px", color: "#1a1a2e" }}>Cancel Assignment?</h3>
             <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 20 }}>The employee will no longer see this KPI assignment.</p>
             <div style={{ display: "flex", gap: 12 }}>
@@ -594,13 +878,11 @@ export default function AssignKpi() {
         </div>
       )}
 
-      {/* Delete Confirm Modal */}
+      {/* Delete Confirm */}
       {deleteConfirm && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div style={{ background: "#fff", borderRadius: 12, padding: 28, maxWidth: 360, width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-              <Trash2 size={36} color="#ef4444" />
-            </div>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Trash2 size={36} color="#ef4444" /></div>
             <h3 style={{ margin: "0 0 8px", color: "#1a1a2e" }}>Delete Assignment?</h3>
             <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 20 }}>This action is permanent and cannot be undone.</p>
             <div style={{ display: "flex", gap: 12 }}>

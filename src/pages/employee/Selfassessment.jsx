@@ -75,75 +75,151 @@ export default function SelfAssessment() {
 
   useEffect(() => { fetchData(); }, []);
 
+  // const fetchData = async () => {
+  //   try {
+  //     const empRes = await axios.get(`${API_BASE}/api/employee/me/${employeeId}`);
+  //     setEmployee(empRes.data);
+
+  //     const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/${employeeId}`);
+  //     // const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/pending/${employeeId}`);
+
+  //     if (assignRes.data.success && assignRes.data.data) {
+  //       const assign = assignRes.data.data;
+  //       setAssignment(assign);
+  //       const kpiItems = assign.template_id?.kpi_items || [];
+
+  //       // ── CHANGE 1: owner_role include பண்றோம் ──
+  //       const initItems = kpiItems.map(item => ({
+  //         kpi_item_id:      item._id,
+  //         kpi_name:         item.kpi_name,
+  //         target:           item.target,
+  //         unit:             item.unit,
+  //         weight:           item.weight || 0,
+  //         is_admission_kpi: item.is_admission_kpi || false,
+  //         program_targets:  item.program_targets || [],
+  //         owner_role:       item.owner_role || "self",   // ← NEW
+  //         self_value:       "",
+  //         self_comment:     ""
+  //       }));
+
+  //       const existingRes = await axios.get(`${API_BASE}/api/self-assessment/by-assignment/${assign._id}`);
+  //       if (existingRes.data.success && existingRes.data.data) {
+  //         const prev = existingRes.data.data;
+  //         setExisting(prev);
+  //         setSubmitted(true);
+
+  //         const isFinalized = HR_FINALIZED_STATUSES.includes(prev.status) ||
+  //           prev.isLocked === true ||
+  //           prev.hr_finalized === true ||
+  //           (prev.final_score !== undefined && prev.final_score !== null);
+
+  //         if (isFinalized) setActiveTab("completed");
+
+  //         const filledItems = initItems.map(item => {
+  //           const prevItem = prev.items.find(p => p.kpi_item_id === item.kpi_item_id);
+  //           return prevItem
+  //             ? {
+  //                 ...item,
+  //                 weight:           item.weight,
+  //                 is_admission_kpi: item.is_admission_kpi,
+  //                 program_targets:  item.program_targets,
+  //                 owner_role:       item.owner_role,     // ← keep owner_role
+  //                 self_value:       prevItem.self_value,
+  //                 self_comment:     prevItem.self_comment || ""
+  //               }
+  //             : item;
+  //         });
+  //         setForm({ items: filledItems, overall_comment: prev.overall_comment || "" });
+  //       } else {
+  //         setForm({ items: initItems, overall_comment: "" });
+  //       }
+
+  //       await fetchLogs(assign._id);
+  //     }
+
+  //     await fetchCompletedReviews();
+  //   } catch (err) {
+  //     console.error(err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
   const fetchData = async () => {
-    try {
-      const empRes = await axios.get(`${API_BASE}/api/employee/me/${employeeId}`);
-      setEmployee(empRes.data);
+  try {
+    const empRes = await axios.get(`${API_BASE}/api/employee/me/${employeeId}`);
+    setEmployee(empRes.data);
 
-      const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/${employeeId}`);
-      // const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/pending/${employeeId}`);
+    const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/${employeeId}`);
 
-      if (assignRes.data.success && assignRes.data.data) {
-        const assign = assignRes.data.data;
-        setAssignment(assign);
-        const kpiItems = assign.template_id?.kpi_items || [];
+    if (assignRes.data.success && assignRes.data.data) {
+      const assign = assignRes.data.data;
+      setAssignment(assign);
 
-        // ── CHANGE 1: owner_role include பண்றோம் ──
-        const initItems = kpiItems.map(item => ({
-          kpi_item_id:      item._id,
-          kpi_name:         item.kpi_name,
-          target:           item.target,
-          unit:             item.unit,
-          weight:           item.weight || 0,
-          is_admission_kpi: item.is_admission_kpi || false,
-          program_targets:  item.program_targets || [],
-          owner_role:       item.owner_role || "self",   // ← NEW
-          self_value:       "",
-          self_comment:     ""
-        }));
+      // ✅ FIX: Use month_version_id.kpi_items if available
+      const kpiItems = assign.month_version_id?.kpi_items 
+        ? assign.month_version_id.kpi_items 
+        : assign.template_id?.kpi_items || [];
 
-        const existingRes = await axios.get(`${API_BASE}/api/self-assessment/by-assignment/${assign._id}`);
-        if (existingRes.data.success && existingRes.data.data) {
-          const prev = existingRes.data.data;
-          setExisting(prev);
-          setSubmitted(true);
+      console.log("=== DEBUG ===");
+      console.log("Assignment period:", assign.period);
+      console.log("Month version:", assign.month_version_id?.month);
+      console.log("KPI items source:", assign.month_version_id?.kpi_items ? "month_version" : "template_default");
+      console.log("KPI items:", kpiItems);
 
-          const isFinalized = HR_FINALIZED_STATUSES.includes(prev.status) ||
-            prev.isLocked === true ||
-            prev.hr_finalized === true ||
-            (prev.final_score !== undefined && prev.final_score !== null);
+      const initItems = kpiItems.map(item => ({
+        kpi_item_id:      item._id || item.kpi_item_id,
+        kpi_name:         item.kpi_name,
+        target:           item.target,
+        unit:             item.unit,
+        weight:           item.weight || 0,
+        is_admission_kpi: item.is_admission_kpi || false,
+        program_targets:  item.program_targets || [],
+        owner_role:       item.owner_role || "self",
+        self_value:       "",
+        self_comment:     ""
+      }));
 
-          if (isFinalized) setActiveTab("completed");
+      const existingRes = await axios.get(`${API_BASE}/api/self-assessment/by-assignment/${assign._id}`);
+      if (existingRes.data.success && existingRes.data.data) {
+        const prev = existingRes.data.data;
+        setExisting(prev);
+        setSubmitted(true);
 
-          const filledItems = initItems.map(item => {
-            const prevItem = prev.items.find(p => p.kpi_item_id === item.kpi_item_id);
-            return prevItem
-              ? {
-                  ...item,
-                  weight:           item.weight,
-                  is_admission_kpi: item.is_admission_kpi,
-                  program_targets:  item.program_targets,
-                  owner_role:       item.owner_role,     // ← keep owner_role
-                  self_value:       prevItem.self_value,
-                  self_comment:     prevItem.self_comment || ""
-                }
-              : item;
-          });
-          setForm({ items: filledItems, overall_comment: prev.overall_comment || "" });
-        } else {
-          setForm({ items: initItems, overall_comment: "" });
-        }
+        const isFinalized = HR_FINALIZED_STATUSES.includes(prev.status) ||
+          prev.isLocked === true ||
+          prev.hr_finalized === true ||
+          (prev.final_score !== undefined && prev.final_score !== null);
 
-        await fetchLogs(assign._id);
+        if (isFinalized) setActiveTab("completed");
+
+        const filledItems = initItems.map(item => {
+          const prevItem = prev.items.find(p => p.kpi_item_id === item.kpi_item_id);
+          return prevItem
+            ? {
+                ...item,
+                self_value:   prevItem.self_value,
+                self_comment: prevItem.self_comment || ""
+              }
+            : item;
+        });
+        setForm({ items: filledItems, overall_comment: prev.overall_comment || "" });
+      } else {
+        setForm({ items: initItems, overall_comment: "" });
       }
 
-      await fetchCompletedReviews();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+      await fetchLogs(assign._id);
     }
-  };
+
+    await fetchCompletedReviews();
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const fetchCompletedReviews = async () => {
     try {
