@@ -81,7 +81,9 @@ export default function PerformanceReviews() {
   const [reviewForm,         setReviewForm]          = useState({ items: [], hr_comment: "" });
   const [saving,             setSaving]              = useState(false);
   const [toast,              setToast]               = useState(null);
-  const [activeTab,          setActiveTab]           = useState("pending");
+  // const [activeTab,          setActiveTab]           = useState("pending");
+  const isEmployeeInit = localStorage.getItem("hrRole") === "employee";
+const [activeTab, setActiveTab] = useState(isEmployeeInit ? "dailylogs" : "pending");
 
   const [allAssignments,      setAllAssignments]      = useState([]);
   const [selectedEmployeeLog, setSelectedEmployeeLog] = useState("");
@@ -349,11 +351,17 @@ const handleSubmitReview = async () => {
     { label: "Completed",       value: completedReviews.length,   color: "#16a34a", bg: "#f0fdf4", Icon: CheckCircle2  },
   ];
 
-  const TABS = [
-    { id: "pending",   Icon: Clock,        label: `Pending (${pendingAssessments.length})` },
-    { id: "completed", Icon: CheckCircle2, label: `Completed (${completedReviews.length})` },
-    { id: "dailylogs", Icon: Calendar,     label: "Daily Logs" },
-  ];
+  const isEmployee = localStorage.getItem("hrRole") === "employee";
+
+const TABS = isEmployee
+  ? [
+      { id: "dailylogs", Icon: Calendar, label: "Daily Logs" },
+    ]
+  : [
+      { id: "pending",   Icon: Clock,        label: `Pending (${pendingAssessments.length})` },
+      { id: "completed", Icon: CheckCircle2, label: `Completed (${completedReviews.length})` },
+      { id: "dailylogs", Icon: Calendar,     label: "Daily Logs" },
+    ];
 
   return (
     <div className="pr-page" style={{ fontFamily: "'Segoe UI', sans-serif", minHeight: "100vh", background: "#f4f6fb" }}>
@@ -365,13 +373,26 @@ const handleSubmitReview = async () => {
         </div>
       )}
 
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#1a1a2e" }}>Performance Reviews</h2>
-        <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 14 }}>Review employee self assessments and finalize scores</p>
-      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+  <div>
+    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#1a1a2e" }}>Performance Reviews</h2>
+    <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 14 }}>Review employee self assessments and finalize scores</p>
+  </div>
+    <button
+      onClick={() => window.open(`${API_BASE}/api/export-excel/all-employees`, "_blank")}
+      style={{
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "10px 20px", border: "none", borderRadius: 9,
+        background: "#1a1a2e", color: "#fff",
+        fontWeight: 700, fontSize: 13, cursor: "pointer",
+      }}
+    >
+      ⬇️ Export All Employees Excel
+    </button>
+</div>
 
       <div className="pr-stats" style={{ display: "grid", gap: 16, marginBottom: 24 }}>
-        {STATS.map((s, i) => (
+          {!isEmployee && STATS.map((s, i) => (
           <div key={i} style={{ background: "#fff", borderRadius: 12, padding: "18px 20px", border: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <p style={{ margin: "0 0 4px", fontSize: 12, color: "#6b7280", fontWeight: 600, textTransform: "uppercase" }}>{s.label}</p>

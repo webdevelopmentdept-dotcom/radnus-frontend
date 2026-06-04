@@ -1182,15 +1182,17 @@ function DailyTab() {
                       </td>
 
                       <td style={S.tableCell}>
-                        <div style={{ display: "flex", gap: 5 }}>
-                          <button onClick={() => setDrawerRecord(r)} style={S.actionBtn(false)}>
-                            <Eye size={11} />View
-                          </button>
-                          <button onClick={() => setMarkModal({ employee: r.employee, existing: r._firstIn ? r : null })} style={S.actionBtn(true)}>
-                            <Edit3 size={11} />{r._firstIn ? "Edit" : "Mark"}
-                          </button>
-                        </div>
-                      </td>
+  <div style={{ display: "flex", gap: 5 }}>
+    <button onClick={() => setDrawerRecord(r)} style={S.actionBtn(false)}>
+      <Eye size={11} />View
+    </button>
+    {localStorage.getItem("hrRole") !== "employee" && (
+      <button onClick={() => setMarkModal({ employee: r.employee, existing: r._firstIn ? r : null })} style={S.actionBtn(true)}>
+        <Edit3 size={11} />{r._firstIn ? "Edit" : "Mark"}
+      </button>
+    )}
+  </div>
+</td>
                     </tr>
                   );
                 })}

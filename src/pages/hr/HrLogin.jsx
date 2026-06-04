@@ -25,21 +25,25 @@ export default function HrLogin() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setError(data.msg || "Invalid HR credentials");
+        setError(data.msg || "Invalid credentials");
         setLoading(false);
         return;
       }
 
-      // ✅ Save HR info to localStorage so other pages can use it
-      // Adjust keys based on what your API actually returns:
-      // Common patterns: data.hr, data.user, data.data, data._id
       const hrInfo = data.hr || data.user || data.data || {};
 
       localStorage.setItem("hrToken", data.token || "");
-     localStorage.setItem("hrId",    hrInfo._id || hrInfo.id || "hr_admin_001");
-      localStorage.setItem("hrUser",  JSON.stringify(hrInfo));
+      localStorage.setItem("hrId", hrInfo._id || hrInfo.id || "hr_admin_001");
+      localStorage.setItem("hrUser", JSON.stringify(hrInfo));
+      localStorage.setItem("hrRole", data.role || hrInfo.role || "hr");
 
-      navigate("/hr/dashboard/applicants");
+      // ✅ Role பொறுத்து redirect
+      if (data.role === "employee") {
+        navigate("/hr/dashboard/attendance/monthly");
+      } else {
+        navigate("/hr/dashboard/applicants");
+      }
+
     } catch (err) {
       setError("Server error");
     } finally {

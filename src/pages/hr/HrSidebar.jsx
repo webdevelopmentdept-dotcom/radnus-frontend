@@ -33,31 +33,23 @@ export default function HrSidebar() {
   const [show, setShow] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // ✅ Role check
+  const hrRole = localStorage.getItem("hrRole") || "hr";
+  const isEmployee = hrRole === "employee";
+
   useEffect(() => {
+    if (isEmployee) return; // Employee ku notification fetch வேண்டாம்
     const fetchUnread = async () => {
       try {
-        // const token = localStorage.getItem("authToken");
-        // if (!id) return;
-        // const res = await axios.get(`${API_BASE}/api/notifications/hr/${id}`);
-
         const token = localStorage.getItem("authToken");
         if (!token) return;
-
-        // ✅ get HR id from token
         const payload = JSON.parse(atob(token.split(".")[1]));
         const hrId = payload?.id;
-
         if (!hrId) return;
-
         const res = await axios.get(
           `${API_BASE}/api/notifications/hr/${hrId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-
         const all = res.data?.data || res.data || [];
         setUnreadCount(all.filter(n => !n.isRead).length);
       } catch (e) { console.log(e); }
@@ -235,7 +227,9 @@ export default function HrSidebar() {
 
         {/* Brand */}
         <div className="hr-brand">
-          <span className="hr-brand-title">🏢 HR Panel</span>
+          <span className="hr-brand-title">
+            {isEmployee ? "👤 Employee Panel" : "🏢 HR Panel"}
+          </span>
           <button className="hr-close-btn" onClick={close}>
             <HugeiconsIcon icon={Cancel01Icon} size={20} color="rgba(255,255,255,0.6)" strokeWidth={2} />
           </button>
@@ -243,514 +237,466 @@ export default function HrSidebar() {
 
         <nav className="hr-nav">
 
-          {/* ── DASHBOARD ── */}
-          <NavLink to="/hr/dashboard" end
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={Home01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Dashboard
-          </NavLink>
-
-          {/* ══════════════════════════════
-              RECRUITMENT
-          ══════════════════════════════ */}
-          <div className="hr-section">Recruitment</div>
-
-          <NavLink to="/hr/dashboard/applicants"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={MailSend01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Applicants ✅
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/job-postings"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={TaskDone01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Job Postings ✅
-          </NavLink>
-
-          {/* ══════════════════════════════
-              EMPLOYEES
-          ══════════════════════════════ */}
-          <div className="hr-section">Employees</div>
-
-          <NavLink to="/hr/dashboard/employees"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={UserMultiple02Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            All Employees ✅
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/hr-pending"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={Clock01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Pending Approvals ✅
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/hr-approved"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={CheckmarkCircle01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Approved ✅
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/hr-reject"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={CancelCircleIcon} size={18} color="currentColor" strokeWidth={1.8} />
-            Rejected ✅
-          </NavLink>
-
-          {/* ══════════════════════════════
-              REPORTS
-          ══════════════════════════════ */}
-          <div className="hr-section">Reports</div>
-
-          <NavLink to="/hr/dashboard/active-employees"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={BarChartIcon} size={18} color="currentColor" strokeWidth={1.8} />
-            Activated Employees ✅
-          </NavLink>
-
-          {/* ══════════════════════════════
-              LEAVE
-          ══════════════════════════════ */}
-          {/* <div className="hr-section">Leave</div>
-
-          <NavLink to="/hr/dashboard/leave/requests"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Requests
-          </NavLink> */}
-
-
-          {/* ══════════════════════════════
-    ATTENDANCE & LEAVE
+         {/* ══════════════════════════════
+    EMPLOYEE VIEW — Restricted
 ══════════════════════════════ */}
-<div className="hr-section">Attendance & Leave</div>
+{isEmployee ? (
+  <>
+    {/* Attendance & Leave */}
+    <div className="hr-section">Attendance & Leave</div>
 
-<NavLink to="/hr/dashboard/attendance/monthly"
-  className={({ isActive }) => isActive ? "active" : ""}
-  onClick={close}>
-  <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-  Attendance
-</NavLink>
+    <NavLink to="/hr/dashboard/attendance/monthly"
+      className={({ isActive }) => isActive ? "active" : ""}
+      onClick={close}>
+      <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+      Attendance
+    </NavLink>
 
-<NavLink to="/hr/dashboard/leave/requests"
-  className={({ isActive }) => isActive ? "active" : ""}
-  onClick={close}>
-  <HugeiconsIcon icon={Clock01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-  Leave Requests
-</NavLink>
+    {/* Performance — KPI */}
+    <div className="hr-section">Performance — KPI</div>
 
-<NavLink to="/hr/dashboard/essl-manager"
-  className={({ isActive }) => isActive ? "active" : ""}
-  onClick={close}>
-  <HugeiconsIcon icon={Notification01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-  eSSL Manager
-</NavLink>
+    <NavLink to="/hr/dashboard/performance/reviews"
+      className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+      onClick={close}>
+      <HugeiconsIcon icon={StarIcon} size={16} color="currentColor" strokeWidth={1.8} />
+      Reviews ✅
+    </NavLink>
 
-          {/* ══════════════════════════════
-              PERFORMANCE — KPI FLOW
-              Step 1 → 2 → 3 → 4
-          ══════════════════════════════ */}
-          <div className="hr-section">Performance — KPI</div>
-
-          {/* Step 1: Create the rulebook */}
-          <NavLink to="/hr/dashboard/performance/kpi-templates"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={Target01Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            KPI Templates ✅
-            <span className="hr-flow-label">1</span>
-          </NavLink>
-
-          {/* Step 2: Assign to employee */}
-          <NavLink to="/hr/dashboard/performance/assign-kpi"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={Task01Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            Assign KPIs ✅
-            <span className="hr-flow-label">2</span>
-          </NavLink>
-
-          {/* Step 3: HR reviews submitted actuals */}
-          <NavLink to="/hr/dashboard/performance/reviews"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={StarIcon} size={16} color="currentColor" strokeWidth={1.8} />
-            Reviews ✅
-            <span className="hr-flow-label">3</span>
-          </NavLink>
-
-          {/* Step 4: See final scores */}
-          <NavLink to="/hr/dashboard/performance/reports"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
-            Performance Reports ✅
-            <span className="hr-flow-label">4</span>
-          </NavLink>
-
-          {/* ══════════════════════════════
-              PERFORMANCE — OKR FLOW
-              Step 1 → 2
-          ══════════════════════════════ */}
-          <div className="hr-section">Performance — OKR</div>
-
-          {/* Step 1: Create team objectives */}
-          <NavLink to="/hr/dashboard/performance/okr-setup"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={Setting07Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            OKR Setup ✅
-            <span className="hr-flow-label">1</span>
-          </NavLink>
-
-          {/* Step 2: Track team progress */}
-          <NavLink to="/hr/dashboard/performance/okr-dashboard"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={Target01Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            OKR Dashboard ✅
-            <span className="hr-flow-label">2</span>
-          </NavLink>
-
-          {/* ══════════════════════════════
-              PERFORMANCE — OTHERS
-          ══════════════════════════════ */}
-          <div className="hr-section">Performance — Others</div>
-
-          <NavLink to="/hr/dashboard/performance/variable-pay"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={ChartAverageIcon} size={18} color="currentColor" strokeWidth={1.8} />
-            Variable Pay
-          </NavLink>
-
-          {/* ══════════════════════════════
-                 APPRAISAL
-            ══════════════════════════════ */}
-          <div className="hr-section">Appraisal</div>
-
-          <NavLink to="/hr/dashboard/appraisal"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={ChartAverageIcon} size={18} color="currentColor" strokeWidth={1.8} />
-            Appraisal Hub
-          </NavLink>
-
-
-          <NavLink to="/hr/dashboard/performance/esop"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={BarChartIcon} size={18} color="currentColor" strokeWidth={1.8} />
-            ESOP
-          </NavLink>
-{/* 
-          <NavLink to="/hr/dashboard/attendance/monthly"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Attendance
-          </NavLink> */}
-
-          {/* ══════════════════════════════
-              RECOGNITION
-          ══════════════════════════════ */}
-          <div className="hr-section">Recognition</div>
-
-          <NavLink to="/hr/dashboard/recognition/awards"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={Medal01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Awards Hub
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/recognition/impact-bonus"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={Medal01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Impact Bonus
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/recognition/engagement-calendar"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Engagement Calendar
-          </NavLink>
-
-          {/* ══════════════════════════════
-              GRADING
-          ══════════════════════════════ */}
-          <div className="hr-section">Grading</div>
-
-          <NavLink to="/hr/dashboard/grading/grade-master"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={Medal01Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            Grade Master ✅
-            <span className="hr-flow-label">1</span>
-          </NavLink>
-
-          {/* Step 2: Set dept-specific salary bands ← NEW */}
-          <NavLink to="/hr/dashboard/grading/dept-salary"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={BarChartIcon} size={16} color="currentColor" strokeWidth={1.8} />
-            Dept Salary Bands ✅
-            <span className="hr-flow-label">2</span>
-          </NavLink>
-
-
-          <NavLink to="/hr/dashboard/grading/assign-grade"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={UserMultiple02Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            Assign Grade ✅
-            <span className="hr-flow-label">2</span>
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/grading/grade-reports"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
-            Grade Reports ✅
-            <span className="hr-flow-label">3</span>
-          </NavLink>
-
-          {/* ══════════════════════════════
-              360° FEEDBACK
-          ══════════════════════════════ */}
-          <div className="hr-section">360° Feedback</div>
-
-          <NavLink to="/hr/dashboard/feedback/setup"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={Setting07Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            Cycle Setup
-            <span className="hr-flow-label">1</span>
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/feedback/nominations"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={UserMultiple02Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            Nominations
-            <span className="hr-flow-label">2</span>
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/feedback/manager-feedback"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={StarIcon} size={16} color="currentColor" strokeWidth={1.8} />
-            HR Feedback
-            <span className="hr-flow-label">3</span>
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/feedback/submissions"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={TaskDone01Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            Submissions
-            <span className="hr-flow-label">4</span>
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/feedback/reports"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
-            Feedback Reports
-            <span className="hr-flow-label">5</span>
-          </NavLink>
-
-
-          <div className="hr-section">Training</div>
-
-          <NavLink to="/hr/dashboard/training"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-
-            <HugeiconsIcon icon={Target01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-
-            Training Roadmap
-          </NavLink>
-
-
-          {/* ══════════════════════════════
-                        INCENTIVE
-            ══════════════════════════════ */}
-          <div className="hr-section">Incentive</div>
-
-          <NavLink to="/hr/dashboard/incentives/plans"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
-            Incentive Plans
-            <span className="hr-flow-label">1</span>
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/incentives/assign"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={UserMultiple02Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            Assign Plans
-            <span className="hr-flow-label">2</span>
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/incentives/results"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={Medal01Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            Results & Payout
-            <span className="hr-flow-label">3</span>
-          </NavLink>
-
-          {/* ══════════════════════════════
-                      MASTERS
-            ══════════════════════════════ */}
-          <div className="hr-section">Masters</div>
-
-          <NavLink to="/hr/dashboard/masters/departments"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={Building04Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Departments ✅
-          </NavLink>
-
-
-          <NavLink to="/hr/dashboard/masters/sop"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={TaskDone01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            SOP Management ✅
-          </NavLink>
-
-          {/* ══════════════════════════════
-              POLICIES  ← ADD THIS SECTION
-             ══════════════════════════════ */}
-          <div className="hr-section">Policies</div>
-
-          <NavLink to="/hr/dashboard/policies"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={TaskDone01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Policy Management ✅
-          </NavLink>
-
-          <NavLink to="/hr/dashboard/policies/quiz"
-            className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-            onClick={close}>
-            <HugeiconsIcon icon={TaskDone01Icon} size={16} color="currentColor" strokeWidth={1.8} />
-            Quiz Management ✅
-            <span className="hr-flow-label">2</span>
-          </NavLink>
-
-          {/* ══════════════════════════════
-    ANNOUNCEMENTS
-══════════════════════════════ */}
-          <div className="hr-section">Announcements</div>
-
-          <NavLink to="/hr/dashboard/announcements"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={Notification01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Announcements
-          </NavLink>
-
-          {/* ══════════════════════════════
-    ESSL BIOMETRIC
-══════════════════════════════ */}
-          {/* <div className="hr-section">Biometric</div>
-
-          <NavLink to="/hr/dashboard/essl-manager"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={Notification01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            eSSL Manager
-          </NavLink> */}
-
-          {/* ══════════════════════════════
-                      WELLNESS
-            ══════════════════════════════ */}
-          <div className="hr-section">Wellness</div>
-
-          <NavLink to="/hr/dashboard/wellness"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Wellness Dashboard
-          </NavLink>
-
-
-          {/* ══════════════════════════════
-                        CLUBS
+    <NavLink to="/hr/dashboard/performance/reports"
+      className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+      onClick={close}>
+      <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
+      Performance Reports ✅
+    </NavLink>
+  </>
+) : (
+            <>
+              {/* ══════════════════════════════
+                  HR VIEW — All Modules
               ══════════════════════════════ */}
-          <div className="hr-section">Clubs</div>
 
-          <NavLink to="/hr/dashboard/clubs"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={Building04Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Corporate Clubs
-          </NavLink>
+              {/* DASHBOARD */}
+              <NavLink to="/hr/dashboard" end
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Home01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Dashboard
+              </NavLink>
 
-          {/* ══════════════════════════════
-                    RETENTION (HR ONLY)
-              ══════════════════════════════ */}
-          <div className="hr-section">Retention</div>
+              {/* RECRUITMENT */}
+              <div className="hr-section">Recruitment</div>
 
-          <NavLink to="/hr/dashboard/retention-plan"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={StarIcon} size={18} />
-            Retention Plan
-          </NavLink>
+              <NavLink to="/hr/dashboard/applicants"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={MailSend01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Applicants ✅
+              </NavLink>
 
-          <NavLink to="/hr/dashboard/leadership-track"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={Target01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Leadership Track
-          </NavLink>
+              <NavLink to="/hr/dashboard/job-postings"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={TaskDone01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Job Postings ✅
+              </NavLink>
 
-          <NavLink to="/hr/dashboard/alumni-network"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
+              {/* EMPLOYEES */}
+              <div className="hr-section">Employees</div>
 
-            <HugeiconsIcon icon={Building04Icon} size={18} color="currentColor" strokeWidth={1.8} />
+              <NavLink to="/hr/dashboard/employees"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={UserMultiple02Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                All Employees ✅
+              </NavLink>
 
-            Alumni Network
-          </NavLink>
+              <NavLink to="/hr/dashboard/hr-pending"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Clock01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Pending Approvals ✅
+              </NavLink>
 
-          {/* ══════════════════════════════
-              SETTINGS & NOTIFICATIONS
-          ══════════════════════════════ */}
-          <div className="hr-section">Settings</div>
+              <NavLink to="/hr/dashboard/hr-approved"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={CheckmarkCircle01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Approved ✅
+              </NavLink>
 
-          <NavLink to="/hr/dashboard/settings"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={Settings01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Settings
-          </NavLink>
+              <NavLink to="/hr/dashboard/hr-reject"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={CancelCircleIcon} size={18} color="currentColor" strokeWidth={1.8} />
+                Rejected ✅
+              </NavLink>
 
-          <NavLink to="/hr/dashboard/notifications"
-            className={({ isActive }) => isActive ? "active" : ""}
-            onClick={close}>
-            <HugeiconsIcon icon={Notification01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-            Notifications
-            {unreadCount > 0 && (
-              <span className="hr-notif-badge">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </NavLink>
+              {/* REPORTS */}
+              <div className="hr-section">Reports</div>
+
+              <NavLink to="/hr/dashboard/active-employees"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={BarChartIcon} size={18} color="currentColor" strokeWidth={1.8} />
+                Activated Employees ✅
+              </NavLink>
+
+              {/* ATTENDANCE & LEAVE */}
+              <div className="hr-section">Attendance & Leave</div>
+
+              <NavLink to="/hr/dashboard/attendance/monthly"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Attendance
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/leave/requests"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Clock01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Leave Requests
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/essl-manager"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Notification01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                eSSL Manager
+              </NavLink>
+
+              {/* PERFORMANCE — KPI */}
+              <div className="hr-section">Performance — KPI</div>
+
+              <NavLink to="/hr/dashboard/performance/kpi-templates"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={Target01Icon} size={16} color="currentColor" strokeWidth={1.8} />
+                KPI Templates ✅
+                <span className="hr-flow-label">1</span>
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/performance/assign-kpi"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={Task01Icon} size={16} color="currentColor" strokeWidth={1.8} />
+                Assign KPIs ✅
+                <span className="hr-flow-label">2</span>
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/performance/reviews"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={StarIcon} size={16} color="currentColor" strokeWidth={1.8} />
+                Reviews ✅
+                <span className="hr-flow-label">3</span>
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/performance/reports"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
+                Performance Reports ✅
+                <span className="hr-flow-label">4</span>
+              </NavLink>
+
+              {/* PERFORMANCE — OKR */}
+              <div className="hr-section">Performance — OKR</div>
+
+              <NavLink to="/hr/dashboard/performance/okr-setup"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={Setting07Icon} size={16} color="currentColor" strokeWidth={1.8} />
+                OKR Setup ✅
+                <span className="hr-flow-label">1</span>
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/performance/okr-dashboard"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={Target01Icon} size={16} color="currentColor" strokeWidth={1.8} />
+                OKR Dashboard ✅
+                <span className="hr-flow-label">2</span>
+              </NavLink>
+
+              {/* PERFORMANCE — OTHERS */}
+              <div className="hr-section">Performance — Others</div>
+
+              <NavLink to="/hr/dashboard/performance/variable-pay"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={ChartAverageIcon} size={18} color="currentColor" strokeWidth={1.8} />
+                Variable Pay
+              </NavLink>
+
+              {/* APPRAISAL */}
+              <div className="hr-section">Appraisal</div>
+
+              <NavLink to="/hr/dashboard/appraisal"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={ChartAverageIcon} size={18} color="currentColor" strokeWidth={1.8} />
+                Appraisal Hub
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/performance/esop"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={BarChartIcon} size={18} color="currentColor" strokeWidth={1.8} />
+                ESOP
+              </NavLink>
+
+              {/* RECOGNITION */}
+              <div className="hr-section">Recognition</div>
+
+              <NavLink to="/hr/dashboard/recognition/awards"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Medal01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Awards Hub
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/recognition/impact-bonus"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Medal01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Impact Bonus
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/recognition/engagement-calendar"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Engagement Calendar
+              </NavLink>
+
+              {/* GRADING */}
+              <div className="hr-section">Grading</div>
+
+              <NavLink to="/hr/dashboard/grading/grade-master"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={Medal01Icon} size={16} color="currentColor" strokeWidth={1.8} />
+                Grade Master ✅
+                <span className="hr-flow-label">1</span>
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/grading/dept-salary"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={BarChartIcon} size={16} color="currentColor" strokeWidth={1.8} />
+                Dept Salary Bands ✅
+                <span className="hr-flow-label">2</span>
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/grading/assign-grade"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={UserMultiple02Icon} size={16} color="currentColor" strokeWidth={1.8} />
+                Assign Grade ✅
+                <span className="hr-flow-label">2</span>
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/grading/grade-reports"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
+                Grade Reports ✅
+                <span className="hr-flow-label">3</span>
+              </NavLink>
+
+              {/* 360° FEEDBACK */}
+              <div className="hr-section">360° Feedback</div>
+
+              <NavLink to="/hr/dashboard/feedback/setup"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={Setting07Icon} size={16} color="currentColor" strokeWidth={1.8} />
+                Cycle Setup
+                <span className="hr-flow-label">1</span>
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/feedback/nominations"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={UserMultiple02Icon} size={16} color="currentColor" strokeWidth={1.8} />
+                Nominations
+                <span className="hr-flow-label">2</span>
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/feedback/manager-feedback"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={StarIcon} size={16} color="currentColor" strokeWidth={1.8} />
+                HR Feedback
+                <span className="hr-flow-label">3</span>
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/feedback/submissions"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={TaskDone01Icon} size={16} color="currentColor" strokeWidth={1.8} />
+                Submissions
+                <span className="hr-flow-label">4</span>
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/feedback/reports"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
+                Feedback Reports
+                <span className="hr-flow-label">5</span>
+              </NavLink>
+
+              {/* TRAINING */}
+              <div className="hr-section">Training</div>
+
+              <NavLink to="/hr/dashboard/training"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Target01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Training Roadmap
+              </NavLink>
+
+              {/* INCENTIVE */}
+              <div className="hr-section">Incentive</div>
+
+              <NavLink to="/hr/dashboard/incentives/plans"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
+                Incentive Plans
+                <span className="hr-flow-label">1</span>
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/incentives/assign"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={UserMultiple02Icon} size={16} color="currentColor" strokeWidth={1.8} />
+                Assign Plans
+                <span className="hr-flow-label">2</span>
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/incentives/results"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={Medal01Icon} size={16} color="currentColor" strokeWidth={1.8} />
+                Results & Payout
+                <span className="hr-flow-label">3</span>
+              </NavLink>
+
+              {/* MASTERS */}
+              <div className="hr-section">Masters</div>
+
+              <NavLink to="/hr/dashboard/masters/departments"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Building04Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Departments ✅
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/masters/sop"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={TaskDone01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                SOP Management ✅
+              </NavLink>
+
+              {/* POLICIES */}
+              <div className="hr-section">Policies</div>
+
+              <NavLink to="/hr/dashboard/policies"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={TaskDone01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Policy Management ✅
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/policies/quiz"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={TaskDone01Icon} size={16} color="currentColor" strokeWidth={1.8} />
+                Quiz Management ✅
+                <span className="hr-flow-label">2</span>
+              </NavLink>
+
+              {/* ANNOUNCEMENTS */}
+              <div className="hr-section">Announcements</div>
+
+              <NavLink to="/hr/dashboard/announcements"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Notification01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Announcements
+              </NavLink>
+
+              {/* WELLNESS */}
+              <div className="hr-section">Wellness</div>
+
+              <NavLink to="/hr/dashboard/wellness"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Wellness Dashboard
+              </NavLink>
+
+              {/* CLUBS */}
+              <div className="hr-section">Clubs</div>
+
+              <NavLink to="/hr/dashboard/clubs"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Building04Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Corporate Clubs
+              </NavLink>
+
+              {/* RETENTION */}
+              <div className="hr-section">Retention</div>
+
+              <NavLink to="/hr/dashboard/retention-plan"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={StarIcon} size={18} />
+                Retention Plan
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/leadership-track"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Target01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Leadership Track
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/alumni-network"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Building04Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Alumni Network
+              </NavLink>
+
+              {/* SETTINGS */}
+              <div className="hr-section">Settings</div>
+
+              <NavLink to="/hr/dashboard/settings"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Settings01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Settings
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/notifications"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Notification01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Notifications
+                {unreadCount > 0 && (
+                  <span className="hr-notif-badge">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </NavLink>
+            </>
+          )}
 
         </nav>
 
