@@ -24,12 +24,20 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
   const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   useEffect(() => {
-    if (!employee?._id) return;
+    if (!employee?._id) {
+      console.error("EmployeeMonthModal: employee._id is missing!", employee);
+      return;
+    }
+    
+    console.log("Fetching monthly for employee:", employee._id, employee.employeeId);
     setLoading(true);
+    
     axios
       .get(`${API_BASE}/api/attendance/monthly/${employee._id}?year=${year}&month=${month}`, { headers: authHeader() })
       .then((res) => {
         const raw = res.data?.data || [];
+        console.log("Monthly records received:", raw.length);
+        
         const daysInMonth = new Date(year, month, 0).getDate();
         const filled = [];
         let presentCount = 0, lateCount = 0, absentCount = 0, otCount = 0, leaveCount = 0, halfCount = 0;
@@ -37,14 +45,36 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
         for (let d = 1; d <= daysInMonth; d++) {
           const dateStr   = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
           const dayOfWeek = new Date(`${year}-${String(month).padStart(2,"0")}-${String(d).padStart(2,"0")}T12:00:00`).getDay();
-          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+          const isWeekend = dayOfWeek === 0; // Sunday ONLY (Saturday is working day)
           const rec       = raw.find((r) => r.date === dateStr);
 
-          if (isWeekend) { filled.push({ date: dateStr, dayOfWeek, status: "weekend", isWeekend: true }); continue; }
+          // Default values for ALL rows
+          let firstIn = null;
+          let lastOut = null;
+          let workHrs = "—";
+          let breakOut = null;
+          let breakIn = null;
+          let breakLate = 0;
+          let lateMin = 0;
+          let otMin = 0;
+          let status = "absent";
+          let remark = "";
 
-          if (rec) {
-            let firstIn = rec.first_in || rec.checkIn || null;
-            let lastOut = rec.last_out || rec.checkOut || null;
+          if (isWeekend) {
+            status = "weekend";
+          } else if (rec) {
+            // Extract values from record
+            status = rec.status || "absent";
+            firstIn = rec.first_in || rec.checkIn || null;
+            lastOut = rec.last_out || rec.checkOut || null;
+            breakOut = rec.breakOut || null;
+            breakIn = rec.breakIn || null;
+            breakLate = rec.breakLate || 0;
+            lateMin = rec.late_minutes || 0;
+            otMin = rec.overtime_minutes || 0;
+            remark = rec.remark || "";
+
+            // Derive firstIn/lastOut from punches if not set
             if (!firstIn && rec.punches?.length) {
               const ins = rec.punches.filter(p => p.type === "in").sort((a, b) => new Date(a.time) - new Date(b.time));
               firstIn = ins[0]?.time || null;
@@ -53,7 +83,8 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
               const outs = rec.punches.filter(p => p.type === "out").sort((a, b) => new Date(b.time) - new Date(a.time));
               lastOut = outs[0]?.time || null;
             }
-            let workHrs = "—";
+
+            // Calculate work hours
             if (rec.work_hours && typeof rec.work_hours === "number" && rec.work_hours > 0) {
               const h = Math.floor(rec.work_hours);
               const m = Math.round((rec.work_hours - h) * 60);
@@ -64,22 +95,44 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
             } else if (firstIn && !lastOut) {
               workHrs = "Ongoing";
             }
-            if (rec.status === "present" || rec.status === "late") presentCount++;
-            if (rec.status === "late" || (rec.late_minutes || 0) > 0) lateCount++;
-            else if (rec.status === "leave")    leaveCount++;
-            else if (rec.status === "half_day") halfCount++;
-            else if (rec.status === "absent")   absentCount++;
-            if ((rec.overtime_minutes || 0) > 0) otCount++;
-            filled.push({ date: dateStr, dayOfWeek, status: rec.status, firstIn, lastOut, workHrs, lateMin: rec.late_minutes || 0, otMin: rec.overtime_minutes || 0, remark: rec.remark || "" });
+
+            // Count summary
+            if (status === "present" || status === "late") presentCount++;
+            if (status === "late" || lateMin > 0) lateCount++;
+            else if (status === "leave") leaveCount++;
+            else if (status === "half_day") halfCount++;
+            else if (status === "absent") absentCount++;
+            if (otMin > 0) otCount++;
           } else {
+            // No record and not weekend = absent
             absentCount++;
-            filled.push({ date: dateStr, dayOfWeek, status: "absent", firstIn: null, lastOut: null, workHrs: "—", lateMin: 0, otMin: 0 });
           }
+
+          filled.push({
+            date: dateStr,
+            dayOfWeek,
+            status,
+            firstIn,
+            lastOut,
+            workHrs,
+            breakOut,
+            breakIn,
+            breakLate,
+            lateMin,
+            otMin,
+            remark,
+            isWeekend,
+          });
         }
+        
         setSummary({ presentCount, lateCount, absentCount, otCount, leaveCount, halfCount });
         setRecords(filled);
       })
-      .catch(() => { setRecords([]); setSummary(null); })
+      .catch((err) => { 
+        console.error("Monthly fetch error:", err);
+        setRecords([]); 
+        setSummary(null); 
+      })
       .finally(() => setLoading(false));
   }, [employee?._id, year, month]);
 
@@ -149,7 +202,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
                     <tr>
-                      {["Date", "Day", "Status", "Check In", "Check Out", "Work Hrs", "Late", "Overtime"].map(h => (
+                      {["Date", "Day", "Status", "Check In", "Check Out", "Work Hrs", "Break Out", "Break In", "Break Late", "Late", "Overtime"].map(h => (
                         <th key={h} style={S.tableHead}>{h}</th>
                       ))}
                     </tr>
@@ -163,23 +216,58 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
                           style={{ background: isWkd ? "#f8fafc" : "transparent", opacity: isWkd ? 0.5 : 1 }}
                           onMouseEnter={e => { if (!isWkd) e.currentTarget.style.background = "#f9fafb"; }}
                           onMouseLeave={e => { e.currentTarget.style.background = isWkd ? "#f8fafc" : "transparent"; }}>
-                          <td style={{ ...S.tableCell, fontWeight: 700, color: "#111827", whiteSpace: "nowrap" }}>{new Date(row.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</td>
-                          <td style={{ ...S.tableCell, color: "#6b7280", fontSize: 12 }}>{DAY_NAMES[row.dayOfWeek]}</td>
-                          <td style={S.tableCell}><span style={S.pill(st.color, st.bg)}>{st.label}</span></td>
+                          
+                          {/* Date */}
+                          <td style={{ ...S.tableCell, fontWeight: 700, color: "#111827", whiteSpace: "nowrap" }}>
+                            {new Date(row.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+                          </td>
+                          
+                          {/* Day */}
+                          <td style={{ ...S.tableCell, color: "#6b7280", fontSize: 12 }}>
+                            {DAY_NAMES[row.dayOfWeek]}
+                          </td>
+                          
+                          {/* Status */}
+                          <td style={S.tableCell}>
+                            <span style={S.pill(st.color, st.bg)}>{st.label}</span>
+                          </td>
+                          
+                          {/* Check In */}
                           <td style={{ ...S.tableCell, fontWeight: 700, color: "#16a34a", fontFamily: "monospace" }}>
                             {row.firstIn ? new Date(row.firstIn).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : <span style={{ color: "#d1d5db" }}>—</span>}
                           </td>
-                          <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
-                            {row.lastOut
-                              ? <span style={{ color: "#dc2626" }}>{new Date(row.lastOut).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
-                              : row.firstIn
-                                ? <span style={{ color: "#f59e0b", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}><AlertCircle size={11} /> No Out</span>
-                                : <span style={{ color: "#d1d5db" }}>—</span>}
+                          
+                          {/* Check Out */}
+                          <td style={{ ...S.tableCell, fontWeight: 700, color: "#dc2626", fontFamily: "monospace" }}>
+                            {row.lastOut ? new Date(row.lastOut).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : <span style={{ color: "#d1d5db" }}>—</span>}
                           </td>
-                          <td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>{row.workHrs || "—"}</td>
+                          
+                          {/* Work Hours */}
+                          <td style={{ ...S.tableCell, fontWeight: 700, color: "#2563eb" }}>
+                            {row.workHrs}
+                          </td>
+                          
+                          {/* Break Out */}
+                          <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace", color: "#0891b2" }}>
+                            {row.breakOut ? new Date(row.breakOut).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : <span style={{ color: "#d1d5db" }}>—</span>}
+                          </td>
+                          
+                          {/* Break In */}
+                          <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace", color: "#0891b2" }}>
+                            {row.breakIn ? new Date(row.breakIn).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : <span style={{ color: "#d1d5db" }}>—</span>}
+                          </td>
+                          
+                          {/* Break Late */}
+                          <td style={S.tableCell}>
+                            {row.breakLate > 0 ? <span style={{ background: "#fef9c3", color: "#d97706", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(row.breakLate)}</span> : <span style={{ color: "#d1d5db" }}>—</span>}
+                          </td>
+                          
+                          {/* Late */}
                           <td style={S.tableCell}>
                             {row.lateMin > 0 ? <span style={{ background: "#fef9c3", color: "#d97706", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(row.lateMin)}</span> : <span style={{ color: "#d1d5db" }}>—</span>}
                           </td>
+                          
+                          {/* Overtime */}
                           <td style={S.tableCell}>
                             {row.otMin > 0 ? <span style={{ background: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(row.otMin)}</span> : <span style={{ color: "#d1d5db" }}>—</span>}
                           </td>
@@ -384,9 +472,7 @@ export default function MonthlyTab() {
                 <tr>
                   <th style={S.tableHead}>#</th>
                   <SortTh label="Employee"    k="name" />
-                  {/* ✅ FIX: Code column header — shows employee code text only */}
                   <SortTh label="Code"        k="employeeId" />
-                  {/* ✅ FIX: Dept column header — shows department badge */}
                   <SortTh label="Dept"        k="department" />
                   <SortTh label="Work Days"   k="work_days" />
                   <SortTh label="Present"     k="present" />
@@ -419,10 +505,8 @@ export default function MonthlyTab() {
                       onMouseEnter={e => e.currentTarget.style.background = "#f0f4ff"}
                       onMouseLeave={e => e.currentTarget.style.background = isEven ? "#fafafa" : "#fff"}>
 
-                      {/* # */}
                       <td style={{ ...S.tableCell, color: "#c4c9d4", fontWeight: 600, width: 36, textAlign: "center" }}>{i + 1}</td>
 
-                      {/* Employee — name + avatar only, no code sub-text to avoid duplication */}
                       <td style={S.tableCell}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <div style={{ width: 36, height: 36, background: "#111827", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 13, flexShrink: 0, letterSpacing: 0.5 }}>
@@ -432,27 +516,22 @@ export default function MonthlyTab() {
                         </div>
                       </td>
 
-                      {/* ✅ FIX: Code column — employee code as plain text (EMP-021 style) */}
                       <td style={{ ...S.tableCell, color: "#6b7280", fontWeight: 600, fontSize: 12, fontFamily: "monospace" }}>
                         {r.employeeId || r.employee_code || "—"}
                       </td>
 
-                      {/* ✅ FIX: Dept column — department badge (was wrongly in Code column before) */}
                       <td style={S.tableCell}>
                         {r.department
                           ? <span style={{ background: "#f1f5f9", color: "#475569", fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 20, whiteSpace: "nowrap", border: "1px solid #e2e8f0" }}>{r.department}</span>
                           : <span style={{ color: "#d1d5db" }}>—</span>}
                       </td>
 
-                      {/* Work Days */}
                       <td style={{ ...S.tableCell, fontWeight: 700, color: "#374151", textAlign: "center" }}>{r.work_days}</td>
 
-                      {/* Present */}
                       <td style={{ ...S.tableCell, textAlign: "center" }}>
                         <span style={{ background: "#dcfce7", color: "#16a34a", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, display: "inline-block" }}>{r.present}</span>
                       </td>
 
-                      {/* Late */}
                       <td style={{ ...S.tableCell, textAlign: "center" }}>
                         {r.late > 0 ? (
                           <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
@@ -462,38 +541,32 @@ export default function MonthlyTab() {
                         ) : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
                       </td>
 
-                      {/* Half Day */}
                       <td style={{ ...S.tableCell, textAlign: "center" }}>
                         {r.half_day > 0
                           ? <span style={{ background: "#f5f3ff", color: "#7c3aed", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, display: "inline-block" }}>{r.half_day}</span>
                           : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
                       </td>
 
-                      {/* On Leave */}
                       <td style={{ ...S.tableCell, textAlign: "center" }}>
                         {r.on_leave > 0
                           ? <span style={{ background: "#e0f2fe", color: "#0891b2", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, display: "inline-block" }}>{r.on_leave}</span>
                           : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
                       </td>
 
-                      {/* Absent */}
                       <td style={{ ...S.tableCell, textAlign: "center" }}>
                         {r.absent > 0
                           ? <span style={{ background: "#fee2e2", color: "#dc2626", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, display: "inline-block" }}>{r.absent}</span>
                           : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
                       </td>
 
-                      {/* OT Days */}
                       <td style={{ ...S.tableCell, textAlign: "center" }}>
                         {r.overtime_days > 0
                           ? <span style={{ background: "#ecfdf5", color: "#047857", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, display: "inline-block" }}>{r.overtime_days}</span>
                           : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
                       </td>
 
-                      {/* Avg Hrs */}
                       <td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700, textAlign: "center" }}>{r.avg_work_hours || "—"}</td>
 
-                      {/* Attendance % */}
                       <td style={{ ...S.tableCell, minWidth: 120 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                           <div style={{ flex: 1, height: 5, background: "#e5e7eb", borderRadius: 3 }}>
@@ -503,7 +576,6 @@ export default function MonthlyTab() {
                         </div>
                       </td>
 
-                      {/* Details — View + Download */}
                       <td style={{ ...S.tableCell, textAlign: "center", whiteSpace: "nowrap" }}>
                         <div style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>
                           <button

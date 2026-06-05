@@ -21,36 +21,61 @@ const isLockedByRole = (item) => {
 
 const getRoleLockInfo = (role) => {
   const map = {
-    manager: { label: "Manager",       color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe", icon: "👔" },
-    md:      { label: "MD / Director", color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", icon: "🏢" },
-    hr:      { label: "HR",            color: "#d97706", bg: "#fffbeb", border: "#fde68a", icon: "🧾" },
+    manager: { label: "Manager", color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe", icon: "👔" },
+    md: { label: "MD / Director", color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", icon: "🏢" },
+    hr: { label: "HR", color: "#d97706", bg: "#fffbeb", border: "#fde68a", icon: "🧾" },
   };
   return map[role] || map.hr;
 };
 // ───────────────────────────────────────────────────────────────
 
 export default function SelfAssessment() {
-  const [assignment, setAssignment]   = useState(null);
-  const [existing, setExisting]       = useState(null);
-  const [form, setForm]               = useState({ items: [], overall_comment: "" });
-  const [loading, setLoading]         = useState(true);
-  const [saving, setSaving]           = useState(false);
-  const [submitted, setSubmitted]     = useState(false);
-  const [toast, setToast]             = useState(null);
+  const [assignment, setAssignment] = useState(null);
+  const [existing, setExisting] = useState(null);
+  const [form, setForm] = useState({ items: [], overall_comment: "" });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [toast, setToast] = useState(null);
   const [expandedItem, setExpandedItem] = useState(null);
-  const [activeTab, setActiveTab]     = useState("assessment");
+  const [activeTab, setActiveTab] = useState("assessment");
 
-  const [logs, setLogs]               = useState([]);
-  const [logTotals, setLogTotals]     = useState({});
+  const [logs, setLogs] = useState([]);
+  const [logTotals, setLogTotals] = useState({});
   const [programLogTotals, setProgramLogTotals] = useState({});
-  const [logForm, setLogForm]         = useState({ kpi_item_id: "", value: "", note: "", log_date: today });
+  const [logForm, setLogForm] = useState({ kpi_item_id: "", value: "", note: "", log_date: today });
   const [programValues, setProgramValues] = useState({});
-  const [savingLog, setSavingLog]     = useState(false);
+  const [savingLog, setSavingLog] = useState(false);
   const [deletingLog, setDeletingLog] = useState(null);
   const [assessmentProgramValues, setAssessmentProgramValues] = useState({});
-  const [employee, setEmployee]       = useState(null);
-
+  const [employee, setEmployee] = useState(null);
+  const [extraFieldValues, setExtraFieldValues] = useState({});
   const [completedReviews, setCompletedReviews] = useState([]);
+  const [showSpecialDropdown, setShowSpecialDropdown] = useState(false);
+const [specialFieldOptions, setSpecialFieldOptions] = useState([
+  // Existing fields
+  { name: "invoice_no", label: "Invoice No.", type: "text" },
+  { name: "customer_name", label: "Customer Name", type: "text" },
+  { name: "mobile_number", label: "Mobile Number", type: "text" },
+  { name: "price_type", label: "Price Type", type: "select", options: ["RETAILER PRICE", "DEALER PRICE", "WHOLESALE"] },
+  { name: "price", label: "Price", type: "number" },
+  { name: "bill_date", label: "Bill Date", type: "date" },
+  { name: "product_name", label: "Product Name", type: "text" },
+  { name: "quantity", label: "Quantity", type: "number" },
+  { name: "discount", label: "Discount", type: "number" },
+  { name: "gst_number", label: "GST Number", type: "text" },
+  
+  // NEW fields from Excel screenshot
+  { name: "booking_no", label: "Booking No.", type: "text" },
+  { name: "booking_count", label: "Booking Count", type: "number" },
+  { name: "model", label: "Model", type: "text" },
+  { name: "fault", label: "Fault", type: "text" },
+  { name: "service_charge", label: "Service Charge", type: "number" },
+  { name: "spare", label: "Spare", type: "number" },
+  { name: "status", label: "Status", type: "select", options: ["DELIVERED", "PENDING", "IN PROGRESS", "COMPLETED", "CANCELLED"] }
+]);
+
+  const [selectedSpecialFields, setSelectedSpecialFields] = useState([]);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -85,21 +110,23 @@ export default function SelfAssessment() {
 
       if (assignRes.data.success && assignRes.data.data) {
         const assign = assignRes.data.data;
+        console.log("KPI Items:", assign.template_id?.kpi_items);
         setAssignment(assign);
         const kpiItems = assign.template_id?.kpi_items || [];
 
         // ── CHANGE 1: owner_role include பண்றோம் ──
         const initItems = kpiItems.map(item => ({
-          kpi_item_id:      item._id,
-          kpi_name:         item.kpi_name,
-          target:           item.target,
-          unit:             item.unit,
-          weight:           item.weight || 0,
+          kpi_item_id: item._id,
+          kpi_name: item.kpi_name,
+          target: item.target,
+          unit: item.unit,
+          weight: item.weight || 0,
           is_admission_kpi: item.is_admission_kpi || false,
-          program_targets:  item.program_targets || [],
-          owner_role:       item.owner_role || "self",   // ← NEW
-          self_value:       "",
-          self_comment:     ""
+          program_targets: item.program_targets || [],
+          owner_role: item.owner_role || "self",   // ← NEW
+          log_fields: item.log_fields || [],
+          self_value: "",
+          self_comment: ""
         }));
 
         const existingRes = await axios.get(`${API_BASE}/api/self-assessment/by-assignment/${assign._id}`);
@@ -119,14 +146,14 @@ export default function SelfAssessment() {
             const prevItem = prev.items.find(p => p.kpi_item_id === item.kpi_item_id);
             return prevItem
               ? {
-                  ...item,
-                  weight:           item.weight,
-                  is_admission_kpi: item.is_admission_kpi,
-                  program_targets:  item.program_targets,
-                  owner_role:       item.owner_role,     // ← keep owner_role
-                  self_value:       prevItem.self_value,
-                  self_comment:     prevItem.self_comment || ""
-                }
+                ...item,
+                weight: item.weight,
+                is_admission_kpi: item.is_admission_kpi,
+                program_targets: item.program_targets,
+                owner_role: item.owner_role,     // ← keep owner_role
+                self_value: prevItem.self_value,
+                self_comment: prevItem.self_comment || ""
+              }
               : item;
           });
           setForm({ items: filledItems, overall_comment: prev.overall_comment || "" });
@@ -240,36 +267,49 @@ export default function SelfAssessment() {
           Object.entries(log.program_values).forEach(([progId, val]) => {
             const prog = kpiItem?.program_targets?.find(p => p.program_id === progId);
             rows.push({
-              "Date":     log.log_date,
+              "Date": log.log_date,
               "KPI Name": log.kpi_name,
-              "Program":  prog?.program_name || progId,
-              "Value":    val,
-              "Unit":     log.unit,
-              "Note":     log.note || ""
+              "Program": prog?.program_name || progId,
+              "Value": val,
+              "Unit": log.unit,
+              "Note": log.note || ""
             });
           });
           rows.push({
-            "Date":     log.log_date,
+            "Date": log.log_date,
             "KPI Name": log.kpi_name,
-            "Program":  "-- TOTAL --",
-            "Value":    log.value,
-            "Unit":     log.unit,
-            "Note":     log.note || ""
+            "Program": "-- TOTAL --",
+            "Value": log.value,
+            "Unit": log.unit,
+            "Note": log.note || ""
           });
         } else {
           rows.push({
-            "Date":     log.log_date,
+            "Date": log.log_date,
+            "Employee": employee?.name || "",
+            "Department": assignment?.template_id?.department || "",
             "KPI Name": log.kpi_name,
-            "Program":  "-",
-            "Value":    log.value,
-            "Unit":     log.unit,
-            "Note":     log.note || ""
+            "Invoice No.": log.extra_fields?.invoice_no || "",
+            "Customer Name": log.extra_fields?.customer_name || "",
+            "Mobile Number": log.extra_fields?.mobile_number || "",
+            "Price Type": log.extra_fields?.price_type || "",
+            "Price": log.extra_fields?.price || "",
+            "Value": log.value,
+            "Target": form.items.find(i => i.kpi_item_id === log.kpi_item_id)?.target || "",
+            "Unit": log.unit,
+            "%": form.items.find(i => i.kpi_item_id === log.kpi_item_id)?.target
+              ? Math.round((log.value / form.items.find(i => i.kpi_item_id === log.kpi_item_id).target) * 100)
+              : ""
           });
         }
       });
 
       const ws = XLSX.utils.json_to_sheet(rows);
-      ws["!cols"] = [{ wch: 14 }, { wch: 28 }, { wch: 22 }, { wch: 10 }, { wch: 10 }, { wch: 35 }];
+      ws["!cols"] = [
+        { wch: 12 }, { wch: 18 }, { wch: 16 }, { wch: 22 },
+        { wch: 14 }, { wch: 20 }, { wch: 14 }, { wch: 16 },
+        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 6 }
+      ];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Daily Logs");
       const fileName = `DailyLogs_${assignment?.period || "export"}_${new Date().toISOString().split("T")[0]}.xlsx`;
@@ -288,32 +328,41 @@ export default function SelfAssessment() {
       if (!logForm.value) return showToast("Enter a value", "error");
     }
 
+    const missingRequired = selectedLogKpi?.log_fields
+      ?.filter(f => f.required && !extraFieldValues[f.name])
+      ?.map(f => f.label) || [];
+    if (missingRequired.length > 0)
+      return showToast(`Fill required: ${missingRequired.join(", ")}`, "error");
+
     setSavingLog(true);
     try {
       const kpiItem = form.items.find(i => i.kpi_item_id === logForm.kpi_item_id);
       const payload = {
-        employee_id:    employeeId,
-        assignment_id:  assignment._id,
-        kpi_item_id:    logForm.kpi_item_id,
-        kpi_name:       kpiItem?.kpi_name || "",
-        unit:           kpiItem?.unit || "",
-        value:          isAdmissionLogKpi ? programValuesTotal : parseFloat(logForm.value),
-        note:           logForm.note,
-        log_date:       logForm.log_date,
-        period:         assignment.period,
+        employee_id: employeeId,
+        assignment_id: assignment._id,
+        kpi_item_id: logForm.kpi_item_id,
+        kpi_name: kpiItem?.kpi_name || "",
+        unit: kpiItem?.unit || "",
+        value: isAdmissionLogKpi ? programValuesTotal : parseFloat(logForm.value),
+        note: logForm.note,
+        log_date: logForm.log_date,
+        period: assignment.period,
         program_values: isAdmissionLogKpi
           ? Object.fromEntries(
-              Object.entries(programValues)
-                .filter(([_, v]) => v !== "" && Number(v) > 0)
-                .map(([k, v]) => [k, Number(v)])
-            )
-          : {}
+            Object.entries(programValues)
+              .filter(([_, v]) => v !== "" && Number(v) > 0)
+              .map(([k, v]) => [k, Number(v)])
+          )
+          : {},
+        extra_fields: extraFieldValues   // ← சரியான இடத்துல
       };
       const res = await axios.post(`${API_BASE}/api/daily-logs`, payload);
       if (res.data.success) {
         showToast("Progress logged!");
         setLogForm({ kpi_item_id: "", value: "", note: "", log_date: today });
         setProgramValues({});
+        setExtraFieldValues({});
+        setSelectedSpecialFields([]);
         await fetchLogs(assignment._id);
       }
     } catch (err) {
@@ -351,8 +400,8 @@ export default function SelfAssessment() {
 
   const getProgressColor = (pct) => {
     if (pct >= 100) return "#16a34a";
-    if (pct >= 75)  return "#2563eb";
-    if (pct >= 50)  return "#d97706";
+    if (pct >= 75) return "#2563eb";
+    if (pct >= 50) return "#d97706";
     return "#dc2626";
   };
 
@@ -380,20 +429,20 @@ export default function SelfAssessment() {
     setSaving(true);
     try {
       const payload = {
-        employee_id:   employeeId,
+        employee_id: employeeId,
         assignment_id: assignment._id,
-        period:        assignment.period,
+        period: assignment.period,
         items: form.items.map(i => ({
-          kpi_item_id:      i.kpi_item_id,
-          kpi_name:         i.kpi_name,
-          target:           i.target,
-          unit:             i.unit,
-          weight:           i.weight,
+          kpi_item_id: i.kpi_item_id,
+          kpi_name: i.kpi_name,
+          target: i.target,
+          unit: i.unit,
+          weight: i.weight,
           is_admission_kpi: i.is_admission_kpi,
-          program_targets:  i.program_targets,
-          owner_role:       i.owner_role,
-          self_value:       parseFloat(i.self_value) || 0,
-          self_comment:     i.self_comment
+          program_targets: i.program_targets,
+          owner_role: i.owner_role,
+          self_value: parseFloat(i.self_value) || 0,
+          self_comment: i.self_comment
         })),
         overall_comment: form.overall_comment
       };
@@ -413,11 +462,11 @@ export default function SelfAssessment() {
   };
 
   const getRatingLabel = (score) => {
-    if (score >= 90) return { label: "Outstanding",          color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0", Icon: Trophy };
+    if (score >= 90) return { label: "Outstanding", color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0", Icon: Trophy };
     if (score >= 75) return { label: "Exceeds Expectations", color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe", Icon: Award };
-    if (score >= 60) return { label: "Meets Expectations",   color: "#d97706", bg: "#fffbeb", border: "#fde68a", Icon: ThumbsUp };
-    if (score >= 45) return { label: "Needs Improvement",    color: "#ea580c", bg: "#fff7ed", border: "#fed7aa", Icon: AlertTriangle };
-    return             { label: "Unsatisfactory",            color: "#dc2626", bg: "#fef2f2", border: "#fecaca", Icon: XCircle };
+    if (score >= 60) return { label: "Meets Expectations", color: "#d97706", bg: "#fffbeb", border: "#fde68a", Icon: ThumbsUp };
+    if (score >= 45) return { label: "Needs Improvement", color: "#ea580c", bg: "#fff7ed", border: "#fed7aa", Icon: AlertTriangle };
+    return { label: "Unsatisfactory", color: "#dc2626", bg: "#fef2f2", border: "#fecaca", Icon: XCircle };
   };
 
   const overallScore = calcOverallScore();
@@ -440,7 +489,7 @@ export default function SelfAssessment() {
   if (loading) return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
       <div style={{ textAlign: "center" }}>
-        <div style={{ width: 40, height: 40, border: "4px solid #e5e7eb", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }}/>
+        <div style={{ width: 40, height: 40, border: "4px solid #e5e7eb", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
         <p style={{ color: "#6b7280", fontSize: 14 }}>Loading...</p>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -508,7 +557,7 @@ export default function SelfAssessment() {
               </div>
               {submitted && (
                 <div className={`sa-badge${isHRReviewed ? " sa-badge--hr" : ""}`}>
-                  <CheckCircle size={13} color={isHRReviewed ? "#2563eb" : "#16a34a"}/>
+                  <CheckCircle size={13} color={isHRReviewed ? "#2563eb" : "#16a34a"} />
                   <span style={{ fontSize: 11, fontWeight: 600, color: isHRReviewed ? "#2563eb" : "#16a34a" }}>
                     {isHRReviewed ? "HR Reviewed" : "Submitted"}
                   </span>
@@ -519,9 +568,9 @@ export default function SelfAssessment() {
             {/* ── TABS ── */}
             <div className="sa-tab-strip">
               {[
-                { id: "dailylog",   label: `Log (${logs.length})`,            Icon: Calendar },
-                { id: "assessment", label: "Assessment",                        Icon: ClipboardList },
-                { id: "completed",  label: `Done (${completedReviews.length})`, Icon: CheckSquare }
+                { id: "dailylog", label: `Log (${logs.length})`, Icon: Calendar },
+                { id: "assessment", label: "Assessment", Icon: ClipboardList },
+                { id: "completed", label: `Done (${completedReviews.length})`, Icon: CheckSquare }
               ].map(tab => (
                 <button key={tab.id} className="sa-tab-btn" onClick={() => setActiveTab(tab.id)}
                   style={{ background: activeTab === tab.id ? "#2563eb" : "transparent", color: activeTab === tab.id ? "#fff" : "#6b7280" }}>
@@ -575,7 +624,7 @@ export default function SelfAssessment() {
                       </div>
                       <div>
                         <label style={labelStyle}>Date *</label>
-                        <input type="date" value={logForm.log_date} onChange={e => setLogForm(f => ({ ...f, log_date: e.target.value }))} style={inputStyle}/>
+                        <input type="date" value={logForm.log_date} onChange={e => setLogForm(f => ({ ...f, log_date: e.target.value }))} style={inputStyle} />
                       </div>
                     </div>
 
@@ -622,7 +671,7 @@ export default function SelfAssessment() {
                         </div>
                         <div style={{ marginTop: 12 }}>
                           <label style={labelStyle}>Note (Optional)</label>
-                          <input type="text" value={logForm.note} onChange={e => setLogForm(f => ({ ...f, note: e.target.value }))} placeholder="Additional notes..." style={inputStyle}/>
+                          <input type="text" value={logForm.note} onChange={e => setLogForm(f => ({ ...f, note: e.target.value }))} placeholder="Additional notes..." style={inputStyle} />
                         </div>
                       </div>
                     ) : (
@@ -631,18 +680,215 @@ export default function SelfAssessment() {
                           <label style={labelStyle}>
                             Value * {logForm.kpi_item_id && <span style={{ color: "#9ca3af", fontWeight: 400 }}>({form.items.find(i => i.kpi_item_id === logForm.kpi_item_id)?.unit})</span>}
                           </label>
-                          <input type="number" value={logForm.value} onChange={e => setLogForm(f => ({ ...f, value: e.target.value }))} placeholder="e.g. 5" min="0" style={inputStyle}/>
+                          <input type="number" value={logForm.value} onChange={e => setLogForm(f => ({ ...f, value: e.target.value }))} placeholder="e.g. 5" min="0" style={inputStyle} />
                         </div>
                         <div>
                           <label style={labelStyle}>Note (Optional)</label>
-                          <input type="text" value={logForm.note} onChange={e => setLogForm(f => ({ ...f, note: e.target.value }))} placeholder="What did you do today?" style={inputStyle}/>
+                          <input type="text" value={logForm.note} onChange={e => setLogForm(f => ({ ...f, note: e.target.value }))} placeholder="What did you do today?" style={inputStyle} />
                         </div>
                       </div>
                     )}
 
+                    {/* ── Special Details Multi-Select Dropdown ── */}
+                    {/* ── Special Details with Button + Dropdown ── */}
+                    {!isAdmissionLogKpi && selectedLogKpi && (
+                      <div style={{
+                        background: "#f0f9ff", border: "1px solid #bae6fd",
+                        borderRadius: 10, padding: 14, marginBottom: 14
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                          <FileText size={13} color="#0369a1" />
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1" }}>
+                            Special Details
+                          </span>
+                          <span style={{ fontSize: 11, color: "#6b7280", marginLeft: "auto" }}>
+                            Optional
+                          </span>
+                        </div>
+
+                        {/* Button to open dropdown */}
+                        <button
+                          type="button"
+                          onClick={() => setShowSpecialDropdown(!showSpecialDropdown)}
+                          style={{
+                            width: "100%", padding: "10px 14px",
+                            background: "#fff", border: "1.5px dashed #0369a1",
+                            borderRadius: 8, cursor: "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            fontSize: 13, color: "#0369a1", fontWeight: 600
+                          }}
+                        >
+                          <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <Plus size={16} color="#0369a1" />
+                            {selectedSpecialFields.length > 0
+                              ? `${selectedSpecialFields.length} field(s) selected`
+                              : "Add Special Details"}
+                          </span>
+                          <ChevronDown size={14} color="#0369a1" style={{
+                            transform: showSpecialDropdown ? "rotate(180deg)" : "rotate(0deg)",
+                            transition: "transform 0.2s"
+                          }} />
+                        </button>
+
+                        {/* Dropdown panel */}
+                        {showSpecialDropdown && (
+                          <div style={{
+                            marginTop: 8,
+                            background: "#fff", border: "1px solid #bae6fd",
+                            borderRadius: 8, padding: 10,
+                            maxHeight: 200, overflowY: "auto"
+                          }}>
+                            {specialFieldOptions.map(field => {
+                              const isSelected = selectedSpecialFields.includes(field.name);
+                              return (
+                                <div
+                                  key={field.name}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setSelectedSpecialFields(prev => prev.filter(f => f !== field.name));
+                                      // Remove value from extraFieldValues too
+                                      setExtraFieldValues(prev => {
+                                        const { [field.name]: _, ...rest } = prev;
+                                        return rest;
+                                      });
+                                    } else {
+                                      setSelectedSpecialFields(prev => [...prev, field.name]);
+                                    }
+                                  }}
+                                  style={{
+                                    padding: "8px 10px", borderRadius: 6,
+                                    cursor: "pointer", display: "flex",
+                                    alignItems: "center", gap: 10,
+                                    background: isSelected ? "#e0f2fe" : "transparent",
+                                    border: isSelected ? "1px solid #0369a1" : "1px solid transparent",
+                                    marginBottom: 4
+                                  }}
+                                >
+                                  <div style={{
+                                    width: 18, height: 18, borderRadius: 4,
+                                    border: `2px solid ${isSelected ? "#0369a1" : "#d1d5db"}`,
+                                    background: isSelected ? "#0369a1" : "#fff",
+                                    display: "flex", alignItems: "center", justifyContent: "center"
+                                  }}>
+                                    {isSelected && <CheckSquare size={12} color="#fff" />}
+                                  </div>
+                                  <span style={{
+                                    fontSize: 13, fontWeight: 600,
+                                    color: isSelected ? "#0369a1" : "#374151"
+                                  }}>
+                                    {field.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Selected fields form */}
+                        {selectedSpecialFields.length > 0 && (
+                          <div style={{
+                            display: "grid",
+                            gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                            gap: 10, marginTop: 12,
+                            padding: 12, background: "#fff",
+                            borderRadius: 8, border: "1px solid #e5e7eb"
+                          }}>
+                            {selectedSpecialFields.map(fieldName => {
+                              const field = specialFieldOptions.find(f => f.name === fieldName);
+                              if (!field) return null;
+                              return (
+                                <div key={field.name}>
+                                  <label style={labelStyle}>
+                                    {field.label}
+                                  </label>
+                                  {field.type === "select" ? (
+                                    <select
+                                      value={extraFieldValues[field.name] || ""}
+                                      onChange={e => setExtraFieldValues(p => ({
+                                        ...p, [field.name]: e.target.value
+                                      }))}
+                                      style={inputStyle}
+                                    >
+                                      <option value="">-- Select --</option>
+                                      {field.options?.map(opt => (
+                                        <option key={opt} value={opt}>{opt}</option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <input
+                                      type={field.type === "number" ? "number" : field.type}
+                                      value={extraFieldValues[field.name] || ""}
+                                      onChange={e => setExtraFieldValues(p => ({
+                                        ...p, [field.name]: e.target.value
+                                      }))}
+                                      placeholder={`Enter ${field.label.toLowerCase()}`}
+                                      style={inputStyle}
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ── Extra Fields for this KPI ── */}
+                    {/* {!isAdmissionLogKpi && selectedLogKpi?.log_fields?.length > 0 && (
+  <div style={{
+    background: "#f8fafc", border: "1px solid #e5e7eb",
+    borderRadius: 10, padding: 14, marginBottom: 14
+  }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+      <FileText size={13} color="#6b7280" />
+      <span style={{ fontSize: 12, fontWeight: 700, color: "#6b7280" }}>
+        Additional Details
+      </span>
+    </div>
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+      gap: 10
+    }}>
+      {selectedLogKpi.log_fields.map(field => (
+        <div key={field.name}>
+          <label style={labelStyle}>
+            {field.label}
+            {field.required && <span style={{ color: "#ef4444" }}> *</span>}
+          </label>
+          {field.type === "select" ? (
+            <select
+              value={extraFieldValues[field.name] || ""}
+              onChange={e => setExtraFieldValues(p => ({
+                ...p, [field.name]: e.target.value
+              }))}
+              style={inputStyle}
+            >
+              <option value="">-- Select --</option>
+              {field.options?.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type={field.type === "number" ? "number" : "text"}
+              value={extraFieldValues[field.name] || ""}
+              onChange={e => setExtraFieldValues(p => ({
+                ...p, [field.name]: e.target.value
+              }))}
+              placeholder={`Enter ${field.label.toLowerCase()}`}
+              style={inputStyle}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+)} */}
+
                     <button onClick={handleAddLog} disabled={savingLog}
                       style={{ background: savingLog ? "#93c5fd" : "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 700, fontSize: 14, cursor: savingLog ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8, width: isMobile ? "100%" : "auto", justifyContent: "center" }}>
-                      <Plus size={16}/> {savingLog ? "Saving..." : "Add Log Entry"}
+                      <Plus size={16} /> {savingLog ? "Saving..." : "Add Log Entry"}
                     </button>
                   </div>
 
@@ -656,7 +902,7 @@ export default function SelfAssessment() {
                       {logs.length > 0 && (
                         <button className="dl-btn" onClick={downloadLogsAsExcel}
                           style={{ display: "flex", alignItems: "center", gap: 6, background: "#16a34a", color: "#fff", border: "none", borderRadius: 8, padding: isMobile ? "7px 10px" : "7px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "background 0.2s", whiteSpace: "nowrap" }}>
-                          <Download size={14}/>
+                          <Download size={14} />
                           {!isMobile && " Download Excel"}
                         </button>
                       )}
@@ -671,7 +917,7 @@ export default function SelfAssessment() {
                       Object.keys(logsByDate).sort((a, b) => b.localeCompare(a)).map(date => (
                         <div key={date} style={{ marginBottom: 16 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                            <Calendar size={13} color="#6b7280"/>
+                            <Calendar size={13} color="#6b7280" />
                             <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                               {new Date(date).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
                             </span>
@@ -686,10 +932,28 @@ export default function SelfAssessment() {
                                       {log.kpi_name} — {log.value} {log.unit}
                                     </p>
                                     {log.note && <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{log.note}</p>}
+
+                                    {log.extra_fields && Object.keys(log.extra_fields).length > 0 && (
+                                      <div style={{
+                                        display: "flex", flexWrap: "wrap", gap: 5,
+                                        marginTop: 5, paddingTop: 5, borderTop: "1px dashed #e5e7eb"
+                                      }}>
+                                        {Object.entries(log.extra_fields).map(([key, val]) => (
+                                          <span key={key} style={{
+                                            fontSize: 11, background: "#f3f4f6", color: "#374151",
+                                            padding: "2px 8px", borderRadius: 99,
+                                            border: "1px solid #e5e7eb", fontWeight: 600
+                                          }}>
+                                            {key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}: {val}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+
                                   </div>
                                 </div>
                                 <button onClick={() => handleDeleteLog(log._id)} disabled={deletingLog === log._id} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, flexShrink: 0 }}>
-                                  <Trash2 size={14} color={deletingLog === log._id ? "#d1d5db" : "#ef4444"}/>
+                                  <Trash2 size={14} color={deletingLog === log._id ? "#d1d5db" : "#ef4444"} />
                                 </button>
                               </div>
                               {log.program_values && Object.keys(log.program_values).length > 0 && (
@@ -738,7 +1002,7 @@ export default function SelfAssessment() {
                             <span style={{ fontSize: 12, fontWeight: 700, color, flexShrink: 0 }}>{total}/{item.target} {item.unit}</span>
                           </div>
                           <div style={{ background: "#f3f4f6", borderRadius: 99, height: 8, overflow: "hidden" }}>
-                            <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 99, transition: "width 0.5s" }}/>
+                            <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 99, transition: "width 0.5s" }} />
                           </div>
                           <p style={{ margin: "4px 0 0", fontSize: 11, color, fontWeight: 600, textAlign: "right" }}>{pct}%</p>
 
@@ -755,7 +1019,7 @@ export default function SelfAssessment() {
                                       <span style={{ fontSize: 11, fontWeight: 700, color: ptColor }}>{ptTotal}/{pt.target}</span>
                                     </div>
                                     <div style={{ background: "#f3f4f6", borderRadius: 99, height: 5, overflow: "hidden" }}>
-                                      <div style={{ width: `${ptPct}%`, height: "100%", background: ptColor, borderRadius: 99, transition: "width 0.5s" }}/>
+                                      <div style={{ width: `${ptPct}%`, height: "100%", background: ptColor, borderRadius: 99, transition: "width 0.5s" }} />
                                     </div>
                                   </div>
                                 );
@@ -781,16 +1045,16 @@ export default function SelfAssessment() {
                     </div>
                     <p style={{ margin: "0 0 12px", fontSize: 13, color: "#3b82f6", lineHeight: 1.5 }}>Fill your self assessment automatically using the totals from your daily logs.</p>
                     <button onClick={autoFillFromLogs} style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 8, background: "#2563eb", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                      <TrendingUp size={16}/> Auto-fill from Logs
+                      <TrendingUp size={16} /> Auto-fill from Logs
                     </button>
                   </div>
 
                   <div style={{ background: "#fff", borderRadius: 14, padding: 16, border: "1px solid #e5e7eb" }}>
                     <p style={{ margin: "0 0 10px", fontWeight: 700, fontSize: 13, color: "#1a1a2e" }}>Period Details</p>
                     {[
-                      { label: "Period",     value: assignment.period },
+                      { label: "Period", value: assignment.period },
                       { label: "Total Logs", value: logs.length },
-                      { label: "Today",      value: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short" }) }
+                      { label: "Today", value: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short" }) }
                     ].map((d, i) => (
                       <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: i < 2 ? "1px solid #f3f4f6" : "none", fontSize: 13 }}>
                         <span style={{ color: "#6b7280" }}>{d.label}</span>
@@ -809,7 +1073,7 @@ export default function SelfAssessment() {
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 300px", gap: 16, width: "100%", boxSizing: "border-box" }}>
                 <div style={{ minWidth: 0 }}>
                   <div className="sa-info-banner">
-                    <AlertCircle size={17} color="#2563eb" style={{ marginTop: 2, flexShrink: 0 }}/>
+                    <AlertCircle size={17} color="#2563eb" style={{ marginTop: 2, flexShrink: 0 }} />
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <p>
                         {isHRReviewed
@@ -819,7 +1083,7 @@ export default function SelfAssessment() {
                       </p>
                       {!isHRReviewed && logs.length > 0 && (
                         <button onClick={autoFillFromLogs} style={{ marginTop: 8, background: "#2563eb", color: "#fff", border: "none", borderRadius: 6, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          <TrendingUp size={13}/> Auto-fill from Daily Logs
+                          <TrendingUp size={13} /> Auto-fill from Daily Logs
                         </button>
                       )}
                     </div>
@@ -855,7 +1119,7 @@ export default function SelfAssessment() {
                             background: locked
                               ? (lockInfo?.bg || "#fffbeb")
                               : isOpen ? "#f8fafc"
-                              : item.is_admission_kpi ? "#f0f9ff" : "#fff"
+                                : item.is_admission_kpi ? "#f0f9ff" : "#fff"
                           }}>
                           <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flex: 1, minWidth: 0 }}>
                             <div style={{
@@ -909,14 +1173,14 @@ export default function SelfAssessment() {
                                 <p style={{ margin: 0, fontSize: 11, color: "#6b7280" }}>{item.self_value}/{item.target}</p>
                               </div>
                             )}
-                            {isOpen ? <ChevronUp size={16} color="#9ca3af"/> : <ChevronDown size={16} color="#9ca3af"/>}
+                            {isOpen ? <ChevronUp size={16} color="#9ca3af" /> : <ChevronDown size={16} color="#9ca3af" />}
                           </div>
                         </div>
 
                         {!locked && item.self_value !== "" && (
                           <div style={{ padding: "0 14px 4px" }}>
                             <div style={{ background: "#f3f4f6", borderRadius: 99, height: 5, overflow: "hidden" }}>
-                              <div style={{ width: `${Math.min(pct, 100)}%`, height: "100%", background: color, borderRadius: 99, transition: "width 0.5s ease" }}/>
+                              <div style={{ width: `${Math.min(pct, 100)}%`, height: "100%", background: color, borderRadius: 99, transition: "width 0.5s ease" }} />
                             </div>
                           </div>
                         )}
@@ -1132,8 +1396,8 @@ export default function SelfAssessment() {
                                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                       {pct >= 100 ? <Trophy size={14} color={color} />
                                         : pct >= 75 ? <ThumbsUp size={14} color={color} />
-                                        : pct >= 50 ? <AlertTriangle size={14} color={color} />
-                                        : <XCircle size={14} color={color} />}
+                                          : pct >= 50 ? <AlertTriangle size={14} color={color} />
+                                            : <XCircle size={14} color={color} />}
                                       <span style={{ fontSize: 13, color, fontWeight: 600 }}>
                                         {pct >= 100 ? "Target exceeded!" : pct >= 75 ? "Good progress!" : pct >= 50 ? "Needs more effort" : "Below target"}
                                       </span>
@@ -1174,7 +1438,7 @@ export default function SelfAssessment() {
 
                   {isHRReviewed ? (
                     <div style={{ width: "100%", padding: "16px", borderRadius: 10, background: "#f0fdf4", border: "1px solid #bbf7d0", textAlign: "center", boxSizing: "border-box" }}>
-                      <Lock size={22} color="#16a34a" style={{ marginBottom: 6 }}/>
+                      <Lock size={22} color="#16a34a" style={{ marginBottom: 6 }} />
                       <p style={{ margin: 0, fontWeight: 700, color: "#16a34a", fontSize: 14 }}>HR Review Completed — Assessment Locked</p>
                       <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 12 }}>Your assessment has been finalized. Check the Completed tab.</p>
                     </div>
@@ -1182,7 +1446,7 @@ export default function SelfAssessment() {
                     <>
                       <button onClick={handleSubmit} disabled={saving || !isFormValid()}
                         style={{ width: "100%", padding: "14px 0", border: "none", borderRadius: 10, background: saving || !isFormValid() ? "#93c5fd" : "#2563eb", color: "#fff", fontWeight: 700, fontSize: 15, cursor: saving || !isFormValid() ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxSizing: "border-box" }}>
-                        {saving ? <RefreshCw size={18} /> : <Send size={18}/>}
+                        {saving ? <RefreshCw size={18} /> : <Send size={18} />}
                         {saving ? "Submitting..." : submitted ? "Update & Resubmit" : "Submit Self Assessment"}
                       </button>
                       {!isFormValid() && (
@@ -1254,7 +1518,7 @@ export default function SelfAssessment() {
 
                   <div style={{ background: isHRReviewed ? "#eff6ff" : submitted ? "#f0fdf4" : "#fffbeb", border: `1px solid ${isHRReviewed ? "#bfdbfe" : submitted ? "#bbf7d0" : "#fde68a"}`, borderRadius: 14, padding: 14 }}>
                     <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                      {isHRReviewed ? <Lock size={16} color="#2563eb"/> : submitted ? <CheckCircle size={16} color="#16a34a"/> : <Clock size={16} color="#d97706"/>}
+                      {isHRReviewed ? <Lock size={16} color="#2563eb" /> : submitted ? <CheckCircle size={16} color="#16a34a" /> : <Clock size={16} color="#d97706" />}
                       <span style={{ fontWeight: 700, fontSize: 13, color: isHRReviewed ? "#2563eb" : submitted ? "#16a34a" : "#d97706" }}>
                         {isHRReviewed ? "HR Review Completed" : submitted ? "Assessment Submitted" : "Not Yet Submitted"}
                       </span>
@@ -1262,7 +1526,7 @@ export default function SelfAssessment() {
                     <p style={{ margin: 0, fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>
                       {isHRReviewed ? "Your score has been finalized. Check the Completed tab."
                         : submitted ? `Submitted for ${assignment.period}. HR will review and finalize your score.`
-                        : "Fill all your KPI values and submit."}
+                          : "Fill all your KPI values and submit."}
                     </p>
                   </div>
                 </div>
@@ -1385,7 +1649,7 @@ export default function SelfAssessment() {
                                       )}
 
                                       <div style={{ background: "#e5e7eb", borderRadius: 99, height: 6, overflow: "hidden" }}>
-                                        <div style={{ width: `${hrPct}%`, height: "100%", background: c, borderRadius: 99 }}/>
+                                        <div style={{ width: `${hrPct}%`, height: "100%", background: c, borderRadius: 99 }} />
                                       </div>
                                       <p style={{ margin: "3px 0 0", fontSize: 11, color: c, fontWeight: 700, textAlign: "right" }}>{hrPct}%</p>
                                       {item.self_comment && <p style={{ margin: "4px 0 0", fontSize: 12, color: "#9ca3af", fontStyle: "italic" }}>"{item.self_comment}"</p>}
@@ -1440,12 +1704,12 @@ export default function SelfAssessment() {
                                   <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: "#374151" }}>Review Details</p>
                                 </div>
                                 {[
-                                  { label: "Period",       value: review.period },
-                                  { label: "Department",   value: review.department || "—" },
-                                  { label: "Role",         value: review.role || "—" },
+                                  { label: "Period", value: review.period },
+                                  { label: "Department", value: review.department || "—" },
+                                  { label: "Role", value: review.role || "—" },
                                   { label: "Submitted On", value: review.submitted_at ? new Date(review.submitted_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—" },
-                                  { label: "Reviewed On",  value: review.reviewed_at  ? new Date(review.reviewed_at).toLocaleDateString("en-IN",  { day: "numeric", month: "short", year: "numeric" }) : "—" },
-                                  { label: "Reviewed By",  value: review.reviewed_by_name || "HR Team" },
+                                  { label: "Reviewed On", value: review.reviewed_at ? new Date(review.reviewed_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—" },
+                                  { label: "Reviewed By", value: review.reviewed_by_name || "HR Team" },
                                 ].map((d, i, arr) => (
                                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: i < arr.length - 1 ? "1px solid #e5e7eb" : "none", fontSize: 13, gap: 8 }}>
                                     <span style={{ color: "#6b7280", flexShrink: 0 }}>{d.label}</span>

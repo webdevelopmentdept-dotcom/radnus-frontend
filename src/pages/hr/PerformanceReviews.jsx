@@ -378,17 +378,22 @@ const TABS = isEmployee
     <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#1a1a2e" }}>Performance Reviews</h2>
     <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 14 }}>Review employee self assessments and finalize scores</p>
   </div>
-    <button
-      onClick={() => window.open(`${API_BASE}/api/export-excel/all-employees`, "_blank")}
-      style={{
-        display: "flex", alignItems: "center", gap: 8,
-        padding: "10px 20px", border: "none", borderRadius: 9,
-        background: "#1a1a2e", color: "#fff",
-        fontWeight: 700, fontSize: 13, cursor: "pointer",
-      }}
-    >
-      ⬇️ Export All Employees Excel
-    </button>
+  <button
+  onClick={() => {
+    const today = new Date().toISOString().split("T")[0];
+    const from  = logDateFrom || today;
+    const to    = logDateTo   || today;
+    window.open(`${API_BASE}/api/export-excel/all-employees?from=${from}&to=${to}`, "_blank");
+  }}
+  style={{
+    display: "flex", alignItems: "center", gap: 8,
+    padding: "10px 20px", border: "none", borderRadius: 9,
+    background: "#1a1a2e", color: "#fff",
+    fontWeight: 700, fontSize: 13, cursor: "pointer",
+  }}
+>
+  ⬇️ Export All Employees Excel
+</button>
 </div>
 
       <div className="pr-stats" style={{ display: "grid", gap: 16, marginBottom: 24 }}>

@@ -978,10 +978,14 @@ function DailyTab() {
 
   const departments = ["all", ...new Set(data.map(r => r.employee?.department).filter(Boolean))];
 
-  const enriched = data.map(r => ({
+ const enriched = data.map(r => ({
   ...r,
   _firstIn:     getFirstIn(r),
   _lastOut:     getLastOut(r),
+  checkOut:     r.checkOut || null,
+  breakOut:     r.breakOut || null,
+  breakIn:      r.breakIn || null,
+  breakLate:    r.breakLate || 0,
   lateMinutes:  calcLateMinutes(getFirstIn(r), r.shift || ""),
   earlyOutMins: getFirstIn(r) && !getLastOut(r) ? 0 : calcEarlyOut(getLastOut(r), r.shift || ""),
   overtimeMins: calcOvertime(getLastOut(r), r.shift || ""),
@@ -1100,7 +1104,7 @@ function DailyTab() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr>
-                  {["#", "Employee", "Dept", "Status", "First In", "Last Out", "Work Hrs", "Punches", "Flags", "Actions"].map(h => (
+                  {["#", "Employee", "Dept", "Status", "First In", "Check Out", "Work Hrs", "Break Out", "Break In", "Break Late", "Punches", "Flags", "Actions"].map(h => (
                     <th key={h} style={S.tableHead}>{h}</th>
                   ))}
                 </tr>
@@ -1153,15 +1157,26 @@ function DailyTab() {
 
                       <td style={{ ...S.tableCell, color: "#16a34a", fontWeight: 700, fontFamily: "monospace" }}>{fmt(r._firstIn)}</td>
 
-                      <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
-                        {r._lastOut
-                          ? <span style={{ color: "#dc2626" }}>{fmt(r._lastOut)}</span>
-                          : r._firstIn
-                            ? <span style={{ color: "#f59e0b", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}><AlertCircle size={11} /> Pending</span>
-                            : "—"}
-                      </td>
+                     <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
+  {r.checkOut
+    ? <span style={{ color: "#dc2626" }}>{fmt(r.checkOut)}</span>
+    : r._firstIn
+      ? <span style={{ color: "#f59e0b", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}><AlertCircle size={11} /> Pending</span>
+      : "—"}
+</td>
 
                       <td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>{hrs}</td>
+                      <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace", color: "#0891b2" }}>
+  {r.breakOut ? fmt(r.breakOut) : "—"}
+</td>
+<td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace", color: "#0891b2" }}>
+  {r.breakIn ? fmt(r.breakIn) : "—"}
+</td>
+<td style={S.tableCell}>
+  {r.breakLate > 0
+    ? <span style={{ background: "#fef9c3", color: "#d97706", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(r.breakLate)}</span>
+    : <span style={{ color: "#d1d5db" }}>—</span>}
+</td>
 
                       <td style={S.tableCell}>
                         {punchCount > 0 ? (

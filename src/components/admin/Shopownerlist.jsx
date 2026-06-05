@@ -372,29 +372,60 @@ export default function ShopOwnerList() {
     setHistory(h);
   };
 
-  const exportExcel = () => {
-    const rows = data.map((d) => [
-      d.shopName, d.ownerName, d.mobile, d.district, d.taluk,
-      d.experience, d.salaryRange, d.jobType,
-      (d.technicianTypes || []).join(", "),
-      d.jobStatus || d.status,
-      d.postedAt ? new Date(d.postedAt).toLocaleDateString("en-IN") : "",
-      new Date(d.createdAt).toLocaleDateString("en-IN"),
-    ]);
-    const header = [
-      "Shop Name","Owner","Mobile","District","Taluk",
-      "Experience","Salary","Job Type","Technician Types",
-      "Status","Posted At","Registered At",
-    ];
-    const csv = [header, ...rows]
-      .map((r) => r.map((c) => `"${c || ""}"`).join(","))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `shop_owners_${Date.now()}.csv`;
-    a.click();
-  };
+const exportExcel = async () => {
+  try {
+    const params = { ...filters, page: 1, limit: 10000 };
+    Object.keys(params).forEach((k) => !params[k] && delete params[k]);
+    
+    const { data: res } = await axios.get(`${API}/api/shop-owner`, { params });
+    const allData = Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : [];
+    
+    import("xlsx").then(XLSX => {
+      const rows = allData.map((d, index) => ({
+        "SL.No": index + 1,  // ← ADD THIS
+        "Shop Name": d.shopName || "",
+        "Owner": d.ownerName || "",
+        "Mobile": d.mobile || "",
+        "District": d.district || "",
+        "Taluk": d.taluk || "",
+        "Experience": d.experience || "",
+        "Salary Range": d.salaryRange || "",
+        "Job Type": d.jobType || "",
+        "Technician Types": (d.technicianTypes || []).join(", "),
+        "Status": d.jobStatus || d.status || "",
+        "Posted At": d.postedAt ? new Date(d.postedAt).toLocaleDateString("en-IN") : "",
+        "Registered At": new Date(d.createdAt).toLocaleDateString("en-IN"),
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      
+      ws["!cols"] = [
+        { wch: 8 },   // SL.No  ← ADD THIS
+        { wch: 22 },  // Shop Name
+        { wch: 18 },  // Owner
+        { wch: 14 },  // Mobile
+        { wch: 14 },  // District
+        { wch: 14 },  // Taluk
+        { wch: 14 },  // Experience
+        { wch: 14 },  // Salary Range
+        { wch: 12 },  // Job Type
+        { wch: 20 },  // Technician Types
+        { wch: 12 },  // Status
+        { wch: 12 },  // Posted At
+        { wch: 14 },  // Registered At
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Shop Owners");
+      
+      const fileName = `shop_owners_${new Date().toISOString().split("T")[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    });
+  } catch (err) {
+    console.error("Export failed:", err);
+    alert("Failed to export. Please try again.");
+  }
+};
 
   return (
     <div>
@@ -408,8 +439,8 @@ export default function ShopOwnerList() {
             <FiRefreshCw size={14} className="me-1" /> Refresh
           </button>
           <button className="btn btn-sm btn-outline-success rounded-3" onClick={exportExcel}>
-            <FiDownload size={14} className="me-1" /> Export CSV
-          </button>
+  <FiDownload size={14} className="me-1" /> Export Excel
+</button>
         </div>
       </div>
 

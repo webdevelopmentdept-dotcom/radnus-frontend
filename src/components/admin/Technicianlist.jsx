@@ -349,24 +349,59 @@ export default function TechnicianList() {
     } catch { setHistory([]); }
   };
 
-  const exportExcel = () => {
-    const rows = data.map((d) => [
-      d.fullName, d.mobile, d.district, d.taluk,
-      d.experience, d.expectedSalary || "",
-      (d.skills || []).join(", "),
-      (d.brands || []).join(", "),
-      d.jobType || "",
-      d.availabilityStatus || d.status,
-      new Date(d.createdAt).toLocaleDateString("en-IN"),
-    ]);
-    const header = ["Full Name","Mobile","District","Taluk","Experience","Expected Salary","Skills","Brands","Job Type","Status","Registered At"];
-    const csv = [header, ...rows].map((r) => r.map((c) => `"${c || ""}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `technicians_${Date.now()}.csv`;
-    a.click();
-  };
+const exportExcel = async () => {
+  try {
+    // Full records fetch pannu (limit: 10000 or no limit)
+    const params = { ...filters, limit: 10000, page: 1 };
+    Object.keys(params).forEach((k) => !params[k] && delete params[k]);
+    
+    const { data: res } = await axios.get(`${API}/api/technician`, { params });
+    const allData = Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : [];
+    
+    import("xlsx").then(XLSX => {
+      const rows = allData.map((d) => ({
+         "SL.No": index + 1,
+        "Full Name": d.fullName || "",
+        "Mobile": d.mobile || "",
+        "District": d.district || "",
+        "Taluk": d.taluk || "",
+        "Experience": d.experience || "",
+        "Expected Salary": d.expectedSalary ? `₹${Number(d.expectedSalary).toLocaleString("en-IN")}` : "",
+        "Skills": (d.skills || []).join(", "),
+        "Brands": (d.brands || []).join(", "),
+        "Tools": (d.tools || []).join(", "),
+        "Job Type": d.jobType || "",
+        "Payment Type": d.paymentType || "",
+        "Work Location": d.workLocation || "",
+        "Join Ready": d.joinReady || "",
+        "Status": d.availabilityStatus || d.status || "",
+        "Radnus Agree": d.radnusAgree || "",
+        "Profile Views": d.profileViews != null ? d.profileViews : "",
+        "Published At": d.publishedAt ? new Date(d.publishedAt).toLocaleDateString("en-IN") : "",
+        "Registered At": new Date(d.createdAt).toLocaleDateString("en-IN"),
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      
+      ws["!cols"] = [
+       { wch: 8 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
+        { wch: 14 }, { wch: 16 }, { wch: 24 }, { wch: 20 },
+        { wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
+        { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
+        { wch: 12 }, { wch: 14 },
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Technicians");
+      
+      const fileName = `technicians_${new Date().toISOString().split("T")[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    });
+  } catch (err) {
+    console.error("Export failed:", err);
+    alert("Failed to export. Please try again.");
+  }
+};
 
   return (
     <div>
@@ -380,8 +415,8 @@ export default function TechnicianList() {
             <FiRefreshCw size={14} className="me-1" /> Refresh
           </button>
           <button className="btn btn-sm btn-outline-success rounded-3" onClick={exportExcel}>
-            <FiDownload size={14} className="me-1" /> Export CSV
-          </button>
+  <FiDownload size={14} className="me-1" /> Export Excel
+</button>
         </div>
       </div>
 
