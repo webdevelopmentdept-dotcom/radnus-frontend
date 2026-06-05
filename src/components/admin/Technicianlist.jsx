@@ -351,7 +351,6 @@ export default function TechnicianList() {
 
 const exportExcel = async () => {
   try {
-    // Full records fetch pannu (limit: 10000 or no limit)
     const params = { ...filters, limit: 10000, page: 1 };
     Object.keys(params).forEach((k) => !params[k] && delete params[k]);
     
@@ -359,8 +358,8 @@ const exportExcel = async () => {
     const allData = Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : [];
     
     import("xlsx").then(XLSX => {
-      const rows = allData.map((d) => ({
-         "SL.No": index + 1,
+      const rows = allData.map((d, index) => ({  // ← index parameter add pannu
+        "SL.No": index + 1,  // ← ippo correct-a work aagum
         "Full Name": d.fullName || "",
         "Mobile": d.mobile || "",
         "District": d.district || "",
@@ -384,11 +383,25 @@ const exportExcel = async () => {
       const ws = XLSX.utils.json_to_sheet(rows);
       
       ws["!cols"] = [
-       { wch: 8 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
-        { wch: 14 }, { wch: 16 }, { wch: 24 }, { wch: 20 },
-        { wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
-        { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
-        { wch: 12 }, { wch: 14 },
+        { wch: 8 },   // SL.No
+        { wch: 20 },  // Full Name
+        { wch: 14 },  // Mobile
+        { wch: 14 },  // District
+        { wch: 14 },  // Taluk
+        { wch: 14 },  // Experience
+        { wch: 16 },  // Expected Salary
+        { wch: 24 },  // Skills
+        { wch: 20 },  // Brands
+        { wch: 20 },  // Tools
+        { wch: 12 },  // Job Type
+        { wch: 14 },  // Payment Type
+        { wch: 14 },  // Work Location
+        { wch: 12 },  // Join Ready
+        { wch: 12 },  // Status
+        { wch: 14 },  // Radnus Agree
+        { wch: 14 },  // Profile Views
+        { wch: 12 },  // Published At
+        { wch: 14 },  // Registered At
       ];
 
       const wb = XLSX.utils.book_new();
