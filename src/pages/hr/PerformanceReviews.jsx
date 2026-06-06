@@ -700,6 +700,24 @@ const TABS = isEmployee
                                 {log.kpi_name} — <span style={{ color: "#2563eb" }}>{log.value} {log.unit}</span>
                               </p>
                               {log.note && <p style={{ margin: 0, fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>{log.note}</p>}
+                              {log.extra_fields && Object.keys(log.extra_fields).length > 0 && (
+  <div style={{
+    display: "flex", flexWrap: "wrap", gap: 5,
+    marginTop: 5, paddingTop: 5, borderTop: "1px dashed #e5e7eb"
+  }}>
+    {Object.entries(log.extra_fields).map(([key, val]) => (
+      val ? (
+        <span key={key} style={{
+          fontSize: 11, background: "#f3f4f6", color: "#374151",
+          padding: "2px 8px", borderRadius: 99,
+          border: "1px solid #e5e7eb", fontWeight: 600
+        }}>
+          {key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}: {val}
+        </span>
+      ) : null
+    ))}
+  </div>
+)}
                             </div>
                           </div>
                           <span style={{ fontSize: 12, color: "#9ca3af", flexShrink: 0 }}>{new Date(log.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>

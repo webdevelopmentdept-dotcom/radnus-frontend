@@ -62,8 +62,8 @@ const [specialFieldOptions, setSpecialFieldOptions] = useState([
   { name: "bill_date", label: "Bill Date", type: "date" },
   { name: "product_name", label: "Product Name", type: "text" },
   { name: "quantity", label: "Quantity", type: "number" },
-  { name: "discount", label: "Discount", type: "number" },
-  { name: "gst_number", label: "GST Number", type: "text" },
+  // { name: "discount", label: "Discount", type: "number" },
+  // { name: "gst_number", label: "GST Number", type: "text" },
   
   // NEW fields from Excel screenshot
   { name: "booking_no", label: "Booking No.", type: "text" },
