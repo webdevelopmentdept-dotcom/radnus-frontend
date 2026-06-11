@@ -100,38 +100,28 @@ export const LUNCH_START_TOTAL = 13 * 60 + 30;
 export const LUNCH_END_TOTAL   = 14 * 60 + 30;
 
 // Parse shift string → start minutes  e.g. "General (10:00 – 19:00)" → 600
-export const parseShiftStartFE = (shiftStr) => {
-  if (!shiftStr) return 10 * 60;
-  const match = shiftStr.match(/(\d{1,2}):(\d{2})\s*[–\-]/);
-  if (match) return parseInt(match[1]) * 60 + parseInt(match[2]);
-  return 10 * 60;
-};
 
-// Parse shift string → end minutes
-export const parseShiftEndFE = (shiftStr) => {
-  if (!shiftStr) return 19 * 60;
-  const matches = [...shiftStr.matchAll(/(\d{1,2}):(\d{2})/g)];
-  if (matches.length >= 2) return parseInt(matches[1][1]) * 60 + parseInt(matches[1][2]);
-  return 19 * 60;
-};
 
-export const calcLateMinutes = (checkIn, shiftStr = "") => {
+const SHIFT_START_MINS = 10 * 60;  // 600 = 10:00 AM
+const SHIFT_END_MINS = 19 * 60;    // 1140 = 7:00 PM
+
+export const calcLateMinutes = (checkIn) => {
   if (!checkIn) return 0;
   const total = new Date(checkIn).getHours() * 60 + new Date(checkIn).getMinutes();
   if (total >= LUNCH_START_TOTAL && total <= LUNCH_END_TOTAL) return 0;
-  return Math.max(total - parseShiftStartFE(shiftStr), 0);
+  return Math.max(total - SHIFT_START_MINS, 0);
 };
 
-export const calcEarlyOut = (checkOut, shiftStr = "") => {
+export const calcEarlyOut = (checkOut) => {
   if (!checkOut) return 0;
   const total = new Date(checkOut).getHours() * 60 + new Date(checkOut).getMinutes();
-  return Math.max(parseShiftEndFE(shiftStr) - total, 0);
+  return Math.max(SHIFT_END_MINS - total, 0);
 };
 
-export const calcOvertime = (checkOut, shiftStr = "") => {
+export const calcOvertime = (checkOut) => {
   if (!checkOut) return 0;
   const total = new Date(checkOut).getHours() * 60 + new Date(checkOut).getMinutes();
-  return Math.max(total - parseShiftEndFE(shiftStr), 0);
+  return Math.max(total - SHIFT_END_MINS, 0);
 };
 
 export const fmtMins = (mins) => {
@@ -389,7 +379,6 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
             <span style={{ ...S.pill(meta.color, meta.bg) }}>{meta.label}</span>
             <span style={{ color: "#6b7280", fontSize: 12 }}>{fmtD(date)}</span>
-            {record?.shift && <span style={{ color: "#6b7280", fontSize: 11, marginLeft: "auto", display: "flex", alignItems: "center", gap: 3 }}><Clock size={11} /> {record.shift}</span>}
           </div>
         </div>
 
@@ -551,281 +540,102 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
 // ═══════════════════════════════════════════
 //  SHIFT SELECTOR
 // ═══════════════════════════════════════════
-function ShiftSelector({ value, onChange }) {
-  const [shifts,   setShifts]   = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [open,     setOpen]     = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [editId,   setEditId]   = useState(null);
-  const [saving,   setSaving]   = useState(false);
-  const [form,     setForm]     = useState({ name: "", startTime: "09:45", endTime: "19:00" });
 
-  useEffect(() => { loadShifts(); }, []);
 
-useEffect(() => {
-  if (shifts.length > 0 && value && !selectedObj) {
-    const match = shifts.find(s => s.name === value);
-    if (match) onChange(shiftLabel(match));
-  }
-}, [shifts, value]);
+// function ShiftInlineEditor({ value, onChange, employeeId }) {
+//   const [editing, setEditing] = useState(false);
 
-  const loadShifts = async () => {
-    setLoading(true);
-    try {
-      const res  = await axios.get(`${API_BASE}/api/shifts`, { headers: authHeader() });
-      const data = res.data?.data || res.data || [];
-      setShifts(data);
-    } catch { }
-    finally { setLoading(false); }
-  };
+//   // Parse existing shift string or default
+//   const parseTime = (shiftStr, part) => {
+//     if (!shiftStr) return part === "start" ? "09:45" : "19:00";
+//     const matches = [...shiftStr.matchAll(/(\d{1,2}):(\d{2})/g)];
+//     if (part === "start" && matches[0]) return `${String(matches[0][1]).padStart(2,"0")}:${matches[0][2]}`;
+//     if (part === "end"   && matches[1]) return `${String(matches[1][1]).padStart(2,"0")}:${matches[1][2]}`;
+//     return part === "start" ? "09:45" : "19:00";
+//   };
 
-  const shiftLabel  = (s) => `${s.name} (${s.startTime} – ${s.endTime})`;
-const selectedObj = shifts.find(s => 
-  shiftLabel(s) === value || s.name === value
-) || null;
+//   const [startTime, setStartTime] = useState(() => parseTime(value, "start"));
+//   const [endTime,   setEndTime]   = useState(() => parseTime(value, "end"));
+//   const [saving,    setSaving]    = useState(false);
 
-  const handleSelect = (s) => { onChange(shiftLabel(s)); setOpen(false); };
+//   const shiftName = value
+//     ? value.split("(")[0].trim()
+//     : "General";
 
-  const openAdd = (e) => {
-    e?.stopPropagation();
-    setEditId(null);
-    setForm({ name: "", startTime: "09:45", endTime: "19:00" });
-    setShowForm(true);
-    setOpen(true);
-  };
+//   const displayStr = value || `General (${startTime} – ${endTime})`;
 
-  const openEdit = (s, e) => {
-    e.stopPropagation();
-    setEditId(s._id);
-    setForm({ name: s.name, startTime: s.startTime, endTime: s.endTime });
-    setShowForm(true);
-    setOpen(true);
-  };
-
-  const saveShift = async (e) => {
-    e?.stopPropagation();
-    if (!form.name.trim()) return;
-    setSaving(true);
-    try {
-      if (editId) {
-        const res     = await axios.put(`${API_BASE}/api/shifts/${editId}`, form, { headers: authHeader() });
-        const updated = res.data?.data || res.data;
-        setShifts(prev => prev.map(s => s._id === editId ? updated : s));
-        onChange(shiftLabel(updated));
-      } else {
-        const res     = await axios.post(`${API_BASE}/api/shifts`, form, { headers: authHeader() });
-        const created = res.data?.data || res.data;
-        setShifts(prev => [...prev, created]);
-        onChange(shiftLabel(created));
-      }
-      setShowForm(false);
-      setEditId(null);
-      setOpen(false);
-    } catch { alert("Failed to save shift"); }
-    finally { setSaving(false); }
-  };
-
-  const deleteShift = async (s, e) => {
-    e.stopPropagation();
-    if (!window.confirm(`Delete "${s.name}" shift?`)) return;
-    try {
-      await axios.delete(`${API_BASE}/api/shifts/${s._id}`, { headers: authHeader() });
-      setShifts(prev => prev.filter(x => x._id !== s._id));
-      if (value === shiftLabel(s)) onChange("");
-    } catch { alert("Delete failed"); }
-  };
-
-  const inp = {
-    border: "1px solid #e5e7eb", borderRadius: 7, padding: "7px 10px",
-    fontSize: 12, outline: "none", fontFamily: "inherit",
-    background: "#f9fafb", width: "100%", boxSizing: "border-box",
-  };
-
-  return (
-    <div style={{ marginBottom: 14, position: "relative" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-        <label style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Shift</label>
-        <button type="button" onClick={openAdd}
-          style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-          + Add New Shift
-        </button>
-      </div>
-
-      <div
-        onClick={() => setOpen(o => !o)}
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "9px 12px", borderRadius: 8, cursor: "pointer",
-          border: `1.5px solid ${selectedObj ? "#111827" : "#e5e7eb"}`,
-          background: selectedObj ? "#111827" : "#f9fafb",
-        }}
-      >
-        {loading ? (
-          <span style={{ fontSize: 13, color: "#9ca3af" }}>Loading...</span>
-        ) : selectedObj ? (
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{selectedObj.name}</div>
-            <div style={{ fontSize: 11, color: "#9ca3af" }}>{selectedObj.startTime} – {selectedObj.endTime}</div>
-          </div>
-        ) : (
-          <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 600 }}>Select a shift...</span>
-        )}
-        <span style={{ color: selectedObj ? "#9ca3af" : "#6b7280", fontSize: 11, display: "inline-block", transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
-      </div>
-
-      {open && (
-        <div style={{ position: "absolute", left: 0, right: 0, zIndex: 999, border: "1px solid #e5e7eb", borderRadius: 8, marginTop: 3, background: "#fff", boxShadow: "0 4px 16px rgba(0,0,0,0.1)", overflow: "hidden" }}>
-          {shifts.length === 0 ? (
-            <div style={{ padding: "12px", fontSize: 13, color: "#9ca3af", textAlign: "center" }}>No shifts. Use "+ Add New Shift".</div>
-          ) : shifts.map(s => {
-            const isSelected = value === shiftLabel(s);
-            return (
-              <div
-                key={s._id}
-                onClick={() => handleSelect(s)}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 12px", cursor: "pointer", background: isSelected ? "#f0fdf4" : "#fff", borderBottom: "1px solid #f3f4f6" }}
-                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "#f8fafc"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = isSelected ? "#f0fdf4" : "#fff"; }}
-              >
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? "#16a34a" : "#111827", display: "flex", alignItems: "center", gap: 5 }}>
-                    {isSelected && <span>✓</span>}{s.name}
-                  </div>
-                  <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>{s.startTime} – {s.endTime}</div>
-                </div>
-                <div style={{ display: "flex", gap: 5 }} onClick={e => e.stopPropagation()}>
-                  <button type="button" onClick={e => openEdit(s, e)} style={{ background: "#f1f5f9", border: "none", borderRadius: 5, padding: "3px 8px", fontSize: 11, fontWeight: 700, color: "#374151", cursor: "pointer", fontFamily: "inherit" }}>Edit</button>
-                  <button type="button" onClick={e => deleteShift(s, e)} style={{ background: "#fee2e2", border: "none", borderRadius: 5, padding: "3px 8px", fontSize: 11, fontWeight: 700, color: "#dc2626", cursor: "pointer", fontFamily: "inherit" }}><X size={10} /></button>
-                </div>
-              </div>
-            );
-          })}
-
-          {showForm && (
-            <div style={{ background: "#f8fafc", borderTop: "1px solid #e2e8f0", padding: 10 }} onClick={e => e.stopPropagation()}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 7 }}>{editId ? "Edit Shift" : "New Shift"}</div>
-              <div style={{ marginBottom: 7 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>Name</label>
-                <input placeholder="e.g. Morning, Night..." value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inp} />
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 8 }}>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>Start</label>
-                  <input type="time" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))} style={inp} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>End</label>
-                  <input type="time" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))} style={inp} />
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 6 }}>
-                <button type="button" onClick={e => { e.stopPropagation(); setShowForm(false); setEditId(null); }} style={{ flex: 1, padding: "6px 0", borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
-                <button type="button" onClick={saveShift} disabled={saving || !form.name.trim()} style={{ flex: 2, padding: "6px 0", borderRadius: 7, background: "#111827", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: !form.name.trim() ? 0.5 : 1 }}>
-                  {saving ? "Saving..." : editId ? "Update" : "Save & Select"}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ShiftInlineEditor({ value, onChange, employeeId }) {
-  const [editing, setEditing] = useState(false);
-
-  // Parse existing shift string or default
-  const parseTime = (shiftStr, part) => {
-    if (!shiftStr) return part === "start" ? "09:45" : "19:00";
-    const matches = [...shiftStr.matchAll(/(\d{1,2}):(\d{2})/g)];
-    if (part === "start" && matches[0]) return `${String(matches[0][1]).padStart(2,"0")}:${matches[0][2]}`;
-    if (part === "end"   && matches[1]) return `${String(matches[1][1]).padStart(2,"0")}:${matches[1][2]}`;
-    return part === "start" ? "09:45" : "19:00";
-  };
-
-  const [startTime, setStartTime] = useState(() => parseTime(value, "start"));
-  const [endTime,   setEndTime]   = useState(() => parseTime(value, "end"));
-  const [saving,    setSaving]    = useState(false);
-
-  const shiftName = value
-    ? value.split("(")[0].trim()
-    : "General";
-
-  const displayStr = value || `General (${startTime} – ${endTime})`;
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const newShiftStr = `${shiftName} (${startTime} – ${endTime})`;
-      // Save to employee record
-      await axios.put(
-  `${API_BASE}/api/hr/employees/${employeeId}/shift`,
-  { shift: `${shiftName} (${startTime} – ${endTime})` },
-  { headers: authHeader() }
-);
-onChange(newShiftStr);
+//   const handleSave = async () => {
+//     setSaving(true);
+//     try {
+//       const newShiftStr = `${shiftName} (${startTime} – ${endTime})`;
+//       // Save to employee record
+//       await axios.put(
+//   `${API_BASE}/api/hr/employees/${employeeId}/shift`,
+//   { shift: `${shiftName} (${startTime} – ${endTime})` },
+//   { headers: authHeader() }
+// );
+// onChange(newShiftStr);
       
-      setEditing(false);
-    } catch {
-      alert("Failed to save shift");
-    } finally {
-      setSaving(false);
-    }
-  };
+//       setEditing(false);
+//     } catch {
+//       alert("Failed to save shift");
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
 
-  const inp = {
-    border: "1px solid #e5e7eb", borderRadius: 7,
-    padding: "7px 10px", fontSize: 13,
-    outline: "none", fontFamily: "inherit",
-    background: "#f9fafb", width: "100%",
-    boxSizing: "border-box",
-  };
+//   const inp = {
+//     border: "1px solid #e5e7eb", borderRadius: 7,
+//     padding: "7px 10px", fontSize: 13,
+//     outline: "none", fontFamily: "inherit",
+//     background: "#f9fafb", width: "100%",
+//     boxSizing: "border-box",
+//   };
 
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-        <label style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Shift</label>
-        {!editing && (
-          <button type="button" onClick={() => setEditing(true)}
-            style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-            Change Timing
-          </button>
-        )}
-      </div>
+//   return (
+//     <div style={{ marginBottom: 14 }}>
+//       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+//         <label style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Shift</label>
+//         {!editing && (
+//           <button type="button" onClick={() => setEditing(true)}
+//             style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+//             Change Timing
+//           </button>
+//         )}
+//       </div>
 
-      {!editing ? (
-        <div style={{ background: "#f1f5f9", borderRadius: 8, padding: "9px 12px", fontSize: 13, fontWeight: 700, color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
-          <Clock size={13} color="#6b7280" />
-          {displayStr}
-        </div>
-      ) : (
-        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: 10 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-            <div>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>Start Time</label>
-              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} style={inp} />
-            </div>
-            <div>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>End Time</label>
-              <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} style={inp} />
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 6 }}>
-            <button type="button" onClick={() => setEditing(false)}
-              style={{ flex: 1, padding: "6px 0", borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
-              Cancel
-            </button>
-            <button type="button" onClick={handleSave} disabled={saving}
-              style={{ flex: 2, padding: "6px 0", borderRadius: 7, background: "#111827", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
-              {saving ? "Saving..." : "Save Timing"}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+//       {!editing ? (
+//         <div style={{ background: "#f1f5f9", borderRadius: 8, padding: "9px 12px", fontSize: 13, fontWeight: 700, color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
+//           <Clock size={13} color="#6b7280" />
+//           {displayStr}
+//         </div>
+//       ) : (
+//         <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: 10 }}>
+//           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+//             <div>
+//               <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>Start Time</label>
+//               <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} style={inp} />
+//             </div>
+//             <div>
+//               <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>End Time</label>
+//               <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} style={inp} />
+//             </div>
+//           </div>
+//           <div style={{ display: "flex", gap: 6 }}>
+//             <button type="button" onClick={() => setEditing(false)}
+//               style={{ flex: 1, padding: "6px 0", borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+//               Cancel
+//             </button>
+//             <button type="button" onClick={handleSave} disabled={saving}
+//               style={{ flex: 2, padding: "6px 0", borderRadius: 7, background: "#111827", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+//               {saving ? "Saving..." : "Save Timing"}
+//             </button>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
 
 // ═══════════════════════════════════════════
 //  HR MARK MODAL
@@ -835,13 +645,13 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
   const existingLastOut = existing ? getLastOut(existing) : null;
   const noTimeStatus = ["absent", "leave", "holiday", "weekend"];
 
-  const [form, setForm] = useState({
+    const [form, setForm] = useState({
   status:   existing?.status || "present",
   checkIn:  existingFirstIn ? new Date(existingFirstIn).toTimeString().slice(0, 5) : "10:00",
   checkOut: existingLastOut ? new Date(existingLastOut).toTimeString().slice(0, 5) : "",
-  shift: existing?.shift || employee?.shift || "",
   remark:   existing?.remark || "",
 });
+
   const [saving, setSaving] = useState(false);
   const isNoTime = noTimeStatus.includes(form.status);
 
@@ -854,7 +664,6 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
         status:   form.status,
         checkIn:  (!isNoTime && form.checkIn)  ? `${date}T${form.checkIn}:00`  : null,
         checkOut: (!isNoTime && form.checkOut) ? `${date}T${form.checkOut}:00` : null,
-        shift:    form.shift,
         remark:   form.remark,
       }, { headers: authHeader() });
       onSave("success", `${employee.name} — attendance marked!`);
@@ -910,13 +719,7 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
           </div>
         )}
 
-{!isNoTime && (
-  <ShiftInlineEditor
-    value={form.shift}
-    onChange={(val) => setForm(f => ({ ...f, shift: val }))}
-    employeeId={employee._id}
-  />
-)}
+
         <div style={{ marginBottom: 18 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 4 }}>HR Remark</label>
           <textarea rows={2} placeholder="Optional..." value={form.remark} onChange={e => setForm(f => ({ ...f, remark: e.target.value }))} style={{ ...inp, resize: "vertical" }} />
@@ -986,9 +789,9 @@ function DailyTab() {
   breakOut:     r.breakOut || null,
   breakIn:      r.breakIn || null,
   breakLate:    r.breakLate || 0,
-  lateMinutes:  calcLateMinutes(getFirstIn(r), r.shift || ""),
-  earlyOutMins: getFirstIn(r) && !getLastOut(r) ? 0 : calcEarlyOut(getLastOut(r), r.shift || ""),
-  overtimeMins: calcOvertime(getLastOut(r), r.shift || ""),
+    lateMinutes:  calcLateMinutes(getFirstIn(r)),
+  earlyOutMins: getFirstIn(r) && !getLastOut(r) ? 0 : calcEarlyOut(getLastOut(r)),
+  overtimeMins: calcOvertime(getLastOut(r)),
   missingPunch: hasMissingOut(r, date),
 }));
 

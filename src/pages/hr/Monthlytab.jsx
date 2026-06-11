@@ -40,7 +40,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
         
         const daysInMonth = new Date(year, month, 0).getDate();
         const filled = [];
-        let presentCount = 0, lateCount = 0, absentCount = 0, otCount = 0, leaveCount = 0, halfCount = 0;
+        let presentCount = 0, lateCount = 0, absentCount = 0, leaveCount = 0, halfCount = 0;
 
         for (let d = 1; d <= daysInMonth; d++) {
           const dateStr   = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -62,27 +62,62 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
 
           if (isWeekend) {
             status = "weekend";
-          } else if (rec) {
-            // Extract values from record
-            status = rec.status || "absent";
-            firstIn = rec.first_in || rec.checkIn || null;
-            lastOut = rec.last_out || rec.checkOut || null;
-            breakOut = rec.breakOut || null;
-            breakIn = rec.breakIn || null;
-            breakLate = rec.breakLate || 0;
-            lateMin = rec.late_minutes || 0;
-            otMin = rec.overtime_minutes || 0;
+} else if (rec) {
+  status = rec.status || "absent";
+  breakOut = rec.breakOut || null;
+  breakIn  = rec.breakIn  || null;
+  breakLate = rec.breakLate || 0;
+  otMin = 0;
+  remark = rec.remark || "";
+
+  // ✅ STEP 1: firstIn — DB field முதல்ல, இல்லன்னா punches-ல இருந்து எடு
+  firstIn = rec.first_in || rec.checkIn || null;
+  if (!firstIn && rec.punches?.length) {
+    const ins = rec.punches
+      .filter(p => p.type === "in")
+      .sort((a, b) => new Date(a.time) - new Date(b.time));
+    firstIn = ins[0]?.time || null;
+  }
+
+  // ✅ STEP 2: lastOut — DB field முதல்ல, இல்லன்னா punches-ல இருந்து எடு
+  lastOut = rec.last_out || rec.checkOut || null;
+  if (!lastOut && rec.punches?.length) {
+    const outs = rec.punches
+      .filter(p => p.type === "out")
+      .sort((a, b) => new Date(b.time) - new Date(a.time));
+    lastOut = outs[0]?.time || null;
+  }
+
+  // ✅ STEP 3: lateMin — DB value முதல்ல, இல்லன்னா firstIn-ல இருந்து IST-ல calculate பண்ணு
+  // lateMin = rec.late_minutes || 0;
+  // if (lateMin === 0 && firstIn) {
+  //   const shiftStr = rec.shift || "";
+  //   const shiftMatch = shiftStr.match(/(\d{1,2}):(\d{2})\s*[–\-]/);
+  //   const shiftStartMins = shiftMatch
+  //     ? parseInt(shiftMatch[1]) * 60 + parseInt(shiftMatch[2])
+  //     : 10 * 60; // default 10:00 AM
+  //   const graceEnd = shiftStartMins + 15; // 15 min grace
+  //   // ✅ IST timezone use பண்ணு (UTC இல்ல!)
+  //   const istDate = new Date(new Date(firstIn).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  //   const firstInMins = istDate.getHours() * 60 + istDate.getMinutes();
+  //   lateMin = Math.max(firstInMins - graceEnd, 0);
+  // }
+            otMin = 0; // OT feature removed
             remark = rec.remark || "";
 
-            // Derive firstIn/lastOut from punches if not set
-            if (!firstIn && rec.punches?.length) {
-              const ins = rec.punches.filter(p => p.type === "in").sort((a, b) => new Date(a.time) - new Date(b.time));
-              firstIn = ins[0]?.time || null;
-            }
-            if (!lastOut && rec.punches?.length) {
-              const outs = rec.punches.filter(p => p.type === "out").sort((a, b) => new Date(b.time) - new Date(a.time));
-              lastOut = outs[0]?.time || null;
-            }
+            // ✅ lateMin — DB value இருந்தா எடு, இல்லன்னா firstIn-ல இருந்து IST-ல calculate
+lateMin = rec.late_minutes || 0;
+if (lateMin === 0 && firstIn) {
+  const istDate = new Date(
+    new Date(firstIn).toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+  const firstInMins = istDate.getHours() * 60 + istDate.getMinutes();
+  const shiftStart  = 10 * 60;  // 10:00 AM
+  const graceMins   = shiftStart + 5; // 15 min grace → 10:15 AM வரை OK
+  lateMin = Math.max(firstInMins - graceMins, 0);
+}
+
+            
 
             // Calculate work hours
             if (rec.work_hours && typeof rec.work_hours === "number" && rec.work_hours > 0) {
@@ -97,13 +132,12 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
             }
 
             // Count summary
-            if (status === "present" || status === "late") presentCount++;
-            if (status === "late" || lateMin > 0) lateCount++;
+if (status === "present" || status === "late") presentCount++;
+if (status === "late") lateCount++;  // late is ALSO present
             else if (status === "leave") leaveCount++;
             else if (status === "half_day") halfCount++;
             else if (status === "absent") absentCount++;
-            if (otMin > 0) otCount++;
-          } else {
+            } else {
             // No record and not weekend = absent
             absentCount++;
           }
@@ -125,7 +159,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
           });
         }
         
-        setSummary({ presentCount, lateCount, absentCount, otCount, leaveCount, halfCount });
+                setSummary({ presentCount, lateCount, absentCount, leaveCount, halfCount });
         setRecords(filled);
       })
       .catch((err) => { 
@@ -180,7 +214,6 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
                   { label: "Absent",   value: summary.absentCount,  color: "#f87171" },
                   { label: "Leave",    value: summary.leaveCount,   color: "#38bdf8" },
                   { label: "Half Day", value: summary.halfCount,    color: "#a78bfa" },
-                  { label: "OT Days",  value: summary.otCount,      color: "#34d399" },
                 ].map(c => (
                   <div key={c.label} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "3px 12px", display: "flex", alignItems: "center", gap: 6 }}>
                     <span style={{ fontSize: 13, fontWeight: 800, color: c.color }}>{c.value}</span>
@@ -202,14 +235,15 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
                     <tr>
-                      {["Date", "Day", "Status", "Check In", "Check Out", "Work Hrs", "Break Out", "Break In", "Break Late", "Late", "Overtime"].map(h => (
+                                            {["Date", "Day", "Status", "Check In", "Check Out", "Work Hrs", "Break Out", "Break In", "Break Late", "Late"].map(h => (
                         <th key={h} style={S.tableHead}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {records.map((row, idx) => {
-                      const st    = statusStyle(row.status);
+                      const displayStatus = row.status === "late" ? "present" : row.status;
+const st = statusStyle(displayStatus);
                       const isWkd = row.isWeekend;
                       return (
                         <tr key={idx}
@@ -266,11 +300,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
                           <td style={S.tableCell}>
                             {row.lateMin > 0 ? <span style={{ background: "#fef9c3", color: "#d97706", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(row.lateMin)}</span> : <span style={{ color: "#d1d5db" }}>—</span>}
                           </td>
-                          
-                          {/* Overtime */}
-                          <td style={S.tableCell}>
-                            {row.otMin > 0 ? <span style={{ background: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(row.otMin)}</span> : <span style={{ color: "#d1d5db" }}>—</span>}
-                          </td>
+                                          
                         </tr>
                       );
                     })}
@@ -392,15 +422,13 @@ export default function MonthlyTab() {
   const totalPresent  = data.reduce((s, r) => s + (r.present       || 0), 0);
   const totalAbsent   = data.reduce((s, r) => s + (r.absent        || 0), 0);
   const totalLate     = data.reduce((s, r) => s + (r.late          || 0), 0);
-  const totalOT       = data.reduce((s, r) => s + (r.overtime_days || 0), 0);
   const avgAttendance = data.length ? Math.round(data.reduce((s, r) => s + (r.attendance_pct || 0), 0) / data.length) : 0;
 
-  const monthlyStats = [
+    const monthlyStats = [
     { label: "Employees",      value: data.length,         color: "#111827" },
     { label: "Total Present",  value: totalPresent,        color: "#16a34a" },
     { label: "Total Absent",   value: totalAbsent,         color: "#dc2626" },
     { label: "Total Late",     value: totalLate,           color: "#d97706" },
-    { label: "OT Days",        value: totalOT,             color: "#047857" },
     { label: "Avg Attendance", value: `${avgAttendance}%`, color: "#2563eb" },
   ];
 
@@ -480,7 +508,6 @@ export default function MonthlyTab() {
                   <SortTh label="Half Day"    k="half_day" />
                   <SortTh label="On Leave"    k="on_leave" />
                   <SortTh label="Absent"      k="absent" />
-                  <SortTh label="OT Days"     k="overtime_days" />
                   <SortTh label="Avg Hrs"     k="avg_work_hours_num" />
                   <SortTh label="Attendance%" k="attendance_pct" />
                   <th style={S.tableHead}>Details</th>
@@ -488,8 +515,8 @@ export default function MonthlyTab() {
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={14} style={{ textAlign: "center", padding: "40px 0", color: "#d1d5db" }}>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
+                                    <tr><td colSpan={13} style={{ textAlign: "center", padding: "40px 0", color: "#d1d5db" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
                       <Activity size={32} color="#e5e7eb" />
                       <span style={{ fontSize: 13 }}>No data for this period</span>
                     </div>
@@ -528,17 +555,25 @@ export default function MonthlyTab() {
 
                       <td style={{ ...S.tableCell, fontWeight: 700, color: "#374151", textAlign: "center" }}>{r.work_days}</td>
 
-                      <td style={{ ...S.tableCell, textAlign: "center" }}>
-                        <span style={{ background: "#dcfce7", color: "#16a34a", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, display: "inline-block" }}>{r.present}</span>
-                      </td>
-
-                      <td style={{ ...S.tableCell, textAlign: "center" }}>
+                      {/* <td style={{ ...S.tableCell, textAlign: "center" }}>
                         {r.late > 0 ? (
                           <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                             <span style={{ background: "#fef9c3", color: "#d97706", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, border: "1px solid #fde68a" }}>{r.late}</span>
                             {r.total_late_minutes > 0 && <span style={{ fontSize: 10, color: "#b45309", fontWeight: 600 }}>{fmtMins(r.total_late_minutes)}</span>}
                           </div>
                         ) : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
+                      </td> */}
+
+                      <td style={{ ...S.tableCell, textAlign: "center" }}>
+                        {r.present > 0
+                          ? <span style={{ background: "#dcfce7", color: "#16a34a", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, border: "1px solid #bbf7d0" }}>{r.present}</span>
+                          : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
+                      </td>
+
+                      <td style={{ ...S.tableCell, textAlign: "center" }}>
+                        {r.late > 0
+                          ? <span style={{ background: "#fef9c3", color: "#d97706", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, border: "1px solid #fde68a" }}>{r.late}</span>
+                          : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
                       </td>
 
                       <td style={{ ...S.tableCell, textAlign: "center" }}>
@@ -558,13 +593,6 @@ export default function MonthlyTab() {
                           ? <span style={{ background: "#fee2e2", color: "#dc2626", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, display: "inline-block" }}>{r.absent}</span>
                           : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
                       </td>
-
-                      <td style={{ ...S.tableCell, textAlign: "center" }}>
-                        {r.overtime_days > 0
-                          ? <span style={{ background: "#ecfdf5", color: "#047857", fontWeight: 800, fontSize: 13, padding: "3px 10px", borderRadius: 20, display: "inline-block" }}>{r.overtime_days}</span>
-                          : <span style={{ color: "#d1d5db", fontSize: 18 }}>·</span>}
-                      </td>
-
                       <td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700, textAlign: "center" }}>{r.avg_work_hours || "—"}</td>
 
                       <td style={{ ...S.tableCell, minWidth: 120 }}>
