@@ -102,26 +102,36 @@ export const LUNCH_END_TOTAL   = 14 * 60 + 30;
 // Parse shift string → start minutes  e.g. "General (10:00 – 19:00)" → 600
 
 
-const SHIFT_START_MINS = 10 * 60;  // 600 = 10:00 AM
-const SHIFT_END_MINS = 19 * 60;    // 1140 = 7:00 PM
+const DEFAULT_SHIFT_START = 10 * 60;
+const DEFAULT_SHIFT_END   = 19 * 60;
 
-export const calcLateMinutes = (checkIn) => {
+// shift object { start: "10:00", end: "19:00" } → minutes
+export const parseShiftMins = (shift) => {
+  if (shift?.start && shift?.end) {
+    const [sh, sm] = shift.start.split(":").map(Number);
+    const [eh, em] = shift.end.split(":").map(Number);
+    return { startMins: sh * 60 + sm, endMins: eh * 60 + em };
+  }
+  return { startMins: DEFAULT_SHIFT_START, endMins: DEFAULT_SHIFT_END };
+};
+
+export const calcLateMinutes = (checkIn, shiftStartMins = DEFAULT_SHIFT_START) => {
   if (!checkIn) return 0;
   const total = new Date(checkIn).getHours() * 60 + new Date(checkIn).getMinutes();
   if (total >= LUNCH_START_TOTAL && total <= LUNCH_END_TOTAL) return 0;
-  return Math.max(total - SHIFT_START_MINS, 0);
+  return Math.max(total - shiftStartMins, 0);
 };
 
-export const calcEarlyOut = (checkOut) => {
+export const calcEarlyOut = (checkOut, shiftEndMins = DEFAULT_SHIFT_END) => {
   if (!checkOut) return 0;
   const total = new Date(checkOut).getHours() * 60 + new Date(checkOut).getMinutes();
-  return Math.max(SHIFT_END_MINS - total, 0);
+  return Math.max(shiftEndMins - total, 0);
 };
 
-export const calcOvertime = (checkOut) => {
+export const calcOvertime = (checkOut, shiftEndMins = DEFAULT_SHIFT_END) => {
   if (!checkOut) return 0;
   const total = new Date(checkOut).getHours() * 60 + new Date(checkOut).getMinutes();
-  return Math.max(total - SHIFT_END_MINS, 0);
+  return Math.max(total - shiftEndMins, 0);
 };
 
 export const fmtMins = (mins) => {
@@ -303,9 +313,10 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
     ].filter(Boolean)
   );
 
-  const lateMinutes  = calcLateMinutes(firstIn);
-  const earlyOutMins = (firstIn && lastOut) ? calcEarlyOut(lastOut) : 0;
-  const overtimeMins = calcOvertime(lastOut);
+  const { startMins, endMins } = parseShiftMins(emp?.shift);
+const lateMinutes  = calcLateMinutes(firstIn, startMins);
+const earlyOutMins = (firstIn && lastOut) ? calcEarlyOut(lastOut, endMins) : 0;
+const overtimeMins = calcOvertime(lastOut, endMins);
   const missingPunch = hasMissingOut(record, date);
 
   const workHrs = () => {
@@ -391,6 +402,15 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
               <Timer size={11} /> Time Summary
             </div>
             <div style={{ background: "#f9fafb", borderRadius: 8, padding: "2px 12px" }}>
+              <Row
+  label="Shift"
+  value={
+    emp?.shift?.start
+      ? `${emp.shift.start} – ${emp.shift.end}`
+      : "10:00 – 19:00"
+  }
+  valueColor="#6b7280"
+/>
               <Row label="First In"     value={fmt(firstIn) || "—"} valueColor="#16a34a" />
               <Row label="Last Out"     value={lastOut ? fmt(lastOut) : missingPunch ? "Pending" : "—"} valueColor={lastOut ? "#dc2626" : "#f59e0b"} />
               <Row label="Work Hours"   value={workHrs()} valueColor="#2563eb" />
@@ -542,100 +562,101 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
 // ═══════════════════════════════════════════
 
 
-// function ShiftInlineEditor({ value, onChange, employeeId }) {
-//   const [editing, setEditing] = useState(false);
+// ✅ இந்த entire commented block uncomment பண்ணு — ஆனா signature மாத்தணும்:
 
-//   // Parse existing shift string or default
-//   const parseTime = (shiftStr, part) => {
-//     if (!shiftStr) return part === "start" ? "09:45" : "19:00";
-//     const matches = [...shiftStr.matchAll(/(\d{1,2}):(\d{2})/g)];
-//     if (part === "start" && matches[0]) return `${String(matches[0][1]).padStart(2,"0")}:${matches[0][2]}`;
-//     if (part === "end"   && matches[1]) return `${String(matches[1][1]).padStart(2,"0")}:${matches[1][2]}`;
-//     return part === "start" ? "09:45" : "19:00";
-//   };
+function ShiftInlineEditor({ empId, currentShift, onShiftSaved }) {
+  const [editing, setEditing] = useState(false);
+  const normalizeToHHMM = (t) => {
+  if (!t) return null;
+  if (/^\d{2}:\d{2}$/.test(t)) return t;
+  if (/^\d{1}:\d{2}$/.test(t)) return "0" + t;
+  return null;
+};
 
-//   const [startTime, setStartTime] = useState(() => parseTime(value, "start"));
-//   const [endTime,   setEndTime]   = useState(() => parseTime(value, "end"));
-//   const [saving,    setSaving]    = useState(false);
+const [startTime, setStartTime] = useState(normalizeToHHMM(currentShift?.start) || "10:00");
+const [endTime,   setEndTime]   = useState(normalizeToHHMM(currentShift?.end)   || "19:00");
+useEffect(() => {
+    setStartTime(normalizeToHHMM(currentShift?.start) || "10:00");
+    setEndTime(normalizeToHHMM(currentShift?.end)     || "19:00");
+  }, [currentShift]);
+  const [saving,    setSaving]    = useState(false);
 
-//   const shiftName = value
-//     ? value.split("(")[0].trim()
-//     : "General";
+ // இந்த entire handleSave மாத்து:
+const handleSave = async () => {
+  setSaving(true);
+  try {
+    const start24 = startTime || "10:00";
+    const end24   = endTime   || "19:00";
 
-//   const displayStr = value || `General (${startTime} – ${endTime})`;
+    // console.log("Sending shift:", start24, end24); // debug-க்கு வேணும்னா வை
 
-//   const handleSave = async () => {
-//     setSaving(true);
-//     try {
-//       const newShiftStr = `${shiftName} (${startTime} – ${endTime})`;
-//       // Save to employee record
-//       await axios.put(
-//   `${API_BASE}/api/hr/employees/${employeeId}/shift`,
-//   { shift: `${shiftName} (${startTime} – ${endTime})` },
-//   { headers: authHeader() }
-// );
-// onChange(newShiftStr);
-      
-//       setEditing(false);
-//     } catch {
-//       alert("Failed to save shift");
-//     } finally {
-//       setSaving(false);
-//     }
-//   };
+    await axios.put(
+      `${API_BASE}/api/hr/employees/${empId}/shift`,
+      { start: start24, end: end24 },
+      { headers: authHeader() }
+    );
+    onShiftSaved({ start: start24, end: end24 });
+    setEditing(false);
+  } catch (err) {
+    // இப்போ exact error message காட்டும்
+    alert(err.response?.data?.message || "Shift save failed");
+  } finally {
+    setSaving(false);
+  }
+};
 
-//   const inp = {
-//     border: "1px solid #e5e7eb", borderRadius: 7,
-//     padding: "7px 10px", fontSize: 13,
-//     outline: "none", fontFamily: "inherit",
-//     background: "#f9fafb", width: "100%",
-//     boxSizing: "border-box",
-//   };
+  const inp = {
+    border: "1px solid #e5e7eb", borderRadius: 7,
+    padding: "7px 10px", fontSize: 13,
+    outline: "none", fontFamily: "inherit",
+    background: "#f9fafb", width: "100%",
+    boxSizing: "border-box",
+  };
 
-//   return (
-//     <div style={{ marginBottom: 14 }}>
-//       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-//         <label style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Shift</label>
-//         {!editing && (
-//           <button type="button" onClick={() => setEditing(true)}
-//             style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-//             Change Timing
-//           </button>
-//         )}
-//       </div>
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+        <label style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Shift Timing</label>
+        {!editing && (
+          <button type="button" onClick={() => setEditing(true)}
+            style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", background: "none", border: "none", cursor: "pointer" }}>
+            Change
+          </button>
+        )}
+      </div>
 
-//       {!editing ? (
-//         <div style={{ background: "#f1f5f9", borderRadius: 8, padding: "9px 12px", fontSize: 13, fontWeight: 700, color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
-//           <Clock size={13} color="#6b7280" />
-//           {displayStr}
-//         </div>
-//       ) : (
-//         <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: 10 }}>
-//           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-//             <div>
-//               <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>Start Time</label>
-//               <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} style={inp} />
-//             </div>
-//             <div>
-//               <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>End Time</label>
-//               <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} style={inp} />
-//             </div>
-//           </div>
-//           <div style={{ display: "flex", gap: 6 }}>
-//             <button type="button" onClick={() => setEditing(false)}
-//               style={{ flex: 1, padding: "6px 0", borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
-//               Cancel
-//             </button>
-//             <button type="button" onClick={handleSave} disabled={saving}
-//               style={{ flex: 2, padding: "6px 0", borderRadius: 7, background: "#111827", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
-//               {saving ? "Saving..." : "Save Timing"}
-//             </button>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
+      {!editing ? (
+        <div style={{ background: "#f1f5f9", borderRadius: 8, padding: "9px 12px", fontSize: 13, fontWeight: 700, color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
+          <Clock size={13} color="#6b7280" />
+          {startTime} – {endTime}
+        </div>
+      ) : (
+        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>Start</label>
+              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} style={inp} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 3 }}>End</label>
+              <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} style={inp} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button type="button" onClick={() => setEditing(false)}
+              style={{ flex: 1, padding: "6px 0", borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+              Cancel
+            </button>
+            <button type="button" onClick={handleSave} disabled={saving}
+              style={{ flex: 2, padding: "6px 0", borderRadius: 7, background: "#111827", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+              {saving ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ═══════════════════════════════════════════
 //  HR MARK MODAL
@@ -644,6 +665,7 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
   const existingFirstIn = existing ? getFirstIn(existing) : null;
   const existingLastOut = existing ? getLastOut(existing) : null;
   const noTimeStatus = ["absent", "leave", "holiday", "weekend"];
+    const [currentShift, setCurrentShift] = useState(employee.shift);
 
     const [form, setForm] = useState({
   status:   existing?.status || "present",
@@ -719,6 +741,14 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
           </div>
         )}
 
+  <ShiftInlineEditor
+  empId={employee._id}
+  currentShift={currentShift}
+  onShiftSaved={(newShift) => {
+    setCurrentShift(newShift);
+    employee.shift = newShift;
+  }}
+/>
 
         <div style={{ marginBottom: 18 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 4 }}>HR Remark</label>
@@ -781,19 +811,26 @@ function DailyTab() {
 
   const departments = ["all", ...new Set(data.map(r => r.employee?.department).filter(Boolean))];
 
- const enriched = data.map(r => ({
-  ...r,
-  _firstIn:     getFirstIn(r),
-  _lastOut:     getLastOut(r),
-  checkOut:     r.checkOut || null,
-  breakOut:     r.breakOut || null,
-  breakIn:      r.breakIn || null,
-  breakLate:    r.breakLate || 0,
-    lateMinutes:  calcLateMinutes(getFirstIn(r)),
-  earlyOutMins: getFirstIn(r) && !getLastOut(r) ? 0 : calcEarlyOut(getLastOut(r)),
-  overtimeMins: calcOvertime(getLastOut(r)),
-  missingPunch: hasMissingOut(r, date),
-}));
+ const enriched = data.map(r => {
+  const { startMins, endMins } = parseShiftMins(r.employee?.shift);
+  const firstIn = getFirstIn(r);
+  const lastOut = getLastOut(r);
+  return {
+    ...r,
+    _firstIn:     firstIn,
+    _lastOut:     lastOut,
+    checkOut:     r.checkOut || null,
+    breakOut:     r.breakOut || null,
+    breakIn:      r.breakIn  || null,
+    breakLate:    r.breakLate || 0,
+    lateMinutes:  calcLateMinutes(firstIn, startMins),
+    earlyOutMins: firstIn && !lastOut ? 0 : calcEarlyOut(lastOut, endMins),
+    overtimeMins: calcOvertime(lastOut, endMins),
+    missingPunch: hasMissingOut(r, date),
+    _shiftStart:  r.employee?.shift?.start || "10:00",
+    _shiftEnd:    r.employee?.shift?.end   || "19:00",
+  };
+});
 
   const filtered = enriched.filter(r => {
     const matchS    = !search || (r.employee?.name || "").toLowerCase().includes(search.toLowerCase()) || (r.employee?.employeeId || r.employee?.employee_code || "").toLowerCase().includes(search.toLowerCase());
@@ -1004,11 +1041,9 @@ function DailyTab() {
     <button onClick={() => setDrawerRecord(r)} style={S.actionBtn(false)}>
       <Eye size={11} />View
     </button>
-    {localStorage.getItem("hrRole") !== "employee" && (
-      <button onClick={() => setMarkModal({ employee: r.employee, existing: r._firstIn ? r : null })} style={S.actionBtn(true)}>
-        <Edit3 size={11} />{r._firstIn ? "Edit" : "Mark"}
-      </button>
-    )}
+    <button onClick={() => setMarkModal({ employee: r.employee, existing: r._firstIn ? r : null })} style={S.actionBtn(true)}>
+  <Edit3 size={11} />{r._firstIn ? "Edit" : "Mark"}
+</button>
   </div>
 </td>
                     </tr>

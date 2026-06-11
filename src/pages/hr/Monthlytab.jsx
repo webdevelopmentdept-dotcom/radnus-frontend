@@ -9,7 +9,7 @@ import {
 import {
   API_BASE, authHeader, pad, fmt, fmtD,
   STATUS_META, S, fmtMins,
-  StatStrip,
+  StatStrip, parseShiftMins,
 } from "./Hrattendancepage";
 
 // ═══════════════════════════════════════════
@@ -28,25 +28,25 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
       console.error("EmployeeMonthModal: employee._id is missing!", employee);
       return;
     }
-    
+
     console.log("Fetching monthly for employee:", employee._id, employee.employeeId);
     setLoading(true);
-    
+
     axios
       .get(`${API_BASE}/api/attendance/monthly/${employee._id}?year=${year}&month=${month}`, { headers: authHeader() })
       .then((res) => {
         const raw = res.data?.data || [];
         console.log("Monthly records received:", raw.length);
-        
+
         const daysInMonth = new Date(year, month, 0).getDate();
         const filled = [];
         let presentCount = 0, lateCount = 0, absentCount = 0, leaveCount = 0, halfCount = 0;
 
         for (let d = 1; d <= daysInMonth; d++) {
-          const dateStr   = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-          const dayOfWeek = new Date(`${year}-${String(month).padStart(2,"0")}-${String(d).padStart(2,"0")}T12:00:00`).getDay();
+          const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          const dayOfWeek = new Date(`${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}T12:00:00`).getDay();
           const isWeekend = dayOfWeek === 0; // Sunday ONLY (Saturday is working day)
-          const rec       = raw.find((r) => r.date === dateStr);
+          const rec = raw.find((r) => r.date === dateStr);
 
           // Default values for ALL rows
           let firstIn = null;
@@ -62,62 +62,62 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
 
           if (isWeekend) {
             status = "weekend";
-} else if (rec) {
-  status = rec.status || "absent";
-  breakOut = rec.breakOut || null;
-  breakIn  = rec.breakIn  || null;
-  breakLate = rec.breakLate || 0;
-  otMin = 0;
-  remark = rec.remark || "";
+          } else if (rec) {
+            status = rec.status || "absent";
+            breakOut = rec.breakOut || null;
+            breakIn = rec.breakIn || null;
+            breakLate = rec.breakLate || 0;
+            otMin = 0;
+            remark = rec.remark || "";
 
-  // ✅ STEP 1: firstIn — DB field முதல்ல, இல்லன்னா punches-ல இருந்து எடு
-  firstIn = rec.first_in || rec.checkIn || null;
-  if (!firstIn && rec.punches?.length) {
-    const ins = rec.punches
-      .filter(p => p.type === "in")
-      .sort((a, b) => new Date(a.time) - new Date(b.time));
-    firstIn = ins[0]?.time || null;
-  }
+            // ✅ STEP 1: firstIn — DB field முதல்ல, இல்லன்னா punches-ல இருந்து எடு
+            firstIn = rec.first_in || rec.checkIn || null;
+            if (!firstIn && rec.punches?.length) {
+              const ins = rec.punches
+                .filter(p => p.type === "in")
+                .sort((a, b) => new Date(a.time) - new Date(b.time));
+              firstIn = ins[0]?.time || null;
+            }
 
-  // ✅ STEP 2: lastOut — DB field முதல்ல, இல்லன்னா punches-ல இருந்து எடு
-  lastOut = rec.last_out || rec.checkOut || null;
-  if (!lastOut && rec.punches?.length) {
-    const outs = rec.punches
-      .filter(p => p.type === "out")
-      .sort((a, b) => new Date(b.time) - new Date(a.time));
-    lastOut = outs[0]?.time || null;
-  }
+            // ✅ STEP 2: lastOut — DB field முதல்ல, இல்லன்னா punches-ல இருந்து எடு
+            lastOut = rec.last_out || rec.checkOut || null;
+            if (!lastOut && rec.punches?.length) {
+              const outs = rec.punches
+                .filter(p => p.type === "out")
+                .sort((a, b) => new Date(b.time) - new Date(a.time));
+              lastOut = outs[0]?.time || null;
+            }
 
-  // ✅ STEP 3: lateMin — DB value முதல்ல, இல்லன்னா firstIn-ல இருந்து IST-ல calculate பண்ணு
-  // lateMin = rec.late_minutes || 0;
-  // if (lateMin === 0 && firstIn) {
-  //   const shiftStr = rec.shift || "";
-  //   const shiftMatch = shiftStr.match(/(\d{1,2}):(\d{2})\s*[–\-]/);
-  //   const shiftStartMins = shiftMatch
-  //     ? parseInt(shiftMatch[1]) * 60 + parseInt(shiftMatch[2])
-  //     : 10 * 60; // default 10:00 AM
-  //   const graceEnd = shiftStartMins + 15; // 15 min grace
-  //   // ✅ IST timezone use பண்ணு (UTC இல்ல!)
-  //   const istDate = new Date(new Date(firstIn).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-  //   const firstInMins = istDate.getHours() * 60 + istDate.getMinutes();
-  //   lateMin = Math.max(firstInMins - graceEnd, 0);
-  // }
+            // ✅ STEP 3: lateMin — DB value முதல்ல, இல்லன்னா firstIn-ல இருந்து IST-ல calculate பண்ணு
+            // lateMin = rec.late_minutes || 0;
+            // if (lateMin === 0 && firstIn) {
+            //   const shiftStr = rec.shift || "";
+            //   const shiftMatch = shiftStr.match(/(\d{1,2}):(\d{2})\s*[–\-]/);
+            //   const shiftStartMins = shiftMatch
+            //     ? parseInt(shiftMatch[1]) * 60 + parseInt(shiftMatch[2])
+            //     : 10 * 60; // default 10:00 AM
+            //   const graceEnd = shiftStartMins + 15; // 15 min grace
+            //   // ✅ IST timezone use பண்ணு (UTC இல்ல!)
+            //   const istDate = new Date(new Date(firstIn).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+            //   const firstInMins = istDate.getHours() * 60 + istDate.getMinutes();
+            //   lateMin = Math.max(firstInMins - graceEnd, 0);
+            // }
             otMin = 0; // OT feature removed
             remark = rec.remark || "";
 
             // ✅ lateMin — DB value இருந்தா எடு, இல்லன்னா firstIn-ல இருந்து IST-ல calculate
-lateMin = rec.late_minutes || 0;
-if (lateMin === 0 && firstIn) {
-  const istDate = new Date(
-    new Date(firstIn).toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
-  );
-  const firstInMins = istDate.getHours() * 60 + istDate.getMinutes();
-  const shiftStart  = 10 * 60;  // 10:00 AM
-  const graceMins   = shiftStart + 5; // 15 min grace → 10:15 AM வரை OK
-  lateMin = Math.max(firstInMins - graceMins, 0);
-}
+            lateMin = rec.late_minutes || 0;
+            if (lateMin === 0 && firstIn) {
+              const istDate = new Date(
+                new Date(firstIn).toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+              );
+              const firstInMins = istDate.getHours() * 60 + istDate.getMinutes();
+              // ← employee shift use பண்ணு (hardcoded இல்ல)
+              const { startMins } = parseShiftMins(employee?.shift);
+              lateMin = Math.max(firstInMins - startMins, 0);
+            }
 
-            
+
 
             // Calculate work hours
             if (rec.work_hours && typeof rec.work_hours === "number" && rec.work_hours > 0) {
@@ -128,16 +128,22 @@ if (lateMin === 0 && firstIn) {
               const diff = (new Date(lastOut) - new Date(firstIn)) / 3600000;
               workHrs = `${Math.floor(diff)}h ${pad(Math.round((diff % 1) * 60))}m`;
             } else if (firstIn && !lastOut) {
-              workHrs = "Ongoing";
-            }
+  const today = new Date().toISOString().split("T")[0];
+  if (rec.date === today) {
+    workHrs = "Ongoing";
+  } else {
+    // Past date la punch out illana - last punch time varaikum calculate
+    workHrs = "No Out";
+  }
+}
 
             // Count summary
-if (status === "present" || status === "late") presentCount++;
-if (status === "late") lateCount++;  // late is ALSO present
+            if (status === "present" || status === "late") presentCount++;
+            if (status === "late") lateCount++;  // late is ALSO present
             else if (status === "leave") leaveCount++;
             else if (status === "half_day") halfCount++;
             else if (status === "absent") absentCount++;
-            } else {
+          } else {
             // No record and not weekend = absent
             absentCount++;
           }
@@ -158,27 +164,27 @@ if (status === "late") lateCount++;  // late is ALSO present
             isWeekend,
           });
         }
-        
-                setSummary({ presentCount, lateCount, absentCount, leaveCount, halfCount });
+
+        setSummary({ presentCount, lateCount, absentCount, leaveCount, halfCount });
         setRecords(filled);
       })
-      .catch((err) => { 
+      .catch((err) => {
         console.error("Monthly fetch error:", err);
-        setRecords([]); 
-        setSummary(null); 
+        setRecords([]);
+        setSummary(null);
       })
       .finally(() => setLoading(false));
   }, [employee?._id, year, month]);
 
   const statusStyle = (status) => {
     const map = {
-      present:  { color: "#16a34a", bg: "#dcfce7", label: "Present"  },
-      late:     { color: "#d97706", bg: "#fef9c3", label: "Late"     },
-      absent:   { color: "#dc2626", bg: "#fee2e2", label: "Absent"   },
+      present: { color: "#16a34a", bg: "#dcfce7", label: "Present" },
+      late: { color: "#d97706", bg: "#fef9c3", label: "Late" },
+      absent: { color: "#dc2626", bg: "#fee2e2", label: "Absent" },
       half_day: { color: "#7c3aed", bg: "#f5f3ff", label: "Half Day" },
-      leave:    { color: "#0891b2", bg: "#e0f2fe", label: "On Leave" },
-      weekend:  { color: "#94a3b8", bg: "#f1f5f9", label: "Weekend"  },
-      holiday:  { color: "#be185d", bg: "#fce7f3", label: "Holiday"  },
+      leave: { color: "#0891b2", bg: "#e0f2fe", label: "On Leave" },
+      weekend: { color: "#94a3b8", bg: "#f1f5f9", label: "Weekend" },
+      holiday: { color: "#be185d", bg: "#fce7f3", label: "Holiday" },
     };
     return map[status] || map.absent;
   };
@@ -209,11 +215,11 @@ if (status === "late") lateCount++;  // late is ALSO present
             {summary && (
               <div style={{ display: "flex", gap: 6, marginTop: 14, flexWrap: "wrap" }}>
                 {[
-                  { label: "Present",  value: summary.presentCount, color: "#4ade80" },
-                  { label: "Late",     value: summary.lateCount,    color: "#fbbf24" },
-                  { label: "Absent",   value: summary.absentCount,  color: "#f87171" },
-                  { label: "Leave",    value: summary.leaveCount,   color: "#38bdf8" },
-                  { label: "Half Day", value: summary.halfCount,    color: "#a78bfa" },
+                  { label: "Present", value: summary.presentCount, color: "#4ade80" },
+                  { label: "Late", value: summary.lateCount, color: "#fbbf24" },
+                  { label: "Absent", value: summary.absentCount, color: "#f87171" },
+                  { label: "Leave", value: summary.leaveCount, color: "#38bdf8" },
+                  { label: "Half Day", value: summary.halfCount, color: "#a78bfa" },
                 ].map(c => (
                   <div key={c.label} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "3px 12px", display: "flex", alignItems: "center", gap: 6 }}>
                     <span style={{ fontSize: 13, fontWeight: 800, color: c.color }}>{c.value}</span>
@@ -235,7 +241,7 @@ if (status === "late") lateCount++;  // late is ALSO present
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
                     <tr>
-                                            {["Date", "Day", "Status", "Check In", "Check Out", "Work Hrs", "Break Out", "Break In", "Break Late", "Late"].map(h => (
+                      {["Date", "Day", "Status", "Check In", "Check Out", "Work Hrs", "Break Out", "Break In", "Break Late", "Late"].map(h => (
                         <th key={h} style={S.tableHead}>{h}</th>
                       ))}
                     </tr>
@@ -243,64 +249,64 @@ if (status === "late") lateCount++;  // late is ALSO present
                   <tbody>
                     {records.map((row, idx) => {
                       const displayStatus = row.status === "late" ? "present" : row.status;
-const st = statusStyle(displayStatus);
+                      const st = statusStyle(displayStatus);
                       const isWkd = row.isWeekend;
                       return (
                         <tr key={idx}
                           style={{ background: isWkd ? "#f8fafc" : "transparent", opacity: isWkd ? 0.5 : 1 }}
                           onMouseEnter={e => { if (!isWkd) e.currentTarget.style.background = "#f9fafb"; }}
                           onMouseLeave={e => { e.currentTarget.style.background = isWkd ? "#f8fafc" : "transparent"; }}>
-                          
+
                           {/* Date */}
                           <td style={{ ...S.tableCell, fontWeight: 700, color: "#111827", whiteSpace: "nowrap" }}>
                             {new Date(row.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
                           </td>
-                          
+
                           {/* Day */}
                           <td style={{ ...S.tableCell, color: "#6b7280", fontSize: 12 }}>
                             {DAY_NAMES[row.dayOfWeek]}
                           </td>
-                          
+
                           {/* Status */}
                           <td style={S.tableCell}>
                             <span style={S.pill(st.color, st.bg)}>{st.label}</span>
                           </td>
-                          
+
                           {/* Check In */}
                           <td style={{ ...S.tableCell, fontWeight: 700, color: "#16a34a", fontFamily: "monospace" }}>
                             {row.firstIn ? new Date(row.firstIn).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : <span style={{ color: "#d1d5db" }}>—</span>}
                           </td>
-                          
+
                           {/* Check Out */}
                           <td style={{ ...S.tableCell, fontWeight: 700, color: "#dc2626", fontFamily: "monospace" }}>
                             {row.lastOut ? new Date(row.lastOut).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : <span style={{ color: "#d1d5db" }}>—</span>}
                           </td>
-                          
+
                           {/* Work Hours */}
                           <td style={{ ...S.tableCell, fontWeight: 700, color: "#2563eb" }}>
                             {row.workHrs}
                           </td>
-                          
+
                           {/* Break Out */}
                           <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace", color: "#0891b2" }}>
                             {row.breakOut ? new Date(row.breakOut).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : <span style={{ color: "#d1d5db" }}>—</span>}
                           </td>
-                          
+
                           {/* Break In */}
                           <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace", color: "#0891b2" }}>
                             {row.breakIn ? new Date(row.breakIn).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : <span style={{ color: "#d1d5db" }}>—</span>}
                           </td>
-                          
+
                           {/* Break Late */}
                           <td style={S.tableCell}>
                             {row.breakLate > 0 ? <span style={{ background: "#fef9c3", color: "#d97706", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(row.breakLate)}</span> : <span style={{ color: "#d1d5db" }}>—</span>}
                           </td>
-                          
+
                           {/* Late */}
                           <td style={S.tableCell}>
                             {row.lateMin > 0 ? <span style={{ background: "#fef9c3", color: "#d97706", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(row.lateMin)}</span> : <span style={{ color: "#d1d5db" }}>—</span>}
                           </td>
-                                          
+
                         </tr>
                       );
                     })}
@@ -324,18 +330,18 @@ const st = statusStyle(displayStatus);
 //  MONTHLY TAB  (default export)
 // ═══════════════════════════════════════════
 export default function MonthlyTab() {
-  const [year,       setYear]       = useState(new Date().getFullYear());
-  const [month,      setMonth]      = useState(new Date().getMonth() + 1);
-  const [data,       setData]       = useState([]);
-  const [loading,    setLoading]    = useState(false);
-  const [exporting,  setExporting]  = useState(false);
-  const [search,     setSearch]     = useState("");
-  const [sortKey,    setSortKey]    = useState("name");
-  const [sortDir,    setSortDir]    = useState("asc");
-  const [toast,      setToast]      = useState(null);
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState("name");
+  const [sortDir, setSortDir] = useState("asc");
+  const [toast, setToast] = useState(null);
   const [monthModal, setMonthModal] = useState(null);
 
-  
+
   useEffect(() => { fetchData(); }, [year, month]);
 
   const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
@@ -347,19 +353,20 @@ export default function MonthlyTab() {
         axios.get(`${API_BASE}/api/attendance/monthly-report?year=${year}&month=${month}`, { headers: authHeader() }),
         axios.get(`${API_BASE}/api/hr/approved`, { headers: authHeader() }).catch(() => ({ data: [] })),
       ]);
-      const monthlyData  = monthlyRes.data?.data || [];
+      const monthlyData = monthlyRes.data?.data || [];
       const approvedList = Array.isArray(approvedRes.data) ? approvedRes.data : (approvedRes.data?.data || []);
-      const monthlyIds   = new Set(monthlyData.map(r => r._id || r.employee_id).filter(Boolean));
+      const monthlyIds = new Set(monthlyData.map(r => r._id || r.employee_id).filter(Boolean));
       const approvedNotInMonthly = approvedList
         .filter(emp => !monthlyIds.has(emp._id))
         .map(emp => ({
-          _id: emp._id, name: emp.name, employeeId: emp.employeeId || emp.employee_id || emp.empId || "",
-          employee_code: emp.employeeId || emp.employee_id || emp.empId || "",
-          department: emp.department || emp.dept || "", designation: emp.designation || emp.role || "",
-          work_days: 0, present: 0, late: 0, half_day: 0, on_leave: 0, absent: 0,
-          overtime_days: 0, avg_work_hours: "—", avg_work_hours_num: 0,
-          total_late_minutes: 0, attendance_pct: 0, _fromApproved: true,
-        }));
+  _id: emp._id, name: emp.name, employeeId: emp.employeeId || emp.employee_id || emp.empId || "",
+  employee_code: emp.employeeId || emp.employee_id || emp.empId || "",
+  department: emp.department || emp.dept || "", designation: emp.designation || emp.role || "",
+  shift: emp.shift || null,   // ✅ ADD
+  work_days: 0, present: 0, late: 0, half_day: 0, on_leave: 0, absent: 0,
+  overtime_days: 0, avg_work_hours: "—", avg_work_hours_num: 0,
+  total_late_minutes: 0, attendance_pct: 0, _fromApproved: true,
+}));
       setData([...monthlyData, ...approvedNotInMonthly]);
     } catch {
       showToast("error", "Failed to load");
@@ -376,9 +383,9 @@ export default function MonthlyTab() {
         `${API_BASE}/api/attendance/export?year=${year}&month=${month}`,
         { headers: authHeader(), responseType: "blob" }
       );
-      const url  = window.URL.createObjectURL(new Blob([res.data]));
+      const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
-      link.href  = url;
+      link.href = url;
       link.setAttribute("download", `Attendance_${month}_${year}.xlsx`);
       document.body.appendChild(link); link.click(); link.remove();
       showToast("success", "Excel exported!");
@@ -393,9 +400,9 @@ export default function MonthlyTab() {
         `${API_BASE}/api/attendance/export?year=${year}&month=${month}&employee_id=${employeeId}`,
         { headers: authHeader(), responseType: "blob" }
       );
-      const url  = window.URL.createObjectURL(new Blob([res.data]));
+      const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
-      link.href  = url;
+      link.href = url;
       link.setAttribute("download", `${employeeName}_Attendance_${month}_${year}.xlsx`);
       document.body.appendChild(link);
       link.click();
@@ -419,16 +426,16 @@ export default function MonthlyTab() {
       return sortDir === "asc" ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
     });
 
-  const totalPresent  = data.reduce((s, r) => s + (r.present       || 0), 0);
-  const totalAbsent   = data.reduce((s, r) => s + (r.absent        || 0), 0);
-  const totalLate     = data.reduce((s, r) => s + (r.late          || 0), 0);
+  const totalPresent = data.reduce((s, r) => s + (r.present || 0), 0);
+  const totalAbsent = data.reduce((s, r) => s + (r.absent || 0), 0);
+  const totalLate = data.reduce((s, r) => s + (r.late || 0), 0);
   const avgAttendance = data.length ? Math.round(data.reduce((s, r) => s + (r.attendance_pct || 0), 0) / data.length) : 0;
 
-    const monthlyStats = [
-    { label: "Employees",      value: data.length,         color: "#111827" },
-    { label: "Total Present",  value: totalPresent,        color: "#16a34a" },
-    { label: "Total Absent",   value: totalAbsent,         color: "#dc2626" },
-    { label: "Total Late",     value: totalLate,           color: "#d97706" },
+  const monthlyStats = [
+    { label: "Employees", value: data.length, color: "#111827" },
+    { label: "Total Present", value: totalPresent, color: "#16a34a" },
+    { label: "Total Absent", value: totalAbsent, color: "#dc2626" },
+    { label: "Total Late", value: totalLate, color: "#d97706" },
     { label: "Avg Attendance", value: `${avgAttendance}%`, color: "#2563eb" },
   ];
 
@@ -452,7 +459,7 @@ export default function MonthlyTab() {
       )}
 
       {/* Stat Strip */}
-      <StatStrip stats={monthlyStats} activeFlag={null} onFlagClick={() => {}} />
+      <StatStrip stats={monthlyStats} activeFlag={null} onFlagClick={() => { }} />
 
       {/* Filters */}
       <div style={S.filterWrap}>
@@ -499,32 +506,32 @@ export default function MonthlyTab() {
               <thead>
                 <tr>
                   <th style={S.tableHead}>#</th>
-                  <SortTh label="Employee"    k="name" />
-                  <SortTh label="Code"        k="employeeId" />
-                  <SortTh label="Dept"        k="department" />
-                  <SortTh label="Work Days"   k="work_days" />
-                  <SortTh label="Present"     k="present" />
-                  <SortTh label="Late"        k="late" />
-                  <SortTh label="Half Day"    k="half_day" />
-                  <SortTh label="On Leave"    k="on_leave" />
-                  <SortTh label="Absent"      k="absent" />
-                  <SortTh label="Avg Hrs"     k="avg_work_hours_num" />
+                  <SortTh label="Employee" k="name" />
+                  <SortTh label="Code" k="employeeId" />
+                  <SortTh label="Dept" k="department" />
+                  <SortTh label="Work Days" k="work_days" />
+                  <SortTh label="Present" k="present" />
+                  <SortTh label="Late" k="late" />
+                  <SortTh label="Half Day" k="half_day" />
+                  <SortTh label="On Leave" k="on_leave" />
+                  <SortTh label="Absent" k="absent" />
+                  <SortTh label="Avg Hrs" k="avg_work_hours_num" />
                   <SortTh label="Attendance%" k="attendance_pct" />
                   <th style={S.tableHead}>Details</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                                    <tr><td colSpan={13} style={{ textAlign: "center", padding: "40px 0", color: "#d1d5db" }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
+                  <tr><td colSpan={13} style={{ textAlign: "center", padding: "40px 0", color: "#d1d5db" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
                       <Activity size={32} color="#e5e7eb" />
                       <span style={{ fontSize: 13 }}>No data for this period</span>
                     </div>
                   </td></tr>
                 ) : filtered.map((r, i) => {
-                  const pct    = r.attendance_pct || 0;
+                  const pct = r.attendance_pct || 0;
                   const pctClr = pct >= 90 ? "#16a34a" : pct >= 75 ? "#d97706" : "#dc2626";
-                  const pctBg  = pct >= 90 ? "#dcfce7" : pct >= 75 ? "#fef9c3" : "#fee2e2";
+                  const pctBg = pct >= 90 ? "#dcfce7" : pct >= 75 ? "#fef9c3" : "#fee2e2";
                   const isEven = i % 2 === 0;
                   return (
                     <tr key={i}
@@ -607,7 +614,15 @@ export default function MonthlyTab() {
                       <td style={{ ...S.tableCell, textAlign: "center", whiteSpace: "nowrap" }}>
                         <div style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>
                           <button
-                            onClick={() => setMonthModal({ employee: { _id: r._id, name: r.name, employeeId: r.employeeId || r.employee_code || "", department: r.department || "" } })}
+                            onClick={() => setMonthModal({
+                              employee: {
+                                _id: r._id,
+                                name: r.name,
+                                employeeId: r.employeeId || r.employee_code || "",
+                                department: r.department || "",
+                                shift: r.shift || null,   // ← இதை add பண்ணு
+                              }
+                            })}
                             style={S.actionBtn(false)}>
                             <Eye size={11} /> View
                           </button>
