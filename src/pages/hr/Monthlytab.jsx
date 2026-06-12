@@ -117,8 +117,6 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
               lateMin = Math.max(firstInMins - startMins, 0);
             }
 
-
-
             // Calculate work hours
             if (rec.work_hours && typeof rec.work_hours === "number" && rec.work_hours > 0) {
               const h = Math.floor(rec.work_hours);
@@ -341,8 +339,11 @@ export default function MonthlyTab() {
   const [toast, setToast] = useState(null);
   const [monthModal, setMonthModal] = useState(null);
 
+  const [todayStats, setTodayStats] = useState({ present: 0, absent: 0, late: 0, total: 0 });
 
-  useEffect(() => { fetchData(); }, [year, month]);
+
+
+useEffect(() => { fetchData(); fetchTodayStats(); }, [year, month]);
 
   const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
 
@@ -374,6 +375,34 @@ export default function MonthlyTab() {
       setLoading(false);
     }
   };
+
+
+  const fetchTodayStats = async () => {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const res = await axios.get(
+      `${API_BASE}/api/attendance/daily?date=${today}`,
+      { headers: authHeader() }
+    );
+    const records = res.data?.data || [];
+
+    const late = records.filter(r =>
+      r.status === "late" ||
+      r.is_late === true ||
+      (r.late_minutes && r.late_minutes > 0)
+    ).length;
+
+    const present = records.filter(r =>
+      r.status === "present" || r.status === "late" || r.is_late
+    ).length;
+
+    const absent = records.filter(r => r.status === "absent").length;
+
+    setTodayStats({ present, late, absent, total: records.length });
+  } catch {
+    console.error("Today stats fetch failed");
+  }
+};
 
   // ── Export all employees ────────────────────────────────────────────────────
   const handleExport = async () => {
@@ -432,12 +461,12 @@ export default function MonthlyTab() {
   const avgAttendance = data.length ? Math.round(data.reduce((s, r) => s + (r.attendance_pct || 0), 0) / data.length) : 0;
 
   const monthlyStats = [
-    { label: "Employees", value: data.length, color: "#111827" },
-    { label: "Total Present", value: totalPresent, color: "#16a34a" },
-    { label: "Total Absent", value: totalAbsent, color: "#dc2626" },
-    { label: "Total Late", value: totalLate, color: "#d97706" },
-    { label: "Avg Attendance", value: `${avgAttendance}%`, color: "#2563eb" },
-  ];
+  { label: "Employees",      value: data.length,           color: "#111827" },
+  { label: "Today Present",  value: todayStats.present,    color: "#16a34a" },
+  { label: "Today Absent",   value: todayStats.absent,     color: "#dc2626" },
+  { label: "Today Late",     value: todayStats.late,       color: "#d97706" },
+  { label: "Avg Attendance", value: `${avgAttendance}%`,   color: "#2563eb" },
+];
 
   const SortTh = ({ label, k }) => (
     <th onClick={() => toggleSort(k)} style={{ ...S.tableHead, cursor: "pointer", userSelect: "none", color: sortKey === k ? "#111827" : "#9ca3af" }}>

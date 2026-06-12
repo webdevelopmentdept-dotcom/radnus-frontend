@@ -12,26 +12,28 @@ import EmployeeLayout from "./EmployeeLayout";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const BGR_META = {
-  Build:  { color: "#059669", bg: "#d1fae5", border: "#6ee7b7" },
-  Grow:   { color: "#2563eb", bg: "#dbeafe", border: "#93c5fd" },
+  Build: { color: "#059669", bg: "#d1fae5", border: "#6ee7b7" },
+  Grow: { color: "#2563eb", bg: "#dbeafe", border: "#93c5fd" },
   Retain: { color: "#d97706", bg: "#fef3c7", border: "#fcd34d" },
 };
 
 export default function MyProfile() {
-  const [employee,       setEmployee]       = useState(null);
-  const [activation,     setActivation]     = useState(null);
-  const [gradeInfo,      setGradeInfo]      = useState(null);
-  const [loading,        setLoading]        = useState(true);
-  const [saving,         setSaving]         = useState(false);
-  const [activeTab,      setActiveTab]      = useState("personal");
-  const [toast,          setToast]          = useState(null);
+  const [employee, setEmployee] = useState(null);
+  const [activation, setActivation] = useState(null);
+  const [gradeInfo, setGradeInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("personal");
+  const [toast, setToast] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const [resolvedEmpCode, setResolvedEmpCode] = useState("");
 
-  const [personalForm, setPersonalForm] = useState({ name:"", email:"", mobile:"", altMobile:"", dob:"", address:"" });
-  const [pwForm,   setPwForm]   = useState({ current:"", newPw:"", confirm:"" });
-  const [showPw,   setShowPw]   = useState({ current:false, newPw:false, confirm:false });
+  const [personalForm, setPersonalForm] = useState({ name: "", email: "", mobile: "", altMobile: "", dob: "", address: "",department: "", designation: "" });
+  const [departments, setDepartments] = useState([]);
+const [selectedDeptDesignations, setSelectedDeptDesignations] = useState([]);
+  const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
+  const [showPw, setShowPw] = useState({ current: false, newPw: false, confirm: false });
   const [pwSaving, setPwSaving] = useState(false);
 
   const empId = localStorage.getItem("employeeId");
@@ -39,6 +41,7 @@ export default function MyProfile() {
   useEffect(() => {
     if (!empId) { window.location.href = "/login"; return; }
     fetchAll();
+     fetchDepartments();
   }, []);
 
   const fetchAll = async () => {
@@ -63,18 +66,25 @@ export default function MyProfile() {
       setEmployee(mergedEmp);
       setResolvedEmpCode(finalEmpCode);
       setPersonalForm({
-        name:      mergedEmp.name      || "",
-        email:     mergedEmp.email     || "",
-        mobile:    mergedEmp.mobile    || "",
+        name: mergedEmp.name || "",
+        email: mergedEmp.email || "",
+        mobile: mergedEmp.mobile || "",
         altMobile: mergedEmp.altMobile || "",
-        dob:       mergedEmp.dob       || "",
-        address:   mergedEmp.address   || "",
+        dob: mergedEmp.dob || "",
+        address: mergedEmp.address || "",
+        department: mergedEmp.department || "",
+        designation: mergedEmp.designation || "",
       });
+
+      const currentDept = departments.find(d => d.name === mergedEmp.department);
+if (currentDept) {
+  setSelectedDeptDesignations(currentDept.designations || []);
+}
 
       try {
         const actRes = await axios.get(`${API_BASE}/api/hr/activation/${empId}`);
         if (actRes.data.success && actRes.data.data) setActivation(actRes.data.data);
-      } catch (_) {}
+      } catch (_) { }
 
       try {
         const gRes = await axios.get(`${API_BASE}/api/assign-grade/employee/${empId}`);
@@ -86,8 +96,8 @@ export default function MyProfile() {
       } catch {
         try {
           const gAllRes = await axios.get(`${API_BASE}/api/assign-grade`);
-          const gData   = gAllRes.data;
-          const list    = gData.success
+          const gData = gAllRes.data;
+          const list = gData.success
             ? (Array.isArray(gData.data) ? gData.data : [gData.data])
             : (Array.isArray(gData) ? gData : []);
           const match = list.find(a => {
@@ -95,94 +105,120 @@ export default function MyProfile() {
             return eid === empId;
           });
           if (match?.grade_id) setGradeInfo(match.grade_id);
-        } catch (_) {}
+        } catch (_) { }
       }
 
     } catch (err) { console.log(err); }
     finally { setLoading(false); }
   };
 
-  const showToast = (msg, type="success") => {
-    setToast({msg,type}); setTimeout(()=>setToast(null),3200);
+  const fetchDepartments = async () => {
+  try {
+    const res = await axios.get(`${API_BASE}/api/departments/active`);
+    const depts = res.data.data || [];
+    setDepartments(depts);
+    
+    // Current employee's department-அ select பண்ணி designations set பண்ணு
+    const currentDept = depts.find(d => d.name === employee?.department);
+    if (currentDept) {
+      setSelectedDeptDesignations(currentDept.designations || []);
+    }
+  } catch (err) {
+    console.log("Failed to load departments", err);
+  }
+};
+
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type }); setTimeout(() => setToast(null), 3200);
   };
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0]; if (!file) return;
     setUploadingPhoto(true);
     try {
-      const fd = new FormData(); fd.append("file",file); fd.append("employeeId",empId);
+      const fd = new FormData(); fd.append("file", file); fd.append("employeeId", empId);
       await axios.post(`${API_BASE}/api/employee/upload-profile`, fd);
       await fetchAll(); showToast("Profile photo updated");
-    } catch { showToast("Upload failed","error"); }
+    } catch { showToast("Upload failed", "error"); }
     finally { setUploadingPhoto(false); }
   };
 
   const handleSavePersonal = async () => {
-    if (!personalForm.name || !personalForm.email) return showToast("Name and Email required","error");
+    if (!personalForm.name || !personalForm.email) return showToast("Name and Email required", "error");
     setSaving(true);
     try {
-      await axios.put(`${API_BASE}/api/employee/update-profile`, {employeeId:empId,...personalForm});
+      await axios.put(`${API_BASE}/api/employee/update-profile`, { employeeId: empId, ...personalForm });
       await fetchAll(); showToast("Profile updated successfully");
-    } catch { showToast("Save failed","error"); }
+    } catch { showToast("Save failed", "error"); }
     finally { setSaving(false); }
   };
 
+  const handleDepartmentChange = (deptName) => {
+  const dept = departments.find(d => d.name === deptName);
+  setSelectedDeptDesignations(dept?.designations || []);
+  setPersonalForm(p => ({ 
+    ...p, 
+    department: deptName,
+    designation: "" // dept change ஆனா designation reset
+  }));
+};
+
   const handleChangePassword = async () => {
-    if (!pwForm.current||!pwForm.newPw||!pwForm.confirm) return showToast("All fields required","error");
-    if (pwForm.newPw.length<6) return showToast("Password must be at least 6 characters","error");
-    if (pwForm.newPw!==pwForm.confirm) return showToast("Passwords do not match","error");
+    if (!pwForm.current || !pwForm.newPw || !pwForm.confirm) return showToast("All fields required", "error");
+    if (pwForm.newPw.length < 6) return showToast("Password must be at least 6 characters", "error");
+    if (pwForm.newPw !== pwForm.confirm) return showToast("Passwords do not match", "error");
     setPwSaving(true);
     try {
       await axios.put(`${API_BASE}/api/employee/change-password`, {
-        employeeId:empId, currentPassword:pwForm.current, newPassword:pwForm.newPw
+        employeeId: empId, currentPassword: pwForm.current, newPassword: pwForm.newPw
       });
-      setPwForm({current:"",newPw:"",confirm:""}); showToast("Password changed successfully");
-    } catch(err) { showToast(err.response?.data?.message||"Failed to change password","error"); }
+      setPwForm({ current: "", newPw: "", confirm: "" }); showToast("Password changed successfully");
+    } catch (err) { showToast(err.response?.data?.message || "Failed to change password", "error"); }
     finally { setPwSaving(false); }
   };
 
-  const emp     = activation?.employment || {};
+  const emp = activation?.employment || {};
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN") : "—";
-  const isApproved = employee?.status==="approved"||employee?.status==="active";
-  const isRejected = employee?.status==="rejected";
+  const isApproved = employee?.status === "approved" || employee?.status === "active";
+  const isRejected = employee?.status === "rejected";
 
   const pwStrength = (pw) => {
-    if(!pw) return 0; let s=0;
-    if(pw.length>=6) s++; if(pw.length>=8) s++;
-    if(/[A-Z]/.test(pw)||/[0-9]/.test(pw)) s++;
-    if(/[^a-zA-Z0-9]/.test(pw)) s++; return s;
+    if (!pw) return 0; let s = 0;
+    if (pw.length >= 6) s++; if (pw.length >= 8) s++;
+    if (/[A-Z]/.test(pw) || /[0-9]/.test(pw)) s++;
+    if (/[^a-zA-Z0-9]/.test(pw)) s++; return s;
   };
-  const strength      = pwStrength(pwForm.newPw);
-  const strengthLabel = ["","Weak","Fair","Good","Strong"][strength];
-  const strengthColor = ["","#ef4444","#f97316","#eab308","#22c55e"][strength];
+  const strength = pwStrength(pwForm.newPw);
+  const strengthLabel = ["", "Weak", "Fair", "Good", "Strong"][strength];
+  const strengthColor = ["", "#ef4444", "#f97316", "#eab308", "#22c55e"][strength];
 
   if (loading) return (
-    <div style={{display:"flex",justifyContent:"center",alignItems:"center",height:"100vh",background:"#f4f6fb"}}>
-      <div style={{width:36,height:36,border:"3px solid #e8eaf0",borderTopColor:"#6366f1",borderRadius:"50%",animation:"_spin .7s linear infinite"}}/>
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", background: "#f4f6fb" }}>
+      <div style={{ width: 36, height: 36, border: "3px solid #e8eaf0", borderTopColor: "#6366f1", borderRadius: "50%", animation: "_spin .7s linear infinite" }} />
       <style>{`@keyframes _spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
   const avatarUrl = (size) => employee?.profileImage ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(employee?.name||"U")}&background=6366f1&color=fff&size=${size}`;
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(employee?.name || "U")}&background=6366f1&color=fff&size=${size}`;
 
   const TABS = [
-    {id:"personal",   icon:<UserCircle size={15}/>, label:"Personal Info"},
-    {id:"employment", icon:<Briefcase size={15}/>,  label:"Employment"},
+    { id: "personal", icon: <UserCircle size={15} />, label: "Personal Info" },
+    { id: "employment", icon: <Briefcase size={15} />, label: "Employment" },
     // {id:"password",   icon:<KeyRound size={15}/>,   label:"Security"},
   ];
 
   const GradeBadge = () => {
-    if (!gradeInfo) return <span style={{color:"#d1d5db",fontStyle:"italic",fontSize:13}}>Not assigned yet</span>;
+    if (!gradeInfo) return <span style={{ color: "#d1d5db", fontStyle: "italic", fontSize: 13 }}>Not assigned yet</span>;
     const meta = BGR_META[gradeInfo.bgr_stage] || BGR_META.Build;
     return (
-      <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
-        <span style={{background:"#1a1a2e",color:"#fff",padding:"2px 9px",borderRadius:6,fontSize:12,fontWeight:800}}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+        <span style={{ background: "#1a1a2e", color: "#fff", padding: "2px 9px", borderRadius: 6, fontSize: 12, fontWeight: 800 }}>
           {gradeInfo.level}
         </span>
-        <span style={{fontWeight:700,color:"#1a1d2e",fontSize:13}}>{gradeInfo.designation}</span>
+        <span style={{ fontWeight: 700, color: "#1a1d2e", fontSize: 13 }}>{gradeInfo.designation}</span>
         {gradeInfo.bgr_stage && (
-          <span style={{background:meta.bg,color:meta.color,border:`1px solid ${meta.border}`,padding:"2px 9px",borderRadius:20,fontSize:11,fontWeight:700}}>
+          <span style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`, padding: "2px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
             {gradeInfo.bgr_stage}
           </span>
         )}
@@ -192,20 +228,20 @@ export default function MyProfile() {
 
   const EMP_ROWS = [
     {
-      icon:<Hash size={14}/>,
-      label:"Employee ID",
+      icon: <Hash size={14} />,
+      label: "Employee ID",
       value: resolvedEmpCode || emp.employee_code || "—",
     },
-    {icon:<Briefcase size={14}/>,   label:"Designation",       value:emp.designation||employee?.designation||"—"},
-    {icon:<Building size={14}/>,    label:"Department",        value:emp.department||employee?.department||"—"},
-    {icon:<Award size={14}/>,       label:"Grade Level",       value:<GradeBadge/>, isJSX:true},
-    {icon:<Briefcase size={14}/>,   label:"Employment Type",   value:emp.employment_type||"—"},
-    {icon:<MapPin size={14}/>,      label:"Work Location",     value:emp.work_location||"—"},
-    {icon:<Clock size={14}/>,       label:"Work Shift",        value:emp.work_shift||"—"},
-    {icon:<Calendar size={14}/>,    label:"Date of Joining",   value:fmtDate(emp.date_of_joining)},
+    { icon: <Briefcase size={14} />, label: "Designation", value: emp.designation || employee?.designation || "—" },
+    { icon: <Building size={14} />, label: "Department", value: emp.department || employee?.department || "—" },
+    { icon: <Award size={14} />, label: "Grade Level", value: <GradeBadge />, isJSX: true },
+    { icon: <Briefcase size={14} />, label: "Employment Type", value: emp.employment_type || "—" },
+    { icon: <MapPin size={14} />, label: "Work Location", value: emp.work_location || "—" },
+    { icon: <Clock size={14} />, label: "Work Shift", value: emp.work_shift || "—" },
+    { icon: <Calendar size={14} />, label: "Date of Joining", value: fmtDate(emp.date_of_joining) },
     // {icon:<Calendar size={14}/>,    label:"Confirmation Date", value:fmtDate(emp.confirmation_date)},
-    {icon:<User size={14}/>,        label:"Reporting Manager", value:emp.reporting_manager||"—"},
-    {icon:<CheckCircle size={14}/>, label:"Account Status",    value:isApproved?"Active":employee?.status||"—"},
+    { icon: <User size={14} />, label: "Reporting Manager", value: emp.reporting_manager || "—" },
+    { icon: <CheckCircle size={14} />, label: "Account Status", value: isApproved ? "Active" : employee?.status || "—" },
   ];
 
   const statusLabel = isApproved ? "Active" : isRejected ? "Rejected" : "Pending";
@@ -335,11 +371,11 @@ export default function MyProfile() {
 
       <div className="mp">
         {toast && (
-          <div className="mp-toast" style={{background:toast.type==="error"?"#dc2626":"#16a34a"}}>
-            {toast.type==="error" ? <AlertTriangle size={15}/> : <CheckCircle size={15}/>}
+          <div className="mp-toast" style={{ background: toast.type === "error" ? "#dc2626" : "#16a34a" }}>
+            {toast.type === "error" ? <AlertTriangle size={15} /> : <CheckCircle size={15} />}
             {toast.msg}
           </div>
-        )} 
+        )}
 
         {/* ── Topbar ── */}
         {/* <div className="mp-top">
@@ -349,28 +385,28 @@ export default function MyProfile() {
 
         {/* ── Hero ── */}
         <div className="mp-hero">
-          <div className="mp-hero-glow1"/>
-          <div className="mp-hero-glow2"/>
+          <div className="mp-hero-glow1" />
+          <div className="mp-hero-glow2" />
 
           <div className="mp-photo-ring">
-            <div className="mp-photo-ring-border"/>
-            <img className="mp-photo-img" src={avatarUrl(76)} alt="profile"/>
+            <div className="mp-photo-ring-border" />
+            <img className="mp-photo-img" src={avatarUrl(76)} alt="profile" />
             <label className="mp-photo-overlay">
-              {uploadingPhoto ? <div className="mp-spinner"/> : <Camera size={17}/>}
+              {uploadingPhoto ? <div className="mp-spinner" /> : <Camera size={17} />}
               <span className="mp-overlay-text">{uploadingPhoto ? "Uploading" : "Change"}</span>
-              <input type="file" accept="image/*" style={{display:"none"}} onChange={handlePhotoUpload}/>
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhotoUpload} />
             </label>
           </div>
 
           <div className="mp-hero-info">
             <p className="mp-hero-name">{employee?.name}</p>
-            <p className="mp-hero-meta"><Briefcase size={12}/>{emp.designation||employee?.designation||"—"}</p>
-            <p className="mp-hero-meta"><Building size={12}/>{emp.department||employee?.department||"—"}</p>
+            <p className="mp-hero-meta"><Briefcase size={12} />{emp.designation || employee?.designation || "—"}</p>
+            <p className="mp-hero-meta"><Building size={12} />{emp.department || employee?.department || "—"}</p>
 
             <div className="mp-hero-chips">
               {resolvedEmpCode && (
                 <div className="mp-hero-chip">
-                  <Hash size={11} color="rgba(255,255,255,.35)"/>
+                  <Hash size={11} color="rgba(255,255,255,.35)" />
                   <span className="mp-chip-label">EMP ID</span>
                   <span className="mp-chip-val">{resolvedEmpCode}</span>
                 </div>
@@ -379,10 +415,10 @@ export default function MyProfile() {
                 const meta = BGR_META[gradeInfo.bgr_stage] || BGR_META.Build;
                 return (
                   <div className="mp-hero-grade-chip">
-                    <Award size={11} color="rgba(255,255,255,.35)"/>
-                    <span style={{background:"rgba(255,255,255,.15)",color:"#fff",padding:"1px 7px",borderRadius:5,fontSize:11,fontWeight:800}}>{gradeInfo.level}</span>
-                    <span style={{fontSize:11,color:"rgba(255,255,255,.7)",fontWeight:600}}>{gradeInfo.designation}</span>
-                    <span style={{background:meta.bg,color:meta.color,padding:"1px 7px",borderRadius:10,fontSize:10,fontWeight:700}}>{gradeInfo.bgr_stage}</span>
+                    <Award size={11} color="rgba(255,255,255,.35)" />
+                    <span style={{ background: "rgba(255,255,255,.15)", color: "#fff", padding: "1px 7px", borderRadius: 5, fontSize: 11, fontWeight: 800 }}>{gradeInfo.level}</span>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,.7)", fontWeight: 600 }}>{gradeInfo.designation}</span>
+                    <span style={{ background: meta.bg, color: meta.color, padding: "1px 7px", borderRadius: 10, fontSize: 10, fontWeight: 700 }}>{gradeInfo.bgr_stage}</span>
                   </div>
                 );
               })()}
@@ -390,11 +426,11 @@ export default function MyProfile() {
           </div>
 
           <div className="mp-status-pill" style={{
-            background: isApproved?"rgba(22,163,74,.12)":isRejected?"rgba(220,38,38,.12)":"rgba(217,119,6,.12)",
-            color:       isApproved?"#86efac":isRejected?"#fca5a5":"#fde68a",
-            borderColor: isApproved?"rgba(134,239,172,.2)":isRejected?"rgba(252,165,165,.2)":"rgba(253,230,138,.2)",
+            background: isApproved ? "rgba(22,163,74,.12)" : isRejected ? "rgba(220,38,38,.12)" : "rgba(217,119,6,.12)",
+            color: isApproved ? "#86efac" : isRejected ? "#fca5a5" : "#fde68a",
+            borderColor: isApproved ? "rgba(134,239,172,.2)" : isRejected ? "rgba(252,165,165,.2)" : "rgba(253,230,138,.2)",
           }}>
-            <span className="mp-status-dot" style={{background:isApproved?"#22c55e":isRejected?"#ef4444":"#f59e0b"}}/>
+            <span className="mp-status-dot" style={{ background: isApproved ? "#22c55e" : isRejected ? "#ef4444" : "#f59e0b" }} />
             {statusLabel}
           </div>
         </div>
@@ -403,67 +439,102 @@ export default function MyProfile() {
         <div className="mp-content">
           <div className="mp-tabbar">
             {TABS.map(t => (
-              <button key={t.id} className={`mp-tab-btn ${activeTab===t.id?"on":""}`} onClick={()=>setActiveTab(t.id)}>
+              <button key={t.id} className={`mp-tab-btn ${activeTab === t.id ? "on" : ""}`} onClick={() => setActiveTab(t.id)}>
                 {t.icon}{t.label}
               </button>
             ))}
           </div>
 
           {/* ── Personal Info Tab ── */}
-          {activeTab==="personal" && (
+          {activeTab === "personal" && (
             <div className="mp-card">
               <div className="mp-card-head">
-                <div className="mp-card-icon"><Pencil size={15} color="#fff"/></div>
+                <div className="mp-card-icon"><Pencil size={15} color="#fff" /></div>
                 <div><h4>Personal Information</h4><p>Update your contact and personal details</p></div>
               </div>
               <div className="mp-form-body">
                 {resolvedEmpCode && (
                   <div className="mp-empid-badge">
                     <span className="mp-empid-badge-label">Employee ID</span>
-                    <span style={{background:"#1a1a2e",color:"#fff",padding:"3px 14px",borderRadius:7,fontSize:13,fontWeight:800,fontFamily:"monospace",letterSpacing:"0.4px"}}>
+                    <span style={{ background: "#1a1a2e", color: "#fff", padding: "3px 14px", borderRadius: 7, fontSize: 13, fontWeight: 800, fontFamily: "monospace", letterSpacing: "0.4px" }}>
                       {resolvedEmpCode}
                     </span>
                   </div>
                 )}
 
-                <div className="mp-form-grid">
-                  {[
-                    {label:"Full Name",     key:"name",   type:"text",  ph:"Your full name"},
-                    {label:"Email Address", key:"email",  type:"email", ph:"email@example.com"},
-                    {label:"Mobile Number", key:"mobile", type:"text",  ph:"10-digit mobile"},
-                    {label:"Date of Birth", key:"dob",    type:"date",  ph:""},
-                  ].map(f => (
-                    <div key={f.key}>
-                      <label className="mp-field-label">{f.label}</label>
-                      <input className="mp-field-input" type={f.type} value={personalForm[f.key]} placeholder={f.ph}
-                        onChange={e=>setPersonalForm(p=>({...p,[f.key]:e.target.value}))}/>
-                    </div>
-                  ))}
-                </div>
+               <div className="mp-form-grid">
+  {[
+    { label: "Full Name", key: "name", type: "text", ph: "Your full name" },
+    { label: "Email Address", key: "email", type: "email", ph: "email@example.com" },
+    { label: "Mobile Number", key: "mobile", type: "text", ph: "10-digit mobile" },
+    { label: "Date of Birth", key: "dob", type: "date", ph: "" },
+  ].map(f => (
+    <div key={f.key}>
+      <label className="mp-field-label">{f.label}</label>
+      <input className="mp-field-input" type={f.type} value={personalForm[f.key]} placeholder={f.ph}
+        onChange={e => setPersonalForm(p => ({ ...p, [f.key]: e.target.value }))} />
+    </div>
+  ))}
+
+  {/* ── Department Dropdown ── */}
+  <div>
+    <label className="mp-field-label">Department</label>
+    <select 
+      className="mp-field-input" 
+      value={personalForm.department} 
+      onChange={e => handleDepartmentChange(e.target.value)}
+      style={{ cursor: "pointer", appearance: "auto" }}
+    >
+      <option value="">Select Department</option>
+      {departments.map(dept => (
+        <option key={dept._id} value={dept.name}>{dept.name}</option>
+      ))}
+    </select>
+  </div>
+
+  {/* ── Designation Dropdown ── */}
+  <div>
+    <label className="mp-field-label">Designation</label>
+    <select 
+      className="mp-field-input" 
+      value={personalForm.designation} 
+      onChange={e => setPersonalForm(p => ({ ...p, designation: e.target.value }))}
+      disabled={!personalForm.department}
+      style={{ cursor: personalForm.department ? "pointer" : "not-allowed", appearance: "auto" }}
+    >
+      <option value="">
+        {personalForm.department ? "Select Designation" : "Select Department first"}
+      </option>
+      {selectedDeptDesignations.map(desig => (
+        <option key={desig._id || desig.title} value={desig.title}>{desig.title}</option>
+      ))}
+    </select>
+  </div>
+</div>
 
                 {/* ── Alternate Phone ── */}
-                <div style={{marginBottom:16}}>
+                <div style={{ marginBottom: 16 }}>
                   <label className="mp-field-label">Alternate Phone Number</label>
                   <div className="mp-alt-phone-wrap">
-                    <span className="mp-alt-phone-icon"><Phone size={13}/></span>
+                    <span className="mp-alt-phone-icon"><Phone size={13} /></span>
                     <input
                       className="mp-field-input"
                       type="text"
                       value={personalForm.altMobile}
                       placeholder="Alternate contact number (optional)"
-                      onChange={e=>setPersonalForm(p=>({...p,altMobile:e.target.value}))}
+                      onChange={e => setPersonalForm(p => ({ ...p, altMobile: e.target.value }))}
                     />
                   </div>
                 </div>
 
-                <div style={{marginBottom:20}}>
+                <div style={{ marginBottom: 20 }}>
                   <label className="mp-field-label">Address</label>
-                  <textarea className="mp-field-input" rows={3} value={personalForm.address} style={{resize:"vertical"}}
-                    placeholder="Your full address" onChange={e=>setPersonalForm(p=>({...p,address:e.target.value}))}/>
+                  <textarea className="mp-field-input" rows={3} value={personalForm.address} style={{ resize: "vertical" }}
+                    placeholder="Your full address" onChange={e => setPersonalForm(p => ({ ...p, address: e.target.value }))} />
                 </div>
 
                 <button className="mp-save-btn" onClick={handleSavePersonal} disabled={saving}>
-                  {saving ? <div className="mp-spinner"/> : <Save size={14}/>}
+                  {saving ? <div className="mp-spinner" /> : <Save size={14} />}
                   {saving ? "Saving..." : "Save Changes"}
                 </button>
               </div>
@@ -471,15 +542,15 @@ export default function MyProfile() {
           )}
 
           {/* ── Employment Info Tab ── */}
-          {activeTab==="employment" && (
+          {activeTab === "employment" && (
             <div className="mp-card">
               <div className="mp-card-head">
-                <div className="mp-card-icon"><Briefcase size={15} color="#fff"/></div>
+                <div className="mp-card-icon"><Briefcase size={15} color="#fff" /></div>
                 <div><h4>Employment Details</h4><p>Set by HR · Read only</p></div>
               </div>
-              <div style={{padding:"4px 0"}}>
-                {EMP_ROWS.map((r,i) => (
-                  <div key={i} className={`mp-emp-row${r.label==="Grade Level"?" is-grade":r.label==="Employee ID"?" is-empid":""}`}>
+              <div style={{ padding: "4px 0" }}>
+                {EMP_ROWS.map((r, i) => (
+                  <div key={i} className={`mp-emp-row${r.label === "Grade Level" ? " is-grade" : r.label === "Employee ID" ? " is-empid" : ""}`}>
                     <span className="mp-emp-lhs">
                       <span className="mp-emp-lhs-icon">{r.icon}</span>
                       {r.label}
@@ -504,9 +575,9 @@ export default function MyProfile() {
                 ))}
               </div>
               {!activation && (
-                <div style={{padding:"13px 22px",background:"#fffbeb",borderTop:"1px solid #fde68a",display:"flex",alignItems:"center",gap:8}}>
-                  <AlertTriangle size={14} color="#92400e"/>
-                  <p style={{margin:0,fontSize:13,color:"#92400e"}}>
+                <div style={{ padding: "13px 22px", background: "#fffbeb", borderTop: "1px solid #fde68a", display: "flex", alignItems: "center", gap: 8 }}>
+                  <AlertTriangle size={14} color="#92400e" />
+                  <p style={{ margin: 0, fontSize: 13, color: "#92400e" }}>
                     Employment details not set yet. HR will configure after activation.
                   </p>
                 </div>

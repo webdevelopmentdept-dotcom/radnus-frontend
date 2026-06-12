@@ -848,7 +848,7 @@ function DailyTab() {
   const s = {
     total:        data.length,
     present:      data.filter(r => r.status === "present").length,
-    late:         data.filter(r => r.status === "late").length,
+    late: enriched.filter(r => r.lateMinutes > 0).length,
     absent:       data.filter(r => r.status === "absent").length,
     leave:        data.filter(r => r.status === "leave").length,
     halfDay:      data.filter(r => r.status === "half_day").length,
