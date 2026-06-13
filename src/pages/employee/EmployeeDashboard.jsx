@@ -289,26 +289,41 @@ export default function EmployeeDashboard() {
         .emp-dash *, .emp-dash *::before, .emp-dash *::after { box-sizing: border-box; }
         .emp-dash { font-family: 'Manrope', sans-serif; background: #f7f8fc; min-height: 100vh; color: #1a1d2e; overflow-x: hidden; width: 100%; max-width: 100%; }
 
-        .ed-topbar { background: #fff; border-bottom: 1px solid #eef0f6; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; padding: 0 12px 0 60px; width: 100%; overflow: hidden; }
+        /* ── TOPBAR (mobile only, hidden on desktop) ── */
+        .ed-topbar {
+          background: #fff;
+          border-bottom: 1px solid #eef0f6;
+          height: 52px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          position: sticky;
+          top: 0;
+          z-index: 40;
+          padding: 0 14px 0 56px;
+          width: 100%;
+        }
         .ed-topbar-left  { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden; }
-        .ed-topbar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: 8px; }
-        .ed-topbar-name  { font-size: 12px; font-weight: 700; color: #1a1d2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; max-width: 90px; }
+        .ed-topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .ed-topbar-name  { font-size: 12px; font-weight: 700; color: #1a1d2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; max-width: 140px; }
         .ed-topbar-sub   { font-size: 10px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
-        .ed-topbar-avatar { display: flex; }
+        .ed-topbar-avatar { display: flex; flex-shrink: 0; }
 
+        /* ── MOBILE STATUS PILL ── */
         .ed-status-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 99px; font-size: 10px; font-weight: 700; border: 1.5px solid; white-space: nowrap; flex-shrink: 0; }
         .ed-pill-text { display: none; }
 
+        /* ── BUTTONS ── */
         .ed-btn-primary { display: inline-flex; align-items: center; gap: 5px; padding: 7px 13px; border-radius: 8px; background: #4f8ef7; border: none; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Manrope', sans-serif; transition: background .15s; white-space: nowrap; flex-shrink: 0; }
         .ed-btn-primary:hover { background: #3a7be8; }
         .ed-btn-outline  { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 8px; background: #fff; border: 1.5px solid #e8eaf0; color: #374151; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Manrope', sans-serif; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
         .ed-btn-outline:hover { border-color: #4f8ef7; color: #4f8ef7; }
         .ed-topbar-actions { display: none; }
 
-        /* ── Notification Bell ── */
+        /* ── NOTIFICATION BELL ── */
         .ed-notif-btn {
           position: relative;
-          width: 34px; height: 34px;
+          width: 36px; height: 36px;
           border-radius: 9px;
           border: 1.5px solid #eef0f6;
           background: #f7f8fc;
@@ -332,38 +347,80 @@ export default function EmployeeDashboard() {
           padding: 0 3px;
           border: 2px solid #fff;
           line-height: 1;
+          pointer-events: none;
         }
 
-        .ed-hero { background: linear-gradient(120deg, #1a1d2e 0%, #252a45 60%, #1f2c4a 100%); padding: 16px 14px; position: relative; overflow: hidden; width: 100%; }
+        /* ── HERO ── */
+        .ed-hero {
+          background: linear-gradient(120deg, #1a1d2e 0%, #252a45 60%, #1f2c4a 100%);
+          padding: 14px 14px 16px;
+          position: relative;
+          overflow: hidden;
+          width: 100%;
+        }
         .ed-hero::before { content: ''; position: absolute; top: -80px; right: -80px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(79,142,247,.18) 0%, transparent 70%); pointer-events: none; }
 
-        .ed-hero-profile-row { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; margin-bottom: 14px; width: 100%; overflow: hidden; }
+        /* ── HERO PROFILE ROW ── */
+        .ed-hero-profile-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          position: relative;
+          z-index: 1;
+          margin-bottom: 12px;
+          width: 100%;
+        }
         .ed-avatar-wrap { position: relative; flex-shrink: 0; }
-        .ed-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2.5px solid rgba(255,255,255,.2); display: block; }
+        .ed-avatar { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2.5px solid rgba(255,255,255,.2); display: block; }
         .ed-avatar-overlay { position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,.5); display: flex; align-items: center; justifyContent: center; opacity: 0; transition: opacity .2s; cursor: pointer; }
         .ed-avatar-wrap:hover .ed-avatar-overlay { opacity: 1; }
         .ed-avatar-wrap input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 5; border-radius: 50%; }
-        .ed-hero-name-block { flex: 1; min-width: 0; overflow: hidden; }
-        .ed-hero-name { margin: 0 0 2px; font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -0.3px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .ed-hero-role { margin: 0; font-size: 11px; color: rgba(255,255,255,.5); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        .ed-hero-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; position: relative; z-index: 1; margin-bottom: 12px; width: 100%; }
-        .ed-hero-chips .ed-chip:nth-child(3) { grid-column: 1 / -1; }
-        .ed-chip { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 7px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow: hidden; }
-        .ed-chip-label { font-size: 9px; color: rgba(255,255,255,.35); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
+        /* name block fills remaining space, bell stays at end */
+        .ed-hero-name-block { flex: 1; min-width: 0; overflow: hidden; }
+        .ed-hero-name { margin: 0 0 2px; font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.3px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ed-hero-role { margin: 0; font-size: 10px; color: rgba(255,255,255,.5); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* ── HERO CHIPS: 2-col on mobile, 3-col on desktop ── */
+        .ed-hero-chips {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 6px;
+          position: relative;
+          z-index: 1;
+          margin-bottom: 10px;
+          width: 100%;
+        }
+        /* Mobile: Employee ID + Mobile on row 1 (chips 1 & 3), Email spans full row 2 */
+        .ed-hero-chips .ed-chip:nth-child(1) { order: 1; }
+        .ed-hero-chips .ed-chip:nth-child(2) { order: 3; grid-column: 1 / -1; }
+        .ed-hero-chips .ed-chip:nth-child(3) { order: 2; }
+        .ed-chip {
+          background: rgba(255,255,255,.08);
+          border: 1px solid rgba(255,255,255,.12);
+          border-radius: 8px;
+          padding: 7px 10px;
+          display: flex; flex-direction: column; gap: 2px;
+          min-width: 0; overflow: hidden;
+        }
+        .ed-chip-label { font-size: 9px; color: rgba(255,255,255,.35); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; }
         .ed-chip-val   { font-size: 11px; color: rgba(255,255,255,.85); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        .ed-hero-status-bar  { display: flex; flex-direction: column; gap: 10px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 12px 14px; position: relative; z-index: 1; width: 100%; }
+        /* ── HERO STATUS BAR ── */
+        .ed-hero-status-bar  { display: flex; flex-direction: column; gap: 10px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 11px 12px; position: relative; z-index: 1; width: 100%; }
         .ed-hero-status-row  { display: flex; align-items: flex-start; gap: 10px; }
         .ed-hero-status-text { flex: 1; min-width: 0; }
         .ed-hero-edit-btn    { width: 100%; }
         .ed-hero-edit-btn > button, .ed-hero-edit-btn > div { width: 100%; justify-content: center; }
         .ed-hero-select option { color: #111827 !important; background: #fff !important; }
 
+        /* ── CARDS ── */
         .ed-card       { background: #fff; border-radius: 14px; border: 1px solid #eef0f6; min-width: 0; overflow: hidden; }
         .ed-card-title { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1.2px; padding: 14px 14px 0; margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
 
+        /* ── MAIN LAYOUT ── */
         .ed-main   { padding: 12px 12px 100px; display: flex; flex-direction: column; gap: 10px; width: 100%; overflow: hidden; }
+        /* Single column on mobile */
         .ed-grid-2 { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; }
         .ed-docs-grid { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 0 14px 14px; }
 
@@ -382,10 +439,13 @@ export default function EmployeeDashboard() {
         .ed-view-btn { display: flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 7px; background: #f0f4ff; border: 1px solid #c7d2fe; color: #4f8ef7; font-size: 11px; font-weight: 700; text-decoration: none; flex-shrink: 0; transition: all .15s; white-space: nowrap; }
         .ed-view-btn:hover { background: #4f8ef7; color: #fff; }
 
-        .ed-score-wrap    { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; overflow: hidden; }
-        .ed-score-arc-wrap{ flex-shrink: 0; transform: scale(0.82); transform-origin: left center; }
-        .ed-score-num     { font-size: 26px; font-weight: 800; line-height: 1; letter-spacing: -1px; font-family: 'JetBrains Mono', monospace; }
+        /* ── SCORE CARD: side-by-side arc + text on mobile ── */
+        .ed-score-wrap     { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; overflow: hidden; }
+        /* Scale down arc slightly on very small screens */
+        .ed-score-arc-wrap { flex-shrink: 0; transform: scale(0.78); transform-origin: left center; }
+        .ed-score-num      { font-size: 24px; font-weight: 800; line-height: 1; letter-spacing: -1px; font-family: 'JetBrains Mono', monospace; }
 
+        /* ── CAREER BUTTON ── */
         .ed-career-btn {
           width: 100%; margin-top: 12px;
           padding: 9px 0;
@@ -401,37 +461,49 @@ export default function EmployeeDashboard() {
         }
         .ed-career-btn:hover { background: #2563eb; color: #fff; border-color: #2563eb; }
 
+        /* ── DESKTOP OVERRIDES (768px+) ── */
         @media (min-width: 768px) {
           .ed-topbar { display: none; }
-          .ed-topbar-name { font-size: 13px; max-width: none; }
-          .ed-topbar-sub  { font-size: 11px; }
-          .ed-topbar-right{ gap: 10px; }
-          .ed-topbar-actions { display: flex; align-items: center; gap: 8px; }
-          .ed-topbar-avatar { display: none; }
+
           .ed-pill-text { display: inline; }
           .ed-status-pill { padding: 5px 10px; font-size: 11px; }
+
           .ed-hero { padding: 28px 32px; }
           .ed-hero-profile-row { margin-bottom: 20px; gap: 14px; }
           .ed-avatar { width: 68px; height: 68px; }
           .ed-hero-name { font-size: 22px; white-space: normal; }
           .ed-hero-role { font-size: 13px; white-space: normal; }
+
+          /* 3-col chips on desktop, reset order & span */
           .ed-hero-chips { grid-template-columns: 1fr 1fr 1fr; }
-          .ed-hero-chips .ed-chip:nth-child(3) { grid-column: auto; }
-          .ed-chip-val { font-size: 12px; white-space: nowrap; }
+          .ed-hero-chips .ed-chip:nth-child(1) { order: unset; }
+          .ed-hero-chips .ed-chip:nth-child(2) { order: unset; grid-column: auto; }
+          .ed-hero-chips .ed-chip:nth-child(3) { order: unset; }
+          .ed-chip-val { font-size: 12px; }
+
           .ed-hero-status-bar { flex-direction: row; align-items: center; }
           .ed-hero-status-row { flex: 1; }
           .ed-hero-edit-btn { width: auto; }
           .ed-hero-edit-btn > button, .ed-hero-edit-btn > div { width: auto; }
+
           .ed-card-title { padding: 18px 20px 0; margin-bottom: 14px; }
           .ed-ann-row  { padding: 12px 20px; gap: 11px; }
           .ed-info-pair{ padding: 11px 20px; }
           .ed-info-value { white-space: normal; }
+
           .ed-main   { padding: 20px 28px 32px; gap: 16px; }
           .ed-grid-2 { grid-template-columns: 1fr 1fr; gap: 16px; }
           .ed-docs-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; padding: 0 20px 20px; }
           .ed-doc-item  { padding: 12px 14px; gap: 11px; }
+
           .ed-score-arc-wrap { transform: scale(1); }
           .ed-score-num { font-size: 30px; }
+
+          .ed-topbar-actions { display: flex; align-items: center; gap: 8px; }
+          .ed-topbar-avatar { display: none; }
+          .ed-topbar-name { font-size: 13px; max-width: none; }
+          .ed-topbar-sub  { font-size: 11px; }
+          .ed-topbar-right{ gap: 10px; }
         }
       `}</style>
 
@@ -439,20 +511,30 @@ export default function EmployeeDashboard() {
 
         {/* ── Topbar (mobile only) ── */}
         <div className="ed-topbar">
+          {/* Left: avatar + name */}
           <div className="ed-topbar-left">
             <div className="ed-topbar-avatar" style={{ width: 30, height: 30, borderRadius: "50%", overflow: "hidden", border: "2px solid #eef0f6", flexShrink: 0 }}>
-              <img src={employee.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=e8f0fe&color=4f8ef7&size=36`} alt="av" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img
+                src={employee.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=e8f0fe&color=4f8ef7&size=36`}
+                alt="av"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            </div>
+            <div style={{ minWidth: 0, overflow: "hidden" }}>
+              <p className="ed-topbar-name">{employee.name}</p>
+              <p className="ed-topbar-sub">{employee.designation}</p>
             </div>
           </div>
 
-          {/* ── Bell Icon (mobile topbar) ── */}
+          {/* Right: Bell icon always visible */}
           <div className="ed-topbar-right">
             <button
               className="ed-notif-btn"
               onClick={() => window.location.href = "/employee/notifications"}
               title="Notifications"
+              style={{ background: "#f7f8fc", border: "1.5px solid #eef0f6", color: "#6b7280" }}
             >
-              <Bell size={16} />
+              <Bell size={17} />
               {unreadCount > 0 && (
                 <span className="ed-notif-badge">
                   {unreadCount > 99 ? "99+" : unreadCount}
@@ -465,8 +547,13 @@ export default function EmployeeDashboard() {
         {/* ── Hero Banner ── */}
         <div className="ed-hero">
           <div className="ed-hero-profile-row">
+            {/* Avatar */}
             <div className="ed-avatar-wrap">
-              <img src={employee.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=252a45&color=7fa8f7&size=72`} alt="profile" className="ed-avatar" />
+              <img
+                src={employee.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=252a45&color=7fa8f7&size=72`}
+                alt="profile"
+                className="ed-avatar"
+              />
               <div className="ed-avatar-overlay">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -484,6 +571,7 @@ export default function EmployeeDashboard() {
               )}
             </div>
 
+            {/* Name / edit block */}
             <div className="ed-hero-name-block">
               {isEditing ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -515,9 +603,9 @@ export default function EmployeeDashboard() {
               )}
             </div>
 
-            {/* ── Bell Icon (desktop hero) ── */}
+            {/* Bell icon (desktop hero, hidden on mobile via media query) */}
             <button
-              className="ed-notif-btn"
+              className="ed-notif-btn ed-hero-bell-desktop"
               onClick={() => window.location.href = "/employee/notifications"}
               title="Notifications"
               style={{ background: "rgba(255,255,255,.1)", border: "1.5px solid rgba(255,255,255,.18)", color: "#fff" }}

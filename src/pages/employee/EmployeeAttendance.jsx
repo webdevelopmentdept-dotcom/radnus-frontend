@@ -31,14 +31,14 @@ function LiveClock() {
   return (
     <div style={{ textAlign: "center" }}>
       <div style={{
-        fontSize: "clamp(40px, 8vw, 60px)", fontWeight: 200, color: "#fff",
+        fontSize: "clamp(36px, 8vw, 60px)", fontWeight: 200, color: "#fff",
         letterSpacing: -3, lineHeight: 1, fontFamily: "'DM Mono', 'Courier New', monospace",
       }}>
         {pad(time.getHours())}:{pad(time.getMinutes())}
-        <span style={{ fontSize: "clamp(22px, 4vw, 30px)", opacity: 0.35 }}>:{pad(time.getSeconds())}</span>
+        <span style={{ fontSize: "clamp(20px, 4vw, 30px)", opacity: 0.35 }}>:{pad(time.getSeconds())}</span>
       </div>
       <div style={{
-        fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 10,
+        fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 8,
         fontWeight: 500, letterSpacing: 2, textTransform: "uppercase",
       }}>
         {time.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
@@ -115,7 +115,7 @@ const calNavBtn = {
 };
 
 /* ══════════════════════════════════════════════
-   LEAVE FORM MODAL — Redesigned
+   LEAVE FORM MODAL
 ══════════════════════════════════════════════ */
 function LeaveForm({ onSubmit, onClose, empId }) {
   const [leaveTypes, setLeaveTypes] = useState([]);
@@ -127,7 +127,6 @@ function LeaveForm({ onSubmit, onClose, empId }) {
   const authHeader = () => ({ Authorization: `Bearer ${getToken()}` });
 
   useEffect(() => {
-    // Fetch leave types from HR-managed API
     const fetchTypes = async () => {
       try {
         const [typesRes, balRes] = await Promise.allSettled([
@@ -207,7 +206,7 @@ function LeaveForm({ onSubmit, onClose, empId }) {
             <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid #e5e7eb", background: "#f9fafb", fontSize: 18, color: "#9ca3af", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>×</button>
           </div>
 
-          {/* ── Leave Balance Chips ── */}
+          {/* Leave Balance Chips */}
           {!typesLoading && Object.keys(balance).length > 0 && (
             <div style={{ marginBottom: 18 }}>
               <label style={S.label}>Leave balance</label>
@@ -232,7 +231,7 @@ function LeaveForm({ onSubmit, onClose, empId }) {
             </div>
           )}
 
-          {/* ── Leave Type Selector ── */}
+          {/* Leave Type Selector */}
           <div style={{ marginBottom: 16 }}>
             <label style={S.label}>Leave type</label>
             {typesLoading ? (
@@ -263,7 +262,7 @@ function LeaveForm({ onSubmit, onClose, empId }) {
             )}
           </div>
 
-          {/* ── Date Pickers ── */}
+          {/* Date Pickers */}
           <div style={{ marginBottom: 16 }}>
             <label style={S.label}>Duration</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -290,7 +289,7 @@ function LeaveForm({ onSubmit, onClose, empId }) {
             </div>
           </div>
 
-          {/* ── Half Day Toggle ── */}
+          {/* Half Day Toggle */}
           <div
             onClick={() => setForm(f => ({ ...f, is_half_day: !f.is_half_day }))}
             style={{
@@ -300,7 +299,6 @@ function LeaveForm({ onSubmit, onClose, empId }) {
               cursor: "pointer", marginBottom: 16, transition: "all 0.15s",
             }}
           >
-            {/* toggle pill */}
             <div style={{
               width: 38, height: 22, borderRadius: 11, flexShrink: 0, transition: "background 0.2s", position: "relative",
               background: form.is_half_day ? "#111827" : "#e5e7eb",
@@ -319,7 +317,7 @@ function LeaveForm({ onSubmit, onClose, empId }) {
             </div>
           </div>
 
-          {/* ── Session Picker (half day only) ── */}
+          {/* Session Picker */}
           {form.is_half_day && (
             <div style={{ marginBottom: 16 }}>
               <label style={S.label}>Session</label>
@@ -348,7 +346,7 @@ function LeaveForm({ onSubmit, onClose, empId }) {
             </div>
           )}
 
-          {/* ── Duration Summary ── */}
+          {/* Duration Summary */}
           <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ fontSize: 12, color: "#9ca3af", fontWeight: 500 }}>Duration</div>
@@ -362,7 +360,7 @@ function LeaveForm({ onSubmit, onClose, empId }) {
             </div>
           </div>
 
-          {/* ── Reason ── */}
+          {/* Reason */}
           <div style={{ marginBottom: 4 }}>
             <label style={S.label}>
               Reason <span style={{ fontSize: 10, fontWeight: 600, color: "#dc2626", textTransform: "none" }}>*</span>
@@ -556,19 +554,19 @@ export default function EmployeeAttendance() {
   );
 
   const SUMMARY_CARDS = [
-    { label: "Present", value: summary.present || 0, color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
-    { label: "Absent", value: summary.absent || 0, color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
-    { label: "Late", value: summary.late || 0, color: "#b45309", bg: "#fffbeb", border: "#fde68a" },
-    { label: "On Leave", value: summary.onLeave || 0, color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd" },
-    { label: "Half Day", value: summary.halfDay || 0, color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff" },
-    { label: "Work Days", value: summary.totalDays || 0, color: "#374151", bg: "#f9fafb", border: "#e5e7eb" },
+    { label: "Present",   value: summary.present  || 0, color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
+    { label: "Absent",    value: summary.absent   || 0, color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
+    { label: "Late",      value: summary.late     || 0, color: "#b45309", bg: "#fffbeb", border: "#fde68a" },
+    { label: "On Leave",  value: summary.onLeave  || 0, color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd" },
+    { label: "Half Day",  value: summary.halfDay  || 0, color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff" },
+    { label: "Work Days", value: summary.totalDays|| 0, color: "#374151", bg: "#f9fafb", border: "#e5e7eb" },
   ];
 
   const TABS = [
-    { id: "today", label: "Today" },
+    { id: "today",    label: "Today" },
     { id: "calendar", label: "Calendar" },
-    { id: "history", label: "History" },
-    { id: "leaves", label: `Leaves${leaves.length ? ` (${leaves.length})` : ""}` },
+    { id: "history",  label: "History" },
+    { id: "leaves",   label: `Leaves${leaves.length ? ` (${leaves.length})` : ""}` },
   ];
 
   const primaryBtn = { padding: "12px 20px", borderRadius: 10, border: "none", background: "#111827", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" };
@@ -578,42 +576,128 @@ export default function EmployeeAttendance() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=DM+Mono:wght@300;400;500&display=swap');
         *, *::before, *::after { box-sizing: border-box; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin    { to { transform: rotate(360deg); } }
         @keyframes slideUp { from { opacity:0; transform:translateY(16px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
         @keyframes toastIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
         .ea-root { font-family:'DM Sans',sans-serif; background:#f8f9fb; min-height:100vh; }
-        .ea-topbar { background:#fff; border-bottom:1px solid #f0f0f0; padding:12px 20px; position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:12px; }
-        @media (min-width:768px) { .ea-topbar { padding:14px 28px; } }
-        .ea-page { padding:16px; }
-        @media (min-width:768px) { .ea-page { padding:24px 28px; } }
-        .stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:18px; }
-        @media (min-width:768px) { .stat-row { grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:22px; } }
-        .ea-tabs { display:flex; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; border-bottom:1px solid #f0f0f0; margin-bottom:20px; }
+
+        /* ── Topbar ── */
+        .ea-topbar {
+          background:#fff; border-bottom:1px solid #f0f0f0;
+          padding:10px 14px;
+          position:sticky; top:0; z-index:50;
+          display:flex; align-items:center; gap:12px;
+        }
+        @media (min-width:640px) { .ea-topbar { padding:14px 28px; } }
+
+        /* ── Page wrapper ── */
+        .ea-page { padding:12px 12px 24px; }
+        @media (min-width:640px) { .ea-page { padding:20px 24px 32px; } }
+        @media (min-width:1024px) { .ea-page { padding:24px 28px 40px; } }
+
+        /* ── Summary stat grid ── */
+        .stat-row {
+          display:grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap:8px;
+          margin-bottom:14px;
+        }
+        @media (min-width:640px) {
+          .stat-row { grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:20px; }
+        }
+
+        /* ── Tabs ── */
+        .ea-tabs {
+          display:flex; overflow-x:auto; -webkit-overflow-scrolling:touch;
+          scrollbar-width:none; border-bottom:1px solid #f0f0f0; margin-bottom:16px;
+        }
         .ea-tabs::-webkit-scrollbar { display:none; }
-        .ea-tab { border:none; background:none; padding:10px 14px; font-weight:600; font-size:13px; cursor:pointer; font-family:'DM Sans',sans-serif; border-bottom:2px solid transparent; margin-bottom:-1px; white-space:nowrap; transition:color 0.15s,border-color 0.15s; color:#9ca3af; }
+        .ea-tab {
+          border:none; background:none;
+          padding:9px 12px;
+          font-weight:600; font-size:13px; cursor:pointer;
+          font-family:'DM Sans',sans-serif;
+          border-bottom:2px solid transparent; margin-bottom:-1px;
+          white-space:nowrap; transition:color 0.15s,border-color 0.15s; color:#9ca3af;
+          flex-shrink:0;
+        }
         .ea-tab.active { color:#111827; border-bottom-color:#111827; }
-        .today-grid { display:grid; grid-template-columns:1fr; gap:14px; }
-        @media (min-width:768px) { .today-grid { grid-template-columns:minmax(0,2fr) minmax(0,3fr); gap:18px; } }
-        .clock-panel { background:#0d1117; border-radius:16px; padding:26px 20px 22px; display:flex; flex-direction:column; align-items:center; gap:16px; position:relative; overflow:hidden; }
+
+        /* ── Today grid: stacked on mobile, 2-col on md+ ── */
+        .today-grid {
+          display:grid;
+          grid-template-columns:1fr;
+          gap:12px;
+        }
+        @media (min-width:768px) {
+          .today-grid { grid-template-columns:minmax(0,2fr) minmax(0,3fr); gap:18px; }
+        }
+
+        /* ── Clock panel ── */
+        .clock-panel {
+          background:#0d1117; border-radius:16px;
+          padding:22px 16px 18px;
+          display:flex; flex-direction:column; align-items:center; gap:14px;
+          position:relative; overflow:hidden;
+        }
         @media (min-width:768px) { .clock-panel { padding:36px 28px 30px; gap:20px; } }
-        .time-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; width:100%; }
-        .ea-action-btn { width:100%; padding:12px; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; border:none; text-align:center; }
+
+        /* ── time stats row (In/Out/Hours) ── */
+        .time-stats {
+          display:grid; grid-template-columns:repeat(3,1fr); gap:6px; width:100%;
+        }
+
+        /* ── Action buttons ── */
+        .ea-action-btn {
+          width:100%; padding:11px; border-radius:10px;
+          font-size:13px; font-weight:600; cursor:pointer;
+          font-family:'DM Sans',sans-serif; transition:all 0.15s; border:none; text-align:center;
+        }
         .ea-action-btn:disabled { opacity:0.45; cursor:not-allowed; }
+
+        /* ── Detail card (today's details) ── */
         .detail-card { background:#fff; border:1px solid #f0f0f0; border-radius:16px; overflow:hidden; }
-        .detail-row { display:flex; justify-content:space-between; align-items:center; padding:10px 20px; border-bottom:1px solid #f9fafb; gap:12px; }
+        .detail-row {
+          display:flex; justify-content:space-between; align-items:center;
+          padding:9px 16px; border-bottom:1px solid #f9fafb; gap:10px;
+        }
         .detail-row:last-child { border-bottom:none; }
-        .calendar-grid { display:grid; grid-template-columns:1fr; gap:14px; }
+
+        /* ── Calendar grid ── */
+        .calendar-grid { display:grid; grid-template-columns:1fr; gap:12px; }
         @media (min-width:768px) { .calendar-grid { grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:18px; } }
+
+        /* ── History: cards on mobile, table on desktop ── */
         .history-cards { display:flex; flex-direction:column; gap:10px; }
         .history-table-wrap { display:none; }
-        @media (min-width:768px) { .history-cards { display:none; } .history-table-wrap { display:block; overflow-x:auto; } }
+        @media (min-width:768px) {
+          .history-cards { display:none; }
+          .history-table-wrap { display:block; overflow-x:auto; }
+        }
+
         .ea-card { background:#fff; border:1px solid #f0f0f0; border-radius:16px; }
-        .ea-toast { position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:9999; padding:11px 18px; border-radius:10px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px; white-space:nowrap; box-shadow:0 8px 32px rgba(0,0,0,0.18); animation:toastIn 0.2s ease; }
-        .method-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; }
+
+        /* ── Toast ── */
+        .ea-toast {
+          position:fixed; top:16px; left:50%; transform:translateX(-50%);
+          z-index:9999; padding:11px 18px; border-radius:10px;
+          font-weight:600; font-size:13px;
+          display:flex; align-items:center; gap:8px;
+          white-space:nowrap; box-shadow:0 8px 32px rgba(0,0,0,0.18);
+          animation:toastIn 0.2s ease;
+        }
+
+        .method-badge {
+          display:inline-flex; align-items:center; gap:4px;
+          padding:3px 9px; border-radius:20px; font-size:10px;
+          font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
+        }
       `}</style>
 
       <div className="ea-root">
 
+        {/* ── Topbar ── */}
         <header className="ea-topbar">
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Attendance</div>
@@ -622,12 +706,13 @@ export default function EmployeeAttendance() {
             </div>
           </div>
           {employee && (
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
               {employee.name?.charAt(0)}
             </div>
           )}
         </header>
 
+        {/* ── Toast ── */}
         {toast && (
           <div className="ea-toast" style={{ background: toast.type === "error" ? "#dc2626" : "#111827", color: "#fff" }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: toast.type === "error" ? "#fca5a5" : "#6ee7b7" }} />
@@ -635,27 +720,30 @@ export default function EmployeeAttendance() {
           </div>
         )}
 
+        {/* ── Leave Modal ── */}
         {showLeaveForm && (
-          <LeaveForm
-            onSubmit={handleLeaveSubmit}
-            onClose={() => setShowLeaveForm(false)}
-            empId={empId}
-          />
+          <LeaveForm onSubmit={handleLeaveSubmit} onClose={() => setShowLeaveForm(false)} empId={empId} />
         )}
 
         <div className="ea-page">
 
-          {/* Summary stat cards */}
+          {/* ── Summary stat cards ── */}
           <div className="stat-row">
             {SUMMARY_CARDS.map((c) => (
-              <div key={c.label} style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 12, padding: "13px 12px" }}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: c.color, lineHeight: 1, fontFamily: "'DM Mono',monospace", letterSpacing: -1 }}>{c.value}</div>
-                <div style={{ fontSize: 11, color: c.color, fontWeight: 500, marginTop: 5, opacity: 0.75 }}>{c.label}</div>
+              <div key={c.label} style={{
+                background: c.bg, border: `1px solid ${c.border}`, borderRadius: 12,
+                padding: "11px 10px",
+              }}>
+                <div style={{
+                  fontSize: 22, fontWeight: 700, color: c.color, lineHeight: 1,
+                  fontFamily: "'DM Mono',monospace", letterSpacing: -1,
+                }}>{c.value}</div>
+                <div style={{ fontSize: 10, color: c.color, fontWeight: 500, marginTop: 4, opacity: 0.75 }}>{c.label}</div>
               </div>
             ))}
           </div>
 
-          {/* Tabs */}
+          {/* ── Tabs ── */}
           <div className="ea-tabs">
             {TABS.map((t) => (
               <button key={t.id} className={`ea-tab${activeTab === t.id ? " active" : ""}`} onClick={() => setActiveTab(t.id)}>
@@ -667,11 +755,16 @@ export default function EmployeeAttendance() {
           {/* ════ TODAY TAB ════ */}
           {activeTab === "today" && (
             <div className="today-grid">
+
+              {/* Clock panel */}
               <div className="clock-panel">
                 <LiveClock />
+
+                {/* Status badges */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
                   <div style={{
-                    padding: "5px 16px", borderRadius: 20, fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase",
+                    padding: "5px 14px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+                    letterSpacing: 0.8, textTransform: "uppercase",
                     background: hasCheckedOut ? "rgba(110,231,183,0.1)" : isCheckedIn ? "rgba(253,230,138,0.1)" : "rgba(252,165,165,0.1)",
                     color: hasCheckedOut ? "#6ee7b7" : isCheckedIn ? "#fde68a" : "#fca5a5",
                     border: `1px solid ${hasCheckedOut ? "rgba(110,231,183,0.2)" : isCheckedIn ? "rgba(253,230,138,0.2)" : "rgba(252,165,165,0.2)"}`,
@@ -689,20 +782,22 @@ export default function EmployeeAttendance() {
                   )}
                 </div>
 
+                {/* Auto-marked notice */}
                 {autoMarked && !todayRecord?.checkIn && !hasCheckedOut && (
-                  <div style={{ width: "100%", background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 10, padding: "10px 14px", fontSize: 11, color: "rgba(160,165,255,0.85)", fontWeight: 500, textAlign: "center", lineHeight: 1.5 }}>
+                  <div style={{ width: "100%", background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 10, padding: "10px 12px", fontSize: 11, color: "rgba(160,165,255,0.85)", fontWeight: 500, textAlign: "center", lineHeight: 1.5 }}>
                     Auto-marked Present · Use <strong>Check Out</strong> button when leaving
                   </div>
                 )}
 
+                {/* In/Out/Hours */}
                 {hasCheckedIn && (
                   <div className="time-stats">
                     {[
-                      { label: "In", value: todayRecord?.checkIn ? fmt(todayRecord.checkIn) : "Auto" },
-                      { label: "Out", value: fmt(todayRecord?.checkOut) },
+                      { label: "In",    value: todayRecord?.checkIn ? fmt(todayRecord.checkIn) : "Auto" },
+                      { label: "Out",   value: fmt(todayRecord?.checkOut) },
                       { label: "Hours", value: workHours },
                     ].map((s) => (
-                      <div key={s.label} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 6px", textAlign: "center" }}>
+                      <div key={s.label} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 4px", textAlign: "center" }}>
                         <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", fontFamily: "'DM Mono',monospace" }}>{s.value}</div>
                         <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 4, fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase" }}>{s.label}</div>
                       </div>
@@ -710,20 +805,26 @@ export default function EmployeeAttendance() {
                   </div>
                 )}
 
+                {/* Break info */}
                 {hasCheckedIn && todayRecord?.breakStart && (
-                  <div style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 9, padding: "9px 14px", fontSize: 12, color: "rgba(255,255,255,0.35)", fontWeight: 500 }}>
-                    {isOnBreak ? `Break started · ${fmt(todayRecord.breakStart)}` : `Break · ${fmt(todayRecord.breakStart)} – ${fmt(todayRecord.breakEnd)} · ${todayRecord.break_minutes || 0} min`}
+                  <div style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 9, padding: "9px 12px", fontSize: 12, color: "rgba(255,255,255,0.35)", fontWeight: 500 }}>
+                    {isOnBreak
+                      ? `Break started · ${fmt(todayRecord.breakStart)}`
+                      : `Break · ${fmt(todayRecord.breakStart)} – ${fmt(todayRecord.breakEnd)} · ${todayRecord.break_minutes || 0} min`}
                   </div>
                 )}
 
+                {/* Action buttons */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
                     {!hasCheckedIn ? (
-                      <button className="ea-action-btn" onClick={handleCheckIn} disabled={checkInLoading} style={{ background: "#fff", color: "#111827" }}>
+                      <button className="ea-action-btn" onClick={handleCheckIn} disabled={checkInLoading}
+                        style={{ background: "#fff", color: "#111827" }}>
                         {checkInLoading ? "Checking in…" : "Check In"}
                       </button>
                     ) : !hasCheckedOut ? (
-                      <button className="ea-action-btn" onClick={handleCheckOut} disabled={checkOutLoading || isOnBreak} title={isOnBreak ? "End your break first" : ""}
+                      <button className="ea-action-btn" onClick={handleCheckOut} disabled={checkOutLoading || isOnBreak}
+                        title={isOnBreak ? "End your break first" : ""}
                         style={{ background: isOnBreak ? "rgba(255,255,255,0.06)" : "rgba(252,165,165,0.13)", color: isOnBreak ? "rgba(255,255,255,0.25)" : "#fca5a5", border: `1px solid ${isOnBreak ? "rgba(255,255,255,0.07)" : "rgba(252,165,165,0.2)"}` }}>
                         {checkOutLoading ? "Checking out…" : "Check Out"}
                       </button>
@@ -732,18 +833,21 @@ export default function EmployeeAttendance() {
                         Day Completed ✓
                       </div>
                     )}
-                    <button onClick={() => setShowLeaveForm(true)} style={{ padding: "12px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.45)", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", fontSize: 13, whiteSpace: "nowrap" }}>
+                    <button onClick={() => setShowLeaveForm(true)}
+                      style={{ padding: "11px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.45)", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", fontSize: 13, whiteSpace: "nowrap" }}>
                       Leave
                     </button>
                   </div>
 
                   {canBreak && !hasCheckedOut && (
                     !todayRecord?.breakStart ? (
-                      <button className="ea-action-btn" onClick={handleBreakStart} disabled={breakStartLoading} style={{ background: "rgba(253,230,138,0.07)", color: "rgba(253,230,138,0.65)", border: "1px solid rgba(253,230,138,0.14)", fontSize: 13 }}>
+                      <button className="ea-action-btn" onClick={handleBreakStart} disabled={breakStartLoading}
+                        style={{ background: "rgba(253,230,138,0.07)", color: "rgba(253,230,138,0.65)", border: "1px solid rgba(253,230,138,0.14)", fontSize: 13 }}>
                         {breakStartLoading ? "Starting…" : "☕  Start Lunch Break"}
                       </button>
                     ) : isOnBreak ? (
-                      <button className="ea-action-btn" onClick={handleBreakEnd} disabled={breakEndLoading} style={{ background: "rgba(110,231,183,0.07)", color: "rgba(110,231,183,0.65)", border: "1px solid rgba(110,231,183,0.14)", fontSize: 13 }}>
+                      <button className="ea-action-btn" onClick={handleBreakEnd} disabled={breakEndLoading}
+                        style={{ background: "rgba(110,231,183,0.07)", color: "rgba(110,231,183,0.65)", border: "1px solid rgba(110,231,183,0.14)", fontSize: 13 }}>
                         {breakEndLoading ? "Ending…" : "End Lunch Break"}
                       </button>
                     ) : (
@@ -755,20 +859,21 @@ export default function EmployeeAttendance() {
                 </div>
               </div>
 
+              {/* Today's Details card */}
               <div className="detail-card">
-                <div style={{ padding: "14px 20px", borderBottom: "1px solid #f0f0f0", fontSize: 14, fontWeight: 700, color: "#111827" }}>Today's Details</div>
+                <div style={{ padding: "12px 16px", borderBottom: "1px solid #f0f0f0", fontSize: 14, fontWeight: 700, color: "#111827" }}>Today's Details</div>
                 {[
-                  { label: "Date", value: new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) },
-                  { label: "Status", value: todayRecord?.status ? STATUS_META[todayRecord.status]?.label : "Not marked", isStatus: true, status: todayRecord?.status },
-                  { label: "Check In", value: todayRecord?.checkIn ? fmt(todayRecord.checkIn) : autoMarked ? "Auto (no timestamp)" : "—" },
-                  { label: "Check Out", value: fmt(todayRecord?.checkOut) },
-                  { label: "Break Start", value: fmt(todayRecord?.breakStart) },
-                  { label: "Break End", value: fmt(todayRecord?.breakEnd) },
+                  { label: "Date",       value: new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) },
+                  { label: "Status",     value: todayRecord?.status ? STATUS_META[todayRecord.status]?.label : "Not marked", isStatus: true, status: todayRecord?.status },
+                  { label: "Check In",   value: todayRecord?.checkIn ? fmt(todayRecord.checkIn) : autoMarked ? "Auto (no timestamp)" : "—" },
+                  { label: "Check Out",  value: fmt(todayRecord?.checkOut) },
+                  { label: "Break Start",value: fmt(todayRecord?.breakStart) },
+                  { label: "Break End",  value: fmt(todayRecord?.breakEnd) },
                   { label: "Break Dur.", value: todayRecord?.break_minutes ? `${todayRecord.break_minutes} min` : "—" },
                   { label: "Work Hours", value: workHours },
-                  { label: "Method", value: methodLabel },
-                  { label: "Shift", value: todayRecord?.shift || "General" },
-                  { label: "HR Remark", value: todayRecord?.remark || "—" },
+                  { label: "Method",     value: methodLabel },
+                  { label: "Shift",      value: todayRecord?.shift || "General" },
+                  { label: "HR Remark",  value: todayRecord?.remark || "—" },
                 ].map(({ label, value, isStatus, status }) => (
                   <div key={label} className="detail-row">
                     <span style={{ fontSize: 12, color: "#9ca3af", fontWeight: 500, flexShrink: 0 }}>{label}</span>
@@ -788,18 +893,18 @@ export default function EmployeeAttendance() {
           {/* ════ CALENDAR TAB ════ */}
           {activeTab === "calendar" && (
             <div className="calendar-grid">
-              <div className="ea-card" style={{ padding: 20 }}>
+              <div className="ea-card" style={{ padding: 16 }}>
                 <AttendanceCalendar records={records} year={calYear} month={calMonth} onMonthChange={handleMonthChange} />
               </div>
-              <div className="ea-card" style={{ padding: 20 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#111827", marginBottom: 16 }}>
+              <div className="ea-card" style={{ padding: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#111827", marginBottom: 14 }}>
                   {new Date(calYear, calMonth).toLocaleString("en-IN", { month: "long" })} Summary
                 </div>
                 {(() => {
                   const counts = {};
                   records.forEach((r) => { counts[r.status] = (counts[r.status] || 0) + 1; });
                   return Object.entries(STATUS_META).map(([key, meta]) => (
-                    <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f9fafb" }}>
+                    <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid #f9fafb" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                         <div style={{ width: 7, height: 7, borderRadius: "50%", background: meta.color }} />
                         <span style={{ fontSize: 13, fontWeight: 500, color: "#374151" }}>{meta.label}</span>
@@ -815,7 +920,7 @@ export default function EmployeeAttendance() {
           {/* ════ HISTORY TAB ════ */}
           {activeTab === "history" && (
             <div className="ea-card" style={{ overflow: "hidden" }}>
-              <div style={{ padding: "14px 20px", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ padding: "12px 16px", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>Attendance History</div>
                 <span style={{ fontSize: 12, color: "#9ca3af", fontWeight: 500 }}>{records.length} records</span>
               </div>
@@ -826,12 +931,13 @@ export default function EmployeeAttendance() {
                 </div>
               ) : (
                 <>
-                  <div className="history-cards" style={{ padding: "12px 14px" }}>
+                  {/* Mobile cards */}
+                  <div className="history-cards" style={{ padding: "10px 12px" }}>
                     {[...records].sort((a, b) => new Date(b.date) - new Date(a.date)).map((r, i) => {
                       const meta = STATUS_META[r.status];
                       const hrs = r.checkIn && r.checkOut ? (() => { const d = (new Date(r.checkOut) - new Date(r.checkIn)) / 3600000; return `${Math.floor(d)}h ${pad(Math.round((d % 1) * 60))}m`; })() : "—";
                       return (
-                        <div key={i} style={{ border: "1px solid #f0f0f0", borderRadius: 12, padding: "14px", background: "#fafafa" }}>
+                        <div key={i} style={{ border: "1px solid #f0f0f0", borderRadius: 12, padding: "12px", background: "#fafafa" }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                             <div>
                               <div style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{fmtD(r.date)}</div>
@@ -842,13 +948,13 @@ export default function EmployeeAttendance() {
                               {r.method && <span style={{ fontSize: 9, color: r.method === "auto" ? "#818cf8" : "#9ca3af", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{r.method === "auto" ? "🤖 Auto" : r.method === "hr_manual" ? "HR" : "Manual"}</span>}
                             </div>
                           </div>
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 7 }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
                             {[
-                              { label: "In", value: r.checkIn ? fmt(r.checkIn) : r.status === "present" ? "Auto" : "—", color: "#16a34a" },
-                              { label: "Out", value: fmt(r.checkOut), color: "#dc2626" },
+                              { label: "In",    value: r.checkIn ? fmt(r.checkIn) : r.status === "present" ? "Auto" : "—", color: "#16a34a" },
+                              { label: "Out",   value: fmt(r.checkOut), color: "#dc2626" },
                               { label: "Hours", value: hrs, color: "#111827" },
                             ].map((s) => (
-                              <div key={s.label} style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 8, padding: "8px 4px", textAlign: "center" }}>
+                              <div key={s.label} style={{ background: "#fff", border: "1px solid #f0f0f0", borderRadius: 8, padding: "7px 4px", textAlign: "center" }}>
                                 <div style={{ fontSize: 12, fontWeight: 700, color: s.color, fontFamily: "'DM Mono',monospace" }}>{s.value}</div>
                                 <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, fontWeight: 500 }}>{s.label}</div>
                               </div>
@@ -859,6 +965,8 @@ export default function EmployeeAttendance() {
                       );
                     })}
                   </div>
+
+                  {/* Desktop table */}
                   <div className="history-table-wrap">
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                       <thead>
@@ -897,7 +1005,7 @@ export default function EmployeeAttendance() {
           {/* ════ LEAVES TAB ════ */}
           {activeTab === "leaves" && (
             <div>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
                 <button onClick={() => setShowLeaveForm(true)} style={{ ...primaryBtn, display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
                   + Apply for Leave
                 </button>
@@ -918,7 +1026,7 @@ export default function EmployeeAttendance() {
                     const sborder = isApproved ? "#bbf7d0" : isRejected ? "#fecaca" : "#fde68a";
                     const days = l.is_half_day ? 0.5 : Math.floor((new Date(l.to_date) - new Date(l.from_date)) / 86400000) + 1;
                     return (
-                      <div key={i} className="ea-card" style={{ padding: "16px 18px" }}>
+                      <div key={i} className="ea-card" style={{ padding: "14px 16px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
@@ -936,16 +1044,14 @@ export default function EmployeeAttendance() {
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
                             <span style={{ fontSize: 11, color: "#d1d5db", fontWeight: 500 }}>Applied {fmtD(l.createdAt)}</span>
-                            <div style={{ display: "flex", gap: 6 }}>
-                              {l.status === "pending" && (
-                                <button
-                                  onClick={() => handleCancelLeave(l._id)}
-                                  style={{ padding: "5px 12px", borderRadius: 8, border: "1.5px solid #fecaca", background: "#fff", color: "#dc2626", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
-                                >
-                                  Cancel
-                                </button>
-                              )}
-                            </div>
+                            {l.status === "pending" && (
+                              <button
+                                onClick={() => handleCancelLeave(l._id)}
+                                style={{ padding: "5px 12px", borderRadius: 8, border: "1.5px solid #fecaca", background: "#fff", color: "#dc2626", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                              >
+                                Cancel
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>

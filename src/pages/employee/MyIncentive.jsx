@@ -3,22 +3,24 @@ import axios from "axios";
 import EmployeeLayout from "./EmployeeLayout";
 import {
   Sparkles, TrendingUp, Clock, CheckCircle, DollarSign,
-  ChevronDown, ChevronUp, Award, Target, BarChart2, Gift
+  ChevronDown, ChevronUp, Award, Target, BarChart2, Gift,
+  ArrowRight, Wallet, CalendarDays, BadgeCheck, Hourglass
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function isKpiPlan(plan) {
-  if (!plan?.plan_type) return false;
-  return plan.plan_type === "kpi_linked" || plan.plan_type === "kpi-linked";
+  if (!plan) return false;
+  if (typeof plan === "string") return false;
+  const pt = (plan.plan_type || "").toLowerCase().trim();
+  return pt === "kpi_linked" || pt === "kpi-linked" || pt === "kpi";
 }
 
 function formatPeriod(cycleStr) {
   if (!cycleStr) return "—";
   if (!/^\d{4}-\d{2}$/.test(cycleStr)) return cycleStr;
   const [year, month] = cycleStr.split("-");
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   return `${months[parseInt(month, 10) - 1]} ${year}`;
 }
 
@@ -36,22 +38,17 @@ function metricLabel(plan) {
   return "Manual Entry";
 }
 
-// ── Per-KPI incentive calculator (mirrors HR side) ────────────────────────────
 function calcKpiIncentive(plan, kpiBreakdown = [], salary = 0) {
   const normalize = (s) => (s || "").toLowerCase().trim();
   const kpiConfigs = plan?.kpi_configs || [];
   if (!kpiConfigs.length) return { rows: [], total: 0 };
-
   let total = 0;
   const rows = kpiConfigs.map(cfg => {
-
-    // ── ADMISSION KPI: program-wise slab ──
     if (cfg.is_admission_kpi) {
       const programTargets = cfg.program_targets || [];
       const programSlabs = cfg.program_slabs || [];
       let admissionTotal = 0;
       const programDetails = [];
-
       programTargets.forEach(pt => {
         const progActual = kpiBreakdown.find(k =>
           normalize(k.kpi_name) === normalize(cfg.kpi_name) &&
@@ -59,117 +56,379 @@ function calcKpiIncentive(plan, kpiBreakdown = [], salary = 0) {
         );
         const actualAdmissions = progActual?.actual_value ?? 0;
         const programTarget = Number(pt.target) || 0;
-        const achPct = programTarget > 0
-          ? Math.min(Math.round((Number(actualAdmissions) / programTarget) * 100), 100)
-          : 0;
-
+        const achPct = programTarget > 0 ? Math.min(Math.round((Number(actualAdmissions) / programTarget) * 100), 100) : 0;
         const progSlabEntry = programSlabs.find(ps => ps.program_id === pt.program_id);
         const slabs = progSlabEntry?.slabs || [];
         const slab = slabs.find(s => achPct >= s.min_score && achPct <= s.max_score);
-
-        let amt = 0;
-        let slabDesc = "No Slab";
+        let amt = 0; let slabDesc = "No Slab";
         if (slab && slab.type !== "none" && slab.value > 0) {
-          if (slab.type === "target_percentage") {
-            amt = Math.round((slab.value / 100) * programTarget);
-          } else if (slab.type === "percentage") {
-            amt = Math.round((slab.value / 100) * salary);
-          } else {
-            amt = slab.value;
-          }
+          if (slab.type === "target_percentage") amt = Math.round((slab.value / 100) * programTarget);
+          else if (slab.type === "percentage") amt = Math.round((slab.value / 100) * salary);
+          else amt = slab.value;
           slabDesc = `${slab.min_score}–${slab.max_score}% → ₹${amt.toLocaleString("en-IN")}`;
-        } else if (slab) {
-          slabDesc = `${slab.min_score}–${slab.max_score}% → No Bonus`;
-        }
-
+        } else if (slab) slabDesc = `${slab.min_score}–${slab.max_score}% → No Bonus`;
         admissionTotal += amt;
         const achColor = achPct >= 90 ? "#16a34a" : achPct >= 70 ? "#6366f1" : achPct >= 50 ? "#d97706" : "#dc2626";
         programDetails.push({ program_name: pt.program_name, target: programTarget, actual: actualAdmissions, achPct, achColor, slabDesc, amt });
       });
-
       total += admissionTotal;
-      return {
-        kpi_name: cfg.kpi_name,
-        weight: cfg.weight,
-        is_admission_kpi: true,
-        programDetails,
-        amt: admissionTotal,
-      };
+      return { kpi_name: cfg.kpi_name, weight: cfg.weight, is_admission_kpi: true, programDetails, amt: admissionTotal };
     }
-
-    // ── NORMAL KPI ──
     const kpiData = kpiBreakdown.find(k => normalize(k.kpi_name) === normalize(cfg.kpi_name));
     let achPct = 0;
     if (kpiData) {
-      if (kpiData.target && Number(kpiData.target) > 0 && kpiData.actual_value != null) {
+      if (kpiData.target && Number(kpiData.target) > 0 && kpiData.actual_value != null)
         achPct = Math.min(Math.round((Number(kpiData.actual_value) / Number(kpiData.target)) * 100), 100);
-      } else if (kpiData.pct_achieved != null) {
-        achPct = Math.round(kpiData.pct_achieved);
-      } else {
-        achPct = Math.round(kpiData.actual_value || 0);
-      }
+      else if (kpiData.pct_achieved != null) achPct = Math.round(kpiData.pct_achieved);
+      else achPct = Math.round(kpiData.actual_value || 0);
     }
-
     const slab = (cfg.slabs || []).find(s => achPct >= s.min_score && achPct <= s.max_score);
-    let amt = 0;
-    let slabDesc = "No Bonus";
+    let amt = 0; let slabDesc = "No Bonus";
     if (slab && slab.type !== "none" && slab.value > 0) {
-      if (slab.type === "target_percentage") {
-        amt = Math.round((slab.value / 100) * Number(cfg.target));
-        slabDesc = `${slab.value}% of Target`;
-      } else if (slab.type === "percentage") {
-        amt = Math.round((slab.value / 100) * salary);
-        slabDesc = `${slab.value}% of Salary`;
-      } else {
-        amt = slab.value;
-        slabDesc = `₹${Number(slab.value).toLocaleString("en-IN")} Fixed`;
-      }
+      if (slab.type === "target_percentage") { amt = Math.round((slab.value / 100) * Number(cfg.target)); slabDesc = `${slab.value}% of Target`; }
+      else if (slab.type === "percentage") { amt = Math.round((slab.value / 100) * salary); slabDesc = `${slab.value}% of Salary`; }
+      else { amt = slab.value; slabDesc = `₹${Number(slab.value).toLocaleString("en-IN")} Fixed`; }
       total += amt;
     }
-
     const achColor = achPct >= 90 ? "#16a34a" : achPct >= 70 ? "#6366f1" : achPct >= 50 ? "#d97706" : "#dc2626";
-    return {
-      kpi_name: cfg.kpi_name, weight: cfg.weight,
-      is_admission_kpi: false,
-      target: kpiData?.target ?? cfg.target,
-      actual: kpiData?.actual_value,
-      unit: kpiData?.unit || "",
-      achPct, achColor, slabs: cfg.slabs || [], slab, slabDesc, amt,
-    };
+    return { kpi_name: cfg.kpi_name, weight: cfg.weight, is_admission_kpi: false, target: kpiData?.target ?? cfg.target, actual: kpiData?.actual_value, unit: kpiData?.unit || "", achPct, achColor, slabs: cfg.slabs || [], slab, slabDesc, amt };
   });
-
   return { rows, total };
 }
 
-const STATUS_META = {
-  pending: { label: "Pending Approval", color: "#d97706", bg: "#fffbeb", icon: <Clock size={13} /> },
-  approved: { label: "Approved", color: "#16a34a", bg: "#f0fdf4", icon: <CheckCircle size={13} /> },
-  paid: { label: "Paid ✓", color: "#2563eb", bg: "#eff6ff", icon: <DollarSign size={13} /> },
-};
+// ── SubmitReviewBox ───────────────────────────────────────────────────────────
+function SubmitReviewBox({ alreadyRequested, submittedValue, reviewNote, reviewRemark, onSubmit, slabs }) {
+  const [val, setVal] = useState("");
+  const [note, setNote] = useState("");
+  const [selectedSlab, setSelectedSlab] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const isValid = val && note.trim() && (slabs.length === 0 || selectedSlab !== null);
 
-// ── Timeline step component ───────────────────────────────────────────────────
-function TimelineStep({ done, active, label, sublabel, color }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
-      <div style={{
-        width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-        background: done ? color : active ? `${color}22` : "#f3f4f6",
-        border: `2px solid ${done || active ? color : "#e5e7eb"}`,
-        transition: "all 0.3s",
-      }}>
-        {done
-          ? <CheckCircle size={16} color="#fff" />
-          : <div style={{ width: 8, height: 8, borderRadius: "50%", background: active ? color : "#d1d5db" }} />}
+  const handleClick = async () => {
+    if (!isValid) return;
+    setSubmitting(true);
+    await onSubmit(val, note, selectedSlab);
+    setSubmitting(false);
+  };
+
+  if (alreadyRequested) {
+    return (
+      <div style={{ background: "#f0fdf4", borderRadius: 12, padding: "14px 18px", border: "1px solid #86efac" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 20 }}>⏳</span>
+          <div>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: "#15803d" }}>Review Requested — Waiting for HR</p>
+            <p style={{ margin: "2px 0 0", fontSize: 11, color: "#6b7280" }}>
+              Submitted value: <strong>{Number(submittedValue || 0).toLocaleString("en-IN")}</strong>
+              {reviewNote ? ` · Note: ${reviewNote}` : ""}
+            </p>
+            {reviewRemark && <p style={{ margin: "4px 0 0", fontSize: 11, color: "#dc2626", fontWeight: 600 }}>HR Remark: {reviewRemark}</p>}
+          </div>
+        </div>
       </div>
-      <p style={{ margin: "6px 0 0", fontSize: 11, fontWeight: 700, color: done || active ? color : "#9ca3af", textAlign: "center" }}>{label}</p>
-      {sublabel && <p style={{ margin: "2px 0 0", fontSize: 10, color: "#9ca3af", textAlign: "center" }}>{sublabel}</p>}
+    );
+  }
+
+  return (
+    <div style={{ background: "#f8fafc", borderRadius: 12, padding: "16px 20px", border: "1px solid #e5e7eb" }}>
+      <p style={{ margin: "0 0 14px", fontWeight: 700, fontSize: 13, color: "#374151" }}>🎯 Achieved your target? Submit to HR for review</p>
+      {slabs.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#6b7280" }}>Which slab did you achieve? <span style={{ color: "#dc2626" }}>*</span></p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {slabs.map((slab, si) => {
+              const isSelected = selectedSlab === si;
+              const rangeLabel = slab.max_target === 0 ? `${Number(slab.min_target).toLocaleString("en-IN")} → ∞` : `${Number(slab.min_target).toLocaleString("en-IN")} → ${Number(slab.max_target).toLocaleString("en-IN")}`;
+              const payoutLabel = slab.payout_type === "fixed" ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}` : `${slab.payout_value}%`;
+              return (
+                <button key={si} onClick={() => setSelectedSlab(isSelected ? null : si)} style={{ padding: "8px 14px", borderRadius: 10, border: isSelected ? "2px solid #6366f1" : "1.5px solid #e5e7eb", background: isSelected ? "#eef2ff" : "#fff", color: isSelected ? "#4f46e5" : "#374151", fontWeight: isSelected ? 800 : 600, fontSize: 12, cursor: "pointer", transition: "all 0.15s", textAlign: "left" }}>
+                  <span style={{ display: "block", fontSize: 11, color: isSelected ? "#6366f1" : "#9ca3af", marginBottom: 2 }}>{rangeLabel}</span>
+                  <span style={{ fontSize: 13 }}>{payoutLabel}</span>
+                  {isSelected && <span style={{ marginLeft: 6, fontSize: 11 }}>✓</span>}
+                </button>
+              );
+            })}
+          </div>
+          {selectedSlab === null && <p style={{ margin: "6px 0 0", fontSize: 11, color: "#dc2626" }}>* Please select a slab</p>}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <div style={{ flex: 1, minWidth: 130 }}>
+          <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Achieved Value <span style={{ color: "#dc2626" }}>*</span></p>
+          <input type="number" value={val} onChange={e => setVal(e.target.value)} placeholder="e.g. 150000" style={{ width: "100%", padding: "8px 12px", border: `1.5px solid ${!val ? "#fca5a5" : "#e5e7eb"}`, borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+        </div>
+        <div style={{ flex: 2, minWidth: 160 }}>
+          <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Note <span style={{ color: "#dc2626" }}>*</span></p>
+          <input value={note} onChange={e => setNote(e.target.value)} placeholder="Supporting info..." style={{ width: "100%", padding: "8px 12px", border: `1.5px solid ${!note.trim() ? "#fca5a5" : "#e5e7eb"}`, borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+        </div>
+        <button onClick={handleClick} disabled={!isValid || submitting} style={{ padding: "8px 20px", background: !isValid || submitting ? "#a5b4fc" : "#6366f1", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: !isValid || submitting ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}>
+          {submitting ? "Sending..." : "Submit to HR"}
+        </button>
+      </div>
     </div>
   );
 }
 
-function TimelineLine({ done, color }) {
+// ── Expanded Detail Panel ─────────────────────────────────────────────────────
+function ExpandedDetail({ r, fetchMyIncentives }) {
+  const isKpi = isKpiPlan(r.plan_id);
+  const total = r.calculated_amount || 0;
+  const bonus = r.completion_bonus || 0;
+  const base = total - bonus;
+  const { rows: kpiRows } = isKpi ? calcKpiIncentive(r.plan_id, r.kpi_breakdown || [], r.salary || 0) : { rows: [] };
+  const hasBreakdown = kpiRows.length > 0;
+
+  const steps = [
+    { label: "Calculated", sub: "System", done: true, color: "#6366f1" },
+    { label: "HR Approved", sub: r.status === "approved" || r.status === "paid" ? "Done" : "Awaiting", done: r.status === "approved" || r.status === "paid", active: r.status === "pending", color: "#16a34a" },
+    { label: "Paid", sub: r.status === "paid" ? "Done" : "Pending", done: r.status === "paid", active: r.status === "approved", color: "#2563eb" },
+  ];
+
   return (
-    <div style={{ flex: 1, height: 2, background: done ? color : "#e5e7eb", marginTop: 15, transition: "background 0.3s", maxWidth: 60 }} />
+    <div style={{ padding: "0 12px 16px", background: "#f8fafc" }}>
+      {/* Timeline */}
+      <div style={{ background: "#fff", borderRadius: 12, padding: "14px 16px", border: "1px solid #eee", marginBottom: 10 }}>
+        <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em" }}>Approval Progress</p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0 }}>
+          {steps.map((s, i) => (
+            <>
+              <div key={s.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 60 }}>
+                <div style={{ width: 30, height: 30, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: s.done ? s.color : s.active ? `${s.color}18` : "#f3f4f6", border: `2px solid ${s.done || s.active ? s.color : "#e5e7eb"}` }}>
+                  {s.done ? <CheckCircle size={14} color="#fff" /> : <div style={{ width: 7, height: 7, borderRadius: "50%", background: s.active ? s.color : "#d1d5db" }} />}
+                </div>
+                <p style={{ margin: "4px 0 0", fontSize: 10, fontWeight: 700, color: s.done || s.active ? s.color : "#9ca3af", textAlign: "center" }}>{s.label}</p>
+                <p style={{ margin: "1px 0 0", fontSize: 9, color: "#9ca3af", textAlign: "center" }}>{s.sub}</p>
+              </div>
+              {i < steps.length - 1 && <div key={`line-${i}`} style={{ flex: 1, height: 2, background: steps[i + 1].done ? steps[i + 1].color : "#e5e7eb", marginBottom: 24 }} />}
+            </>
+          ))}
+        </div>
+        {r.status === "pending" && <div style={{ marginTop: 10, padding: "8px 12px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a" }}><p style={{ margin: 0, fontSize: 12, color: "#92400e", fontWeight: 600 }}>⏳ Under HR review — you'll be notified once approved.</p></div>}
+        {r.status === "approved" && <div style={{ marginTop: 10, padding: "8px 12px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #86efac" }}><p style={{ margin: 0, fontSize: 12, color: "#15803d", fontWeight: 600 }}>✅ Approved! Payment will be processed in the next payroll cycle.</p></div>}
+        {r.status === "paid" && <div style={{ marginTop: 10, padding: "8px 12px", background: "#eff6ff", borderRadius: 8, border: "1px solid #bfdbfe" }}><p style={{ margin: 0, fontSize: 12, color: "#1d4ed8", fontWeight: 600 }}>💸 Paid! ₹{total.toLocaleString("en-IN")} has been credited.</p></div>}
+      </div>
+
+      {/* Payout summary */}
+      <div style={{ background: "#fff", borderRadius: 12, padding: "14px 16px", border: "1px solid #eee", marginBottom: 10 }}>
+        <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em" }}>Payout Breakdown</p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ background: "#f8fafc", borderRadius: 10, padding: "10px 14px", border: "1px solid #e5e7eb", textAlign: "center", minWidth: 90, flex: 1 }}>
+            <p style={{ margin: "0 0 3px", fontSize: 10, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>Base Payout</p>
+            <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: base > 0 ? "#374151" : "#9ca3af" }}>{base > 0 ? `₹${base.toLocaleString("en-IN")}` : "—"}</p>
+          </div>
+          {bonus > 0 && <>
+            <span style={{ fontSize: 16, color: "#d1d5db" }}>+</span>
+            <div style={{ background: "#fef9c3", borderRadius: 10, padding: "10px 14px", border: "1px solid #fde68a", textAlign: "center", minWidth: 90, flex: 1 }}>
+              <p style={{ margin: "0 0 3px", fontSize: 10, color: "#92400e", fontWeight: 700, textTransform: "uppercase" }}>🏆 Bonus</p>
+              <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#92400e" }}>₹{bonus.toLocaleString("en-IN")}</p>
+            </div>
+            <span style={{ fontSize: 16, color: "#d1d5db" }}>=</span>
+          </>}
+          <div style={{ background: total > 0 ? "#f0fdf4" : "#f8fafc", borderRadius: 10, padding: "10px 14px", border: `1px solid ${total > 0 ? "#86efac" : "#e5e7eb"}`, textAlign: "center", minWidth: 90, flex: 1 }}>
+            <p style={{ margin: "0 0 3px", fontSize: 10, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>Total</p>
+            <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: total > 0 ? "#16a34a" : "#9ca3af" }}>{total > 0 ? `₹${total.toLocaleString("en-IN")}` : "—"}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Breakdown table */}
+      {isKpi && hasBreakdown && (
+        <div style={{ background: "#fff", borderRadius: 12, padding: "14px 16px", border: "1px solid #eee", marginBottom: 10 }}>
+          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em" }}>KPI Achievement</p>
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <table style={{ width: "100%", minWidth: 480, borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: "#f8fafc" }}>
+                  {["KPI", "Target", "Actual", "Achievement", "Slab", "Incentive"].map(h => (
+                    <th key={h} style={{ padding: "9px 10px", textAlign: "left", fontWeight: 700, color: "#6b7280", borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap", fontSize: 11, textTransform: "uppercase" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {kpiRows.map((row, ri) => row.is_admission_kpi ? (
+                  <>
+                    <tr key={`ah-${ri}`} style={{ background: "#f0f9ff", borderBottom: "1px solid #bae6fd" }}>
+                      <td colSpan={6} style={{ padding: "10px 10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 12, fontWeight: 800, color: "#0369a1" }}>🎓 {row.kpi_name}</span>
+                            <span style={{ fontSize: 10, background: "#eef2ff", color: "#4f46e5", padding: "1px 6px", borderRadius: 10, fontWeight: 600 }}>{row.weight}%</span>
+                          </div>
+                          <span style={{ fontWeight: 800, color: row.amt > 0 ? "#16a34a" : "#9ca3af", fontSize: 14 }}>{row.amt > 0 ? `₹${row.amt.toLocaleString("en-IN")}` : "—"}</span>
+                        </div>
+                      </td>
+                    </tr>
+                    {row.programDetails.map((pd, pdi) => (
+                      <tr key={`ap-${ri}-${pdi}`} style={{ borderBottom: "1px solid #f3f4f6", background: "#fafeff" }}>
+                        <td style={{ padding: "9px 10px 9px 20px", fontWeight: 600, color: "#0369a1", fontSize: 12 }}>📚 {pd.program_name}</td>
+                        <td style={{ padding: "9px 10px", color: "#6b7280", fontSize: 12 }}>{pd.target}</td>
+                        <td style={{ padding: "9px 10px", fontWeight: 700, color: pd.achColor, fontSize: 13 }}>{pd.actual}</td>
+                        <td style={{ padding: "9px 10px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ background: "#f3f4f6", borderRadius: 99, height: 7, width: 50, overflow: "hidden" }}><div style={{ width: `${pd.achPct}%`, height: "100%", background: pd.achColor, borderRadius: 99 }} /></div>
+                            <span style={{ fontWeight: 800, color: pd.achColor, fontSize: 12 }}>{pd.achPct}%</span>
+                          </div>
+                        </td>
+                        <td style={{ padding: "9px 10px" }}><span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 5, fontWeight: 600, background: pd.amt > 0 ? "#eef2ff" : "#f3f4f6", color: pd.amt > 0 ? "#4f46e5" : "#9ca3af" }}>{pd.slabDesc}</span></td>
+                        <td style={{ padding: "9px 10px", fontWeight: 800, color: pd.amt > 0 ? "#16a34a" : "#9ca3af", fontSize: 14 }}>{pd.amt > 0 ? `₹${pd.amt.toLocaleString("en-IN")}` : "—"}</td>
+                      </tr>
+                    ))}
+                    <tr style={{ background: "#e0f2fe", borderBottom: "1px solid #bae6fd" }}>
+                      <td colSpan={5} style={{ padding: "8px 10px", fontWeight: 700, color: "#0369a1", fontSize: 12 }}>🎓 {row.kpi_name} Total</td>
+                      <td style={{ padding: "8px 10px", fontWeight: 800, color: row.amt > 0 ? "#0369a1" : "#9ca3af", fontSize: 14 }}>{row.amt > 0 ? `₹${row.amt.toLocaleString("en-IN")}` : "—"}</td>
+                    </tr>
+                  </>
+                ) : (
+                  <tr key={ri} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <td style={{ padding: "11px 10px", fontWeight: 700, color: "#1f2937", fontSize: 13 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <Target size={13} color="#6366f1" />
+                        {row.kpi_name}
+                        <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: "#eef2ff", color: "#4f46e5", fontWeight: 600 }}>{row.weight}%</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: "11px 10px", color: "#6b7280", fontSize: 12 }}>{row.target} {row.unit}</td>
+                    <td style={{ padding: "11px 10px", fontWeight: 700, color: row.achColor, fontSize: 13 }}>{row.actual != null ? `${row.actual} ${row.unit}` : "—"}</td>
+                    <td style={{ padding: "11px 10px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div style={{ background: "#f3f4f6", borderRadius: 99, height: 7, width: 50, overflow: "hidden" }}><div style={{ width: `${row.achPct}%`, height: "100%", background: row.achColor, borderRadius: 99 }} /></div>
+                        <span style={{ fontWeight: 800, color: row.achColor, fontSize: 12 }}>{row.achPct}%</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: "11px 10px" }}>
+                      {row.slab ? <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 5, fontWeight: 600, background: row.amt > 0 ? "#eef2ff" : "#f3f4f6", color: row.amt > 0 ? "#4f46e5" : "#9ca3af" }}>{row.slab.min_score}–{row.slab.max_score}% · {row.slabDesc}</span> : <span style={{ fontSize: 11, color: "#9ca3af" }}>No slab match</span>}
+                    </td>
+                    <td style={{ padding: "11px 10px", fontWeight: 800, color: row.amt > 0 ? "#16a34a" : "#9ca3af", fontSize: 14 }}>{row.amt > 0 ? `₹${row.amt.toLocaleString("en-IN")}` : "—"}</td>
+                  </tr>
+                ))}
+                <tr style={{ background: "#f0fdf4", borderTop: "2px solid #86efac" }}>
+                  <td colSpan={5} style={{ padding: "11px 10px", fontWeight: 700, color: "#15803d", fontSize: 13 }}>{bonus > 0 ? "KPI Base Total" : "Total Incentive"}</td>
+                  <td style={{ padding: "11px 10px", fontWeight: 900, color: "#16a34a", fontSize: 16 }}>₹{base.toLocaleString("en-IN")}</td>
+                </tr>
+                {bonus > 0 && (
+                  <tr style={{ background: "#fef9c3", borderTop: "1px solid #fde68a" }}>
+                    <td colSpan={5} style={{ padding: "11px 10px", fontWeight: 700, color: "#92400e", fontSize: 13 }}>🏆 All-KPI Completion Bonus</td>
+                    <td style={{ padding: "11px 10px", fontWeight: 900, color: "#92400e", fontSize: 16 }}>+₹{bonus.toLocaleString("en-IN")}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Standalone detail */}
+      {!isKpi && (() => {
+        const slabs = r.plan_id?.standalone_slabs || [];
+        const alreadyRequested = r.hr_review_requested;
+        const handleSubmitReview = async (achievedVal, note, selectedSlabIndex) => {
+          try {
+            const slabList = r.plan_id?.standalone_slabs || [];
+            const selectedSlab = selectedSlabIndex !== null ? slabList[selectedSlabIndex] : null;
+            await axios.post(`${API_BASE}/api/incentive-results/${r._id}/request-review`, { achieved_value: achievedVal, note, selected_slab: selectedSlab ?? undefined });
+            const empId = localStorage.getItem("employeeId");
+            fetchMyIncentives(empId);
+          } catch (err) { alert(err.response?.data?.message || "Submit failed"); }
+        };
+        return (
+          <>
+            <div style={{ background: "#fffbeb", borderRadius: 12, padding: "14px 16px", border: "1px solid #fde68a", marginBottom: 10 }}>
+              <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, color: "#92400e", textTransform: "uppercase" }}>Standalone Plan Details</p>
+              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                {[{ label: "Metric", value: metricLabel(r.plan_id) }, { label: "Payout Rule", value: standaloneLabel(r.plan_id) }, { label: "Your Payout", value: total > 0 ? `₹${total.toLocaleString("en-IN")}` : "Pending HR entry" }].map(d => (
+                  <div key={d.label}>
+                    <p style={{ margin: "0 0 2px", fontSize: 10, color: "#b45309", fontWeight: 600, textTransform: "uppercase" }}>{d.label}</p>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#92400e" }}>{d.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {slabs.length > 0 && (
+              <div style={{ background: "#fff", borderRadius: 12, padding: "14px 16px", border: "1px solid #eee", marginBottom: 10 }}>
+                <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" }}>Slab Structure</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {slabs.map((slab, si) => (
+                    <div key={si} style={{ padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "#f0fdf4", border: "1px solid #86efac", color: "#15803d" }}>
+                      {Number(slab.min_target).toLocaleString("en-IN")} → {slab.max_target === 0 ? "∞" : Number(slab.max_target).toLocaleString("en-IN")} : {slab.payout_type === "fixed" ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}` : `${slab.payout_value}%`}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {r.status === "pending" && <SubmitReviewBox alreadyRequested={alreadyRequested} submittedValue={r.employee_submitted_value} reviewNote={r.hr_review_note} reviewRemark={r.hr_review_remark} slabs={r.plan_id?.standalone_slabs || []} onSubmit={handleSubmitReview} />}
+          </>
+        );
+      })()}
+    </div>
+  );
+}
+
+// ── IncentiveCard ─────────────────────────────────────────────────────────────
+function IncentiveCard({ r, expanded, onToggle, fetchMyIncentives }) {
+  const isKpi = isKpiPlan(r.plan_id);
+  const total = r.calculated_amount || 0;
+  const bonus = r.completion_bonus || 0;
+  const score = Math.round(r.performance_score || 0);
+  const scoreColor = score >= 90 ? "#16a34a" : score >= 75 ? "#6366f1" : score >= 60 ? "#d97706" : "#dc2626";
+  const isExp = expanded === r._id;
+
+  const statusConfig = {
+    pending:  { label: "Pending", bg: "#fffbeb", color: "#d97706", dot: "#f59e0b" },
+    approved: { label: "Approved", bg: "#f0fdf4", color: "#16a34a", dot: "#22c55e" },
+    paid:     { label: "Paid",    bg: "#eff6ff", color: "#2563eb", dot: "#3b82f6" },
+  };
+  const sc = statusConfig[r.status] || statusConfig.pending;
+
+  return (
+    <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", overflow: "hidden", marginBottom: 10 }}>
+      {/* Card header — clickable */}
+      <div onClick={() => onToggle(r._id)} style={{ padding: "14px 14px", cursor: "pointer" }}>
+        {/* Row 1: icon + info + chevron (status moved to row2) */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 11, background: isKpi ? "#eef2ff" : "#fffbeb", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            {isKpi ? <BarChart2 size={17} color="#6366f1" /> : <Target size={17} color="#d97706" />}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 14, fontWeight: 800, color: "#1a1a2e" }}>{formatPeriod(r.cycle_period)}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 20, background: isKpi ? "#eef2ff" : "#fef9c3", color: isKpi ? "#6366f1" : "#92400e" }}>
+                {isKpi ? "KPI-Linked" : "Standalone"}
+              </span>
+            </div>
+            <div style={{ fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {r.plan_id?.name || "—"} · {r.cycle || "Monthly"}
+            </div>
+          </div>
+          <div style={{ color: "#9ca3af", flexShrink: 0 }}>{isExp ? <ChevronUp size={15} /> : <ChevronDown size={15} />}</div>
+        </div>
+
+        {/* Row 2: score/metric LEFT  |  amount + status RIGHT */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingLeft: 48 }}>
+          <div style={{ minWidth: 0 }}>
+            {isKpi ? (
+              <><span style={{ fontSize: 15, fontWeight: 900, color: scoreColor }}>{score}%</span><span style={{ fontSize: 10, color: "#9ca3af", marginLeft: 3 }}>KPI</span></>
+            ) : (
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#374151" }}>{metricLabel(r.plan_id)}</span>
+            )}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 16, fontWeight: 900, color: total > 0 ? "#16a34a" : "#9ca3af", lineHeight: 1.1 }}>
+                {total > 0 ? `₹${total.toLocaleString("en-IN")}` : "—"}
+              </div>
+              {bonus > 0 && <div style={{ fontSize: 10, color: "#d97706", fontWeight: 700 }}>+₹{bonus.toLocaleString("en-IN")} bonus</div>}
+            </div>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: sc.bg, color: sc.color, fontWeight: 700, padding: "4px 9px", borderRadius: 20, fontSize: 11, whiteSpace: "nowrap" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: sc.dot, display: "inline-block" }} />
+              {sc.label}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded */}
+      {isExp && <ExpandedDetail r={r} fetchMyIncentives={fetchMyIncentives} />}
+    </div>
   );
 }
 
@@ -179,6 +438,7 @@ export default function MyIncentive() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState(null);
+  const [activeTab, setActiveTab] = useState("pending");
 
   useEffect(() => {
     const empId = localStorage.getItem("employeeId");
@@ -189,7 +449,17 @@ export default function MyIncentive() {
   const fetchMyIncentives = async (empId) => {
     try {
       const res = await axios.get(`${API_BASE}/api/incentive-results/employee/${empId}`);
-      setResults(res.data?.data || res.data || []);
+      let data = res.data?.data || res.data || [];
+      const enriched = await Promise.all(data.map(async (r) => {
+        if (typeof r.plan_id === "string") {
+          try {
+            const p = await axios.get(`${API_BASE}/api/incentive-plans/${r.plan_id}`);
+            r.plan_id = p.data?.data || p.data || r.plan_id;
+          } catch (e) {}
+        }
+        return r;
+      }));
+      setResults(enriched);
     } catch {
       setError("Failed to load incentive data.");
     } finally {
@@ -198,16 +468,19 @@ export default function MyIncentive() {
   };
 
   const summary = useMemo(() => {
-    const total = results.reduce((s, r) => s + (r.calculated_amount || 0), 0);
-    const paid = results.filter(r => r.status === "paid").reduce((s, r) => s + (r.calculated_amount || 0), 0);
-    const pending = results.filter(r => r.status === "pending").length;
-    const approved = results.filter(r => r.status === "approved").length;
-    return { total, paid, pending, approved };
+    const totalEarned = results.reduce((s, r) => s + (r.calculated_amount || 0), 0);
+    const totalPaid   = results.filter(r => r.status === "paid").reduce((s, r) => s + (r.calculated_amount || 0), 0);
+    const pending     = results.filter(r => r.status === "pending");
+    const approved    = results.filter(r => r.status === "approved");
+    const paid        = results.filter(r => r.status === "paid");
+    return { totalEarned, totalPaid, pending, approved, paid };
   }, [results]);
 
-  const latest = results[0] || null;
+  const pendingList   = results.filter(r => r.status === "pending");
+  const completedList = results.filter(r => r.status === "approved" || r.status === "paid");
 
-  // ── Loading ──
+  const handleToggle = (id) => setExpanded(prev => prev === id ? null : id);
+
   if (loading) return (
     <EmployeeLayout>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", flexDirection: "column", gap: 12, fontFamily: "'Sora',sans-serif" }}>
@@ -218,7 +491,6 @@ export default function MyIncentive() {
     </EmployeeLayout>
   );
 
-  // ── Error ──
   if (error) return (
     <EmployeeLayout>
       <div style={{ textAlign: "center", padding: 80, fontFamily: "'Sora',sans-serif" }}>
@@ -230,598 +502,124 @@ export default function MyIncentive() {
 
   return (
     <EmployeeLayout>
-      <div style={{ padding: "24px 20px", fontFamily: "'Sora',sans-serif", minHeight: "100vh", background: "#f4f6fb", maxWidth: 960, margin: "0 auto" }}>
+      <div style={{ padding: "20px 14px", fontFamily: "'Sora',sans-serif", minHeight: "100vh", background: "#f4f6fb", maxWidth: 980, margin: "0 auto" }}>
         <style>{`
-          @keyframes spin    { to { transform:rotate(360deg); } }
-          @keyframes fadeUp  { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
-          .inc-card { animation: fadeUp 0.35s ease both; }
-          .hist-row:hover { background: #f8faff !important; }
-          @media (max-width:600px) {
-            .inc-stats { grid-template-columns: 1fr 1fr !important; }
-            .inc-hero  { flex-direction: column !important; align-items: flex-start !important; }
-            .kpi-row   { grid-template-columns: 1fr !important; }
+          @keyframes spin   { to { transform:rotate(360deg); } }
+          @keyframes fadeUp { from { opacity:0;transform:translateY(10px);} to {opacity:1;transform:translateY(0);} }
+          .fade-up { animation: fadeUp 0.3s ease both; }
+
+          /* ── Responsive overrides ── */
+          @media (min-width: 600px) {
+            .incentive-summary-grid { grid-template-columns: repeat(4, 1fr) !important; }
+            .incentive-page-wrap    { padding: 28px 24px !important; }
+          }
+          @media (max-width: 599px) {
+            .incentive-summary-grid { grid-template-columns: repeat(2, 1fr) !important; }
+            .incentive-tab-bar      { width: 100% !important; box-sizing: border-box; }
+            .incentive-tab-bar button { flex: 1 !important; justify-content: center !important; padding: 8px 6px !important; font-size: 12px !important; }
           }
         `}</style>
 
-        {/* ── Page Header ── */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Sparkles size={20} color="#fff" />
-            </div>
-            <div>
-              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: "#1a1a2e" }}>My Incentive</h2>
-              <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>Performance-based incentive history & payout status</p>
+        {/* ── Top header ── */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Sparkles size={20} color="#fff" />
+              </div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: "#1a1a2e" }}>My Incentive</h2>
+                <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>Track your performance-based incentives & payouts</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* ── Empty State ── */}
         {results.length === 0 ? (
           <div style={{ textAlign: "center", padding: "80px 20px", background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb" }}>
             <div style={{ fontSize: 52, marginBottom: 16 }}>🎯</div>
             <p style={{ fontWeight: 700, fontSize: 16, color: "#1a1a2e", margin: "0 0 8px" }}>No Incentive Records Yet</p>
-            <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
-              Once your KPI review is completed and an incentive plan is assigned, your results will appear here.
-            </p>
+            <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>Once your KPI review is completed and an incentive plan is assigned, your results will appear here.</p>
           </div>
         ) : (
           <>
-            {/* ══════════════════════════════════════════════════════════════
-                HERO CARD — Latest Record
-            ══════════════════════════════════════════════════════════════ */}
-            {latest && (() => {
-              const isKpi = isKpiPlan(latest.plan_id);
-              const sm = STATUS_META[latest.status] || STATUS_META.pending;
-              const score = Math.round(latest.performance_score || 0);
-              const bonus = latest.completion_bonus || 0;
-              const total = latest.calculated_amount || 0;
-              const base = total - bonus;
-              const scoreColor = score >= 90 ? "#4ade80" : score >= 75 ? "#818cf8" : score >= 60 ? "#fbbf24" : "#f87171";
-
-              // KPI breakdown for hero
-              const { rows: kpiRows } = isKpi
-                ? calcKpiIncentive(latest.plan_id, latest.kpi_breakdown || [], latest.salary || 0)
-                : { rows: [] };
-
-              const hasBreakdown = kpiRows.length > 0;
-
-              return (
-                <div className="inc-card" style={{ background: "linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%)", borderRadius: 20, padding: 24, marginBottom: 20, color: "#fff", position: "relative", overflow: "hidden" }}>
-                  {/* BG glow */}
-                  <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, background: "radial-gradient(circle,rgba(99,102,241,0.3),transparent 70%)", pointerEvents: "none" }} />
-                  <div style={{ position: "absolute", bottom: -40, left: -40, width: 150, height: 150, background: "radial-gradient(circle,rgba(139,92,246,0.2),transparent 70%)", pointerEvents: "none" }} />
-
-                  {/* Badge */}
-                  <div style={{ marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 12px", borderRadius: 20, background: isKpi ? "rgba(124,58,237,0.25)" : "rgba(217,119,6,0.25)", color: isKpi ? "#c4b5fd" : "#fcd34d", border: `1px solid ${isKpi ? "rgba(124,58,237,0.4)" : "rgba(217,119,6,0.4)"}` }}>
-                      {isKpi ? "🔗 KPI-Linked Plan" : "📋 Standalone Plan"}
-                    </span>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Latest Period</span>
-                  </div>
-
-                  <div className="inc-hero" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20, position: "relative" }}>
-                    {/* Left: score + info */}
-                    <div style={{ flex: 1 }}>
-                      <p style={{ margin: "0 0 4px", fontSize: 11, color: "rgba(255,255,255,0.5)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.8px" }}>Period</p>
-                      <p style={{ margin: "0 0 16px", fontSize: 18, fontWeight: 800 }}>
-                        {formatPeriod(latest.cycle_period)}
-                        <span style={{ marginLeft: 10, fontSize: 11, background: "rgba(255,255,255,0.1)", padding: "2px 10px", borderRadius: 20, fontWeight: 600 }}>
-                          {latest.plan_id?.period_type || latest.cycle || "Monthly"}
-                        </span>
-                      </p>
-
-                      {/* KPI Score bar */}
-                      {isKpi && (
-                        <div style={{ marginBottom: 16 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>Overall KPI Score</span>
-                            <span style={{ fontSize: 14, fontWeight: 800, color: scoreColor }}>{score}%</span>
-                          </div>
-                          <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: 99, height: 10, overflow: "hidden" }}>
-                            <div style={{ width: `${score}%`, height: "100%", background: `linear-gradient(90deg,${scoreColor},${scoreColor}99)`, borderRadius: 99, transition: "width 0.8s cubic-bezier(.4,0,.2,1)" }} />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Standalone info */}
-                      {!isKpi && (
-                        <div style={{ marginBottom: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                          <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 8, padding: "8px 14px", border: "1px solid rgba(255,255,255,0.1)" }}>
-                            <p style={{ margin: "0 0 2px", fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 600, textTransform: "uppercase" }}>Metric</p>
-                            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fcd34d" }}>{metricLabel(latest.plan_id)}</p>
-                          </div>
-                          <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 8, padding: "8px 14px", border: "1px solid rgba(255,255,255,0.1)" }}>
-                            <p style={{ margin: "0 0 2px", fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 600, textTransform: "uppercase" }}>Payout Rule</p>
-                            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#86efac" }}>{standaloneLabel(latest.plan_id)}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Status badge */}
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: sm.bg, color: sm.color, fontWeight: 700, padding: "5px 14px", borderRadius: 20, fontSize: 12 }}>
-                        {sm.icon} {sm.label}
-                      </span>
-
-                      {/* KPI mini breakdown in hero */}
-                      {isKpi && hasBreakdown && (
-                        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 6 }}>
-                          {kpiRows.map((row, ri) => (
-                            <div key={ri} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "7px 12px", border: "1px solid rgba(255,255,255,0.08)" }}>
-                              <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.7)", flex: 1, minWidth: 120 }}>{row.kpi_name}</span>
-                              <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: 99, height: 5, width: 80, overflow: "hidden" }}>
-                                <div style={{ width: `${row.achPct}%`, height: "100%", background: row.achColor, borderRadius: 99 }} />
-                              </div>
-                              <span style={{ fontSize: 12, fontWeight: 800, color: row.achColor, minWidth: 36 }}>{row.achPct}%</span>
-                              <span style={{ fontSize: 11, fontWeight: 700, color: row.amt > 0 ? "#4ade80" : "rgba(255,255,255,0.3)" }}>
-                                {row.amt > 0 ? `₹${row.amt.toLocaleString("en-IN")}` : "—"}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* No breakdown warning */}
-                      {isKpi && !hasBreakdown && (
-                        <div style={{ marginTop: 12, padding: "8px 12px", background: "rgba(251,191,36,0.1)", borderRadius: 8, border: "1px solid rgba(251,191,36,0.2)" }}>
-                          <p style={{ margin: 0, fontSize: 11, color: "#fbbf24" }}>⚠ KPI breakdown pending sync — HR will update soon</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Right: Payout box */}
-                    <div style={{ textAlign: "center", background: "rgba(255,255,255,0.07)", borderRadius: 18, padding: "20px 24px", border: "1px solid rgba(255,255,255,0.1)", flexShrink: 0, minWidth: 160 }}>
-                      <p style={{ margin: "0 0 4px", fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.8px" }}>Total Incentive</p>
-                      <p style={{ margin: 0, fontSize: 30, fontWeight: 900, color: total > 0 ? "#4ade80" : "rgba(255,255,255,0.25)", letterSpacing: "-1px" }}>
-                        {total > 0 ? `₹${total.toLocaleString("en-IN")}` : "—"}
-                      </p>
-                      {bonus > 0 && (
-                        <div style={{ marginTop: 10, borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 10 }}>
-                          <p style={{ margin: "0 0 2px", fontSize: 10, color: "rgba(255,255,255,0.4)" }}>Base: ₹{base.toLocaleString("en-IN")}</p>
-                          <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#fcd34d" }}>🏆 +₹{bonus.toLocaleString("en-IN")} Bonus</p>
-                        </div>
-                      )}
-                      {latest.plan_id?.name && (
-                        <p style={{ margin: "8px 0 0", fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.3 }}>{latest.plan_id.name}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* ── Summary Stats ── */}
-            <div className="inc-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 20 }}>
+            {/* ── Summary strip ── */}
+            <div className="fade-up incentive-summary-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginBottom: 20 }}>
               {[
-                { label: "Total Earned", value: `₹${summary.total.toLocaleString("en-IN")}`, color: "#6366f1", bg: "#f5f3ff", icon: <BarChart2 size={18} color="#6366f1" /> },
-                { label: "Amount Paid", value: `₹${summary.paid.toLocaleString("en-IN")}`, color: "#16a34a", bg: "#f0fdf4", icon: <CheckCircle size={18} color="#16a34a" /> },
-                { label: "Approved", value: summary.approved, color: "#d97706", bg: "#fffbeb", icon: <Award size={18} color="#d97706" /> },
-                { label: "Pending", value: summary.pending, color: "#ea580c", bg: "#fff7ed", icon: <Clock size={18} color="#ea580c" /> },
+                { label: "Total Earned",   value: `₹${summary.totalEarned.toLocaleString("en-IN")}`, color: "#6366f1", bg: "#f5f3ff", icon: <Wallet size={18} color="#6366f1" /> },
+                { label: "Amount Paid",    value: `₹${summary.totalPaid.toLocaleString("en-IN")}`,   color: "#16a34a", bg: "#f0fdf4", icon: <BadgeCheck size={18} color="#16a34a" /> },
+                { label: "Approved",       value: summary.approved.length,                            color: "#0ea5e9", bg: "#f0f9ff", icon: <CheckCircle size={18} color="#0ea5e9" /> },
+                { label: "Pending",        value: summary.pending.length,                             color: "#f59e0b", bg: "#fffbeb", icon: <Hourglass size={18} color="#f59e0b" /> },
               ].map((s, i) => (
-                <div key={i} className="inc-card" style={{ background: "#fff", borderRadius: 12, padding: "14px 16px", border: "1px solid #e5e7eb", animationDelay: `${i * 0.06}s`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div key={i} className="fade-up" style={{ background: "#fff", borderRadius: 12, padding: "12px 14px", border: "1px solid #e5e7eb", animationDelay: `${i * 0.05}s`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <p style={{ margin: "0 0 4px", fontSize: 10, color: "#9ca3af", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</p>
-                    <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</p>
+                    <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: s.color }}>{s.value}</p>
                   </div>
-                  <div style={{ width: 38, height: 38, borderRadius: 10, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>{s.icon}</div>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>{s.icon}</div>
                 </div>
               ))}
             </div>
 
-            {/* ══════════════════════════════════════════════════════════════
-                HISTORY LIST
-            ══════════════════════════════════════════════════════════════ */}
-            <div className="inc-card" style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", overflow: "hidden", animationDelay: "0.18s" }}>
-              <div style={{ padding: "16px 20px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", gap: 8 }}>
-                <TrendingUp size={16} color="#6366f1" />
-                <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "#1a1a2e" }}>Incentive History</p>
-                <span style={{ marginLeft: "auto", fontSize: 12, color: "#9ca3af" }}>{results.length} record{results.length !== 1 ? "s" : ""}</span>
-              </div>
-
-              {results.map((r, i) => {
-                const isKpi = isKpiPlan(r.plan_id);
-                const sm = STATUS_META[r.status] || STATUS_META.pending;
-                const score = Math.round(r.performance_score || 0);
-                const total = r.calculated_amount || 0;
-                const bonus = r.completion_bonus || 0;
-                const base = total - bonus;
-                const isExp = expanded === r._id;
-                const scoreColor = score >= 90 ? "#16a34a" : score >= 75 ? "#6366f1" : score >= 60 ? "#d97706" : "#dc2626";
-
-                // Per-KPI rows
-                const { rows: kpiRows } = isKpi
-                  ? calcKpiIncentive(r.plan_id, r.kpi_breakdown || [], r.salary || 0)
-                  : { rows: [] };
-
-                const hasBreakdown = kpiRows.length > 0;
-
-                return (
-                  <div key={r._id}>
-                    {/* ── Row ── */}
-                    <div
-                      className="hist-row"
-                      onClick={() => setExpanded(isExp ? null : r._id)}
-                      style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderBottom: isExp ? "none" : "1px solid #f9fafb", cursor: "pointer", background: isExp ? "#fafbff" : i % 2 === 0 ? "#fff" : "#fdfdfd", transition: "background 0.15s" }}
-                    >
-                      {/* Period */}
-                      <div style={{ minWidth: 80 }}>
-                        <span style={{ background: "#f3f4f6", padding: "3px 10px", borderRadius: 6, fontWeight: 700, fontSize: 12, color: "#374151" }}>
-                          {formatPeriod(r.cycle_period)}
-                        </span>
-                      </div>
-
-                      {/* Plan type */}
-                      <div style={{ minWidth: 90 }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: isKpi ? "#ede9fe" : "#fef9c3", color: isKpi ? "#7c3aed" : "#a16207" }}>
-                          {isKpi ? "🔗 KPI" : "📋 Standalone"}
-                        </span>
-                      </div>
-
-                      {/* Score / metric */}
-                      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
-                        {isKpi ? (
-                          <>
-                            <span style={{ fontWeight: 800, fontSize: 15, color: scoreColor, minWidth: 40 }}>{score}%</span>
-                            <div style={{ flex: 1, background: "#f3f4f6", borderRadius: 99, height: 6, overflow: "hidden", maxWidth: 100 }}>
-                              <div style={{ width: `${score}%`, height: "100%", background: scoreColor, borderRadius: 99 }} />
-                            </div>
-                          </>
-                        ) : (
-                          <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 600 }}>{metricLabel(r.plan_id)}</span>
-                        )}
-                      </div>
-
-                      {/* Bonus badge */}
-                      {bonus > 0 && (
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 10px", borderRadius: 20, background: "#fef9c3", color: "#92400e" }}>
-                          🏆 +₹{bonus.toLocaleString("en-IN")}
-                        </span>
-                      )}
-
-                      {/* Amount */}
-                      <div style={{ minWidth: 100, textAlign: "right" }}>
-                        <p style={{ margin: 0, fontWeight: 800, fontSize: 16, color: total > 0 ? "#16a34a" : "#9ca3af" }}>
-                          {total > 0 ? `₹${total.toLocaleString("en-IN")}` : "—"}
-                        </p>
-                      </div>
-
-                      {/* Status */}
-                      <div style={{ minWidth: 120 }}>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: sm.bg, color: sm.color, fontWeight: 700, padding: "4px 10px", borderRadius: 20, fontSize: 11 }}>
-                          {sm.icon} {sm.label}
-                        </span>
-                      </div>
-
-                      <div style={{ color: "#9ca3af" }}>
-                        {isExp ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </div>
-                    </div>
-
-                    {/* ═══════════════════════════════════════════════════
-                        EXPANDED DETAIL
-                    ═══════════════════════════════════════════════════ */}
-                    {isExp && (
-                      <div style={{ padding: "20px 24px", background: "#f8fafc", borderBottom: "1px solid #f3f4f6" }}>
-
-                        {/* ── 1. Approval Timeline ── */}
-                        <div style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", border: "1px solid #e5e7eb", marginBottom: 16 }}>
-                          <p style={{ margin: "0 0 16px", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>📋 Approval Status</p>
-                          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
-                            <TimelineStep done={true} active={false} label="Calculated" sublabel="By System" color="#6366f1" />
-                            <TimelineLine done={r.status === "approved" || r.status === "paid"} color="#16a34a" />
-                            <TimelineStep done={r.status === "approved" || r.status === "paid"} active={r.status === "pending"} label="HR Approved" sublabel={r.status === "approved" || r.status === "paid" ? "✓ Done" : "Awaiting"} color="#16a34a" />
-                            <TimelineLine done={r.status === "paid"} color="#2563eb" />
-                            <TimelineStep done={r.status === "paid"} active={r.status === "approved"} label="Paid" sublabel={r.status === "paid" ? "✓ Done" : "Pending"} color="#2563eb" />
-                          </div>
-
-                          {r.status === "pending" && (
-                            <div style={{ marginTop: 14, padding: "10px 14px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a" }}>
-                              <p style={{ margin: 0, fontSize: 12, color: "#92400e", fontWeight: 600 }}>⏳ Your incentive is under HR review. You'll be notified once approved.</p>
-                            </div>
-                          )}
-                          {r.status === "approved" && (
-                            <div style={{ marginTop: 14, padding: "10px 14px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #86efac" }}>
-                              <p style={{ margin: 0, fontSize: 12, color: "#15803d", fontWeight: 600 }}>✅ Approved! Payment will be processed in the next payroll cycle.</p>
-                            </div>
-                          )}
-                          {r.status === "paid" && (
-                            <div style={{ marginTop: 14, padding: "10px 14px", background: "#eff6ff", borderRadius: 8, border: "1px solid #bfdbfe" }}>
-                              <p style={{ margin: 0, fontSize: 12, color: "#1d4ed8", fontWeight: 600 }}>💸 Paid! ₹{total.toLocaleString("en-IN")} has been credited to your account.</p>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* ── 2. Payout Summary ── */}
-                        <div style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", border: "1px solid #e5e7eb", marginBottom: 16 }}>
-                          <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>💰 Payout Summary</p>
-                          <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-                            <div style={{ background: "#f8fafc", borderRadius: 10, padding: "12px 18px", border: "1px solid #e5e7eb", textAlign: "center" }}>
-                              <p style={{ margin: "0 0 4px", fontSize: 10, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>Base Payout</p>
-                              <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: base > 0 ? "#374151" : "#9ca3af" }}>
-                                {base > 0 ? `₹${base.toLocaleString("en-IN")}` : "—"}
-                              </p>
-                            </div>
-
-                            {bonus > 0 && (
-                              <>
-                                <span style={{ fontSize: 20, color: "#d1d5db", fontWeight: 300 }}>+</span>
-                                <div style={{ background: "#fef9c3", borderRadius: 10, padding: "12px 18px", border: "1px solid #fde68a", textAlign: "center" }}>
-                                  <p style={{ margin: "0 0 4px", fontSize: 10, color: "#92400e", fontWeight: 700, textTransform: "uppercase" }}>🏆 All-KPI Bonus</p>
-                                  <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#92400e" }}>₹{bonus.toLocaleString("en-IN")}</p>
-                                  {r.completion_bonus_label && (
-                                    <p style={{ margin: "2px 0 0", fontSize: 10, color: "#b45309" }}>{r.completion_bonus_label}</p>
-                                  )}
-                                </div>
-                                <span style={{ fontSize: 20, color: "#d1d5db", fontWeight: 300 }}>=</span>
-                              </>
-                            )}
-
-                            <div style={{ background: total > 0 ? "#f0fdf4" : "#f8fafc", borderRadius: 10, padding: "12px 18px", border: `1px solid ${total > 0 ? "#86efac" : "#e5e7eb"}`, textAlign: "center" }}>
-                              <p style={{ margin: "0 0 4px", fontSize: 10, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>Total</p>
-                              <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color: total > 0 ? "#16a34a" : "#9ca3af" }}>
-                                {total > 0 ? `₹${total.toLocaleString("en-IN")}` : "—"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* ── 3. KPI Breakdown Table (only if kpi_breakdown exists) ── */}
-                        {isKpi && hasBreakdown && (
-                          <div style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", border: "1px solid #e5e7eb", marginBottom: 16 }}>
-                            <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>🎯 KPI Achievement & Incentive</p>
-                            <div style={{ overflowX: "auto" }}>
-                              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                                <thead>
-                                  <tr style={{ background: "#f8fafc" }}>
-                                    {["KPI", "Target", "Actual", "Achievement", "Slab", "Incentive"].map(h => (
-                                      <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontWeight: 700, color: "#6b7280", borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap", fontSize: 11, textTransform: "uppercase" }}>{h}</th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {kpiRows.map((row, ri) => (
-                                    row.is_admission_kpi ? (
-                                      // ── Admission KPI: program-wise rows ──
-                                      <>
-                                        {/* Header row */}
-                                        <tr key={`adm-header-${ri}`} style={{ background: "#f0f9ff", borderBottom: "1px solid #bae6fd" }}>
-                                          <td colSpan={6} style={{ padding: "10px 12px" }}>
-                                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                                <span style={{ fontSize: 10, background: "#e0f2fe", color: "#0369a1", padding: "2px 8px", borderRadius: 99, fontWeight: 700, border: "1px solid #bae6fd" }}>🎓</span>
-                                                <span style={{ fontWeight: 800, fontSize: 13, color: "#0369a1" }}>{row.kpi_name}</span>
-                                                <span style={{ fontSize: 10, background: "#eef2ff", color: "#4f46e5", padding: "1px 6px", borderRadius: 10, fontWeight: 600 }}>{row.weight}%</span>
-                                              </div>
-                                              <span style={{ fontWeight: 800, color: row.amt > 0 ? "#16a34a" : "#9ca3af", fontSize: 14 }}>
-                                                {row.amt > 0 ? `₹${row.amt.toLocaleString("en-IN")}` : "—"}
-                                              </span>
-                                            </div>
-                                          </td>
-                                        </tr>
-                                        {/* Per-program rows */}
-                                        {row.programDetails.map((pd, pdi) => (
-                                          <tr key={`adm-${ri}-${pdi}`} style={{ borderBottom: "1px solid #f3f4f6", background: "#fafeff" }}>
-                                            <td style={{ padding: "9px 12px 9px 24px", fontWeight: 600, color: "#0369a1", fontSize: 12 }}>
-                                              📚 {pd.program_name}
-                                            </td>
-                                            <td style={{ padding: "9px 12px", color: "#6b7280", fontSize: 12 }}>{pd.target}</td>
-                                            <td style={{ padding: "9px 12px", fontWeight: 700, color: pd.achColor, fontSize: 13 }}>{pd.actual}</td>
-                                            <td style={{ padding: "9px 12px" }}>
-                                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                                <div style={{ background: "#f3f4f6", borderRadius: 99, height: 7, width: 70, overflow: "hidden" }}>
-                                                  <div style={{ width: `${pd.achPct}%`, height: "100%", background: pd.achColor, borderRadius: 99 }} />
-                                                </div>
-                                                <span style={{ fontWeight: 800, color: pd.achColor, fontSize: 13 }}>{pd.achPct}%</span>
-                                              </div>
-                                            </td>
-                                            <td style={{ padding: "9px 12px" }}>
-                                              <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 5, fontWeight: 600, background: pd.amt > 0 ? "#eef2ff" : "#f3f4f6", color: pd.amt > 0 ? "#4f46e5" : "#9ca3af" }}>
-                                                {pd.slabDesc}
-                                              </span>
-                                            </td>
-                                            <td style={{ padding: "9px 12px", fontWeight: 800, color: pd.amt > 0 ? "#16a34a" : "#9ca3af", fontSize: 14 }}>
-                                              {pd.amt > 0 ? `₹${pd.amt.toLocaleString("en-IN")}` : "—"}
-                                            </td>
-                                          </tr>
-                                        ))}
-                                        {/* Admission subtotal */}
-                                        <tr style={{ background: "#e0f2fe", borderBottom: "1px solid #bae6fd" }}>
-                                          <td colSpan={5} style={{ padding: "8px 12px", fontWeight: 700, color: "#0369a1", fontSize: 12 }}>
-                                            🎓 {row.kpi_name} Total
-                                          </td>
-                                          <td style={{ padding: "8px 12px", fontWeight: 800, color: row.amt > 0 ? "#0369a1" : "#9ca3af", fontSize: 14 }}>
-                                            {row.amt > 0 ? `₹${row.amt.toLocaleString("en-IN")}` : "—"}
-                                          </td>
-                                        </tr>
-                                      </>
-                                    ) : (
-                                      // ── Normal KPI row ──
-                                      <tr key={ri} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                                        <td style={{ padding: "11px 12px", fontWeight: 700, color: "#1f2937", fontSize: 13 }}>
-                                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                            <Target size={13} color="#6366f1" />
-                                            {row.kpi_name}
-                                            <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: "#eef2ff", color: "#4f46e5", fontWeight: 600 }}>{row.weight}%</span>
-                                          </div>
-                                        </td>
-                                        <td style={{ padding: "11px 12px", color: "#6b7280", fontSize: 12 }}>{row.target} {row.unit}</td>
-                                        <td style={{ padding: "11px 12px", fontWeight: 700, color: row.achColor, fontSize: 13 }}>
-                                          {row.actual != null ? `${row.actual} ${row.unit}` : "—"}
-                                        </td>
-                                        <td style={{ padding: "11px 12px" }}>
-                                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                            <div style={{ background: "#f3f4f6", borderRadius: 99, height: 7, width: 70, overflow: "hidden" }}>
-                                              <div style={{ width: `${row.achPct}%`, height: "100%", background: row.achColor, borderRadius: 99 }} />
-                                            </div>
-                                            <span style={{ fontWeight: 800, color: row.achColor, fontSize: 13 }}>{row.achPct}%</span>
-                                          </div>
-                                        </td>
-                                        <td style={{ padding: "11px 12px" }}>
-                                          {row.slab ? (
-                                            <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 5, fontWeight: 600, background: row.amt > 0 ? "#eef2ff" : "#f3f4f6", color: row.amt > 0 ? "#4f46e5" : "#9ca3af" }}>
-                                              {row.slab.min_score}–{row.slab.max_score}% · {row.slabDesc}
-                                            </span>
-                                          ) : (
-                                            <span style={{ fontSize: 11, color: "#9ca3af" }}>No slab match</span>
-                                          )}
-                                        </td>
-                                        <td style={{ padding: "11px 12px", fontWeight: 800, color: row.amt > 0 ? "#16a34a" : "#9ca3af", fontSize: 14 }}>
-                                          {row.amt > 0 ? `₹${row.amt.toLocaleString("en-IN")}` : "—"}
-                                        </td>
-                                      </tr>
-                                    )
-                                  ))}
-                                  {/* Total row */}
-                                  <tr style={{ background: "#f0fdf4", borderTop: "2px solid #86efac" }}>
-                                    <td colSpan={5} style={{ padding: "11px 12px", fontWeight: 700, color: "#15803d", fontSize: 13 }}>
-                                      {bonus > 0 ? "KPI Base Total" : "Total Incentive"}
-                                    </td>
-                                    <td style={{ padding: "11px 12px", fontWeight: 900, color: "#16a34a", fontSize: 16 }}>
-                                      ₹{base.toLocaleString("en-IN")}
-                                    </td>
-                                  </tr>
-                                  {bonus > 0 && (
-                                    <tr style={{ background: "#fef9c3", borderTop: "1px solid #fde68a" }}>
-                                      <td colSpan={5} style={{ padding: "11px 12px", fontWeight: 700, color: "#92400e", fontSize: 13 }}>
-                                        🏆 All-KPI Completion Bonus
-                                      </td>
-                                      <td style={{ padding: "11px 12px", fontWeight: 900, color: "#92400e", fontSize: 16 }}>
-                                        +₹{bonus.toLocaleString("en-IN")}
-                                      </td>
-                                    </tr>
-                                  )}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* ── 4. Slab Structure ── */}
-                        {isKpi && (r.plan_id?.kpi_configs || []).length > 0 && (
-                          <div style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", border: "1px solid #e5e7eb", marginBottom: 16 }}>
-                            <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>📊 Slab Structure</p>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                              {r.plan_id.kpi_configs.map((cfg, ci) => (
-                                (cfg.slabs?.length > 0 || cfg.is_admission_kpi) && (
-                                  <div key={ci}>
-                                    <p style={{ margin: "0 0 6px", fontSize: 12, fontWeight: 700, color: "#374151" }}>
-                                      <Target size={12} color="#6366f1" style={{ marginRight: 4 }} />
-                                      {cfg.kpi_name} <span style={{ color: "#9ca3af", fontWeight: 400 }}>(target: {cfg.target})</span>
-                                    </p>
-                                    {cfg.is_admission_kpi ? (
-                                      // ── Admission KPI: program-wise slabs ──
-                                      (cfg.program_slabs || []).map((ps, psi) => (
-                                        <div key={psi} style={{ marginBottom: 10 }}>
-                                          <p style={{ margin: "0 0 6px", fontSize: 12, fontWeight: 700, color: "#0369a1" }}>
-                                            📚 {ps.program_name}
-                                          </p>
-                                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                                            {ps.slabs.map((slab, si) => {
-                                              const isMatched = kpiRows
-                                                .find(row => row.kpi_name === cfg.kpi_name)
-                                                ?.programDetails?.find(pd => pd.program_name === ps.program_name)
-                                                ?.slabDesc?.includes(`${slab.min_score}–${slab.max_score}`);
-                                              return (
-                                                <div key={si} style={{
-                                                  padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600,
-                                                  border: isMatched ? "2px solid #0369a1" : "1px solid #bae6fd",
-                                                  background: isMatched ? "#e0f2fe" : "#f0f9ff",
-                                                  color: isMatched ? "#0369a1" : "#374151",
-                                                }}>
-                                                  {slab.min_score}–{slab.max_score}%:&nbsp;
-                                                  {slab.type === "none" ? "No Bonus"
-                                                    : slab.type === "target_percentage" ? `${slab.value}% of Target`
-                                                    : `₹${Number(slab.value).toLocaleString("en-IN")}`}
-                                                  {isMatched && <span style={{ marginLeft: 4 }}>← You</span>}
-                                                </div>
-                                              );
-                                            })}
-                                          </div>
-                                        </div>
-                                      ))
-                                    ) : (
-                                      // ── Normal KPI slabs ──
-                                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                                        {cfg.slabs.map((slab, si) => {
-                                          const isMatched = kpiRows.find(row =>
-                                            (row.kpi_name || "").toLowerCase().trim() === (cfg.kpi_name || "").toLowerCase().trim()
-                                          )?.slab === slab;
-                                          return (
-                                            <div key={si} style={{
-                                              padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600,
-                                              border: isMatched ? "2px solid #6366f1" : "1px solid #e5e7eb",
-                                              background: isMatched ? "#eef2ff" : slab.type === "none" ? "#f3f4f6" : "#fff",
-                                              color: isMatched ? "#4f46e5" : slab.type === "none" ? "#9ca3af" : "#374151",
-                                            }}>
-                                              {slab.min_score}–{slab.max_score}%:&nbsp;
-                                              {slab.type === "none" ? "No Bonus"
-                                                : slab.type === "target_percentage" ? `${slab.value}% of Target`
-                                                  : slab.type === "percentage" ? `${slab.value}% of Salary`
-                                                    : `₹${Number(slab.value).toLocaleString("en-IN")}`}
-                                              {isMatched && <span style={{ marginLeft: 4 }}>← You</span>}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
-                                  </div>
-                                )
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* ── 5. All-KPI Bonus rule ── */}
-                        {isKpi && r.plan_id?.completion_reward_type && r.plan_id.completion_reward_type !== "none" && (
-                          <div style={{ background: bonus > 0 ? "#f0fdf4" : "#fff", borderRadius: 12, padding: "14px 18px", border: `1.5px solid ${bonus > 0 ? "#86efac" : "#e5e7eb"}` }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                              <Gift size={16} color={bonus > 0 ? "#16a34a" : "#9ca3af"} />
-                              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: bonus > 0 ? "#15803d" : "#374151" }}>
-                                All-KPI Bonus:{" "}
-                                {r.plan_id.completion_reward_type === "fixed"
-                                  ? `₹${Number(r.plan_id.completion_reward_value).toLocaleString("en-IN")}`
-                                  : `${r.plan_id.completion_reward_value}% of Salary`}
-                                {r.plan_id.completion_reward_label ? ` · ${r.plan_id.completion_reward_label}` : ""}
-                              </p>
-                              <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20, background: bonus > 0 ? "#dcfce7" : "#f3f4f6", color: bonus > 0 ? "#16a34a" : "#9ca3af" }}>
-                                {bonus > 0 ? "✅ Earned" : "Not Earned"}
-                              </span>
-                            </div>
-                            <p style={{ margin: 0, fontSize: 11, color: "#6b7280" }}>
-                              {bonus > 0 ? "🎉 You achieved ≥ 100% on all KPIs this period!" : "Achieve ≥ 100% on ALL KPIs to earn this bonus."}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* ── Standalone detail ── */}
-                        {!isKpi && (
-                          <div style={{ background: "#fffbeb", borderRadius: 12, padding: "14px 18px", border: "1px solid #fde68a" }}>
-                            <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, color: "#92400e", textTransform: "uppercase" }}>📋 Standalone Plan Details</p>
-                            <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-                              {[
-                                { label: "Metric", value: metricLabel(r.plan_id) },
-                                { label: "Payout Rule", value: standaloneLabel(r.plan_id) },
-                                { label: "Your Payout", value: total > 0 ? `₹${total.toLocaleString("en-IN")}` : "Pending HR entry" },
-                              ].map(d => (
-                                <div key={d.label}>
-                                  <p style={{ margin: "0 0 2px", fontSize: 10, color: "#b45309", fontWeight: 600, textTransform: "uppercase" }}>{d.label}</p>
-                                  <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#92400e" }}>{d.value}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              <p style={{ textAlign: "center", padding: "12px 0", fontSize: 12, color: "#9ca3af", margin: 0, borderTop: "1px solid #f3f4f6" }}>
-                {results.length} record{results.length !== 1 ? "s" : ""} · Click any row to see full details
-              </p>
+            {/* ── Tab bar ── */}
+            <div className="incentive-tab-bar" style={{ display: "flex", gap: 2, background: "#fff", borderRadius: 12, padding: 4, border: "1px solid #e5e7eb", marginBottom: 16, width: "100%" }}>
+              {[
+                { key: "pending",   label: "Pending",   count: pendingList.length,   dot: "#f59e0b" },
+                { key: "completed", label: "Completed", count: completedList.length, dot: "#16a34a" },
+              ].map(tab => (
+                <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 18px", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: "pointer", background: activeTab === tab.key ? "#6366f1" : "transparent", color: activeTab === tab.key ? "#fff" : "#6b7280", transition: "all 0.15s" }}>
+                  {tab.label}
+                  <span style={{ background: activeTab === tab.key ? "rgba(255,255,255,0.25)" : "#f3f4f6", color: activeTab === tab.key ? "#fff" : "#6b7280", borderRadius: 20, padding: "1px 8px", fontSize: 11, fontWeight: 800 }}>{tab.count}</span>
+                </button>
+              ))}
             </div>
+
+            {/* ── Tab content ── */}
+            {activeTab === "pending" && (
+              <div className="fade-up">
+                {pendingList.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "60px 20px", background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb" }}>
+                    <div style={{ width: 56, height: 56, borderRadius: 16, background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                      <CheckCircle size={28} color="#16a34a" />
+                    </div>
+                    <p style={{ fontWeight: 700, fontSize: 15, color: "#1a1a2e", margin: "0 0 6px" }}>All caught up!</p>
+                    <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>No pending incentives at the moment.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <Hourglass size={14} color="#f59e0b" />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>{pendingList.length} pending incentive{pendingList.length !== 1 ? "s" : ""}</span>
+                      <span style={{ fontSize: 12, color: "#9ca3af" }}>— awaiting HR approval</span>
+                    </div>
+                    {pendingList.map(r => <IncentiveCard key={r._id} r={r} expanded={expanded} onToggle={handleToggle} fetchMyIncentives={fetchMyIncentives} />)}
+                  </>
+                )}
+              </div>
+            )}
+
+            {activeTab === "completed" && (
+              <div className="fade-up">
+                {completedList.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "60px 20px", background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb" }}>
+                    <div style={{ width: 56, height: 56, borderRadius: 16, background: "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                      <TrendingUp size={28} color="#6366f1" />
+                    </div>
+                    <p style={{ fontWeight: 700, fontSize: 15, color: "#1a1a2e", margin: "0 0 6px" }}>No completed records yet</p>
+                    <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>Approved and paid incentives will appear here.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <BadgeCheck size={14} color="#16a34a" />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>{completedList.length} completed record{completedList.length !== 1 ? "s" : ""}</span>
+                      <span style={{ fontSize: 12, color: "#9ca3af" }}>— approved & paid</span>
+                    </div>
+                    {completedList.map(r => <IncentiveCard key={r._id} r={r} expanded={expanded} onToggle={handleToggle} fetchMyIncentives={fetchMyIncentives} />)}
+                  </>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>

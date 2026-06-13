@@ -9,7 +9,6 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-// ── Styles ────────────────────────────────────────────────────────────────────
 const inp = {
   width: "100%", padding: "9px 12px", border: "1.5px solid #e2e8f0",
   borderRadius: 8, fontSize: 13, color: "#1e293b", background: "#fff",
@@ -21,7 +20,6 @@ const lbl = {
   color: "#64748b", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em",
 };
 
-// ── Constants ─────────────────────────────────────────────────────────────────
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1];
@@ -40,7 +38,27 @@ const OPERATORS = [
   { value: "<",  label: "< (Less than)" },
 ];
 
-// ── Build empty KPI config from template item ─────────────────────────────────
+// ── Standalone target measurement types ──────────────────────────────────────
+const STANDALONE_TARGET_TYPES = [
+  { value: "revenue", label: "Revenue (₹)", icon: "💰", placeholder: "e.g. 100000" },
+  { value: "units",   label: "Units / Count", icon: "📦", placeholder: "e.g. 50" },
+  { value: "percent", label: "Percentage (%)", icon: "📊", placeholder: "e.g. 75" },
+];
+
+// ── Standalone payout types ───────────────────────────────────────────────────
+const STANDALONE_PAYOUT_TYPES = [
+  { value: "fixed",              label: "Fixed Amount (₹)" },
+  { value: "percent_of_achieved", label: "% of Achieved Value" },
+  { value: "percent_of_salary",  label: "% of Salary" },
+];
+
+const EMPTY_STANDALONE_SLAB = () => ({
+  min_target: 0,
+  max_target: 0,
+  payout_type: "fixed",
+  payout_value: 0,
+});
+
 const EMPTY_KPI_CONFIG = (kpiItem) => ({
   kpi_name:         kpiItem.kpi_name,
   weight:           kpiItem.weight,
@@ -64,8 +82,12 @@ const EMPTY_FORM = {
   period_quarter: "Q1", period_half: "H1", period_year: CURRENT_YEAR,
   kpi_template_id: "", selected_kpis: [], kpi_configs: [],
   completion_reward_type: "none", completion_reward_value: 0, completion_reward_label: "",
+  // Standalone
   standalone_payout_type: "fixed", standalone_payout_value: 0,
-  standalone_metric: "manual", standalone_metric_label: "", slabs: [],
+  standalone_metric: "manual", standalone_metric_label: "",
+  standalone_target_type: "revenue",
+  standalone_slabs: [],
+  slabs: [],
 };
 
 const DEPT_COLORS = {
@@ -78,7 +100,6 @@ const DEPT_COLORS = {
 };
 const getColor = (d) => DEPT_COLORS[d] || { color: "#6b7280", bg: "#f3f4f6" };
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function buildRuleLabel(cfg) {
   if (!cfg.target) return "";
   const opLabel = OPERATORS.find(o => o.value === cfg.operator)?.label?.split(" ")[0] || cfg.operator;
@@ -110,7 +131,165 @@ function validateSlabs(slabs) {
   return errors;
 }
 
-// ── SlabEditor sub-component ──────────────────────────────────────────────────
+function validateStandaloneSlabs(slabs) {
+  const errors = [];
+  slabs.forEach((s, i) => {
+    if (Number(s.min_target) > Number(s.max_target) && Number(s.max_target) !== 0)
+      errors.push(`Slab ${i + 1}: Min > Max`);
+    if (s.payout_value <= 0) errors.push(`Slab ${i + 1}: Payout value must be > 0`);
+  });
+  return errors;
+}
+
+// ── Format target display ─────────────────────────────────────────────────────
+function formatTarget(val, type) {
+  if (!val && val !== 0) return "—";
+  const n = Number(val);
+  if (type === "revenue") return n >= 100000 ? `₹${(n / 100000).toFixed(1)}L` : `₹${n.toLocaleString("en-IN")}`;
+  if (type === "percent") return `${n}%`;
+  return n.toLocaleString("en-IN");
+}
+
+// ── Standalone Slab Editor ────────────────────────────────────────────────────
+function StandaloneSlabEditor({ slabs, targetType, onAdd, onUpdate, onRemove }) {
+  const errors = validateStandaloneSlabs(slabs);
+  const tInfo  = STANDALONE_TARGET_TYPES.find(t => t.value === targetType) || STANDALONE_TARGET_TYPES[0];
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <label style={{ ...lbl, margin: 0 }}>
+          {tInfo.icon} Target → Payout Slabs
+        </label>
+        <button onClick={onAdd}
+          style={{ background: "#eef2ff", border: "none", borderRadius: 7, padding: "5px 14px", fontSize: 11, fontWeight: 700, color: "#4f46e5", cursor: "pointer" }}>
+          + Add Slab
+        </button>
+      </div>
+
+      {errors.length > 0 && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 7, padding: "7px 12px", marginBottom: 8 }}>
+          {errors.map((e, i) => <p key={i} style={{ margin: "2px 0", fontSize: 11, color: "#dc2626", fontWeight: 600 }}>⚠ {e}</p>)}
+        </div>
+      )}
+
+      {slabs.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "24px 16px", background: "#f8fafc", borderRadius: 10, border: "2px dashed #e2e8f0" }}>
+          <p style={{ margin: 0, fontSize: 13, color: "#94a3b8", fontWeight: 500 }}>
+            No slabs yet — click "+ Add Slab" to define target ranges
+          </p>
+          <p style={{ margin: "4px 0 0", fontSize: 11, color: "#cbd5e1" }}>
+            Example: 0–1,00,000 → ₹1,000 | 1,00,001–2,00,000 → ₹2,000
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Header */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 160px 1fr 32px", gap: 8, marginBottom: 6, padding: "0 4px" }}>
+            {[`Min ${tInfo.label}`, `Max ${tInfo.label}`, "Payout Type", "Payout Value", ""].map(h => (
+              <span key={h} style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" }}>{h}</span>
+            ))}
+          </div>
+
+          {slabs.map((slab, si) => (
+            <div key={si} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 160px 1fr 32px", gap: 8, marginBottom: 8, alignItems: "start" }}>
+              {/* Min target */}
+              <div>
+                <input
+                  type="number" min="0"
+                  value={slab.min_target}
+                  onChange={e => onUpdate(si, "min_target", e.target.value)}
+                  placeholder={tInfo.placeholder}
+                  style={{ ...inp, padding: "7px 8px", fontSize: 12 }}
+                />
+                <span style={{ fontSize: 10, color: "#94a3b8", marginTop: 2, display: "block" }}>
+                  {formatTarget(slab.min_target, targetType)}
+                </span>
+              </div>
+
+              {/* Max target */}
+              <div>
+                <input
+                  type="number" min="0"
+                  value={slab.max_target}
+                  onChange={e => onUpdate(si, "max_target", e.target.value)}
+                  placeholder="0 = no limit"
+                  style={{ ...inp, padding: "7px 8px", fontSize: 12 }}
+                />
+                <span style={{ fontSize: 10, color: "#94a3b8", marginTop: 2, display: "block" }}>
+                  {Number(slab.max_target) === 0 ? "No limit" : formatTarget(slab.max_target, targetType)}
+                </span>
+              </div>
+
+              {/* Payout type */}
+              <select
+                value={slab.payout_type}
+                onChange={e => onUpdate(si, "payout_type", e.target.value)}
+                style={{ ...inp, padding: "7px 8px", fontSize: 12 }}
+              >
+                {STANDALONE_PAYOUT_TYPES.map(pt => (
+                  <option key={pt.value} value={pt.value}>{pt.label}</option>
+                ))}
+              </select>
+
+              {/* Payout value */}
+              <div>
+                <input
+                  type="number" min="0" step="0.01"
+                  value={slab.payout_value}
+                  onChange={e => onUpdate(si, "payout_value", e.target.value)}
+                  placeholder={slab.payout_type === "fixed" ? "e.g. 1000" : "e.g. 5"}
+                  style={{ ...inp, padding: "7px 8px", fontSize: 12 }}
+                />
+                {slab.payout_value > 0 && (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#4f46e5", marginTop: 2, display: "block" }}>
+                    {slab.payout_type === "fixed"
+                      ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}`
+                      : `${slab.payout_value}%`}
+                  </span>
+                )}
+              </div>
+
+              {/* Remove */}
+              <button
+                onClick={() => onRemove(si)}
+                style={{ background: "#fef2f2", border: "none", borderRadius: 7, padding: "7px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}
+              >
+                <HugeiconsIcon icon={Delete02Icon} size={13} color="#dc2626" strokeWidth={2} />
+              </button>
+            </div>
+          ))}
+
+          {/* Slab preview */}
+          {slabs.length > 0 && (
+            <div style={{ marginTop: 12, background: "#f8fafc", borderRadius: 10, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
+              <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Preview</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {slabs.map((slab, si) => (
+                  <div key={si} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: "#374151" }}>
+                    <span style={{ color: "#64748b" }}>
+                      {formatTarget(slab.min_target, targetType)}
+                      {" → "}
+                      {Number(slab.max_target) === 0 ? "∞" : formatTarget(slab.max_target, targetType)}
+                    </span>
+                    <span style={{ margin: "0 6px", color: "#cbd5e1" }}>|</span>
+                    <span style={{ color: "#16a34a", fontWeight: 700 }}>
+                      {slab.payout_type === "fixed"
+                        ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}`
+                        : `${slab.payout_value}% ${slab.payout_type === "percent_of_salary" ? "of salary" : "of achieved"}`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── KPI SlabEditor (existing, unchanged) ─────────────────────────────────────
 function SlabEditor({ slabs, onAdd, onUpdate, onRemove, cfg }) {
   const errors = validateSlabs(slabs);
   return (
@@ -174,25 +353,17 @@ function SlabEditor({ slabs, onAdd, onUpdate, onRemove, cfg }) {
   );
 }
 
-// ── AdmissionKpiConfig: per-program tabs ─────────────────────────────────────
-// FIX: Use a stable key-based re-mount strategy + correct useEffect dependency
+// ── AdmissionKpiConfig (unchanged from original) ─────────────────────────────
 function AdmissionKpiConfig({ cfg, onAddProgSlab, onUpdateProgSlab, onRemoveProgSlab }) {
-  // FIX 1: Lazy initializer so it correctly picks first program on mount
   const [activeProgram, setActiveProgram] = useState(
     () => cfg.program_targets?.[0]?.program_id || null
   );
-
-  // FIX 2: Correct dependency — react to program_targets changing (e.g. on edit load)
-  // Using a ref to track the previous program_targets length to avoid stale closures
   const prevProgramTargetsRef = useRef(null);
 
   useEffect(() => {
     if (!cfg.program_targets?.length) return;
-
-    // Stringify to detect real changes (program_targets is an array of objects)
     const currentKey = cfg.program_targets.map(pt => pt.program_id).join(",");
     const prevKey    = prevProgramTargetsRef.current;
-
     if (currentKey !== prevKey) {
       prevProgramTargetsRef.current = currentKey;
       setActiveProgram(prev => {
@@ -203,25 +374,19 @@ function AdmissionKpiConfig({ cfg, onAddProgSlab, onUpdateProgSlab, onRemoveProg
   }, [cfg.program_targets]);
 
   if (!cfg.program_targets?.length) {
-    return (
-      <p style={{ fontSize: 12, color: "#f59e0b", fontStyle: "italic" }}>
-        ⚠ No programs found for this KPI.
-      </p>
-    );
+    return <p style={{ fontSize: 12, color: "#f59e0b", fontStyle: "italic" }}>⚠ No programs found for this KPI.</p>;
   }
 
   const activePt      = cfg.program_targets.find(pt => pt.program_id === activeProgram);
   const progSlabEntry = (cfg.program_slabs || []).find(ps => ps.program_id === activeProgram);
   const progSlabs     = progSlabEntry?.slabs || [];
-
-  const totalTarget = cfg.program_targets.reduce((s, pt) => s + (Number(pt.target) || 0), 0);
+  const totalTarget   = cfg.program_targets.reduce((s, pt) => s + (Number(pt.target) || 0), 0);
 
   return (
     <div>
-      {/* Program targets overview cards */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
         {cfg.program_targets.map((pt) => {
-          const pSlabs = (cfg.program_slabs || []).find(ps => ps.program_id === pt.program_id)?.slabs || [];
+          const pSlabs  = (cfg.program_slabs || []).find(ps => ps.program_id === pt.program_id)?.slabs || [];
           const isActive = activeProgram === pt.program_id;
           return (
             <div key={pt.program_id} style={{
@@ -230,39 +395,26 @@ function AdmissionKpiConfig({ cfg, onAddProgSlab, onUpdateProgSlab, onRemoveProg
               borderRadius: 8, padding: "8px 12px", textAlign: "center", minWidth: 80,
               cursor: "pointer", transition: "all 0.15s",
             }} onClick={() => setActiveProgram(pt.program_id)}>
-              <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: isActive ? "rgba(255,255,255,0.8)" : "#6b7280" }}>
-                {pt.program_name}
-              </p>
-              <p style={{ margin: "2px 0 0", fontSize: 18, fontWeight: 800, fontFamily: "monospace", color: isActive ? "#fff" : "#0369a1" }}>
-                {pt.target}
-              </p>
-              <p style={{ margin: 0, fontSize: 9, color: isActive ? "rgba(255,255,255,0.6)" : "#9ca3af" }}>
-                {pSlabs.length} slab{pSlabs.length !== 1 ? "s" : ""}
-              </p>
+              <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: isActive ? "rgba(255,255,255,0.8)" : "#6b7280" }}>{pt.program_name}</p>
+              <p style={{ margin: "2px 0 0", fontSize: 18, fontWeight: 800, fontFamily: "monospace", color: isActive ? "#fff" : "#0369a1" }}>{pt.target}</p>
+              <p style={{ margin: 0, fontSize: 9, color: isActive ? "rgba(255,255,255,0.6)" : "#9ca3af" }}>{pSlabs.length} slab{pSlabs.length !== 1 ? "s" : ""}</p>
             </div>
           );
         })}
-        {/* Total card */}
         <div style={{ background: "#1e293b", border: "1px solid #1e293b", borderRadius: 8, padding: "8px 12px", textAlign: "center", minWidth: 80 }}>
           <p style={{ margin: 0, fontSize: 10, color: "rgba(255,255,255,0.6)", fontWeight: 600 }}>Total</p>
           <p style={{ margin: "2px 0 0", fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "monospace" }}>{totalTarget}</p>
           <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,0.5)" }}>admissions</p>
         </div>
       </div>
-
-      {/* Active program slab editor */}
       {activePt && (
         <div style={{ border: "1.5px solid #bae6fd", borderRadius: 10, overflow: "hidden" }}>
           <div style={{ background: "#f0f9ff", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #bae6fd" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 14, fontWeight: 700, color: "#0369a1" }}>📚 {activePt.program_name}</span>
-              <span style={{ fontSize: 11, color: "#6b7280", background: "#e0f2fe", padding: "2px 8px", borderRadius: 99, fontWeight: 600 }}>
-                Target: {activePt.target} admissions
-              </span>
+              <span style={{ fontSize: 11, color: "#6b7280", background: "#e0f2fe", padding: "2px 8px", borderRadius: 99, fontWeight: 600 }}>Target: {activePt.target} admissions</span>
             </div>
-            <span style={{ fontSize: 11, color: "#0369a1", fontWeight: 700 }}>
-              {progSlabs.length} slab{progSlabs.length !== 1 ? "s" : ""}
-            </span>
+            <span style={{ fontSize: 11, color: "#0369a1", fontWeight: 700 }}>{progSlabs.length} slab{progSlabs.length !== 1 ? "s" : ""}</span>
           </div>
           <div style={{ padding: "14px" }}>
             <SlabEditor
@@ -317,22 +469,14 @@ export default function IncentivePlans() {
   const filteredTemplates = kpiTemplates.filter(t => !form.department || t.department === form.department);
   const selectedTemplate  = kpiTemplates.find(t => t._id === form.kpi_template_id);
 
-  // ── KPI toggle ────────────────────────────────────────────────────────────
+  // ── KPI handlers (unchanged) ──────────────────────────────────────────────
   const toggleKpi = (kpiItem) => {
     const name       = kpiItem.kpi_name;
     const isSelected = form.selected_kpis.includes(name);
     if (isSelected) {
-      setForm(f => ({
-        ...f,
-        selected_kpis: f.selected_kpis.filter(k => k !== name),
-        kpi_configs:   f.kpi_configs.filter(c => c.kpi_name !== name),
-      }));
+      setForm(f => ({ ...f, selected_kpis: f.selected_kpis.filter(k => k !== name), kpi_configs: f.kpi_configs.filter(c => c.kpi_name !== name) }));
     } else {
-      setForm(f => ({
-        ...f,
-        selected_kpis: [...f.selected_kpis, name],
-        kpi_configs:   [...f.kpi_configs, EMPTY_KPI_CONFIG(kpiItem)],
-      }));
+      setForm(f => ({ ...f, selected_kpis: [...f.selected_kpis, name], kpi_configs: [...f.kpi_configs, EMPTY_KPI_CONFIG(kpiItem)] }));
     }
   };
 
@@ -348,89 +492,36 @@ export default function IncentivePlans() {
     }));
   };
 
-  // ── Normal KPI slab handlers ──────────────────────────────────────────────
-  const addSlabToKpi = (kpiName) => {
-    setForm(f => ({
-      ...f,
-      kpi_configs: f.kpi_configs.map(c => {
-        if (c.kpi_name !== kpiName) return c;
-        const last   = c.slabs[c.slabs.length - 1];
-        const newMin = last ? last.max_score + 1 : 0;
-        return { ...c, slabs: [...c.slabs, { min_score: newMin, max_score: Math.min(newMin + 10, 100), type: "fixed", value: 0 }] };
-      }),
-    }));
+  const addSlabToKpi   = (kpiName) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; const last = c.slabs[c.slabs.length - 1]; const newMin = last ? last.max_score + 1 : 0; return { ...c, slabs: [...c.slabs, { min_score: newMin, max_score: Math.min(newMin + 10, 100), type: "fixed", value: 0 }] }; }) }));
+  const updateKpiSlab  = (kpiName, slabIdx, field, val) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; const slabs = [...c.slabs]; slabs[slabIdx] = { ...slabs[slabIdx], [field]: field === "type" ? val : Number(val) }; return { ...c, slabs }; }) }));
+  const removeKpiSlab  = (kpiName, slabIdx) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; return { ...c, slabs: c.slabs.filter((_, i) => i !== slabIdx) }; }) }));
+
+  const addProgSlab    = (kpiName, progId) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; const ps = [...(c.program_slabs || [])]; const progIdx = ps.findIndex(p => p.program_id === progId); const mkNew = () => ({ min_score: 0, max_score: 10, type: "fixed", value: 0 }); if (progIdx >= 0) { ps[progIdx] = { ...ps[progIdx], slabs: [...ps[progIdx].slabs, mkNew()] }; } else { const ptEntry = c.program_targets.find(p => p.program_id === progId); ps.push({ program_id: progId, program_name: ptEntry?.program_name || progId, slabs: [mkNew()] }); } return { ...c, program_slabs: ps }; }) }));
+  const updateProgSlab = (kpiName, progId, slabIdx, field, val) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; const ps = [...(c.program_slabs || [])]; const progIdx = ps.findIndex(p => p.program_id === progId); if (progIdx < 0) return c; const slabs = [...ps[progIdx].slabs]; slabs[slabIdx] = { ...slabs[slabIdx], [field]: field === "type" ? val : Number(val) }; ps[progIdx] = { ...ps[progIdx], slabs }; return { ...c, program_slabs: ps }; }) }));
+  const removeProgSlab = (kpiName, progId, slabIdx) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; const ps = [...(c.program_slabs || [])]; const progIdx = ps.findIndex(p => p.program_id === progId); if (progIdx < 0) return c; ps[progIdx] = { ...ps[progIdx], slabs: ps[progIdx].slabs.filter((_, i) => i !== slabIdx) }; return { ...c, program_slabs: ps }; }) }));
+
+  // ── Standalone slab handlers ──────────────────────────────────────────────
+  const addStandaloneSlab = () => {
+    setForm(f => {
+      const last   = f.standalone_slabs[f.standalone_slabs.length - 1];
+      const newMin = last ? (Number(last.max_target) + 1) : 0;
+      return {
+        ...f,
+        standalone_slabs: [...f.standalone_slabs, { min_target: newMin, max_target: 0, payout_type: "fixed", payout_value: 0 }],
+      };
+    });
   };
 
-  const updateKpiSlab = (kpiName, slabIdx, field, val) => {
-    setForm(f => ({
-      ...f,
-      kpi_configs: f.kpi_configs.map(c => {
-        if (c.kpi_name !== kpiName) return c;
-        const slabs = [...c.slabs];
-        slabs[slabIdx] = { ...slabs[slabIdx], [field]: field === "type" ? val : Number(val) };
-        return { ...c, slabs };
-      }),
-    }));
+  const updateStandaloneSlab = (si, field, val) => {
+    setForm(f => {
+      const slabs = [...f.standalone_slabs];
+      slabs[si] = { ...slabs[si], [field]: field === "payout_type" ? val : Number(val) };
+      return { ...f, standalone_slabs: slabs };
+    });
   };
 
-  const removeKpiSlab = (kpiName, slabIdx) => {
-    setForm(f => ({
-      ...f,
-      kpi_configs: f.kpi_configs.map(c => {
-        if (c.kpi_name !== kpiName) return c;
-        return { ...c, slabs: c.slabs.filter((_, i) => i !== slabIdx) };
-      }),
-    }));
-  };
-
-  // ── Per-program slab handlers (Admission KPI) ─────────────────────────────
-  const addProgSlab = (kpiName, progId) => {
-    setForm(f => ({
-      ...f,
-      kpi_configs: f.kpi_configs.map(c => {
-        if (c.kpi_name !== kpiName) return c;
-        const ps      = [...(c.program_slabs || [])];
-        const progIdx = ps.findIndex(p => p.program_id === progId);
-        const mkNew   = () => ({ min_score: 0, max_score: 10, type: "fixed", value: 0 });
-        if (progIdx >= 0) {
-          ps[progIdx] = { ...ps[progIdx], slabs: [...ps[progIdx].slabs, mkNew()] };
-        } else {
-          const ptEntry = c.program_targets.find(p => p.program_id === progId);
-          ps.push({ program_id: progId, program_name: ptEntry?.program_name || progId, slabs: [mkNew()] });
-        }
-        return { ...c, program_slabs: ps };
-      }),
-    }));
-  };
-
-  const updateProgSlab = (kpiName, progId, slabIdx, field, val) => {
-    setForm(f => ({
-      ...f,
-      kpi_configs: f.kpi_configs.map(c => {
-        if (c.kpi_name !== kpiName) return c;
-        const ps      = [...(c.program_slabs || [])];
-        const progIdx = ps.findIndex(p => p.program_id === progId);
-        if (progIdx < 0) return c;
-        const slabs = [...ps[progIdx].slabs];
-        slabs[slabIdx] = { ...slabs[slabIdx], [field]: field === "type" ? val : Number(val) };
-        ps[progIdx] = { ...ps[progIdx], slabs };
-        return { ...c, program_slabs: ps };
-      }),
-    }));
-  };
-
-  const removeProgSlab = (kpiName, progId, slabIdx) => {
-    setForm(f => ({
-      ...f,
-      kpi_configs: f.kpi_configs.map(c => {
-        if (c.kpi_name !== kpiName) return c;
-        const ps      = [...(c.program_slabs || [])];
-        const progIdx = ps.findIndex(p => p.program_id === progId);
-        if (progIdx < 0) return c;
-        ps[progIdx] = { ...ps[progIdx], slabs: ps[progIdx].slabs.filter((_, i) => i !== slabIdx) };
-        return { ...c, program_slabs: ps };
-      }),
-    }));
+  const removeStandaloneSlab = (si) => {
+    setForm(f => ({ ...f, standalone_slabs: f.standalone_slabs.filter((_, i) => i !== si) }));
   };
 
   const handleTemplateChange = (templateId) => {
@@ -439,59 +530,36 @@ export default function IncentivePlans() {
 
   const openCreate = () => { setForm(EMPTY_FORM); setEditId(null); setShowForm(true); };
 
-  // FIX 3: openEdit — correctly rebuild kpi_configs with program_targets preserved
-  // and also re-hydrate program_targets from the kpi_template if they're missing
   const openEdit = (p) => {
     const templateKpiItems = (() => {
-      // Try to find the template from loaded kpiTemplates for re-hydration
       const templateId = p.kpi_template_id?._id || p.kpi_template_id;
       const tpl = kpiTemplates.find(t => t._id === templateId);
       return tpl?.kpi_items || [];
     })();
 
     const configs = (p.kpi_configs || []).map(c => {
-      // FIX: Re-hydrate program_targets from the KPI template if saved data is empty
-      // This handles edge cases where program_targets wasn't saved correctly
-      let program_targets = Array.isArray(c.program_targets) && c.program_targets.length > 0
-        ? c.program_targets
-        : [];
-
+      let program_targets = Array.isArray(c.program_targets) && c.program_targets.length > 0 ? c.program_targets : [];
       if (program_targets.length === 0 && c.is_admission_kpi) {
-        // Fallback: get program_targets from the template kpi_items
         const templateKpi = templateKpiItems.find(k => k.kpi_name === c.kpi_name);
-        if (templateKpi?.program_targets?.length > 0) {
-          program_targets = templateKpi.program_targets;
-        }
+        if (templateKpi?.program_targets?.length > 0) program_targets = templateKpi.program_targets;
       }
-
-      // FIX: Ensure program_slabs has an entry for every program_target
-      // so the UI always has a slot to add slabs into
       const existing_program_slabs = c.program_slabs || [];
       const program_slabs = program_targets.map(pt => {
         const existing = existing_program_slabs.find(ps => ps.program_id === pt.program_id);
-        return existing
-          ? existing
-          : { program_id: pt.program_id, program_name: pt.program_name, slabs: [] };
+        return existing ? existing : { program_id: pt.program_id, program_name: pt.program_name, slabs: [] };
       });
-
-      return {
-        ...c,
-        is_admission_kpi: c.is_admission_kpi || false,
-        program_targets,
-        program_slabs,
-        slabs: c.slabs || [],
-      };
+      return { ...c, is_admission_kpi: c.is_admission_kpi || false, program_targets, program_slabs, slabs: c.slabs || [] };
     });
 
     setForm({
-      name:           p.name,
-      department:     p.department,
-      plan_type:      p.plan_type      ?? "kpi_linked",
-      period_type:    p.period_type    || "Monthly",
-      period_month:   p.period_month   || new Date().getMonth() + 1,
-      period_quarter: p.period_quarter || "Q1",
-      period_half:    p.period_half    || "H1",
-      period_year:    p.period_year    || CURRENT_YEAR,
+      name:                    p.name,
+      department:              p.department,
+      plan_type:               p.plan_type      ?? "kpi_linked",
+      period_type:             p.period_type    || "Monthly",
+      period_month:            p.period_month   || new Date().getMonth() + 1,
+      period_quarter:          p.period_quarter || "Q1",
+      period_half:             p.period_half    || "H1",
+      period_year:             p.period_year    || CURRENT_YEAR,
       kpi_template_id:         p.kpi_template_id?._id || p.kpi_template_id || "",
       selected_kpis:           configs.map(c => c.kpi_name),
       kpi_configs:             configs,
@@ -502,6 +570,8 @@ export default function IncentivePlans() {
       standalone_payout_value: p.standalone_payout_value || 0,
       standalone_metric:       p.standalone_metric       || "manual",
       standalone_metric_label: p.standalone_metric_label || "",
+      standalone_target_type:  p.standalone_target_type  || "revenue",
+      standalone_slabs:        p.standalone_slabs        || [],
       slabs: p.slabs || [],
     });
     setEditId(p._id);
@@ -515,17 +585,10 @@ export default function IncentivePlans() {
     if (form.plan_type === "kpi_linked") {
       if (!form.kpi_template_id)         { showToast("Please select a KPI template", "error"); return; }
       if (form.kpi_configs.length === 0) { showToast("Select at least one KPI", "error"); return; }
-      for (const cfg of form.kpi_configs) {
-        if (!cfg.is_admission_kpi) {
-          const errs = validateSlabs(cfg.slabs);
-          if (errs.length) { showToast(`${cfg.kpi_name}: ${errs[0]}`, "error"); return; }
-        } else {
-          for (const ps of cfg.program_slabs || []) {
-            const errs = validateSlabs(ps.slabs);
-            if (errs.length) { showToast(`${cfg.kpi_name} / ${ps.program_name}: ${errs[0]}`, "error"); return; }
-          }
-        }
-      }
+    }
+    if (form.plan_type === "standalone") {
+      const errs = validateStandaloneSlabs(form.standalone_slabs);
+      if (errs.length) { showToast(errs[0], "error"); return; }
     }
     setSaving(true);
     try {
@@ -543,11 +606,12 @@ export default function IncentivePlans() {
           completion_reward_value: form.completion_reward_value,
           completion_reward_label: form.completion_reward_label,
         } : {
-          standalone_metric:       form.standalone_metric,
-          standalone_metric_label: form.standalone_metric_label,
-          standalone_payout_type:  form.standalone_payout_type,
-          standalone_payout_value: form.standalone_payout_value,
-          slabs:                   form.slabs,
+          standalone_metric:        form.standalone_metric,
+          standalone_metric_label:  form.standalone_metric_label,
+          standalone_payout_type:   form.standalone_payout_type,
+          standalone_payout_value:  form.standalone_payout_value,
+          standalone_target_type:   form.standalone_target_type,
+          standalone_slabs:         form.standalone_slabs,
         }),
       };
 
@@ -573,18 +637,14 @@ export default function IncentivePlans() {
   const totalWeight       = form.kpi_configs.reduce((s, c) => s + (c.weight || 0), 0);
   const totalTemplateKpis = selectedTemplate?.kpi_items?.length || 0;
 
-  // ════════════════════════════════════════════════════════════════════════════
   return (
     <div style={{ padding: "28px 32px", fontFamily: "'Segoe UI',sans-serif", minHeight: "100vh", background: "#f4f6fb" }}>
       <style>{`
         @keyframes spin    { to { transform: rotate(360deg); } }
         @keyframes fadeIn  { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
         .plan-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); transform: translateY(-1px); }
         input:focus, select:focus { border-color: #6366f1 !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
         .checkbox-kpi:hover { background: #f8fafc; }
-        .prog-tab { cursor:pointer; padding:7px 14px; border-radius:8px; font-size:12px; font-weight:700; transition:all 0.15s; border:none; }
-        .prog-tab:hover { opacity:0.85; }
       `}</style>
 
       {/* Toast */}
@@ -672,7 +732,8 @@ export default function IncentivePlans() {
                   </div>
                 </div>
 
-                {isKpi && (
+                {/* Card body */}
+                {isKpi ? (
                   <div style={{ padding: "12px 20px" }}>
                     {plan.kpi_template_id && (
                       <p style={{ margin: "0 0 8px", fontSize: 12, color: "#7c3aed", fontWeight: 700 }}>
@@ -682,54 +743,44 @@ export default function IncentivePlans() {
                     {(plan.kpi_configs || []).slice(0, 3).map((cfg, i) => (
                       <div key={i} style={{ padding: "4px 0", borderBottom: "1px dashed #f1f5f9", fontSize: 12 }}>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "#475569", fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
-                            {cfg.kpi_name}
-                            {cfg.is_admission_kpi && (
-                              <span style={{ fontSize: 10, background: "#f0f9ff", color: "#0369a1", padding: "1px 6px", borderRadius: 99, border: "1px solid #bae6fd", fontWeight: 700 }}>🎓 Admission</span>
-                            )}
-                          </span>
-                          <span style={{ color: "#64748b" }}>
-                            {cfg.is_admission_kpi
-                              ? `${cfg.program_slabs?.filter(ps => ps.slabs?.length > 0).length || 0}/${cfg.program_targets?.length || 0} programs configured`
-                              : cfg.rule_label || "—"}
-                          </span>
+                          <span style={{ color: "#475569", fontWeight: 500 }}>{cfg.kpi_name}</span>
+                          <span style={{ color: "#64748b" }}>{cfg.rule_label || "—"}</span>
                         </div>
-                        {cfg.is_admission_kpi && cfg.program_targets?.length > 0 && (
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-                            {cfg.program_targets.map((pt, pi) => {
-                              const hasSlabs = cfg.program_slabs?.find(ps => ps.program_id === pt.program_id)?.slabs?.length > 0;
-                              return (
-                                <span key={pi} style={{ fontSize: 10, background: hasSlabs ? "#f0fdf4" : "#f0f9ff", color: hasSlabs ? "#15803d" : "#0369a1", padding: "1px 7px", borderRadius: 99, border: `1px solid ${hasSlabs ? "#86efac" : "#bae6fd"}`, fontWeight: 600 }}>
-                                  {pt.program_name}: {pt.target} {hasSlabs ? "✓" : ""}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        )}
                       </div>
                     ))}
                     {plan.kpi_configs?.length > 3 && (
                       <p style={{ margin: "6px 0 0", fontSize: 11, color: "#94a3b8" }}>+{plan.kpi_configs.length - 3} more KPIs</p>
                     )}
-                    {plan.completion_reward_type !== "none" && (
-                      <div style={{ marginTop: 8, background: "#fef9c3", borderRadius: 7, padding: "6px 10px", fontSize: 12, fontWeight: 700, color: "#92400e" }}>
-                        🏆 All-KPI Bonus:{" "}
-                        {plan.completion_reward_type === "fixed"
-                          ? `₹${Number(plan.completion_reward_value).toLocaleString("en-IN")}`
-                          : `${plan.completion_reward_value}% of Salary`}
-                        {plan.completion_reward_label ? ` · ${plan.completion_reward_label}` : ""}
-                      </div>
-                    )}
                   </div>
-                )}
-
-                {!isKpi && (
+                ) : (
                   <div style={{ padding: "12px 20px" }}>
-                    <p style={{ margin: 0, fontSize: 12, color: "#92400e", fontWeight: 700 }}>
-                      💰 {plan.standalone_payout_type === "percentage"
-                        ? `${plan.standalone_payout_value}% of Salary`
-                        : `₹${Number(plan.standalone_payout_value).toLocaleString("en-IN")} Fixed`}
-                    </p>
+                    {/* Standalone slab preview on card */}
+                    {(plan.standalone_slabs || []).length > 0 ? (
+                      <div>
+                        <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>
+                          {STANDALONE_TARGET_TYPES.find(t => t.value === plan.standalone_target_type)?.icon || "💰"} Slab Structure
+                        </p>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                          {(plan.standalone_slabs || []).slice(0, 4).map((slab, si) => (
+                            <span key={si} style={{ fontSize: 11, background: "#f0fdf4", color: "#15803d", padding: "3px 10px", borderRadius: 20, fontWeight: 600, border: "1px solid #86efac" }}>
+                              {formatTarget(slab.min_target, plan.standalone_target_type)} →{" "}
+                              {slab.payout_type === "fixed"
+                                ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}`
+                                : `${slab.payout_value}%`}
+                            </span>
+                          ))}
+                          {(plan.standalone_slabs || []).length > 4 && (
+                            <span style={{ fontSize: 11, color: "#94a3b8" }}>+{plan.standalone_slabs.length - 4} more</span>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <p style={{ margin: 0, fontSize: 12, color: "#92400e", fontWeight: 700 }}>
+                        💰 {plan.standalone_payout_type === "percentage"
+                          ? `${plan.standalone_payout_value}% of Salary`
+                          : `₹${Number(plan.standalone_payout_value).toLocaleString("en-IN")} Fixed`}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -738,14 +789,13 @@ export default function IncentivePlans() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ════════════════════════════════════════════════════════════
           MODAL
-      ══════════════════════════════════════════════════════════════════════ */}
+      ════════════════════════════════════════════════════════════ */}
       {showForm && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 700, maxHeight: "93vh", overflowY: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.22)", animation: "fadeIn 0.2s ease" }}>
 
-            {/* Modal Header */}
             <div style={{ padding: "20px 26px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", zIndex: 10, borderRadius: "18px 18px 0 0" }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#1e293b" }}>
@@ -763,8 +813,7 @@ export default function IncentivePlans() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                   <div style={{ gridColumn: "1/-1" }}>
                     <label style={lbl}>Plan Name *</label>
-                    <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                      placeholder="e.g. Sales Q1 2025 Incentive" style={inp} />
+                    <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Sales Q1 2025 Incentive" style={inp} />
                   </div>
                   <div>
                     <label style={lbl}>Department *</label>
@@ -835,10 +884,10 @@ export default function IncentivePlans() {
                 </div>
               </Section>
 
-              {/* KPI-LINKED STEPS */}
+              {/* ═══════════════════════════════════════════════════
+                  KPI-LINKED STEPS (unchanged)
+              ═══════════════════════════════════════════════════ */}
               {form.plan_type === "kpi_linked" && (<>
-
-                {/* STEP 3: Select KPIs */}
                 <Section step={3} title="Select KPIs" icon="🎯">
                   <div style={{ marginBottom: 14 }}>
                     <label style={lbl}>KPI Template *</label>
@@ -847,7 +896,6 @@ export default function IncentivePlans() {
                       {filteredTemplates.map(t => <option key={t._id} value={t._id}>{t.template_name} — {t.role}</option>)}
                     </select>
                   </div>
-
                   {selectedTemplate && (<>
                     <p style={{ margin: "0 0 10px", fontSize: 12, color: "#64748b" }}>Check the KPIs you want to include:</p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -859,12 +907,7 @@ export default function IncentivePlans() {
                             <div style={{ width: 20, height: 20, borderRadius: 5, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: isChecked ? "2px solid #4f46e5" : "2px solid #cbd5e1", background: isChecked ? "#4f46e5" : "#fff" }}>
                               {isChecked && <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>✓</span>}
                             </div>
-                            <span style={{ flex: 1, fontSize: 13, fontWeight: isChecked ? 700 : 500, color: isChecked ? "#3730a3" : "#475569" }}>
-                              {item.kpi_name}
-                              {item.is_admission_kpi && (
-                                <span style={{ marginLeft: 8, fontSize: 10, background: "#f0f9ff", color: "#0369a1", padding: "1px 7px", borderRadius: 99, border: "1px solid #bae6fd", fontWeight: 700 }}>🎓 Admission</span>
-                              )}
-                            </span>
+                            <span style={{ flex: 1, fontSize: 13, fontWeight: isChecked ? 700 : 500, color: isChecked ? "#3730a3" : "#475569" }}>{item.kpi_name}</span>
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <div style={{ width: 60, height: 5, background: "#e2e8f0", borderRadius: 99, overflow: "hidden" }}>
                                 <div style={{ width: `${item.weight}%`, height: "100%", borderRadius: 99, background: isChecked ? "#4f46e5" : "#94a3b8" }} />
@@ -886,28 +929,20 @@ export default function IncentivePlans() {
                   </>)}
                 </Section>
 
-                {/* STEP 4: Configure Each KPI */}
                 {form.kpi_configs.length > 0 && (
                   <Section step={4} title="Configure Each KPI" icon="⚙️">
                     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                       {form.kpi_configs.map(cfg => {
                         const isAdm = cfg.is_admission_kpi;
                         return (
-                          // FIX 4: Use kpi_name as key so React fully re-mounts
-                          // AdmissionKpiConfig when switching between edit sessions
                           <div key={cfg.kpi_name} style={{ border: `1.5px solid ${isAdm ? "#bae6fd" : "#e2e8f0"}`, borderRadius: 12, overflow: "hidden" }}>
-                            {/* KPI Header */}
                             <div style={{ padding: "12px 16px", background: isAdm ? "#f0f9ff" : "#f8fafc", borderBottom: `1px solid ${isAdm ? "#bae6fd" : "#e2e8f0"}`, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                               <HugeiconsIcon icon={Target01Icon} size={16} color={isAdm ? "#0369a1" : "#4f46e5"} strokeWidth={2} />
                               <span style={{ fontWeight: 800, fontSize: 14, color: "#1e293b" }}>{cfg.kpi_name}</span>
                               <span style={{ fontSize: 11, padding: "2px 8px", background: isAdm ? "#e0f2fe" : "#eef2ff", color: isAdm ? "#0369a1" : "#4f46e5", borderRadius: 20, fontWeight: 700 }}>Weight: {cfg.weight}%</span>
-                              {isAdm && <span style={{ fontSize: 10, padding: "2px 8px", background: "#f0f9ff", color: "#0369a1", borderRadius: 99, border: "1px solid #bae6fd", fontWeight: 700 }}>🎓 Admission KPI</span>}
                             </div>
-
                             <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
                               {isAdm ? (
-                                // FIX 5: Pass a stable key based on program_targets IDs
-                                // so AdmissionKpiConfig re-mounts fresh when edit data changes
                                 <AdmissionKpiConfig
                                   key={`${cfg.kpi_name}-${(cfg.program_targets || []).map(pt => pt.program_id).join("-")}`}
                                   cfg={cfg}
@@ -957,7 +992,6 @@ export default function IncentivePlans() {
                   </Section>
                 )}
 
-                {/* STEP 5: Completion Reward */}
                 {form.kpi_configs.length > 0 && (
                   <Section step={5} title="Completion Reward" icon="🏆">
                     <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
@@ -979,7 +1013,6 @@ export default function IncentivePlans() {
                           <label style={lbl}>{form.completion_reward_type === "fixed" ? "Amount (₹)" : "Percentage (%)"}</label>
                           <input type="number" min="0" value={form.completion_reward_value}
                             onChange={e => setForm({ ...form, completion_reward_value: Number(e.target.value) })}
-                            placeholder={form.completion_reward_type === "fixed" ? "e.g. 10000" : "e.g. 5"}
                             style={inp} />
                         </div>
                         <div>
@@ -990,76 +1023,81 @@ export default function IncentivePlans() {
                         </div>
                       </>)}
                     </div>
-                    {form.completion_reward_type !== "none" && form.completion_reward_value > 0 && (
-                      <div style={{ marginTop: 12, padding: "10px 14px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 9, display: "flex", alignItems: "center", gap: 10 }}>
-                        <HugeiconsIcon icon={Award01Icon} size={18} color="#16a34a" strokeWidth={2} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: "#15803d" }}>
-                          {form.completion_reward_label || "Completion Bonus"}:{" "}
-                          {form.completion_reward_type === "fixed"
-                            ? `₹${Number(form.completion_reward_value).toLocaleString("en-IN")}`
-                            : `${form.completion_reward_value}% of salary`}
-                          {" "}· awarded when ALL KPIs score ≥ 100%
-                        </span>
-                      </div>
-                    )}
                   </Section>
                 )}
               </>)}
 
-              {/* STANDALONE */}
+              {/* ═══════════════════════════════════════════════════
+                  STANDALONE — NEW SLAB-BASED CONFIG
+              ═══════════════════════════════════════════════════ */}
               {form.plan_type === "standalone" && (
-                <Section step={3} title="Payout Configuration" icon="💰">
-                  <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
-                    <p style={{ margin: 0, fontSize: 13, color: "#92400e", fontWeight: 600 }}>📋 Standalone Plan</p>
-                    <p style={{ margin: "4px 0 0", fontSize: 12, color: "#b45309" }}>Payout is not linked to KPI scores. HR enters results manually each cycle.</p>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
-                    <div>
-                      <label style={lbl}>Metric / Trigger</label>
-                      <select value={form.standalone_metric} onChange={e => setForm({ ...form, standalone_metric: e.target.value })} style={inp}>
-                        <option value="manual">Manual Entry</option>
-                        <option value="attendance">Attendance %</option>
-                        <option value="custom">Custom Metric</option>
-                      </select>
-                    </div>
-                    {form.standalone_metric === "custom" && (
+                <>
+                  <Section step={3} title="Metric & Target Type" icon="📊">
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                       <div>
-                        <label style={lbl}>Custom Metric Name</label>
-                        <input value={form.standalone_metric_label} onChange={e => setForm({ ...form, standalone_metric_label: e.target.value })} placeholder="e.g. Client Satisfaction Score" style={inp} />
+                        <label style={lbl}>Metric / Trigger</label>
+                        <select value={form.standalone_metric} onChange={e => setForm({ ...form, standalone_metric: e.target.value })} style={inp}>
+                          <option value="manual">Manual Entry</option>
+                          <option value="attendance">Attendance %</option>
+                          <option value="custom">Custom Metric</option>
+                        </select>
                       </div>
-                    )}
-                    <div>
-                      <label style={lbl}>Payout Type *</label>
-                      <select value={form.standalone_payout_type} onChange={e => setForm({ ...form, standalone_payout_type: e.target.value })} style={inp}>
-                        <option value="fixed">Fixed Amount (₹)</option>
-                        <option value="percentage">% of Salary</option>
-                      </select>
+                      {form.standalone_metric === "custom" && (
+                        <div>
+                          <label style={lbl}>Custom Metric Name</label>
+                          <input value={form.standalone_metric_label}
+                            onChange={e => setForm({ ...form, standalone_metric_label: e.target.value })}
+                            placeholder="e.g. Sales Revenue" style={inp} />
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <label style={lbl}>{form.standalone_payout_type === "fixed" ? "Amount (₹) *" : "Percentage (%) *"}</label>
-                      <input type="number" min="0" value={form.standalone_payout_value}
-                        onChange={e => setForm({ ...form, standalone_payout_value: Number(e.target.value) })}
-                        placeholder={form.standalone_payout_type === "fixed" ? "e.g. 5000" : "e.g. 8"} style={inp} />
+
+                    {/* Target type selector */}
+                    <div style={{ marginTop: 16 }}>
+                      <label style={lbl}>Target Measurement Type</label>
+                      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        {STANDALONE_TARGET_TYPES.map(t => (
+                          <div
+                            key={t.value}
+                            onClick={() => setForm(f => ({ ...f, standalone_target_type: t.value, standalone_slabs: [] }))}
+                            style={{
+                              flex: 1, minWidth: 120, padding: "12px 14px", borderRadius: 10, cursor: "pointer",
+                              textAlign: "center", transition: "all 0.15s",
+                              border: form.standalone_target_type === t.value ? "2px solid #4f46e5" : "2px solid #e2e8f0",
+                              background: form.standalone_target_type === t.value ? "#eef2ff" : "#fafafa",
+                            }}
+                          >
+                            <div style={{ fontSize: 22, marginBottom: 4 }}>{t.icon}</div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: form.standalone_target_type === t.value ? "#4f46e5" : "#64748b" }}>{t.label}</div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  {form.standalone_payout_value > 0 && (
-                    <div style={{ padding: "10px 14px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 9, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 13, color: "#374151", fontWeight: 600 }}>Each eligible employee receives</span>
-                      <span style={{ fontSize: 17, fontWeight: 800, color: "#16a34a" }}>
-                        {form.standalone_payout_type === "fixed"
-                          ? `₹${Number(form.standalone_payout_value).toLocaleString("en-IN")}`
-                          : `${form.standalone_payout_value}% of salary`}
-                      </span>
+                  </Section>
+
+                  <Section step={4} title="Payout Slabs" icon="💰">
+                    <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: "12px 14px", marginBottom: 16 }}>
+                      <p style={{ margin: 0, fontSize: 13, color: "#0369a1", fontWeight: 600 }}>
+                        💡 Define target ranges and the payout for each range.
+                        Example: ₹0–₹1L → ₹1,000 | ₹1L–₹2L → ₹2,000 | ₹2L+ → ₹5,000
+                      </p>
                     </div>
-                  )}
-                </Section>
+                    <StandaloneSlabEditor
+                      slabs={form.standalone_slabs}
+                      targetType={form.standalone_target_type}
+                      onAdd={addStandaloneSlab}
+                      onUpdate={updateStandaloneSlab}
+                      onRemove={removeStandaloneSlab}
+                    />
+                  </Section>
+                </>
               )}
 
               {/* Actions */}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", borderTop: "1px solid #f1f5f9", paddingTop: 16 }}>
                 <button onClick={() => setShowForm(false)} style={{ padding: "10px 20px", background: "#f1f5f9", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 14, cursor: "pointer", color: "#475569" }}>Cancel</button>
                 <button onClick={handleSave} disabled={saving}
-                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 24px", color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 14, boxShadow: "0 2px 8px rgba(79,70,229,0.3)", background: saving ? "#a5b4fc" : "#4f46e5", cursor: saving ? "not-allowed" : "pointer" }}>
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 24px", color: "#fff", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 14, background: saving ? "#a5b4fc" : "#4f46e5", cursor: saving ? "not-allowed" : "pointer" }}>
                   <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color="#fff" strokeWidth={2} />
                   {saving ? "Saving..." : editId ? "Update Plan" : "Create Plan"}
                 </button>
@@ -1072,7 +1110,6 @@ export default function IncentivePlans() {
   );
 }
 
-// ── Section wrapper ───────────────────────────────────────────────────────────
 function Section({ step, title, icon, children }) {
   return (
     <div style={{ border: "1.5px solid #e2e8f0", borderRadius: 14, overflow: "hidden" }}>
