@@ -277,13 +277,32 @@ export default function IncentiveAssign() {
 
             {/* Standalone preview */}
             {selectedPlan.plan_type === "standalone" && (
-              <div style={{ fontSize:13, color:"#374151", fontWeight:600 }}>
-                💰 Payout:{" "}
-                {selectedPlan.standalone_payout_type === "percentage"
-                  ? `${selectedPlan.standalone_payout_value}% of Salary`
-                  : `₹${Number(selectedPlan.standalone_payout_value).toLocaleString("en-IN")} Fixed`}
-              </div>
-            )}
+  <div>
+    {/* புதுசு slabs இருந்தா அதை show பண்ணு */}
+    {(selectedPlan.standalone_slabs || []).length > 0 ? (
+      <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+        {selectedPlan.standalone_slabs.map((slab, i) => (
+          <span key={i} style={{ background:"#f0fdf4", color:"#15803d",
+            padding:"3px 10px", borderRadius:20, fontWeight:600,
+            fontSize:12, border:"1px solid #86efac" }}>
+            ₹{Number(slab.min_target).toLocaleString("en-IN")} →{" "}
+            {slab.payout_type === "fixed"
+              ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}`
+              : `${slab.payout_value}%`}
+          </span>
+        ))}
+      </div>
+    ) : (
+      // Fallback — பழைய flat payout
+      <div style={{ fontSize:13, color:"#374151", fontWeight:600 }}>
+        💰 Payout:{" "}
+        {selectedPlan.standalone_payout_type === "percentage"
+          ? `${selectedPlan.standalone_payout_value}% of Salary`
+          : `₹${Number(selectedPlan.standalone_payout_value).toLocaleString("en-IN")} Fixed`}
+      </div>
+    )}
+  </div>
+)}
           </div>
         )}
 
