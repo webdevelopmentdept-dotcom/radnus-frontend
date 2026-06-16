@@ -237,39 +237,47 @@ export default function HrSidebar() {
 
         <nav className="hr-nav">
 
-         {/* ══════════════════════════════
+          {/* ══════════════════════════════
     EMPLOYEE VIEW — Restricted
 ══════════════════════════════ */}
-{isEmployee ? (
-  <>
-    {/* Attendance & Leave */}
-    <div className="hr-section">Attendance & Leave</div>
+          {isEmployee ? (
+            <>
+              {/* Attendance & Leave */}
+              <div className="hr-section">Attendance & Leave</div>
 
-    <NavLink to="/hr/dashboard/attendance/monthly"
-      className={({ isActive }) => isActive ? "active" : ""}
-      onClick={close}>
-      <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
-      Attendance
-    </NavLink>
+              <NavLink to="/hr/dashboard/attendance/monthly"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={CalendarCheckIn01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Attendance
+              </NavLink>
 
-    {/* Performance — KPI */}
-    <div className="hr-section">Performance — KPI</div>
+              {/* Performance — KPI */}
+              <div className="hr-section">Performance — KPI</div>
 
-    <NavLink to="/hr/dashboard/performance/reviews"
-      className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-      onClick={close}>
-      <HugeiconsIcon icon={StarIcon} size={16} color="currentColor" strokeWidth={1.8} />
-      Reviews ✅
-    </NavLink>
+              <NavLink to="/hr/dashboard/performance/reviews"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={StarIcon} size={16} color="currentColor" strokeWidth={1.8} />
+                Reviews ✅
+              </NavLink>
 
-    <NavLink to="/hr/dashboard/performance/reports"
-      className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-      onClick={close}>
-      <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
-      Performance Reports ✅
-    </NavLink>
-  </>
-) : (
+              <NavLink to="/hr/dashboard/performance/reports"
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
+                Performance Reports ✅
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/performance/department-scoreboard"
+  className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+  onClick={close}>
+  <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
+  Department Scoreboard
+</NavLink>
+
+            </>
+          ) : (
             <>
               {/* ══════════════════════════════
                   HR VIEW — All Modules
@@ -421,6 +429,13 @@ export default function HrSidebar() {
 
               {/* PERFORMANCE — OTHERS */}
               <div className="hr-section">Performance — Others</div>
+
+              <NavLink to="/hr/dashboard/performance/department-scoreboard"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={ChartAverageIcon} size={18} color="currentColor" strokeWidth={1.8} />
+                Department Scoreboard
+              </NavLink>
 
               <NavLink to="/hr/dashboard/performance/variable-pay"
                 className={({ isActive }) => isActive ? "active" : ""}

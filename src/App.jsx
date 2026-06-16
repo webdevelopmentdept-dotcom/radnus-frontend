@@ -108,6 +108,7 @@ import PolicyQuizManagementPage from "./pages/hr/PolicyQuizManagementPage";
 import DeptGradeSalary from "./pages/hr/DeptGradeSalary";
 import HRAnnouncements from "./pages/hr/Hrannouncements";
 import EsslEmployeeManager from "./pages/hr/EsslEmployeeManager";
+import DepartmentScoreboard from "./pages/hr/DepartmentScoreboard";
 
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
@@ -279,6 +280,7 @@ location.pathname.startsWith("/radnus-connect/find-technician")
           <Route path="performance/okr-setup" element={<OkrSetup />} />
           <Route path="performance/variable-pay" element={<VariablePayDashboard />} />
           <Route path="performance/esop" element={<EsopDashboard />} />
+          <Route path="performance/department-scoreboard" element={<DepartmentScoreboard />} />
 
           <Route path="incentives/plans" element={<IncentivePlans />} />
           <Route path="incentives/assign" element={<IncentiveAssign />} />
