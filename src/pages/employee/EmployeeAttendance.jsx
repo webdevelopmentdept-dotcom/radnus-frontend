@@ -609,7 +609,8 @@ export default function EmployeeAttendance() {
       filled.push({ date: dateStr, dayOfWeek: dow, status, firstIn, lastOut, workHrs, breakOut, breakIn, breakLate, lateMin, earlyOutMin, remark, isWeekend, isFuture });
     }
 
-    const workingDays = filled.filter(r => !r.isWeekend && r.status !== "upcoming").length;
+   const workingDays = filled.filter(r => !r.isWeekend).length;
+
     const countedPresent = presentCount + halfCount * 0.5;
     const pct = workingDays ? Math.round((countedPresent / workingDays) * 100) : 0;
 
