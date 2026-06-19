@@ -56,6 +56,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
           let breakIn = null;
           let breakLate = 0;
           let lateMin = 0;
+          let earlyOutMin = 0;
           let otMin = 0;
           let status = "absent";
           let remark = "";
@@ -116,6 +117,16 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
               const { startMins } = parseShiftMins(employee?.shift);
               lateMin = Math.max(firstInMins - startMins, 0);
             }
+             // earlyOutMin — DB value irundha eduthukko, illana lastOut-la irundhu IST-la calculate pannu
+            earlyOutMin = rec.early_out_minutes || 0;
+            if (earlyOutMin === 0 && lastOut) {
+              const istDateOut = new Date(
+                new Date(lastOut).toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+              );
+              const lastOutMins = istDateOut.getHours() * 60 + istDateOut.getMinutes();
+              const { endMins } = parseShiftMins(employee?.shift);
+              earlyOutMin = Math.max(endMins - lastOutMins, 0);
+            }
 
             // Calculate work hours
             if (rec.work_hours && typeof rec.work_hours === "number" && rec.work_hours > 0) {
@@ -126,14 +137,14 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
               const diff = (new Date(lastOut) - new Date(firstIn)) / 3600000;
               workHrs = `${Math.floor(diff)}h ${pad(Math.round((diff % 1) * 60))}m`;
             } else if (firstIn && !lastOut) {
-  const today = new Date().toISOString().split("T")[0];
-  if (rec.date === today) {
-    workHrs = "Ongoing";
-  } else {
-    // Past date la punch out illana - last punch time varaikum calculate
-    workHrs = "No Out";
-  }
-}
+              const today = new Date().toISOString().split("T")[0];
+              if (rec.date === today) {
+                workHrs = "Ongoing";
+              } else {
+                // Past date la punch out illana - last punch time varaikum calculate
+                workHrs = "No Out";
+              }
+            }
 
             // Count summary
             if (status === "present" || status === "late") presentCount++;
@@ -157,6 +168,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
             breakIn,
             breakLate,
             lateMin,
+              earlyOutMin, 
             otMin,
             remark,
             isWeekend,
@@ -239,7 +251,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
                     <tr>
-                      {["Date", "Day", "Status", "Check In", "Check Out", "Work Hrs", "Break Out", "Break In", "Break Late", "Late"].map(h => (
+                      {["Date", "Day", "Status", "Check In", "Check Out", "Work Hrs", "Break Out", "Break In", "Break Late", "Late", "Early Out" ].map(h => (
                         <th key={h} style={S.tableHead}>{h}</th>
                       ))}
                     </tr>
@@ -305,6 +317,11 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
                             {row.lateMin > 0 ? <span style={{ background: "#fef9c3", color: "#d97706", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(row.lateMin)}</span> : <span style={{ color: "#d1d5db" }}>—</span>}
                           </td>
 
+                          {/* Early Out */}
+                          <td style={S.tableCell}>
+                            {row.earlyOutMin > 0 ? <span style={{ background: "#faf5ff", color: "#9333ea", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(row.earlyOutMin)}</span> : <span style={{ color: "#d1d5db" }}>—</span>}
+                          </td>
+
                         </tr>
                       );
                     })}
@@ -343,7 +360,7 @@ export default function MonthlyTab() {
 
 
 
-useEffect(() => { fetchData(); fetchTodayStats(); }, [year, month]);
+  useEffect(() => { fetchData(); fetchTodayStats(); }, [year, month]);
 
   const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
 
@@ -360,14 +377,14 @@ useEffect(() => { fetchData(); fetchTodayStats(); }, [year, month]);
       const approvedNotInMonthly = approvedList
         .filter(emp => !monthlyIds.has(emp._id))
         .map(emp => ({
-  _id: emp._id, name: emp.name, employeeId: emp.employeeId || emp.employee_id || emp.empId || "",
-  employee_code: emp.employeeId || emp.employee_id || emp.empId || "",
-  department: emp.department || emp.dept || "", designation: emp.designation || emp.role || "",
-  shift: emp.shift || null,   // ✅ ADD
-  work_days: 0, present: 0, late: 0, half_day: 0, on_leave: 0, absent: 0,
-  overtime_days: 0, avg_work_hours: "—", avg_work_hours_num: 0,
-  total_late_minutes: 0, attendance_pct: 0, _fromApproved: true,
-}));
+          _id: emp._id, name: emp.name, employeeId: emp.employeeId || emp.employee_id || emp.empId || "",
+          employee_code: emp.employeeId || emp.employee_id || emp.empId || "",
+          department: emp.department || emp.dept || "", designation: emp.designation || emp.role || "",
+          shift: emp.shift || null,   // ✅ ADD
+          work_days: 0, present: 0, late: 0, half_day: 0, on_leave: 0, absent: 0,
+          overtime_days: 0, avg_work_hours: "—", avg_work_hours_num: 0,
+          total_late_minutes: 0, attendance_pct: 0, _fromApproved: true,
+        }));
       setData([...monthlyData, ...approvedNotInMonthly]);
     } catch {
       showToast("error", "Failed to load");
@@ -378,31 +395,31 @@ useEffect(() => { fetchData(); fetchTodayStats(); }, [year, month]);
 
 
   const fetchTodayStats = async () => {
-  try {
-    const today = new Date().toISOString().split("T")[0];
-    const res = await axios.get(
-      `${API_BASE}/api/attendance/daily?date=${today}`,
-      { headers: authHeader() }
-    );
-    const records = res.data?.data || [];
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const res = await axios.get(
+        `${API_BASE}/api/attendance/daily?date=${today}`,
+        { headers: authHeader() }
+      );
+      const records = res.data?.data || [];
 
-    const late = records.filter(r =>
-      r.status === "late" ||
-      r.is_late === true ||
-      (r.late_minutes && r.late_minutes > 0)
-    ).length;
+      const late = records.filter(r =>
+        r.status === "late" ||
+        r.is_late === true ||
+        (r.late_minutes && r.late_minutes > 0)
+      ).length;
 
-    const present = records.filter(r =>
-      r.status === "present" || r.status === "late" || r.is_late
-    ).length;
+      const present = records.filter(r =>
+        r.status === "present" || r.status === "late" || r.is_late
+      ).length;
 
-    const absent = records.filter(r => r.status === "absent").length;
+      const absent = records.filter(r => r.status === "absent").length;
 
-    setTodayStats({ present, late, absent, total: records.length });
-  } catch {
-    console.error("Today stats fetch failed");
-  }
-};
+      setTodayStats({ present, late, absent, total: records.length });
+    } catch {
+      console.error("Today stats fetch failed");
+    }
+  };
 
   // ── Export all employees ────────────────────────────────────────────────────
   const handleExport = async () => {
@@ -461,12 +478,12 @@ useEffect(() => { fetchData(); fetchTodayStats(); }, [year, month]);
   const avgAttendance = data.length ? Math.round(data.reduce((s, r) => s + (r.attendance_pct || 0), 0) / data.length) : 0;
 
   const monthlyStats = [
-  { label: "Employees",      value: data.length,           color: "#111827" },
-  { label: "Today Present",  value: todayStats.present,    color: "#16a34a" },
-  { label: "Today Absent",   value: todayStats.absent,     color: "#dc2626" },
-  { label: "Today Late",     value: todayStats.late,       color: "#d97706" },
-  { label: "Avg Attendance", value: `${avgAttendance}%`,   color: "#2563eb" },
-];
+    { label: "Employees", value: data.length, color: "#111827" },
+    { label: "Today Present", value: todayStats.present, color: "#16a34a" },
+    { label: "Today Absent", value: todayStats.absent, color: "#dc2626" },
+    { label: "Today Late", value: todayStats.late, color: "#d97706" },
+    { label: "Avg Attendance", value: `${avgAttendance}%`, color: "#2563eb" },
+  ];
 
   const SortTh = ({ label, k }) => (
     <th onClick={() => toggleSort(k)} style={{ ...S.tableHead, cursor: "pointer", userSelect: "none", color: sortKey === k ? "#111827" : "#9ca3af" }}>

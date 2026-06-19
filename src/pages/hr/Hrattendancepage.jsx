@@ -15,26 +15,26 @@ import MonthlyTab from "./Monthlytab";
 // ═══════════════════════════════════════════
 //  SHARED CONSTANTS (exported for MonthlyTab)
 // ═══════════════════════════════════════════
-export const API_BASE    = import.meta.env.VITE_API_BASE_URL;
-export const getToken    = () => localStorage.getItem("hrToken") || localStorage.getItem("token") || sessionStorage.getItem("hrToken");
-export const authHeader  = () => ({ Authorization: `Bearer ${getToken()}` });
-export const pad         = (n) => String(n).padStart(2, "0");
-export const fmt         = (d) => d ? new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "—";
-export const fmtD        = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
-export const todayStr    = () => new Date().toISOString().split("T")[0];
+export const API_BASE = import.meta.env.VITE_API_BASE_URL;
+export const getToken = () => localStorage.getItem("hrToken") || localStorage.getItem("token") || sessionStorage.getItem("hrToken");
+export const authHeader = () => ({ Authorization: `Bearer ${getToken()}` });
+export const pad = (n) => String(n).padStart(2, "0");
+export const fmt = (d) => d ? new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "—";
+export const fmtD = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+export const todayStr = () => new Date().toISOString().split("T")[0];
 
 // export const SHIFT_END_HOUR   = 19;
 // export const SHIFT_END_MINUTE = 0;
 // export const SHIFT_END_TOTAL  = SHIFT_END_HOUR * 60 + SHIFT_END_MINUTE;
 
 export const STATUS_META = {
-  present:  { label: "Present",  color: "#16a34a", bg: "#dcfce7", border: "#bbf7d0" },
-  absent:   { label: "Absent",   color: "#dc2626", bg: "#fee2e2", border: "#fecaca" },
-  late:     { label: "Late",     color: "#d97706", bg: "#fef9c3", border: "#fde68a" },
+  present: { label: "Present", color: "#16a34a", bg: "#dcfce7", border: "#bbf7d0" },
+  absent: { label: "Absent", color: "#dc2626", bg: "#fee2e2", border: "#fecaca" },
+  late: { label: "Late", color: "#d97706", bg: "#fef9c3", border: "#fde68a" },
   half_day: { label: "Half Day", color: "#7c3aed", bg: "#f5f3ff", border: "#e9d5ff" },
-  leave:    { label: "On Leave", color: "#0891b2", bg: "#e0f2fe", border: "#bae6fd" },
-  holiday:  { label: "Holiday",  color: "#be185d", bg: "#fce7f3", border: "#f9a8d4" },
-  weekend:  { label: "Weekend",  color: "#94a3b8", bg: "#f1f5f9", border: "#e2e8f0" },
+  leave: { label: "On Leave", color: "#0891b2", bg: "#e0f2fe", border: "#bae6fd" },
+  holiday: { label: "Holiday", color: "#be185d", bg: "#fce7f3", border: "#f9a8d4" },
+  weekend: { label: "Weekend", color: "#94a3b8", bg: "#f1f5f9", border: "#e2e8f0" },
 };
 
 // ─── Punch helpers (exported) ─────────────────────────────────────────────────
@@ -63,7 +63,7 @@ export const hasMissingOut = (r, dateStr) => {
   const firstIn = getFirstIn(r);
   const lastOut = getLastOut(r);
   if (!firstIn) return false;
-  if (lastOut)  return false;
+  if (lastOut) return false;
   const today = new Date().toISOString().split("T")[0];
   if (dateStr === today) return new Date().getHours() >= 20;
   return true;
@@ -97,13 +97,13 @@ export const hasMissingOut = (r, dateStr) => {
 // };
 
 export const LUNCH_START_TOTAL = 13 * 60 + 30;
-export const LUNCH_END_TOTAL   = 14 * 60 + 30;
+export const LUNCH_END_TOTAL = 14 * 60 + 30;
 
 // Parse shift string → start minutes  e.g. "General (10:00 – 19:00)" → 600
 
 
 const DEFAULT_SHIFT_START = 10 * 60;
-const DEFAULT_SHIFT_END   = 19 * 60;
+const DEFAULT_SHIFT_END = 19 * 60;
 
 // shift object { start: "10:00", end: "19:00" } → minutes
 export const parseShiftMins = (shift) => {
@@ -271,9 +271,9 @@ export function PunchTimeline({ punches }) {
     <div style={{ position: "relative", paddingLeft: 28 }}>
       <div style={{ position: "absolute", left: 10, top: 8, bottom: 8, width: 2, background: "#e5e7eb", borderRadius: 2 }} />
       {punches.map((p, idx) => {
-        const isIn  = p.type === "in";
+        const isIn = p.type === "in";
         const color = isIn ? "#16a34a" : "#dc2626";
-        const bg    = isIn ? "#dcfce7" : "#fee2e2";
+        const bg = isIn ? "#dcfce7" : "#fee2e2";
         return (
           <div key={idx} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: idx < punches.length - 1 ? 12 : 0 }}>
             <div style={{ position: "absolute", left: 5, width: 12, height: 12, borderRadius: "50%", background: color, border: "2px solid #fff", boxShadow: `0 0 0 2px ${color}33` }} />
@@ -301,22 +301,22 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
   const [monthSummary, setMonthSummary] = useState(null);
   const [loadingMonth, setLoadingMonth] = useState(false);
 
-  const emp      = record?.employee;
+  const emp = record?.employee;
   const displayStatus = record?.status === "late" ? "present" : record?.status;
   const meta = STATUS_META[displayStatus] || STATUS_META.absent;
-  const firstIn  = getFirstIn(record);
-  const lastOut  = getLastOut(record);
-  const punches  = record?.punches || (
+  const firstIn = getFirstIn(record);
+  const lastOut = getLastOut(record);
+  const punches = record?.punches || (
     [
-      record?.checkIn  ? { type: "in",  time: record.checkIn,  method: record.method || "Manual" } : null,
+      record?.checkIn ? { type: "in", time: record.checkIn, method: record.method || "Manual" } : null,
       record?.checkOut ? { type: "out", time: record.checkOut, method: record.method || "Manual" } : null,
     ].filter(Boolean)
   );
 
   const { startMins, endMins } = parseShiftMins(emp?.shift);
-const lateMinutes  = calcLateMinutes(firstIn, startMins);
-const earlyOutMins = (firstIn && lastOut) ? calcEarlyOut(lastOut, endMins) : 0;
-const overtimeMins = calcOvertime(lastOut, endMins);
+  const lateMinutes = calcLateMinutes(firstIn, startMins);
+  const earlyOutMins = (firstIn && lastOut) ? calcEarlyOut(lastOut, endMins) : 0;
+  const overtimeMins = calcOvertime(lastOut, endMins);
   const missingPunch = hasMissingOut(record, date);
 
   const workHrs = () => {
@@ -330,7 +330,7 @@ const overtimeMins = calcOvertime(lastOut, endMins);
   useEffect(() => {
     if (!emp?._id) return;
     const d = new Date(date);
-    const year  = d.getFullYear();
+    const year = d.getFullYear();
     const month = d.getMonth() + 1;
     setLoadingMonth(true);
     axios.get(`${API_BASE}/api/attendance/monthly-report?year=${year}&month=${month}`, { headers: authHeader() })
@@ -403,17 +403,17 @@ const overtimeMins = calcOvertime(lastOut, endMins);
             </div>
             <div style={{ background: "#f9fafb", borderRadius: 8, padding: "2px 12px" }}>
               <Row
-  label="Shift"
-  value={
-    emp?.shift?.start
-      ? `${emp.shift.start} – ${emp.shift.end}`
-      : "10:00 – 19:00"
-  }
-  valueColor="#6b7280"
-/>
-              <Row label="First In"     value={fmt(firstIn) || "—"} valueColor="#16a34a" />
-              <Row label="Last Out"     value={lastOut ? fmt(lastOut) : missingPunch ? "Pending" : "—"} valueColor={lastOut ? "#dc2626" : "#f59e0b"} />
-              <Row label="Work Hours"   value={workHrs()} valueColor="#2563eb" />
+                label="Shift"
+                value={
+                  emp?.shift?.start
+                    ? `${emp.shift.start} – ${emp.shift.end}`
+                    : "10:00 – 19:00"
+                }
+                valueColor="#6b7280"
+              />
+              <Row label="First In" value={fmt(firstIn) || "—"} valueColor="#16a34a" />
+              <Row label="Last Out" value={lastOut ? fmt(lastOut) : missingPunch ? "Pending" : "—"} valueColor={lastOut ? "#dc2626" : "#f59e0b"} />
+              <Row label="Work Hours" value={workHrs()} valueColor="#2563eb" />
               {punches.length > 0 && <Row label="Total Punches" value={`${punches.length} punches`} valueColor="#6b7280" />}
               {record?.remark && <div style={{ padding: "8px 0", fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>Remark: {record.remark}</div>}
             </div>
@@ -422,7 +422,7 @@ const overtimeMins = calcOvertime(lastOut, endMins);
           {/* Punch History */}
           {punches.length > 0 && (() => {
             const LUNCH_START = 13 * 60 + 30;
-            const LUNCH_END   = 14 * 60 + 30;
+            const LUNCH_END = 14 * 60 + 30;
 
             const normalPunches = punches.filter(p => {
               const t = new Date(p.time);
@@ -506,9 +506,9 @@ const overtimeMins = calcOvertime(lastOut, endMins);
               <>
                 <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
                   {[
-                    { label: "Present",  value: monthSummary.present,  color: "#16a34a", bg: "#dcfce7" },
-                    { label: "Absent",   value: monthSummary.absent,   color: "#dc2626", bg: "#fee2e2" },
-                    { label: "Late",     value: monthSummary.late,     color: "#d97706", bg: "#fef9c3" },
+                    { label: "Present", value: monthSummary.present, color: "#16a34a", bg: "#dcfce7" },
+                    { label: "Absent", value: monthSummary.absent, color: "#dc2626", bg: "#fee2e2" },
+                    { label: "Late", value: monthSummary.late, color: "#d97706", bg: "#fef9c3" },
                     { label: "On Leave", value: monthSummary.on_leave, color: "#0891b2", bg: "#e0f2fe" },
                   ].map(c => (
                     <div key={c.label} style={{ background: c.bg, borderRadius: 8, padding: "10px 8px", textAlign: "center", flex: 1 }}>
@@ -567,43 +567,41 @@ const overtimeMins = calcOvertime(lastOut, endMins);
 function ShiftInlineEditor({ empId, currentShift, onShiftSaved }) {
   const [editing, setEditing] = useState(false);
   const normalizeToHHMM = (t) => {
-  if (!t) return null;
-  if (/^\d{2}:\d{2}$/.test(t)) return t;
-  if (/^\d{1}:\d{2}$/.test(t)) return "0" + t;
-  return null;
-};
+    if (!t) return null;
+    if (/^\d{2}:\d{2}$/.test(t)) return t;
+    if (/^\d{1}:\d{2}$/.test(t)) return "0" + t;
+    return null;
+  };
 
-const [startTime, setStartTime] = useState(normalizeToHHMM(currentShift?.start) || "10:00");
-const [endTime,   setEndTime]   = useState(normalizeToHHMM(currentShift?.end)   || "19:00");
-useEffect(() => {
+  const [startTime, setStartTime] = useState(normalizeToHHMM(currentShift?.start) || "10:00");
+  const [endTime, setEndTime] = useState(normalizeToHHMM(currentShift?.end) || "19:00");
+  useEffect(() => {
     setStartTime(normalizeToHHMM(currentShift?.start) || "10:00");
-    setEndTime(normalizeToHHMM(currentShift?.end)     || "19:00");
+    setEndTime(normalizeToHHMM(currentShift?.end) || "19:00");
   }, [currentShift]);
-  const [saving,    setSaving]    = useState(false);
+  const [saving, setSaving] = useState(false);
 
- // இந்த entire handleSave மாத்து:
-const handleSave = async () => {
-  setSaving(true);
-  try {
-    const start24 = startTime || "10:00";
-    const end24   = endTime   || "19:00";
+  // இந்த entire handleSave மாத்து:
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const start24 = startTime || "10:00";
+      const end24 = endTime || "19:00";
 
-    // console.log("Sending shift:", start24, end24); // debug-க்கு வேணும்னா வை
-
-    await axios.put(
-      `${API_BASE}/api/hr/employees/${empId}/shift`,
-      { start: start24, end: end24 },
-      { headers: authHeader() }
-    );
-    onShiftSaved({ start: start24, end: end24 });
-    setEditing(false);
-  } catch (err) {
-    // இப்போ exact error message காட்டும்
-    alert(err.response?.data?.message || "Shift save failed");
-  } finally {
-    setSaving(false);
-  }
-};
+      await axios.put(
+        `${API_BASE}/api/hr/employees/${empId}/shift`,
+        { start: start24, end: end24 },
+        { headers: authHeader() }
+      );
+      onShiftSaved({ start: start24, end: end24 });
+      setEditing(false);
+    } catch (err) {
+      // இப்போ exact error message காட்டும்
+      alert(err.response?.data?.message || "Shift save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const inp = {
     border: "1px solid #e5e7eb", borderRadius: 7,
@@ -665,28 +663,34 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
   const existingFirstIn = existing ? getFirstIn(existing) : null;
   const existingLastOut = existing ? getLastOut(existing) : null;
   const noTimeStatus = ["absent", "leave", "holiday", "weekend"];
-    const [currentShift, setCurrentShift] = useState(employee.shift);
+  const [currentShift, setCurrentShift] = useState(employee.shift);
 
-    const [form, setForm] = useState({
-  status:   existing?.status || "present",
-  checkIn:  existingFirstIn ? new Date(existingFirstIn).toTimeString().slice(0, 5) : "10:00",
-  checkOut: existingLastOut ? new Date(existingLastOut).toTimeString().slice(0, 5) : "",
-  remark:   existing?.remark || "",
-});
+  const [form, setForm] = useState({
+    status: existing?.status || "present",
+    checkIn: existingFirstIn ? new Date(existingFirstIn).toTimeString().slice(0, 5) : "10:00",
+    checkOut: existingLastOut ? new Date(existingLastOut).toTimeString().slice(0, 5) : "",
+    remark: existing?.remark || "",
+  });
 
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const isNoTime = noTimeStatus.includes(form.status);
 
   const handle = async () => {
+    if (form.status === "leave" && !form.remark.trim()) {
+      setError("Fill Remarks");
+      return;
+    }
+    setError("");
     setSaving(true);
     try {
       await axios.post(`${API_BASE}/api/attendance/hr-mark`, {
         employee_id: employee._id,
         date,
-        status:   form.status,
-        checkIn:  (!isNoTime && form.checkIn)  ? `${date}T${form.checkIn}:00`  : null,
+        status: form.status,
+        checkIn: (!isNoTime && form.checkIn) ? `${date}T${form.checkIn}:00` : null,
         checkOut: (!isNoTime && form.checkOut) ? `${date}T${form.checkOut}:00` : null,
-        remark:   form.remark,
+        remark: form.remark,
       }, { headers: authHeader() });
       onSave("success", `${employee.name} — attendance marked!`);
     } catch (err) {
@@ -741,18 +745,27 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
           </div>
         )}
 
-  <ShiftInlineEditor
-  empId={employee._id}
-  currentShift={currentShift}
-  onShiftSaved={(newShift) => {
-    setCurrentShift(newShift);
-    employee.shift = newShift;
-  }}
-/>
+        <ShiftInlineEditor
+          empId={employee._id}
+          currentShift={currentShift}
+          onShiftSaved={(newShift) => {
+            setCurrentShift(newShift);
+            employee.shift = newShift;
+          }}
+        />
 
         <div style={{ marginBottom: 18 }}>
-          <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 4 }}>HR Remark</label>
-          <textarea rows={2} placeholder="Optional..." value={form.remark} onChange={e => setForm(f => ({ ...f, remark: e.target.value }))} style={{ ...inp, resize: "vertical" }} />
+          <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 4 }}>
+            HR Remark {form.status === "leave" && <span style={{ color: "#dc2626" }}>*</span>}
+          </label>
+          <textarea
+            rows={2}
+            placeholder={form.status === "leave" ? "Required — reason for leave..." : "Optional..."}
+            value={form.remark}
+            onChange={e => { setForm(f => ({ ...f, remark: e.target.value })); if (error) setError(""); }}
+            style={{ ...inp, resize: "vertical", border: error ? "1.5px solid #dc2626" : inp.border }}
+          />
+          {error && <div style={{ color: "#dc2626", fontSize: 12, marginTop: 5, fontWeight: 600 }}>{error}</div>}
         </div>
 
         <div style={{ display: "flex", gap: 8 }}>
@@ -770,16 +783,16 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
 //  DAILY TAB
 // ═══════════════════════════════════════════
 function DailyTab() {
-  const [date,         setDate]         = useState(todayStr());
-  const [data,         setData]         = useState([]);
-  const [loading,      setLoading]      = useState(false);
-  const [search,       setSearch]       = useState("");
+  const [date, setDate] = useState(todayStr());
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [deptFilter,   setDeptFilter]   = useState("all");
-  const [flagFilter,   setFlagFilter]   = useState("all");
-  const [markModal,    setMarkModal]    = useState(null);
+  const [deptFilter, setDeptFilter] = useState("all");
+  const [flagFilter, setFlagFilter] = useState("all");
+  const [markModal, setMarkModal] = useState(null);
   const [drawerRecord, setDrawerRecord] = useState(null);
-  const [toast,        setToast]        = useState(null);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => { fetchData(); }, [date]);
 
@@ -793,8 +806,8 @@ function DailyTab() {
         axios.get(`${API_BASE}/api/hr/approved`, { headers: authHeader() }).catch(() => ({ data: [] })),
       ]);
       const attendanceData = attendanceRes.data?.data || [];
-      const approvedList   = Array.isArray(approvedRes.data) ? approvedRes.data : (approvedRes.data?.data || []);
-      const attendanceIds  = new Set(attendanceData.map(r => r.employee?._id).filter(Boolean));
+      const approvedList = Array.isArray(approvedRes.data) ? approvedRes.data : (approvedRes.data?.data || []);
+      const attendanceIds = new Set(attendanceData.map(r => r.employee?._id).filter(Boolean));
       const approvedNotInAttendance = approvedList
         .filter(emp => !attendanceIds.has(emp._id))
         .map(emp => ({
@@ -811,61 +824,61 @@ function DailyTab() {
 
   const departments = ["all", ...new Set(data.map(r => r.employee?.department).filter(Boolean))];
 
- const enriched = data.map(r => {
-  const { startMins, endMins } = parseShiftMins(r.employee?.shift);
-  const firstIn = getFirstIn(r);
-  const lastOut = getLastOut(r);
-  return {
-    ...r,
-    _firstIn:     firstIn,
-    _lastOut:     lastOut,
-    checkOut:     r.checkOut || null,
-    breakOut:     r.breakOut || null,
-    breakIn:      r.breakIn  || null,
-    breakLate:    r.breakLate || 0,
-    lateMinutes:  calcLateMinutes(firstIn, startMins),
-    earlyOutMins: firstIn && !lastOut ? 0 : calcEarlyOut(lastOut, endMins),
-    overtimeMins: calcOvertime(lastOut, endMins),
-    missingPunch: hasMissingOut(r, date),
-    _shiftStart:  r.employee?.shift?.start || "10:00",
-    _shiftEnd:    r.employee?.shift?.end   || "19:00",
-  };
-});
+  const enriched = data.map(r => {
+    const { startMins, endMins } = parseShiftMins(r.employee?.shift);
+    const firstIn = getFirstIn(r);
+    const lastOut = getLastOut(r);
+    return {
+      ...r,
+      _firstIn: firstIn,
+      _lastOut: lastOut,
+      checkOut: r.checkOut || null,
+      breakOut: r.breakOut || null,
+      breakIn: r.breakIn || null,
+      breakLate: r.breakLate || 0,
+      lateMinutes: calcLateMinutes(firstIn, startMins),
+      earlyOutMins: firstIn && !lastOut ? 0 : calcEarlyOut(lastOut, endMins),
+      overtimeMins: calcOvertime(lastOut, endMins),
+      missingPunch: hasMissingOut(r, date),
+      _shiftStart: r.employee?.shift?.start || "10:00",
+      _shiftEnd: r.employee?.shift?.end || "19:00",
+    };
+  });
 
   const filtered = enriched.filter(r => {
-    const matchS    = !search || (r.employee?.name || "").toLowerCase().includes(search.toLowerCase()) || (r.employee?.employeeId || r.employee?.employee_code || "").toLowerCase().includes(search.toLowerCase());
-    const matchF    = statusFilter === "all" || r.status === statusFilter;
-    const matchD    = deptFilter   === "all" || r.employee?.department === deptFilter;
+    const matchS = !search || (r.employee?.name || "").toLowerCase().includes(search.toLowerCase()) || (r.employee?.employeeId || r.employee?.employee_code || "").toLowerCase().includes(search.toLowerCase());
+    const matchF = statusFilter === "all" || r.status === statusFilter;
+    const matchD = deptFilter === "all" || r.employee?.department === deptFilter;
     const matchFlag =
-      flagFilter === "all"           ? true :
-      flagFilter === "late"          ? r.lateMinutes > 0 :
-      flagFilter === "early_out"     ? r.earlyOutMins > 0 :
-      flagFilter === "overtime"      ? r.overtimeMins > 0 :
-      flagFilter === "missing_punch" ? r.missingPunch : true;
+      flagFilter === "all" ? true :
+        flagFilter === "late" ? r.lateMinutes > 0 :
+          flagFilter === "early_out" ? r.earlyOutMins > 0 :
+            flagFilter === "overtime" ? r.overtimeMins > 0 :
+              flagFilter === "missing_punch" ? r.missingPunch : true;
     return matchS && matchF && matchD && matchFlag;
   });
 
   const s = {
-    total:        data.length,
-    present:      data.filter(r => r.status === "present").length,
+    total: data.length,
+    present: data.filter(r => r.status === "present").length,
     late: enriched.filter(r => r.lateMinutes > 0).length,
-    absent:       data.filter(r => r.status === "absent").length,
-    leave:        data.filter(r => r.status === "leave").length,
-    halfDay:      data.filter(r => r.status === "half_day").length,
+    absent: data.filter(r => r.status === "absent").length,
+    leave: data.filter(r => r.status === "leave").length,
+    halfDay: data.filter(r => r.status === "half_day").length,
     missingPunch: enriched.filter(r => r.missingPunch).length,
-    overtime:     enriched.filter(r => r.overtimeMins > 0).length,
-    earlyOut:     enriched.filter(r => r.earlyOutMins > 0).length,
+    overtime: enriched.filter(r => r.overtimeMins > 0).length,
+    earlyOut: enriched.filter(r => r.earlyOutMins > 0).length,
   };
 
   const dailyStats = [
-    { label: "Total",         value: s.total,        color: "#111827" },
-    { label: "Present",       value: s.present,      color: "#16a34a" },
-    { label: "Late",          value: s.late,         color: "#d97706", flag: "late" },
-    { label: "Absent",        value: s.absent,       color: "#dc2626" },
-    { label: "On Leave",      value: s.leave,        color: "#0891b2" },
-    { label: "Half Day",      value: s.halfDay,      color: "#7c3aed" },
+    { label: "Total", value: s.total, color: "#111827" },
+    { label: "Present", value: s.present, color: "#16a34a" },
+    { label: "Late", value: s.late, color: "#d97706", flag: "late" },
+    { label: "Absent", value: s.absent, color: "#dc2626" },
+    { label: "On Leave", value: s.leave, color: "#0891b2" },
+    { label: "Half Day", value: s.halfDay, color: "#7c3aed" },
     { label: "Missing Punch", value: s.missingPunch, color: "#b91c1c", flag: "missing_punch" },
-    { label: "Early Out",     value: s.earlyOut,     color: "#9333ea", flag: "early_out" },
+    { label: "Early Out", value: s.earlyOut, color: "#9333ea", flag: "early_out" },
   ];
 
   return (
@@ -917,9 +930,9 @@ function DailyTab() {
       {/* Flag filter pills */}
       <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
         {[
-          { id: "all",           label: "All",           icon: <Users size={11} /> },
-          { id: "late",          label: "Late Arrivals", icon: <Clock size={11} /> },
-          { id: "early_out",     label: "Early Out",     icon: <ArrowRightFromLine size={11} /> },
+          { id: "all", label: "All", icon: <Users size={11} /> },
+          { id: "late", label: "Late Arrivals", icon: <Clock size={11} /> },
+          { id: "early_out", label: "Early Out", icon: <ArrowRightFromLine size={11} /> },
           { id: "missing_punch", label: "Missing Punch", icon: <AlertCircle size={11} /> },
         ].map(f => (
           <button key={f.id} onClick={() => setFlagFilter(f.id)} style={{ padding: "4px 12px", borderRadius: 20, border: `1px solid ${flagFilter === f.id ? "#111827" : "#e5e7eb"}`, background: flagFilter === f.id ? "#111827" : "#fff", color: flagFilter === f.id ? "#fff" : "#6b7280", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
@@ -960,15 +973,15 @@ function DailyTab() {
                 ) : filtered.map((r, i) => {
                   const displayStatus = r.status === "late" ? "present" : r.status;
                   const meta = STATUS_META[displayStatus] || STATUS_META.absent;
-                  const hrs        = workHrsFromPunches(r);
+                  const hrs = workHrsFromPunches(r);
                   const punchCount = r.punches?.length || (r.checkIn ? (r.checkOut ? 2 : 1) : 0);
                   const flags = [];
-                  if (r.lateMinutes > 0)  flags.push({ label: `Late ${fmtMins(r.lateMinutes)}`,   color: "#d97706", bg: "#fef9c3" });
+                  if (r.lateMinutes > 0) flags.push({ label: `Late ${fmtMins(r.lateMinutes)}`, color: "#d97706", bg: "#fef9c3" });
                   if (r.earlyOutMins > 0) flags.push({ label: `Early ${fmtMins(r.earlyOutMins)}`, color: "#9333ea", bg: "#faf5ff" });
-                  if (r.missingPunch)     flags.push({ label: "No Out",                             color: "#b91c1c", bg: "#fff1f2" });
+                  if (r.missingPunch) flags.push({ label: "No Out", color: "#b91c1c", bg: "#fff1f2" });
 
 
-                  
+
                   return (
                     <tr key={i}
                       style={{ background: r.missingPunch ? "#fffbfb" : "transparent" }}
@@ -997,26 +1010,26 @@ function DailyTab() {
 
                       <td style={{ ...S.tableCell, color: "#16a34a", fontWeight: 700, fontFamily: "monospace" }}>{fmt(r._firstIn)}</td>
 
-                     <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
-  {r.checkOut
-    ? <span style={{ color: "#dc2626" }}>{fmt(r.checkOut)}</span>
-    : r._firstIn
-      ? <span style={{ color: "#f59e0b", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}><AlertCircle size={11} /> Pending</span>
-      : "—"}
-</td>
+                      <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
+                        {r.checkOut
+                          ? <span style={{ color: "#dc2626" }}>{fmt(r.checkOut)}</span>
+                          : r._firstIn
+                            ? <span style={{ color: "#f59e0b", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}><AlertCircle size={11} /> Pending</span>
+                            : "—"}
+                      </td>
 
                       <td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>{hrs}</td>
                       <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace", color: "#0891b2" }}>
-  {r.breakOut ? fmt(r.breakOut) : "—"}
-</td>
-<td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace", color: "#0891b2" }}>
-  {r.breakIn ? fmt(r.breakIn) : "—"}
-</td>
-<td style={S.tableCell}>
-  {r.breakLate > 0
-    ? <span style={{ background: "#fef9c3", color: "#d97706", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(r.breakLate)}</span>
-    : <span style={{ color: "#d1d5db" }}>—</span>}
-</td>
+                        {r.breakOut ? fmt(r.breakOut) : "—"}
+                      </td>
+                      <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace", color: "#0891b2" }}>
+                        {r.breakIn ? fmt(r.breakIn) : "—"}
+                      </td>
+                      <td style={S.tableCell}>
+                        {r.breakLate > 0
+                          ? <span style={{ background: "#fef9c3", color: "#d97706", padding: "2px 8px", borderRadius: 10, fontWeight: 700, fontSize: 11 }}>{fmtMins(r.breakLate)}</span>
+                          : <span style={{ color: "#d1d5db" }}>—</span>}
+                      </td>
 
                       <td style={S.tableCell}>
                         {punchCount > 0 ? (
@@ -1037,15 +1050,15 @@ function DailyTab() {
                       </td>
 
                       <td style={S.tableCell}>
-  <div style={{ display: "flex", gap: 5 }}>
-    <button onClick={() => setDrawerRecord(r)} style={S.actionBtn(false)}>
-      <Eye size={11} />View
-    </button>
-    <button onClick={() => setMarkModal({ employee: r.employee, existing: r._firstIn ? r : null })} style={S.actionBtn(true)}>
-  <Edit3 size={11} />{r._firstIn ? "Edit" : "Mark"}
-</button>
-  </div>
-</td>
+                        <div style={{ display: "flex", gap: 5 }}>
+                          <button onClick={() => setDrawerRecord(r)} style={S.actionBtn(false)}>
+                            <Eye size={11} />View
+                          </button>
+                          <button onClick={() => setMarkModal({ employee: r.employee, existing: r._firstIn ? r : null })} style={S.actionBtn(true)}>
+                            <Edit3 size={11} />{r._firstIn ? "Edit" : "Mark"}
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -1065,8 +1078,8 @@ export default function HRAttendancePage() {
   const [activeTab, setActiveTab] = useState("daily");
 
   const TABS = [
-    { id: "daily",   label: "Daily Attendance", icon: <CalendarCheck size={14} /> },
-    { id: "monthly", label: "Monthly Report",   icon: <Activity size={14} /> },
+    { id: "daily", label: "Daily Attendance", icon: <CalendarCheck size={14} /> },
+    { id: "monthly", label: "Monthly Report", icon: <Activity size={14} /> },
   ];
 
   return (
@@ -1085,7 +1098,7 @@ export default function HRAttendancePage() {
         ))}
       </div>
 
-      {activeTab === "daily"   && <DailyTab />}
+      {activeTab === "daily" && <DailyTab />}
       {activeTab === "monthly" && <MonthlyTab />}
     </div>
   );
