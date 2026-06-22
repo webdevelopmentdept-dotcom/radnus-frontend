@@ -23,10 +23,6 @@ export const fmt = (d) => d ? new Date(d).toLocaleTimeString("en-IN", { hour: "2
 export const fmtD = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
 export const todayStr = () => new Date().toISOString().split("T")[0];
 
-// export const SHIFT_END_HOUR   = 19;
-// export const SHIFT_END_MINUTE = 0;
-// export const SHIFT_END_TOTAL  = SHIFT_END_HOUR * 60 + SHIFT_END_MINUTE;
-
 export const STATUS_META = {
   present: { label: "Present", color: "#16a34a", bg: "#dcfce7", border: "#bbf7d0" },
   absent: { label: "Absent", color: "#dc2626", bg: "#fee2e2", border: "#fecaca" },
@@ -37,7 +33,10 @@ export const STATUS_META = {
   weekend: { label: "Weekend", color: "#94a3b8", bg: "#f1f5f9", border: "#e2e8f0" },
 };
 
-// ─── Punch helpers (exported) ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════
+//  PUNCH HELPERS (FIXED)
+// ═══════════════════════════════════════════
+
 export const getFirstIn = (r) => {
   if (r.punches?.length) {
     const first = r.punches.find(p => p.type === "in");
@@ -45,67 +44,128 @@ export const getFirstIn = (r) => {
   }
   return r.checkIn || r.first_in || null;
 };
-
 export const getLastOut = (r) => {
-  if (r.punches?.length) {
-    const sorted = [...r.punches].sort((a, b) => new Date(a.time) - new Date(b.time));
-    const outs = sorted.filter(p => p.type === "out");
-    if (!outs.length) return null;
-    const lastOutTime = outs[outs.length - 1].time;
-    const firstIn = r.punches.find(p => p.type === "in")?.time;
-    if (firstIn && new Date(lastOutTime).getTime() === new Date(firstIn).getTime()) return null;
-    return lastOutTime;
+  if (!r.punches || r.punches.length === 0) {
+    return r.checkOut || r.last_out || null;
   }
-  return r.checkOut || r.last_out || null;
+
+  // Sort by time
+  const sorted = [...r.punches].sort((a, b) => 
+    new Date(a.time) - new Date(b.time)
+  );
+
+  // Get all IN times (rounded to seconds)
+  const inTimes = new Set(
+    sorted
+      .filter(p => p.type === "in")
+      .map(p => Math.round(new Date(p.time).getTime() / 1000))
+  );
+
+  // Find last IN index
+  let lastInIndex = -1;
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    if (sorted[i].type === "in") {
+      lastInIndex = i;
+      break;
+    }
+  }
+
+  // No IN found
+  if (lastInIndex === -1) return null;
+
+  // Find last OUT after last IN (skip same time as IN)
+  for (let i = sorted.length - 1; i > lastInIndex; i--) {
+    if (sorted[i].type === "out") {
+      const outTime = Math.round(new Date(sorted[i].time).getTime() / 1000);
+      // Skip if same time as any IN (duplicate)
+      if (inTimes.has(outTime)) continue;
+      return sorted[i].time;
+    }
+  }
+
+  return null;
 };
 
+// ✅ ADDED: hasMissingOut — last punch IN → missing OUT
+// ✅ FIX: hasMissingOut - proper logic
 export const hasMissingOut = (r, dateStr) => {
+  if (!r.punches || r.punches.length === 0) {
+    // No punches at all
+    return false;
+  }
+
+  // Sort punches by time
+  const sorted = [...r.punches].sort((a, b) => 
+    new Date(a.time) - new Date(b.time)
+  );
+
+  // Get last punch
+  const lastPunch = sorted[sorted.length - 1];
+
+  // If last punch is IN, missing OUT
+  if (lastPunch.type === "in") {
+    // Check if it's today and before 8 PM
+    const today = new Date().toISOString().split("T")[0];
+    if (dateStr === today) {
+      const now = new Date();
+      // Before 8 PM, still working - not missing yet
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+const { endMins } = parseShiftMins(r.employee?.shift);
+if (nowMins < endMins) return false;
+    }
+    // Either past date or after 8 PM today - missing OUT
+    return true;
+  }
+
+  // Last punch is OUT - no missing punch
+  return false;
+};
+
+// ✅ FIX: workHrsFromPunches - proper display
+export const workHrsFromPunches = (r) => {
   const firstIn = getFirstIn(r);
   const lastOut = getLastOut(r);
-  if (!firstIn) return false;
-  if (lastOut) return false;
-  const today = new Date().toISOString().split("T")[0];
-  if (dateStr === today) return new Date().getHours() >= 20;
-  return true;
+  
+  // No check-in at all
+  if (!firstIn) return "—";
+  
+  // Has check-in but no check-out
+  if (!lastOut) {
+    return (
+      <span style={{ 
+        color: "#f59e0b", 
+        fontWeight: 700, 
+        fontSize: 11, 
+        display: "inline-flex", 
+        alignItems: "center", 
+        gap: 3 
+      }}>
+        <AlertCircle size={11} /> No Out
+      </span>
+    );
+  }
+
+  // Calculate work hours
+  const diffMs = new Date(lastOut) - new Date(firstIn);
+  if (diffMs <= 0) return "—";
+  
+  const totalMins = Math.round(diffMs / 60000);
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  
+  return `${h}h ${pad(m)}m`;
 };
 
-// ─── Time calculations (exported) ────────────────────────────────────────────
-// export const SHIFT_START_TOTAL = 10 * 60;
-// export const LUNCH_START_TOTAL = 13 * 60 + 30;
-// export const LUNCH_END_TOTAL   = 14 * 60 + 30;
-
-// export const calcLateMinutes = (checkIn) => {
-//   if (!checkIn) return 0;
-//   const d     = new Date(checkIn);
-//   const total = d.getHours() * 60 + d.getMinutes();
-//   if (total >= LUNCH_START_TOTAL && total <= LUNCH_END_TOTAL) return 0;
-//   return Math.max(total - SHIFT_START_TOTAL, 0);
-// };
-
-// export const calcEarlyOut = (checkOut) => {
-//   if (!checkOut) return 0;
-//   const d = new Date(checkOut);
-//   const total = d.getHours() * 60 + d.getMinutes();
-//   return Math.max(SHIFT_END_TOTAL - total, 0);
-// };
-
-// export const calcOvertime = (checkOut) => {
-//   if (!checkOut) return 0;
-//   const d = new Date(checkOut);
-//   const total = d.getHours() * 60 + d.getMinutes();
-//   return Math.max(total - SHIFT_END_TOTAL, 0);
-// };
+// ═══════════════════════════════════════════
+//  TIME CALCULATIONS
+// ═══════════════════════════════════════════
 
 export const LUNCH_START_TOTAL = 13 * 60 + 30;
 export const LUNCH_END_TOTAL = 14 * 60 + 30;
 
-// Parse shift string → start minutes  e.g. "General (10:00 – 19:00)" → 600
-
-
 const DEFAULT_SHIFT_START = 10 * 60;
 const DEFAULT_SHIFT_END = 19 * 60;
 
-// shift object { start: "10:00", end: "19:00" } → minutes
 export const parseShiftMins = (shift) => {
   if (shift?.start && shift?.end) {
     const [sh, sm] = shift.start.split(":").map(Number);
@@ -141,24 +201,10 @@ export const fmtMins = (mins) => {
   return h > 0 ? `${h}h ${pad(m)}m` : `${m}m`;
 };
 
-export const workHrsFromPunches = (r) => {
-  const firstIn = getFirstIn(r);
-  const lastOut = getLastOut(r);
-  if (!firstIn) return "—";
-  if (!lastOut) return (
-    <span style={{ color: "#f59e0b", fontWeight: 700, fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>
-      <AlertCircle size={11} /> No Out
-    </span>
-  );
-  const diffMs = new Date(lastOut) - new Date(firstIn);
-  if (diffMs <= 0) return "—";
-  const totalMins = Math.round(diffMs / 60000);
-  const h = Math.floor(totalMins / 60);
-  const m = totalMins % 60;
-  return `${h}h ${pad(m)}m`;
-};
+// ═══════════════════════════════════════════
+//  STYLES
+// ═══════════════════════════════════════════
 
-// ─── Shared styles (exported) ─────────────────────────────────────────────────
 export const S = {
   card: {
     background: "#fff",
@@ -222,8 +268,9 @@ export const S = {
 };
 
 // ═══════════════════════════════════════════
-//  STAT STRIP (exported)
+//  STAT STRIP
 // ═══════════════════════════════════════════
+
 export function StatStrip({ stats, activeFlag, onFlagClick }) {
   return (
     <div style={{ ...S.card, display: "flex", marginBottom: 16 }}>
@@ -257,8 +304,9 @@ export function StatStrip({ stats, activeFlag, onFlagClick }) {
 }
 
 // ═══════════════════════════════════════════
-//  PUNCH TIMELINE (exported)
+//  PUNCH TIMELINE
 // ═══════════════════════════════════════════
+
 export function PunchTimeline({ punches }) {
   if (!punches?.length) {
     return (
@@ -297,6 +345,7 @@ export function PunchTimeline({ punches }) {
 // ═══════════════════════════════════════════
 //  EMPLOYEE DETAIL DRAWER
 // ═══════════════════════════════════════════
+
 function EmployeeDrawer({ record, date, onClose, onEdit }) {
   const [monthSummary, setMonthSummary] = useState(null);
   const [loadingMonth, setLoadingMonth] = useState(false);
@@ -412,7 +461,32 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
                 valueColor="#6b7280"
               />
               <Row label="First In" value={fmt(firstIn) || "—"} valueColor="#16a34a" />
-              <Row label="Last Out" value={lastOut ? fmt(lastOut) : missingPunch ? "Pending" : "—"} valueColor={lastOut ? "#dc2626" : "#f59e0b"} />
+              <Row 
+  label="Last Out" 
+  value={(() => {
+    const lo = getLastOut(record); // ✅ Use function
+    if (lo) return fmt(lo);
+    const fi = getFirstIn(record);
+    if (fi) return "Pending";
+    return "—";
+  })()} 
+  valueColor={getLastOut(record) ? "#dc2626" : "#f59e0b"} 
+/>
+<Row 
+  label="Work Hours" 
+  value={(() => {
+    const fi = getFirstIn(record);
+    const lo = getLastOut(record);
+    if (!fi) return "—";
+    if (!lo) return "Ongoing";
+    const diffMs = new Date(lo) - new Date(fi);
+    const totalMins = Math.round(diffMs / 60000);
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    return `${h}h ${String(m).padStart(2, '0')}m`;
+  })()} 
+  valueColor="#2563eb" 
+/>
               <Row label="Work Hours" value={workHrs()} valueColor="#2563eb" />
               {punches.length > 0 && <Row label="Total Punches" value={`${punches.length} punches`} valueColor="#6b7280" />}
               {record?.remark && <div style={{ padding: "8px 0", fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>Remark: {record.remark}</div>}
@@ -561,9 +635,6 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
 //  SHIFT SELECTOR
 // ═══════════════════════════════════════════
 
-
-// ✅ இந்த entire commented block uncomment பண்ணு — ஆனா signature மாத்தணும்:
-
 function ShiftInlineEditor({ empId, currentShift, onShiftSaved }) {
   const [editing, setEditing] = useState(false);
   const normalizeToHHMM = (t) => {
@@ -581,7 +652,6 @@ function ShiftInlineEditor({ empId, currentShift, onShiftSaved }) {
   }, [currentShift]);
   const [saving, setSaving] = useState(false);
 
-  // இந்த entire handleSave மாத்து:
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -596,7 +666,6 @@ function ShiftInlineEditor({ empId, currentShift, onShiftSaved }) {
       onShiftSaved({ start: start24, end: end24 });
       setEditing(false);
     } catch (err) {
-      // இப்போ exact error message காட்டும்
       alert(err.response?.data?.message || "Shift save failed");
     } finally {
       setSaving(false);
@@ -659,6 +728,7 @@ function ShiftInlineEditor({ empId, currentShift, onShiftSaved }) {
 // ═══════════════════════════════════════════
 //  HR MARK MODAL
 // ═══════════════════════════════════════════
+
 function HRMarkModal({ employee, date, existing, onSave, onClose }) {
   const existingFirstIn = existing ? getFirstIn(existing) : null;
   const existingLastOut = existing ? getLastOut(existing) : null;
@@ -782,6 +852,7 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
 // ═══════════════════════════════════════════
 //  DAILY TAB
 // ═══════════════════════════════════════════
+
 function DailyTab() {
   const [date, setDate] = useState(todayStr());
   const [data, setData] = useState([]);
@@ -976,9 +1047,13 @@ function DailyTab() {
                   const hrs = workHrsFromPunches(r);
                   const punchCount = r.punches?.length || (r.checkIn ? (r.checkOut ? 2 : 1) : 0);
                   const flags = [];
-                  if (r.lateMinutes > 0) flags.push({ label: `Late ${fmtMins(r.lateMinutes)}`, color: "#d97706", bg: "#fef9c3" });
-                  if (r.earlyOutMins > 0) flags.push({ label: `Early ${fmtMins(r.earlyOutMins)}`, color: "#9333ea", bg: "#faf5ff" });
-                  if (r.missingPunch) flags.push({ label: "No Out", color: "#b91c1c", bg: "#fff1f2" });
+const firstIn = getFirstIn(r);
+const lastOut = getLastOut(r);
+const isMissingOut = r.missingPunch; // ✅ Calculate properly
+
+if (r.lateMinutes > 0) flags.push({ label: `Late ${fmtMins(r.lateMinutes)}`, color: "#d97706", bg: "#fef9c3" });
+if (r.earlyOutMins > 0) flags.push({ label: `Early ${fmtMins(r.earlyOutMins)}`, color: "#9333ea", bg: "#faf5ff" });
+if (isMissingOut) flags.push({ label: "No Out", color: "#b91c1c", bg: "#fff1f2" });
 
 
 
@@ -1010,15 +1085,45 @@ function DailyTab() {
 
                       <td style={{ ...S.tableCell, color: "#16a34a", fontWeight: 700, fontFamily: "monospace" }}>{fmt(r._firstIn)}</td>
 
-                      <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
-                        {r.checkOut
-                          ? <span style={{ color: "#dc2626" }}>{fmt(r.checkOut)}</span>
-                          : r._firstIn
-                            ? <span style={{ color: "#f59e0b", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}><AlertCircle size={11} /> Pending</span>
-                            : "—"}
-                      </td>
-
-                      <td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>{hrs}</td>
+<td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
+  {(() => {
+    const lastOut = getLastOut(r); // ✅ Call function here
+    const firstIn = getFirstIn(r); // ✅ Call function here
+    
+    if (lastOut) {
+      return <span style={{ color: "#dc2626" }}>{fmt(lastOut)}</span>;
+    }
+    if (firstIn) {
+      return (
+        <span style={{ color: "#f59e0b", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>
+          <AlertCircle size={11} /> Pending
+        </span>
+      );
+    }
+    return "—";
+  })()}
+</td>
+<td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>
+  {(() => {
+    const firstIn = getFirstIn(r);
+    const lastOut = getLastOut(r);
+    
+    if (!firstIn) return "—";
+    if (!lastOut) {
+      return (
+        <span style={{ color: "#f59e0b", fontWeight: 700, fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>
+          <AlertCircle size={11} /> No Out
+        </span>
+      );
+    }
+    
+    const diffMs = new Date(lastOut) - new Date(firstIn);
+    const totalMins = Math.round(diffMs / 60000);
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    return `${h}h ${String(m).padStart(2, '0')}m`;
+  })()}
+</td>
                       <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace", color: "#0891b2" }}>
                         {r.breakOut ? fmt(r.breakOut) : "—"}
                       </td>
@@ -1074,6 +1179,7 @@ function DailyTab() {
 // ═══════════════════════════════════════════
 //  MAIN PAGE
 // ═══════════════════════════════════════════
+
 export default function HRAttendancePage() {
   const [activeTab, setActiveTab] = useState("daily");
 
