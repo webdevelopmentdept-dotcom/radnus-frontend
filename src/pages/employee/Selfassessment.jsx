@@ -40,6 +40,8 @@ export default function SelfAssessment() {
   const [expandedItem, setExpandedItem] = useState(null);
   const [activeTab, setActiveTab] = useState("assessment");
 
+const [editingLog, setEditingLog] = useState(null);
+const [editForm, setEditForm] = useState({ value: "", note: "" });
   const [logs, setLogs] = useState([]);
   const [logTotals, setLogTotals] = useState({});
   const [programLogTotals, setProgramLogTotals] = useState({});
@@ -84,6 +86,10 @@ const [specialFieldOptions, setSpecialFieldOptions] = useState([
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+  if (editingLog) setEditForm({ value: editingLog.value, note: editingLog.note || "" });
+}, [editingLog]);
 
   const employeeId = localStorage.getItem("employeeId");
 
@@ -384,6 +390,23 @@ const [specialFieldOptions, setSpecialFieldOptions] = useState([
       setDeletingLog(null);
     }
   };
+
+  const handleEditLog = async () => {
+  if (!editForm.value) return showToast("Enter value", "error");
+  try {
+    const res = await axios.put(`${API_BASE}/api/daily-logs/${editingLog._id}`, {
+      value: parseFloat(editForm.value),
+      note: editForm.note
+    });
+    if (res.data.success) {
+      showToast("Log updated!");
+      setEditingLog(null);
+      await fetchLogs(assignment._id);
+    }
+  } catch (err) {
+    showToast(err.response?.data?.message || "Edit failed", "error");
+  }
+};
 
   const handleItemChange = (idx, field, value) => {
     setForm(f => {
@@ -952,9 +975,34 @@ const [specialFieldOptions, setSpecialFieldOptions] = useState([
 
                                   </div>
                                 </div>
-                                <button onClick={() => handleDeleteLog(log._id)} disabled={deletingLog === log._id} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, flexShrink: 0 }}>
-                                  <Trash2 size={14} color={deletingLog === log._id ? "#d1d5db" : "#ef4444"} />
-                                </button>
+                                {/* Edit/Delete — 24hr check */}
+{(() => {
+  const createdAt = new Date(log.createdAt);
+  const diffHours = (new Date() - createdAt) / (1000 * 60 * 60);
+  const canModify = diffHours <= 24;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+      {/* Edit button */}
+      {canModify && (
+        <button onClick={() => setEditingLog(log)} 
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+          <Edit3 size={14} color="#2563eb" />
+        </button>
+      )}
+      {/* Delete button */}
+      {canModify ? (
+        <button onClick={() => handleDeleteLog(log._id)} disabled={deletingLog === log._id}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+          <Trash2 size={14} color={deletingLog === log._id ? "#d1d5db" : "#ef4444"} />
+        </button>
+      ) : (
+        <span title="Locked after 24hrs">
+          <Lock size={14} color="#9ca3af" />
+        </span>
+      )}
+    </div>
+  );
+})()}
                               </div>
                               {log.program_values && Object.keys(log.program_values).length > 0 && (
                                 <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px dashed #e0f2fe", display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -1738,6 +1786,46 @@ const [specialFieldOptions, setSpecialFieldOptions] = useState([
           </>
         )}
       </div>
+
+      {editingLog && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999,
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 14, padding: 24, width: "100%", 
+            maxWidth: 400, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <h3 style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700 }}>Edit Log</h3>
+            <p style={{ margin: "0 0 16px", fontSize: 12, color: "#6b7280" }}>
+              {editingLog.kpi_name} · Logged at {new Date(editingLog.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 5 }}>
+                Value ({editingLog.unit}) *
+              </label>
+              <input type="number" value={editForm.value}
+                onChange={e => setEditForm(f => ({ ...f, value: e.target.value }))}
+                style={{ width: "100%", padding: "9px 11px", border: "1px solid #d1d5db", 
+                  borderRadius: 7, fontSize: 14, boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 5 }}>Note</label>
+              <input type="text" value={editForm.note}
+                onChange={e => setEditForm(f => ({ ...f, note: e.target.value }))}
+                placeholder="Update your note..."
+                style={{ width: "100%", padding: "9px 11px", border: "1px solid #d1d5db", 
+                  borderRadius: 7, fontSize: 13, boxSizing: "border-box" }} />
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setEditingLog(null)}
+                style={{ flex: 1, padding: "10px 0", border: "1px solid #e5e7eb", borderRadius: 8,
+                  background: "#fff", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+              <button onClick={handleEditLog}
+                style={{ flex: 1, padding: "10px 0", border: "none", borderRadius: 8,
+                  background: "#2563eb", color: "#fff", fontWeight: 700, cursor: "pointer" }}>
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </EmployeeLayout>
   );
 }

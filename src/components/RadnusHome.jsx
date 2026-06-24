@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import UpcomingEventsPopup from "./UpcomingEventsPopup";
+import ShadeOfTrustTicker from "./Shadeoftrustticker";
 
 function RadnusHome() {
   const stats = [
@@ -58,6 +59,8 @@ function RadnusHome() {
     "
         />
       </Helmet>
+      {/* ===== SHADE OF TRUST TICKER ===== */}
+<ShadeOfTrustTicker />
 
       {/* ===== HERO SECTION ===== */}
       <section

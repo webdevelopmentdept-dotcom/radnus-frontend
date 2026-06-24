@@ -23,6 +23,7 @@ import Career from "./components/Career";
 import CareerDetail from "./components/shared/CareerDetail";
 import ThankYou from "./ThankYou";
 import jobsData from "./components/jobsData";
+import ShadeOfTrust from "./components/Shadeoftrust";
 
 /* Auth */
 import Login from "./pages/auth/Login";
@@ -186,6 +187,7 @@ location.pathname.startsWith("/radnus-connect/find-technician")
         <Route path="/timeline" element={<Timeline />} />
         <Route path="/startup" element={<Startup />} />
         <Route path="/gallery" element={<Gallery />} />
+        <Route path="/shade-of-trust" element={<ShadeOfTrust />} />
         {/* AUTH */}
         <Route path="/login" element={<Login />} />
         <Route path="/employee/login" element={<Employeelogin />} />

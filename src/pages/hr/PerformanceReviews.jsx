@@ -9,26 +9,26 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const getRatingInfo = (score) => {
-  if (score >= 90) return { label: "Outstanding",           color: "#16a34a", bg: "#f0fdf4" };
-  if (score >= 75) return { label: "Exceeds Expectations",  color: "#2563eb", bg: "#eff6ff" };
-  if (score >= 60) return { label: "Meets Expectations",    color: "#d97706", bg: "#fffbeb" };
-  if (score >= 45) return { label: "Needs Improvement",     color: "#ea580c", bg: "#fff7ed" };
-  return             { label: "Unsatisfactory",             color: "#dc2626", bg: "#fef2f2" };
+  if (score >= 90) return { label: "Outstanding", color: "#16a34a", bg: "#f0fdf4" };
+  if (score >= 75) return { label: "Exceeds Expectations", color: "#2563eb", bg: "#eff6ff" };
+  if (score >= 60) return { label: "Meets Expectations", color: "#d97706", bg: "#fffbeb" };
+  if (score >= 45) return { label: "Needs Improvement", color: "#ea580c", bg: "#fff7ed" };
+  return { label: "Unsatisfactory", color: "#dc2626", bg: "#fef2f2" };
 };
 
 const getProgressColor = (pct) => {
   if (pct >= 100) return "#16a34a";
-  if (pct >= 75)  return "#2563eb";
-  if (pct >= 50)  return "#d97706";
+  if (pct >= 75) return "#2563eb";
+  if (pct >= 50) return "#d97706";
   return "#dc2626";
 };
 
 // ── owner_role helpers ──────────────────────────────────────────
 const ownerStyles = {
-  self:    { bg: "#f0fdf4", color: "#16a34a", label: "Self (Employee)" },
-  manager: { bg: "#eff6ff", color: "#2563eb", label: "Manager"         },
-  md:      { bg: "#f5f3ff", color: "#7c3aed", label: "MD / Director"   },
-  hr:      { bg: "#fffbeb", color: "#d97706", label: "HR"              },
+  self: { bg: "#f0fdf4", color: "#16a34a", label: "Self (Employee)" },
+  manager: { bg: "#eff6ff", color: "#2563eb", label: "Manager" },
+  md: { bg: "#f5f3ff", color: "#7c3aed", label: "MD / Director" },
+  hr: { bg: "#fffbeb", color: "#d97706", label: "HR" },
 };
 
 // const isHREditable = (item) => (item.owner_role || "self") === "hr";
@@ -73,25 +73,25 @@ const STYLES = `
 `;
 
 export default function PerformanceReviews() {
-  const [assessments,        setAssessments]        = useState([]);
-  const [completedReviews,   setCompletedReviews]   = useState([]);
-  const [incentivePlans,     setIncentivePlans]      = useState([]);
-  const [loading,            setLoading]             = useState(true);
-  const [selectedAssessment, setSelectedAssessment]  = useState(null);
-  const [reviewForm,         setReviewForm]          = useState({ items: [], hr_comment: "" });
-  const [saving,             setSaving]              = useState(false);
-  const [toast,              setToast]               = useState(null);
+  const [assessments, setAssessments] = useState([]);
+  const [completedReviews, setCompletedReviews] = useState([]);
+  const [incentivePlans, setIncentivePlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedAssessment, setSelectedAssessment] = useState(null);
+  const [reviewForm, setReviewForm] = useState({ items: [], hr_comment: "" });
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
   // const [activeTab,          setActiveTab]           = useState("pending");
   const isEmployeeInit = localStorage.getItem("hrRole") === "employee";
-const [activeTab, setActiveTab] = useState(isEmployeeInit ? "dailylogs" : "pending");
+  const [activeTab, setActiveTab] = useState(isEmployeeInit ? "dailylogs" : "pending");
 
-  const [allAssignments,      setAllAssignments]      = useState([]);
+  const [allAssignments, setAllAssignments] = useState([]);
   const [selectedEmployeeLog, setSelectedEmployeeLog] = useState("");
-  const [logDateFrom,         setLogDateFrom]         = useState("");
-  const [logDateTo,           setLogDateTo]           = useState("");
-  const [employeeLogs,        setEmployeeLogs]        = useState([]);
-  const [logTotals,           setLogTotals]           = useState({});
-  const [logsLoading,         setLogsLoading]         = useState(false);
+  const [logDateFrom, setLogDateFrom] = useState("");
+  const [logDateTo, setLogDateTo] = useState("");
+  const [employeeLogs, setEmployeeLogs] = useState([]);
+  const [logTotals, setLogTotals] = useState({});
+  const [logsLoading, setLogsLoading] = useState(false);
 
   const [incentiveResult, setIncentiveResult] = useState(null);
 
@@ -120,32 +120,32 @@ const [activeTab, setActiveTab] = useState(isEmployeeInit ? "dailylogs" : "pendi
 
   const isReviewed = (id) => completedReviews.some(r => r.self_assessment_id === id);
 
-const openReview = (assessment) => {
-  setSelectedAssessment(assessment);
-  setIncentiveResult(null);
+  const openReview = (assessment) => {
+    setSelectedAssessment(assessment);
+    setIncentiveResult(null);
 
-  const items = assessment.items.map(item => {
-    // ✅ FIXED: Prioritize hr_value, then self_value, then empty
-    const actualValue = item.hr_value !== undefined && item.hr_value !== null && item.hr_value !== ""
-      ? item.hr_value 
-      : (item.self_value !== undefined && item.self_value !== null ? item.self_value : "");
-    
-    return {
-      kpi_item_id: item.kpi_item_id,
-      kpi_name: item.kpi_name,
-      target: item.target,
-      unit: item.unit,
-      weight: item.weight || 0,
-      owner_role: item.owner_role || "self",
-      self_value: item.self_value,
-      self_comment: item.self_comment || "",
-      actual_value: actualValue,  // ✅ Now correctly uses hr_value or self_value
-      hr_comment: item.hr_comment || ""
-    };
-  });
-  
-  setReviewForm({ items, hr_comment: "" });
-};
+    const items = assessment.items.map(item => {
+      // ✅ FIXED: Prioritize hr_value, then self_value, then empty
+      const actualValue = item.hr_value !== undefined && item.hr_value !== null && item.hr_value !== ""
+        ? item.hr_value
+        : (item.self_value !== undefined && item.self_value !== null ? item.self_value : "");
+
+      return {
+        kpi_item_id: item.kpi_item_id,
+        kpi_name: item.kpi_name,
+        target: item.target,
+        unit: item.unit,
+        weight: item.weight || 0,
+        owner_role: item.owner_role || "self",
+        self_value: item.self_value,
+        self_comment: item.self_comment || "",
+        actual_value: actualValue,  // ✅ Now correctly uses hr_value or self_value
+        hr_comment: item.hr_comment || ""
+      };
+    });
+
+    setReviewForm({ items, hr_comment: "" });
+  };
 
   const handleActualChange = (idx, value) => {
     setReviewForm(f => {
@@ -163,7 +163,7 @@ const openReview = (assessment) => {
     reviewForm.items.forEach(item => {
       const val = parseFloat(item.actual_value) || 0;
       const pct = Math.min((val / item.target) * 100, 100);
-      const w   = totalWeight === 0 ? equalWeight : (item.weight || 0);
+      const w = totalWeight === 0 ? equalWeight : (item.weight || 0);
       const div = totalWeight === 0 ? 100 : totalWeight;
       total += pct * (w / div);
     });
@@ -177,7 +177,7 @@ const openReview = (assessment) => {
     let s = 0;
     a.items.forEach(item => {
       const pct = Math.min((item.self_value / item.target) * 100, 100);
-      const w   = totalWeight === 0 ? equalWeight : (item.weight || 0);
+      const w = totalWeight === 0 ? equalWeight : (item.weight || 0);
       const div = totalWeight === 0 ? 100 : totalWeight;
       s += pct * (w / div);
     });
@@ -194,7 +194,7 @@ const openReview = (assessment) => {
   const calcIncentiveAmount = (plan, finalScore, salary = 0) => {
     if (!plan) return { amount: 0, slabLabel: "No plan found for dept" };
     const score = Math.round(finalScore || 0);
-    const slab  = (plan.slabs || []).find(s => score >= s.min_score && score <= s.max_score);
+    const slab = (plan.slabs || []).find(s => score >= s.min_score && score <= s.max_score);
     if (!slab || slab.type === "none") return { amount: 0, slabLabel: `${score}% → No Bonus` };
     const amount = slab.type === "percentage"
       ? Math.round((slab.value / 100) * (salary || 0))
@@ -206,14 +206,14 @@ const openReview = (assessment) => {
   };
 
   // ── EXCEL EXPORT FUNCTION ────────────────────────────────────
- const exportEmployeeExcel = (assignmentId) => {
-  const assignment = allAssignments.find(a => a._id === assignmentId);
-  if (!assignment) return;
-  window.open(`${API_BASE}/api/export-excel/${assignmentId}`, "_blank");
-};
+  const exportEmployeeExcel = (assignmentId) => {
+    const assignment = allAssignments.find(a => a._id === assignmentId);
+    if (!assignment) return;
+    window.open(`${API_BASE}/api/export-excel/${assignmentId}`, "_blank");
+  };
   // ─────────────────────────────────────────────────────────────
 
-const handleSubmitReview = async () => {
+  const handleSubmitReview = async () => {
     if (!reviewForm.hr_comment.trim())
       return showToast("Please add HR feedback comment", "error");
 
@@ -232,16 +232,16 @@ const handleSubmitReview = async () => {
       });
 
       const reviewPayload = {
-        employee_id:        selectedAssessment.employee_id._id || selectedAssessment.employee_id,
-        assignment_id:      selectedAssessment.assignment_id?._id || selectedAssessment.assignment_id,
+        employee_id: selectedAssessment.employee_id._id || selectedAssessment.employee_id,
+        assignment_id: selectedAssessment.assignment_id?._id || selectedAssessment.assignment_id,
         self_assessment_id: selectedAssessment._id,
-        period:             selectedAssessment.period,
+        period: selectedAssessment.period,
         kpi_breakdown: reviewForm.items.map(i => {
           // ✅ FIX: Properly convert to number, don't fallback to self_value
-          const actualVal = i.actual_value !== "" && i.actual_value !== null && i.actual_value !== undefined 
-            ? Number(i.actual_value) 
+          const actualVal = i.actual_value !== "" && i.actual_value !== null && i.actual_value !== undefined
+            ? Number(i.actual_value)
             : Number(i.self_value) || 0;
-          
+
           return {
             kpi_item_id: i.kpi_item_id,
             kpi_name: i.kpi_name,
@@ -269,19 +269,19 @@ const handleSubmitReview = async () => {
       }
 
       const matchedPlan = findMatchingPlan(selectedAssessment);
-      const empSalary   = selectedAssessment.employee_id?.salary || 0;
+      const empSalary = selectedAssessment.employee_id?.salary || 0;
       const { amount, slabLabel } = calcIncentiveAmount(matchedPlan, finalScore, empSalary);
 
       let incentiveCreated = false;
       try {
         const resultPayload = {
-          employee_id:       selectedAssessment.employee_id._id || selectedAssessment.employee_id,
-          review_id:         reviewRes.data.data?._id,
-          plan_id:           matchedPlan?._id || null,
+          employee_id: selectedAssessment.employee_id._id || selectedAssessment.employee_id,
+          review_id: reviewRes.data.data?._id,
+          plan_id: matchedPlan?._id || null,
           performance_score: finalScore,
           calculated_amount: amount,
-          cycle_period:      selectedAssessment.period,
-          status:            "pending",
+          cycle_period: selectedAssessment.period,
+          status: "pending",
         };
         const incentiveRes = await axios.post(`${API_BASE}/api/incentive-results`, resultPayload);
         if (incentiveRes.data?.success || incentiveRes.status === 201) incentiveCreated = true;
@@ -313,7 +313,7 @@ const handleSubmitReview = async () => {
         axios.get(`${API_BASE}/api/daily-logs/${employeeId}/${assignmentId}`),
         axios.get(`${API_BASE}/api/daily-logs/totals/${employeeId}/${assignmentId}`)
       ]);
-      if (logsRes.data.success)   setEmployeeLogs(logsRes.data.data);
+      if (logsRes.data.success) setEmployeeLogs(logsRes.data.data);
       if (totalsRes.data.success) setLogTotals(totalsRes.data.data);
     } catch { showToast("Failed to load logs", "error"); }
     finally { setLogsLoading(false); }
@@ -330,7 +330,7 @@ const handleSubmitReview = async () => {
 
   const filteredLogs = employeeLogs.filter(log => {
     if (logDateFrom && log.log_date < logDateFrom) return false;
-    if (logDateTo   && log.log_date > logDateTo)   return false;
+    if (logDateTo && log.log_date > logDateTo) return false;
     return true;
   });
 
@@ -341,26 +341,26 @@ const handleSubmitReview = async () => {
   }, {});
 
   const selectedAssignmentData = allAssignments.find(a => a._id === selectedEmployeeLog);
-  const liveScore              = calcLiveScore();
+  const liveScore = calcLiveScore();
   const { label: liveLabel, color: liveColor } = getRatingInfo(liveScore);
-  const pendingAssessments     = assessments.filter(a => !isReviewed(a._id));
+  const pendingAssessments = assessments.filter(a => !isReviewed(a._id));
 
   const STATS = [
-    { label: "Total Submitted", value: assessments.length,        color: "#2563eb", bg: "#eff6ff", Icon: ClipboardList },
-    { label: "Pending Review",  value: pendingAssessments.length, color: "#d97706", bg: "#fffbeb", Icon: Clock         },
-    { label: "Completed",       value: completedReviews.length,   color: "#16a34a", bg: "#f0fdf4", Icon: CheckCircle2  },
+    { label: "Total Submitted", value: assessments.length, color: "#2563eb", bg: "#eff6ff", Icon: ClipboardList },
+    { label: "Pending Review", value: pendingAssessments.length, color: "#d97706", bg: "#fffbeb", Icon: Clock },
+    { label: "Completed", value: completedReviews.length, color: "#16a34a", bg: "#f0fdf4", Icon: CheckCircle2 },
   ];
 
   const isEmployee = localStorage.getItem("hrRole") === "employee";
 
-const TABS = isEmployee
-  ? [
+  const TABS = isEmployee
+    ? [
       { id: "dailylogs", Icon: Calendar, label: "Daily Logs" },
     ]
-  : [
-      { id: "pending",   Icon: Clock,        label: `Pending (${pendingAssessments.length})` },
+    : [
+      { id: "pending", Icon: Clock, label: `Pending (${pendingAssessments.length})` },
       { id: "completed", Icon: CheckCircle2, label: `Completed (${completedReviews.length})` },
-      { id: "dailylogs", Icon: Calendar,     label: "Daily Logs" },
+      { id: "dailylogs", Icon: Calendar, label: "Daily Logs" },
     ];
 
   return (
@@ -374,30 +374,30 @@ const TABS = isEmployee
       )}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
-  <div>
-    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#1a1a2e" }}>Performance Reviews</h2>
-    <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 14 }}>Review employee self assessments and finalize scores</p>
-  </div>
-  <button
-  onClick={() => {
-    const today = new Date().toISOString().split("T")[0];
-    const from  = logDateFrom || today;
-    const to    = logDateTo   || today;
-    window.open(`${API_BASE}/api/export-excel/all-employees?from=${from}&to=${to}`, "_blank");
-  }}
-  style={{
-    display: "flex", alignItems: "center", gap: 8,
-    padding: "10px 20px", border: "none", borderRadius: 9,
-    background: "#1a1a2e", color: "#fff",
-    fontWeight: 700, fontSize: 13, cursor: "pointer",
-  }}
->
-  ⬇️ Export All Employees Excel
-</button>
-</div>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#1a1a2e" }}>Performance Reviews</h2>
+          <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 14 }}>Review employee self assessments and finalize scores</p>
+        </div>
+        <button
+          onClick={() => {
+            const today = new Date().toISOString().split("T")[0];
+            const from = logDateFrom || today;
+            const to = logDateTo || today;
+            window.open(`${API_BASE}/api/export-excel/all-employees?from=${from}&to=${to}`, "_blank");
+          }}
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "10px 20px", border: "none", borderRadius: 9,
+            background: "#1a1a2e", color: "#fff",
+            fontWeight: 700, fontSize: 13, cursor: "pointer",
+          }}
+        >
+          ⬇️ Export All Employees Excel
+        </button>
+      </div>
 
       <div className="pr-stats" style={{ display: "grid", gap: 16, marginBottom: 24 }}>
-          {!isEmployee && STATS.map((s, i) => (
+        {!isEmployee && STATS.map((s, i) => (
           <div key={i} style={{ background: "#fff", borderRadius: 12, padding: "18px 20px", border: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <p style={{ margin: "0 0 4px", fontSize: 12, color: "#6b7280", fontWeight: 600, textTransform: "uppercase" }}>{s.label}</p>
@@ -417,7 +417,7 @@ const TABS = isEmployee
             padding: "8px 18px", border: "none", borderRadius: 8, cursor: "pointer",
             fontWeight: 600, fontSize: 13,
             background: activeTab === tab.id ? "#2563eb" : "transparent",
-            color:      activeTab === tab.id ? "#fff"    : "#6b7280"
+            color: activeTab === tab.id ? "#fff" : "#6b7280"
           }}>
             <tab.Icon size={13} />
             {tab.label}
@@ -441,15 +441,15 @@ const TABS = isEmployee
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc" }}>
-                      {["Employee","Department","Period","KPIs","Self Score","Submitted On","Incentive Plan","Action"].map(h => (
+                      {["Employee", "Department", "Period", "KPIs", "Self Score", "Submitted On", "Incentive Plan", "Action"].map(h => (
                         <th key={h} style={{ padding: "12px 20px", textAlign: "left", fontWeight: 700, color: "#374151", borderBottom: "2px solid #e5e7eb", whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {pendingAssessments.map((a, i) => {
-                      const selfScore   = calcSelfScore(a);
-                      const { color }   = getRatingInfo(selfScore);
+                      const selfScore = calcSelfScore(a);
+                      const { color } = getRatingInfo(selfScore);
                       const matchedPlan = findMatchingPlan(a);
                       return (
                         <tr key={a._id} style={{ borderBottom: "1px solid #f3f4f6", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
@@ -471,13 +471,15 @@ const TABS = isEmployee
                           <td style={{ padding: "14px 20px", color: "#6b7280", fontSize: 13 }}>{new Date(a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</td>
                           <td style={{ padding: "14px 20px" }}>
                             {matchedPlan ? (
-                              <span style={{ fontSize:12, fontWeight:700, padding:"3px 8px", borderRadius:5,
-                                background: matchedPlan.plan_type==="kpi_linked" ? "#ede9fe" : "#fef9c3",
-                                color:      matchedPlan.plan_type==="kpi_linked" ? "#7c3aed"  : "#a16207" }}>
-                                {matchedPlan.plan_type==="kpi_linked" ? "🔗" : "📋"} {matchedPlan.name}
+                              <span style={{
+                                fontSize: 12, fontWeight: 700, padding: "3px 8px", borderRadius: 5,
+                                background: matchedPlan.plan_type === "kpi_linked" ? "#ede9fe" : "#fef9c3",
+                                color: matchedPlan.plan_type === "kpi_linked" ? "#7c3aed" : "#a16207"
+                              }}>
+                                {matchedPlan.plan_type === "kpi_linked" ? "🔗" : "📋"} {matchedPlan.name}
                               </span>
                             ) : (
-                              <span style={{ fontSize:12, color:"#9ca3af" }}>No plan</span>
+                              <span style={{ fontSize: 12, color: "#9ca3af" }}>No plan</span>
                             )}
                           </td>
                           <td style={{ padding: "14px 20px" }}>
@@ -492,8 +494,8 @@ const TABS = isEmployee
 
               <div className="pr-card-list">
                 {pendingAssessments.map(a => {
-                  const selfScore   = calcSelfScore(a);
-                  const { color }   = getRatingInfo(selfScore);
+                  const selfScore = calcSelfScore(a);
+                  const { color } = getRatingInfo(selfScore);
                   const matchedPlan = findMatchingPlan(a);
                   return (
                     <div key={a._id} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px", background: "#fff" }}>
@@ -511,10 +513,12 @@ const TABS = isEmployee
                       </div>
                       {matchedPlan && (
                         <div style={{ marginBottom: 8 }}>
-                          <span style={{ fontSize:12, fontWeight:700, padding:"3px 8px", borderRadius:5,
-                            background: matchedPlan.plan_type==="kpi_linked" ? "#ede9fe" : "#fef9c3",
-                            color:      matchedPlan.plan_type==="kpi_linked" ? "#7c3aed"  : "#a16207" }}>
-                            {matchedPlan.plan_type==="kpi_linked" ? "🔗" : "📋"} {matchedPlan.name}
+                          <span style={{
+                            fontSize: 12, fontWeight: 700, padding: "3px 8px", borderRadius: 5,
+                            background: matchedPlan.plan_type === "kpi_linked" ? "#ede9fe" : "#fef9c3",
+                            color: matchedPlan.plan_type === "kpi_linked" ? "#7c3aed" : "#a16207"
+                          }}>
+                            {matchedPlan.plan_type === "kpi_linked" ? "🔗" : "📋"} {matchedPlan.name}
                           </span>
                         </div>
                       )}
@@ -542,7 +546,7 @@ const TABS = isEmployee
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc" }}>
-                      {["Employee","Department","Period","Final Score","Rating","Reviewed On"].map(h => (
+                      {["Employee", "Department", "Period", "Final Score", "Rating", "Reviewed On"].map(h => (
                         <th key={h} style={{ padding: "12px 20px", textAlign: "left", fontWeight: 700, color: "#374151", borderBottom: "2px solid #e5e7eb", whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
@@ -698,29 +702,45 @@ const TABS = isEmployee
                             <div>
                               <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: "#1f2937" }}>
                                 {log.kpi_name} — <span style={{ color: "#2563eb" }}>{log.value} {log.unit}</span>
+                                {log.isEdited && (
+                                  <span style={{
+                                    marginLeft: 6, fontSize: 10, fontWeight: 700,
+                                    background: "#fef3c7", color: "#d97706",
+                                    padding: "1px 7px", borderRadius: 99, border: "1px solid #fde68a"
+                                  }}>
+                                    ✏️ Edited
+                                  </span>
+                                )}
                               </p>
                               {log.note && <p style={{ margin: 0, fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>{log.note}</p>}
                               {log.extra_fields && Object.keys(log.extra_fields).length > 0 && (
-  <div style={{
-    display: "flex", flexWrap: "wrap", gap: 5,
-    marginTop: 5, paddingTop: 5, borderTop: "1px dashed #e5e7eb"
-  }}>
-    {Object.entries(log.extra_fields).map(([key, val]) => (
-      val ? (
-        <span key={key} style={{
-          fontSize: 11, background: "#f3f4f6", color: "#374151",
-          padding: "2px 8px", borderRadius: 99,
-          border: "1px solid #e5e7eb", fontWeight: 600
-        }}>
-          {key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}: {val}
-        </span>
-      ) : null
-    ))}
-  </div>
-)}
+                                <div style={{
+                                  display: "flex", flexWrap: "wrap", gap: 5,
+                                  marginTop: 5, paddingTop: 5, borderTop: "1px dashed #e5e7eb"
+                                }}>
+                                  {Object.entries(log.extra_fields).map(([key, val]) => (
+                                    val ? (
+                                      <span key={key} style={{
+                                        fontSize: 11, background: "#f3f4f6", color: "#374151",
+                                        padding: "2px 8px", borderRadius: 99,
+                                        border: "1px solid #e5e7eb", fontWeight: 600
+                                      }}>
+                                        {key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}: {val}
+                                      </span>
+                                    ) : null
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
-                          <span style={{ fontSize: 12, color: "#9ca3af", flexShrink: 0 }}>{new Date(log.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
+                         <span style={{ fontSize: 12, color: "#9ca3af", flexShrink: 0, textAlign: "right" }}>
+  <span style={{ display: "block", fontWeight: 600, color: "#6b7280" }}>
+    {new Date(log.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+  </span>
+  <span style={{ display: "block" }}>
+    {new Date(log.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+  </span>
+</span>
                         </div>
                       ))}
                     </div>
@@ -742,7 +762,7 @@ const TABS = isEmployee
               ) : (
                 selectedAssignmentData?.template_id?.kpi_items?.map((item, i) => {
                   const total = logTotals[item._id] || 0;
-                  const pct   = Math.min(Math.round((total / item.target) * 100), 100);
+                  const pct = Math.min(Math.round((total / item.target) * 100), 100);
                   const color = pct >= 100 ? "#16a34a" : pct >= 75 ? "#2563eb" : pct >= 50 ? "#d97706" : "#dc2626";
                   return (
                     <div key={i} style={{ marginBottom: 16 }}>
@@ -766,11 +786,11 @@ const TABS = isEmployee
                   <User size={13} color="#374151" /> Employee Info
                 </p>
                 {[
-                  { label: "Name",        value: selectedAssignmentData.employee_id?.name },
+                  { label: "Name", value: selectedAssignmentData.employee_id?.name },
                   { label: "Designation", value: selectedAssignmentData.employee_id?.designation || "—" },
-                  { label: "Department",  value: selectedAssignmentData.employee_id?.department  || "—" },
-                  { label: "Period",      value: selectedAssignmentData.period },
-                  { label: "Total Logs",  value: employeeLogs.length },
+                  { label: "Department", value: selectedAssignmentData.employee_id?.department || "—" },
+                  { label: "Period", value: selectedAssignmentData.period },
+                  { label: "Total Logs", value: employeeLogs.length },
                 ].map((d, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: i < 4 ? "1px solid #f3f4f6" : "none", fontSize: 13 }}>
                     <span style={{ color: "#6b7280" }}>{d.label}</span>
@@ -812,25 +832,25 @@ const TABS = isEmployee
               {(() => {
                 const plan = findMatchingPlan(selectedAssessment);
                 if (!plan) return (
-                  <div style={{ background:"#fff7ed", border:"1px solid #fed7aa", borderRadius:10, padding:"10px 14px", marginBottom:16, fontSize:13, color:"#92400e" }}>
+                  <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#92400e" }}>
                     ⚠️ No incentive plan found for <strong>{selectedAssessment.employee_id?.department}</strong> dept. Incentive won't auto-create.
                   </div>
                 );
                 const { amount } = calcIncentiveAmount(plan, liveScore, selectedAssessment.employee_id?.salary || 0);
                 return (
-                  <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:10, padding:"12px 16px", marginBottom:16, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10 }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "12px 16px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <Zap size={16} color="#16a34a" />
                       <div>
-                        <p style={{ margin:0, fontSize:13, fontWeight:700, color:"#166534" }}>
-                          {plan.plan_type==="kpi_linked" ? "🔗 KPI-Linked" : "📋 Standalone"} — {plan.name}
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#166534" }}>
+                          {plan.plan_type === "kpi_linked" ? "🔗 KPI-Linked" : "📋 Standalone"} — {plan.name}
                         </p>
-                        <p style={{ margin:0, fontSize:12, color:"#16a34a" }}>Incentive auto-creates on finalize</p>
+                        <p style={{ margin: 0, fontSize: 12, color: "#16a34a" }}>Incentive auto-creates on finalize</p>
                       </div>
                     </div>
-                    <div style={{ textAlign:"right" }}>
-                      <p style={{ margin:0, fontSize:11, color:"#6b7280" }}>Estimated (live score)</p>
-                      <p style={{ margin:0, fontSize:18, fontWeight:800, color:"#16a34a" }}>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ margin: 0, fontSize: 11, color: "#6b7280" }}>Estimated (live score)</p>
+                      <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#16a34a" }}>
                         {amount > 0 ? `₹${amount.toLocaleString("en-IN")}` : "No Bonus"}
                       </p>
                     </div>
@@ -840,15 +860,15 @@ const TABS = isEmployee
 
               {/* Incentive Result (after submit) */}
               {incentiveResult && (
-                <div style={{ background:"#eff6ff", border:"2px solid #2563eb", borderRadius:12, padding:"16px 20px", marginBottom:20, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
+                <div style={{ background: "#eff6ff", border: "2px solid #2563eb", borderRadius: 12, padding: "16px 20px", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
                   <div>
-                    <p style={{ margin:"0 0 4px", fontWeight:800, fontSize:15, color:"#1d4ed8" }}>✅ Review Finalized!</p>
-                    <p style={{ margin:0, fontSize:13, color:"#374151" }}>Final Score: <strong>{incentiveResult.finalScore}%</strong> · {incentiveResult.slabLabel}</p>
-                    {incentiveResult.planName && <p style={{ margin:"4px 0 0", fontSize:12, color:"#6b7280" }}>Plan: {incentiveResult.planName}</p>}
+                    <p style={{ margin: "0 0 4px", fontWeight: 800, fontSize: 15, color: "#1d4ed8" }}>✅ Review Finalized!</p>
+                    <p style={{ margin: 0, fontSize: 13, color: "#374151" }}>Final Score: <strong>{incentiveResult.finalScore}%</strong> · {incentiveResult.slabLabel}</p>
+                    {incentiveResult.planName && <p style={{ margin: "4px 0 0", fontSize: 12, color: "#6b7280" }}>Plan: {incentiveResult.planName}</p>}
                   </div>
-                  <div style={{ textAlign:"right" }}>
-                    <p style={{ margin:0, fontSize:11, color:"#6b7280" }}>Incentive Created</p>
-                    <p style={{ margin:0, fontSize:24, fontWeight:900, color:"#16a34a" }}>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ margin: 0, fontSize: 11, color: "#6b7280" }}>Incentive Created</p>
+                    <p style={{ margin: 0, fontSize: 24, fontWeight: 900, color: "#16a34a" }}>
                       {incentiveResult.amount > 0 ? `₹${incentiveResult.amount.toLocaleString("en-IN")}` : "No Bonus"}
                     </p>
                   </div>
@@ -859,10 +879,10 @@ const TABS = isEmployee
               <h4 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1a1a2e" }}>KPI Actual Values</h4>
 
               {reviewForm.items.map((item, idx) => {
-                const hrEditable  = isHREditable(item);
-                const ownerStyle  = ownerStyles[item.owner_role || "self"];
-                const selfPct     = item.self_value ? Math.round((item.self_value / item.target) * 100) : 0;
-                const actualPct   = item.actual_value
+                const hrEditable = isHREditable(item);
+                const ownerStyle = ownerStyles[item.owner_role || "self"];
+                const selfPct = item.self_value ? Math.round((item.self_value / item.target) * 100) : 0;
+                const actualPct = item.actual_value
                   ? Math.min(Math.round((parseFloat(item.actual_value) / item.target) * 100), 150)
                   : 0;
                 const actualColor = getProgressColor(actualPct);
@@ -907,23 +927,23 @@ const TABS = isEmployee
                       </div>
 
                       {hrEditable ? (
-                     // Remove the ternary, always show HR editable input
-<div style={{ background: "#fff", borderRadius: 8, padding: "10px 14px", border: "2px solid #d97706" }}>
-  <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "#d97706", textTransform: "uppercase" }}>
-    🧾 HR Actual Value *
-  </p>
-  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-    <input
-      type="number"
-      value={item.actual_value}
-      onChange={e => handleActualChange(idx, e.target.value)}
-      min="0"
-      placeholder={`Enter actual (target: ${item.target})`}
-      style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 15, fontWeight: 700, color: actualColor, outline: "none", boxSizing: "border-box" }}
-    />
-    <span style={{ fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>{item.unit}</span>
-  </div>
-</div>
+                        // Remove the ternary, always show HR editable input
+                        <div style={{ background: "#fff", borderRadius: 8, padding: "10px 14px", border: "2px solid #d97706" }}>
+                          <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "#d97706", textTransform: "uppercase" }}>
+                            🧾 HR Actual Value *
+                          </p>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <input
+                              type="number"
+                              value={item.actual_value}
+                              onChange={e => handleActualChange(idx, e.target.value)}
+                              min="0"
+                              placeholder={`Enter actual (target: ${item.target})`}
+                              style={{ width: "100%", padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 15, fontWeight: 700, color: actualColor, outline: "none", boxSizing: "border-box" }}
+                            />
+                            <span style={{ fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>{item.unit}</span>
+                          </div>
+                        </div>
                       ) : (
                         <div style={{ background: "#f3f4f6", borderRadius: 8, padding: "10px 14px", border: "1px solid #e5e7eb", opacity: 0.85 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
@@ -997,4 +1017,4 @@ const TABS = isEmployee
 }
 
 const labelStyle = { display: "block", fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 6 };
-const inputStyle  = { width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, color: "#1a1a2e", background: "#fff", boxSizing: "border-box", outline: "none" };
+const inputStyle = { width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, color: "#1a1a2e", background: "#fff", boxSizing: "border-box", outline: "none" };
