@@ -19,6 +19,8 @@ const empty = {
   salary: "", description: "", responsibilities: "",
   requirements: "", schedule: "Day shift",
   workLocation: "In-person", contactDetails: "", status: "active",
+  visibility: "public",   
+  minExperience: 0, 
 };
 
 export default function JobPostings() {
@@ -180,6 +182,13 @@ export default function JobPostings() {
                     borderRadius: 20, padding: "2px 10px",
                     fontSize: 11, fontWeight: 600, textTransform: "capitalize"
                   }}>{job.status}</span>
+                  {job.visibility === "internal" && (
+    <span style={{
+      background: "#f5f3ff", color: "#7c3aed",
+      borderRadius: 20, padding: "2px 10px",
+      fontSize: 11, fontWeight: 600
+    }}>🔒 Internal</span>
+  )}
                 </div>
                 <div style={{ display: "flex", gap: 16, color: "#6b7280", fontSize: 12, flexWrap: "wrap" }}>
                   <span>📁 {job.type}</span>
@@ -333,6 +342,55 @@ export default function JobPostings() {
                   </select>
                 </div>
               </div>
+
+              {/* ── NEW: Visibility toggle ── */}
+<div>
+  <label style={labelStyle}>Job Visibility</label>
+  <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+    <button
+      type="button"
+      onClick={() => setForm((p) => ({ ...p, visibility: "public" }))}
+      style={{
+        flex: 1, padding: "9px 0", borderRadius: 8, fontSize: 13,
+        fontWeight: 600, cursor: "pointer", border: "1px solid",
+        borderColor: form.visibility === "public" ? "#1d4ed8" : "#d1d5db",
+        background: form.visibility === "public" ? "#eff6ff" : "#f9fafb",
+        color: form.visibility === "public" ? "#1d4ed8" : "#6b7280",
+      }}
+    >
+      🌐 Public (Careers page)
+    </button>
+    <button
+      type="button"
+      onClick={() => setForm((p) => ({ ...p, visibility: "internal" }))}
+      style={{
+        flex: 1, padding: "9px 0", borderRadius: 8, fontSize: 13,
+        fontWeight: 600, cursor: "pointer", border: "1px solid",
+        borderColor: form.visibility === "internal" ? "#7c3aed" : "#d1d5db",
+        background: form.visibility === "internal" ? "#f5f3ff" : "#f9fafb",
+        color: form.visibility === "internal" ? "#7c3aed" : "#6b7280",
+      }}
+    >
+      🔒 Internal (Employees only)
+    </button>
+  </div>
+  {form.visibility === "internal" && (
+    <div style={{ marginTop: 10 }}>
+      <label style={labelStyle}>
+        Min. Years of Experience <span style={{ color: "#9ca3af", fontWeight: 400 }}>(for eligibility)</span>
+      </label>
+      <input
+        type="number"
+        name="minExperience"
+        value={form.minExperience}
+        onChange={handleChange}
+        min={0} max={20}
+        placeholder="e.g. 2"
+        style={inputStyle}
+      />
+    </div>
+  )}
+</div>
 
               {/* Buttons */}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import {
   Mail, Phone, FileText, CheckCircle, Clock,
@@ -61,6 +61,478 @@ const getImpactEmployeeName = (ib) => {
   );
 };
 
+// ── Job Toast Notification ──
+function JobToastNotification({ job, employeeId, apiBase, onDismiss, initialApplied }) {
+  const [visible, setVisible] = useState(false);
+  const [showSheet, setShowSheet] = useState(false);
+const [applyStatus, setApplyStatus] = useState(initialApplied ? "applied" : null);
+  const toastRef = useRef(null);
+  const startXRef = useRef(0);
+  const currentXRef = useRef(0);
+  const draggingRef = useRef(false);
+    const hasDismissedRef = useRef(false);
+
+  // Slide in from RIGHT after mount
+  useEffect(() => {
+    setVisible(true);
+    return () => {};
+  }, []);
+
+  // ✅ FIXED: Cancel button click → swipe LEFT animation (same as touch swipe)
+  const dismiss = () => {
+  if (hasDismissedRef.current) return; // ✅ Prevent double dismiss
+  hasDismissedRef.current = true;
+  
+  if (toastRef.current) {
+    toastRef.current.style.transition = "transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s ease";
+    toastRef.current.style.transform = "translateX(-110%)";
+    toastRef.current.style.opacity = "0";
+  }
+  setTimeout(() => onDismiss && onDismiss(), 370);
+};
+
+  // ── Touch: swipe LEFT to dismiss ──
+  const onTouchStart = (e) => {
+    startXRef.current = e.touches[0].clientX;
+    draggingRef.current = true;
+    if (toastRef.current) toastRef.current.style.transition = "none";
+  };
+  const onTouchMove = (e) => {
+    if (!draggingRef.current) return;
+    const dx = Math.min(0, e.touches[0].clientX - startXRef.current);
+    currentXRef.current = dx;
+    if (toastRef.current) {
+      toastRef.current.style.transform = `translateX(${dx}px)`;
+      toastRef.current.style.opacity = Math.max(0, 1 - Math.abs(dx) / 140);
+    }
+  };
+  const onTouchEnd = () => {
+    draggingRef.current = false;
+    if (toastRef.current) toastRef.current.style.transition = "";
+    if (currentXRef.current < -80) {
+      if (toastRef.current) {
+        toastRef.current.style.transition = "transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s ease";
+        toastRef.current.style.transform = "translateX(-110%)";
+        toastRef.current.style.opacity = "0";
+      }
+      setTimeout(() => onDismiss && onDismiss(), 370);
+    } else {
+      if (toastRef.current) {
+        toastRef.current.style.transition = "";
+        toastRef.current.style.transform = "";
+        toastRef.current.style.opacity = "";
+      }
+    }
+    currentXRef.current = 0;
+  };
+
+  // ── Mouse drag: swipe LEFT to dismiss (desktop) ──
+  const onMouseDown = (e) => {
+    startXRef.current = e.clientX;
+    draggingRef.current = true;
+    if (toastRef.current) toastRef.current.style.transition = "none";
+  };
+  const onMouseMove = (e) => {
+    if (!draggingRef.current) return;
+    const dx = Math.min(0, e.clientX - startXRef.current);
+    currentXRef.current = dx;
+    if (toastRef.current) {
+      toastRef.current.style.transform = `translateX(${dx}px)`;
+      toastRef.current.style.opacity = Math.max(0, 1 - Math.abs(dx) / 140);
+    }
+  };
+  const onMouseUp = () => {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    if (toastRef.current) toastRef.current.style.transition = "";
+    if (currentXRef.current < -80) {
+      if (toastRef.current) {
+        toastRef.current.style.transition = "transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s ease";
+        toastRef.current.style.transform = "translateX(-110%)";
+        toastRef.current.style.opacity = "0";
+      }
+      setTimeout(() => onDismiss && onDismiss(), 370);
+    } else {
+      if (toastRef.current) {
+        toastRef.current.style.transition = "";
+        toastRef.current.style.transform = "";
+        toastRef.current.style.opacity = "";
+      }
+    }
+    currentXRef.current = 0;
+  };
+
+  useEffect(() => {
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  const handleApply = async () => {
+    if (applyStatus === "applied" || applyStatus === "applying") return;
+    setApplyStatus("applying");
+    try {
+      await axios.post(`${apiBase}/api/jobs/${job._id}/apply`, { employeeId });
+      setApplyStatus("applied");
+    } catch (err) {
+      if (err?.response?.status === 409) {
+        setApplyStatus("applied");
+      } else {
+        setApplyStatus("error");
+        setTimeout(() => setApplyStatus(null), 2500);
+      }
+    }
+  };
+
+  const expLabel = {
+    "Fresher": "Fresher",
+    "0-1 Years": "0–1 yr",
+    "6 Months – 1 Year": "6m–1yr",
+    "1-3 Years": "1–3 yrs",
+    "3–5 Years": "3–5 yrs",
+  }[job.experience] || job.experience;
+
+  return (
+    <>
+      <style>{`
+        @keyframes slideInFromRight {
+          from { transform: translateX(110%); opacity: 0; }
+          to   { transform: translateX(0);    opacity: 1; }
+        }
+        @keyframes slideUpSheet {
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0);   }
+        }
+      `}</style>
+
+      {/* ── Toast ── */}
+      <div
+        ref={toastRef}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onMouseDown={onMouseDown}
+        style={{
+          position: "fixed",
+          top: 16,
+          right: 16,
+          left: "auto",
+          width: "calc(100% - 32px)",
+          maxWidth: 390,
+          background: "#fff",
+          border: "1px solid #eef0f6",
+          borderRadius: 14,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.13)",
+          padding: "10px 12px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          cursor: "grab",
+          userSelect: "none",
+          zIndex: 999,
+          // ✅ Only slide-in animation; dismiss is handled by JS directly
+          animation: visible
+            ? "slideInFromRight 0.4s cubic-bezier(.4,0,.2,1) forwards"
+            : "none",
+        }}
+      >
+        {/* Swipe-left hint bar */}
+        <div style={{
+          position: "absolute",
+          left: 8,
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: 3,
+          height: 28,
+          borderRadius: 2,
+          background: "#e5e7eb",
+        }} />
+
+        {/* Icon */}
+        <div style={{
+          width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+          background: "#f5f3ff", border: "1px solid #ddd6fe",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          marginLeft: 6,
+        }}>
+          <BadgeCheck size={16} color="#7c3aed" />
+        </div>
+
+        {/* Text */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ margin: "0 0 1px", fontSize: 10, fontWeight: 700, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            New opportunity
+          </p>
+          <p style={{ margin: "0 0 1px", fontSize: 13, fontWeight: 700, color: "#1a1d2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {job.title}
+          </p>
+          <p style={{ margin: 0, fontSize: 11, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {job.salary && job.salary !== "N/A" ? `${job.salary} · ` : ""}{job.type}
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, flexShrink: 0 }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowSheet(true); }}
+            style={{
+              fontSize: 11, padding: "4px 11px", borderRadius: 8,
+              background: "#7c3aed", color: "#fff",
+              border: "none", cursor: "pointer", fontWeight: 700,
+              fontFamily: "'Manrope',sans-serif", whiteSpace: "nowrap"
+            }}
+          >
+            See more
+          </button>
+          {/* ✅ FIXED: Cancel now triggers swipe-left animation */}
+          <button
+            onClick={(e) => { e.stopPropagation(); dismiss(); }}
+            style={{
+              fontSize: 11, padding: "4px 11px", borderRadius: 8,
+              background: "transparent", color: "#6b7280",
+              border: "1px solid #e5e7eb", cursor: "pointer", fontWeight: 600,
+              fontFamily: "'Manrope',sans-serif", whiteSpace: "nowrap"
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      {/* ── Detail bottom sheet ── */}
+     {/* ── Detail bottom sheet ── */}
+{showSheet && (
+  <div
+    style={{
+      position: "fixed", inset: 0, zIndex: 1000,
+      background: "rgba(0,0,0,0.35)",
+      display: "flex", alignItems: "flex-end", justifyContent: "center"
+    }}
+    onClick={() => setShowSheet(false)}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "100%", maxWidth: 480,
+        background: "#fff", borderRadius: "18px 18px 0 0",
+        padding: "18px 20px 0",
+        animation: "slideUpSheet .3s cubic-bezier(.4,0,.2,1)",
+        position: "relative",
+        maxHeight: "65vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* Drag handle */}
+      <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e5e7eb", margin: "0 auto 16px", flexShrink: 0 }} />
+
+      {/* Close button */}
+      <button
+        onClick={() => setShowSheet(false)}
+        style={{
+          position: "absolute", top: 16, right: 16,
+          width: 28, height: 28, borderRadius: "50%",
+          background: "#f3f4f6", border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 2,
+        }}
+      >
+        <X size={14} color="#6b7280" />
+      </button>
+
+      {/* ✅ SCROLLABLE CONTENT */}
+      <div style={{ overflowY: "auto", flex: 1, paddingRight: 4 }}>
+        
+        <p style={{ margin: "0 0 3px", fontSize: 17, fontWeight: 800, color: "#1a1d2e" }}>{job.title}</p>
+        <p style={{ margin: "0 0 12px", fontSize: 12, color: "#6b7280" }}>{job.type}</p>
+
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+          {job.experience && (
+            <span style={{ fontSize: 11, color: "#6b7280", background: "#f3f4f6", padding: "3px 10px", borderRadius: 99, fontWeight: 600 }}>
+              👤 {expLabel}
+            </span>
+          )}
+          {job.salary && job.salary !== "N/A" && (
+            <span style={{ fontSize: 11, color: "#059669", background: "#ecfdf5", padding: "3px 10px", borderRadius: 99, fontWeight: 700, border: "1px solid #6ee7b7" }}>
+              💰 {job.salary}
+            </span>
+          )}
+        </div>
+
+        {/* REQUIREMENTS */}
+        {job.requirements && job.requirements.length > 0 && (
+          <>
+            <p style={{ margin: "0 0 5px", fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em" }}>Requirements</p>
+            <ul style={{ margin: "0 0 14px", paddingLeft: 16, fontSize: 13, color: "#374151", lineHeight: 1.65 }}>
+              {Array.isArray(job.requirements)
+                ? job.requirements.map((req, i) => <li key={i}>{req}</li>)
+                : typeof job.requirements === "string"
+                  ? job.requirements.split("\n").filter(Boolean).map((req, i) => <li key={i}>{req}</li>)
+                  : null
+              }
+            </ul>
+          </>
+        )}
+
+        {/* RESPONSIBILITIES */}
+        {job.responsibilities && job.responsibilities.length > 0 && (
+          <>
+            <p style={{ margin: "0 0 5px", fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em" }}>Responsibilities</p>
+            <ul style={{ margin: "0 0 14px", paddingLeft: 16, fontSize: 13, color: "#374151", lineHeight: 1.65 }}>
+              {Array.isArray(job.responsibilities)
+                ? job.responsibilities.map((resp, i) => <li key={i}>{resp}</li>)
+                : typeof job.responsibilities === "string"
+                  ? job.responsibilities.split("\n").filter(Boolean).map((resp, i) => <li key={i}>{resp}</li>)
+                  : null
+              }
+            </ul>
+          </>
+        )}
+
+      </div> {/* ✅ END SCROLLABLE CONTENT */}
+
+      {/* ✅ STICKY APPLY BUTTON */}
+      <div style={{ 
+        padding: "12px 0 20px", 
+        background: "#fff",
+        borderTop: "1px solid #f3f4f6",
+        marginTop: 4,
+        flexShrink: 0,
+      }}>
+        <button
+          onClick={handleApply}
+          disabled={applyStatus === "applying" || applyStatus === "applied"}
+          style={{
+            width: "100%", padding: "11px",
+            borderRadius: 10, fontSize: 14, fontWeight: 700,
+            border: "1.5px solid",
+            cursor: (applyStatus === "applied" || applyStatus === "applying") ? "default" : "pointer",
+            fontFamily: "'Manrope',sans-serif", transition: "all .15s",
+            ...(applyStatus === "applied"
+              ? { background: "#ecfdf5", color: "#059669", borderColor: "#6ee7b7" }
+              : applyStatus === "error"
+              ? { background: "#fef2f2", color: "#dc2626", borderColor: "#fca5a5" }
+              : applyStatus === "applying"
+              ? { background: "#f5f3ff", color: "#7c3aed", borderColor: "#ddd6fe", opacity: .7 }
+              : { background: "#7c3aed", color: "#fff", borderColor: "#7c3aed" }
+            )
+          }}
+        >
+          {applyStatus === "applied" ? "✓ Applied!" : applyStatus === "applying" ? "Submitting..." : applyStatus === "error" ? "Try again" : "Apply for this role"}
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
+    </>
+  );
+}
+
+// ── Internal Job Row Component ──
+function InternalJobRow({ job, employeeId, apiBase }) {
+  const [status, setStatus] = useState(() => {
+    const alreadyApplied = job.applicants?.some((a) => {
+      const appEmpId = a.employeeId?._id || a.employeeId;
+      return appEmpId?.toString() === employeeId?.toString();
+    });
+    return alreadyApplied ? "applied" : null;
+  });
+
+  const expLabel = {
+    "Fresher": "Fresher",
+    "0-1 Years": "0–1 yr",
+    "6 Months – 1 Year": "6m–1yr",
+    "1-3 Years": "1–3 yrs",
+    "3–5 Years": "3–5 yrs",
+  }[job.experience] || job.experience;
+
+  const handleApply = async () => {
+    if (status === "applied" || status === "applying") return;
+    setStatus("applying");
+    try {
+      await axios.post(`${apiBase}/api/jobs/${job._id}/apply`, { employeeId });
+      setStatus("applied");
+    } catch (err) {
+      if (err?.response?.status === 409) {
+        setStatus("applied");
+      } else {
+        setStatus("error");
+        setTimeout(() => setStatus(null), 2500);
+      }
+    }
+  };
+
+  return (
+    <div style={{
+      display: "flex", alignItems: "flex-start", gap: 10,
+      padding: "11px 16px",
+      borderBottom: "1px solid #f4f5f8",
+    }}>
+      <div style={{
+        width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+        background: "#f5f3ff", border: "1px solid #ddd6fe",
+        display: "flex", alignItems: "center", justifyContent: "center"
+      }}>
+        <BadgeCheck size={15} color="#7c3aed" />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{
+          margin: "0 0 4px", fontSize: 13, fontWeight: 700,
+          color: "#1a1d2e", overflow: "hidden",
+          textOverflow: "ellipsis", whiteSpace: "nowrap"
+        }}>
+          {job.title}
+        </p>
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 7 }}>
+          {job.type && (
+            <span style={{
+              fontSize: 10, color: "#6b7280", background: "#f3f4f6",
+              padding: "1px 7px", borderRadius: 99, fontWeight: 600
+            }}>📁 {job.type}</span>
+          )}
+          {job.experience && (
+            <span style={{
+              fontSize: 10, color: "#6b7280", background: "#f3f4f6",
+              padding: "1px 7px", borderRadius: 99, fontWeight: 600
+            }}>👤 {expLabel}</span>
+          )}
+          {job.salary && job.salary !== "N/A" && (
+            <span style={{
+              fontSize: 10, color: "#059669", background: "#ecfdf5",
+              padding: "1px 7px", borderRadius: 99, fontWeight: 700,
+              border: "1px solid #6ee7b7"
+            }}>💰 {job.salary}</span>
+          )}
+        </div>
+        <button
+          onClick={handleApply}
+          disabled={status === "applying" || status === "applied"}
+          style={{
+            padding: "5px 14px", borderRadius: 7, fontSize: 11,
+            fontWeight: 700, cursor: (status === "applied" || status === "applying") ? "default" : "pointer",
+            border: "1.5px solid", fontFamily: "'Manrope', sans-serif",
+            transition: "all .15s",
+            ...(status === "applied"
+              ? { background: "#ecfdf5", color: "#059669", borderColor: "#6ee7b7" }
+              : status === "error"
+              ? { background: "#fef2f2", color: "#dc2626", borderColor: "#fca5a5" }
+              : status === "applying"
+              ? { background: "#f5f3ff", color: "#7c3aed", borderColor: "#ddd6fe", opacity: .7 }
+              : { background: "#7c3aed", color: "#fff", borderColor: "#7c3aed" }
+            )
+          }}
+        >
+          {status === "applied" ? "✓ Applied" : status === "applying" ? "Submitting..." : status === "error" ? "Try again" : "Apply Now"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function EmployeeDashboard() {
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -75,9 +547,10 @@ export default function EmployeeDashboard() {
   const [showCareer, setShowCareer] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [deptDesigs, setDeptDesigs] = useState([]);
-
-  // ── Notification unread count ──
   const [unreadCount, setUnreadCount] = useState(0);
+  const [internalJobs, setInternalJobs] = useState([]);
+  const [toastQueue, setToastQueue] = useState([]);
+  const [toastIndex, setToastIndex] = useState(0);
 
   useEffect(() => {
     const hideCrisp = () => { if (window.$crisp) window.$crisp.push(["do", "chat:hide"]); };
@@ -92,7 +565,6 @@ export default function EmployeeDashboard() {
     fetchAll(id);
     const t = setInterval(() => fetchAll(id), 30000);
 
-    // ── Fetch unread notification count ──
     const fetchUnread = async () => {
       try {
         const res = await axios.get(`${API_BASE}/api/notifications/${id}`);
@@ -188,6 +660,15 @@ export default function EmployeeDashboard() {
       try {
         const ibRes = await axios.get(`${API_BASE}/api/impact-bonus/announcements`);
         if (ibRes.data.success) setImpactAnnouncements(ibRes.data.data);
+      } catch (_) { }
+
+      try {
+        const ijRes = await axios.get(`${API_BASE}/api/jobs/internal`);
+        if (ijRes.data.success) {
+          const jobs = ijRes.data.jobs || [];
+          setInternalJobs(jobs);
+          setToastQueue(prev => prev.length === 0 ? jobs : prev);
+        }
       } catch (_) { }
 
     } catch (err) { console.log(err); }
@@ -289,7 +770,6 @@ export default function EmployeeDashboard() {
         .emp-dash *, .emp-dash *::before, .emp-dash *::after { box-sizing: border-box; }
         .emp-dash { font-family: 'Manrope', sans-serif; background: #f7f8fc; min-height: 100vh; color: #1a1d2e; overflow-x: hidden; width: 100%; max-width: 100%; }
 
-        /* ── TOPBAR (mobile only, hidden on desktop) ── */
         .ed-topbar {
           background: #fff;
           border-bottom: 1px solid #eef0f6;
@@ -309,104 +789,55 @@ export default function EmployeeDashboard() {
         .ed-topbar-sub   { font-size: 10px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
         .ed-topbar-avatar { display: flex; flex-shrink: 0; }
 
-        /* ── MOBILE STATUS PILL ── */
         .ed-status-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 99px; font-size: 10px; font-weight: 700; border: 1.5px solid; white-space: nowrap; flex-shrink: 0; }
         .ed-pill-text { display: none; }
 
-        /* ── BUTTONS ── */
         .ed-btn-primary { display: inline-flex; align-items: center; gap: 5px; padding: 7px 13px; border-radius: 8px; background: #4f8ef7; border: none; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Manrope', sans-serif; transition: background .15s; white-space: nowrap; flex-shrink: 0; }
         .ed-btn-primary:hover { background: #3a7be8; }
         .ed-btn-outline  { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 8px; background: #fff; border: 1.5px solid #e8eaf0; color: #374151; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Manrope', sans-serif; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
         .ed-btn-outline:hover { border-color: #4f8ef7; color: #4f8ef7; }
         .ed-topbar-actions { display: none; }
 
-        /* ── NOTIFICATION BELL ── */
         .ed-notif-btn {
-          position: relative;
-          width: 36px; height: 36px;
-          border-radius: 9px;
-          border: 1.5px solid #eef0f6;
-          background: #f7f8fc;
+          position: relative; width: 36px; height: 36px; border-radius: 9px;
+          border: 1.5px solid #eef0f6; background: #f7f8fc;
           display: flex; align-items: center; justify-content: center;
-          cursor: pointer;
-          transition: all 0.15s;
-          color: #6b7280;
-          flex-shrink: 0;
-          padding: 0;
+          cursor: pointer; transition: all 0.15s; color: #6b7280; flex-shrink: 0; padding: 0;
         }
         .ed-notif-btn:hover { background: #eff6ff; border-color: #bfdbfe; color: #2563eb; }
         .ed-notif-badge {
-          position: absolute;
-          top: -5px; right: -5px;
-          min-width: 17px; height: 17px;
-          background: #dc2626;
-          color: #fff;
-          border-radius: 99px;
-          font-size: 9px; font-weight: 700;
+          position: absolute; top: -5px; right: -5px;
+          min-width: 17px; height: 17px; background: #dc2626; color: #fff;
+          border-radius: 99px; font-size: 9px; font-weight: 700;
           display: flex; align-items: center; justify-content: center;
-          padding: 0 3px;
-          border: 2px solid #fff;
-          line-height: 1;
-          pointer-events: none;
+          padding: 0 3px; border: 2px solid #fff; line-height: 1; pointer-events: none;
         }
 
-        /* ── HERO ── */
         .ed-hero {
           background: linear-gradient(120deg, #1a1d2e 0%, #252a45 60%, #1f2c4a 100%);
-          padding: 14px 14px 16px;
-          position: relative;
-          overflow: hidden;
-          width: 100%;
+          padding: 14px 14px 16px; position: relative; overflow: hidden; width: 100%;
         }
         .ed-hero::before { content: ''; position: absolute; top: -80px; right: -80px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(79,142,247,.18) 0%, transparent 70%); pointer-events: none; }
 
-        /* ── HERO PROFILE ROW ── */
-        .ed-hero-profile-row {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          position: relative;
-          z-index: 1;
-          margin-bottom: 12px;
-          width: 100%;
-        }
+        .ed-hero-profile-row { display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; margin-bottom: 12px; width: 100%; }
         .ed-avatar-wrap { position: relative; flex-shrink: 0; }
         .ed-avatar { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2.5px solid rgba(255,255,255,.2); display: block; }
         .ed-avatar-overlay { position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,.5); display: flex; align-items: center; justifyContent: center; opacity: 0; transition: opacity .2s; cursor: pointer; }
         .ed-avatar-wrap:hover .ed-avatar-overlay { opacity: 1; }
         .ed-avatar-wrap input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 5; border-radius: 50%; }
 
-        /* name block fills remaining space, bell stays at end */
         .ed-hero-name-block { flex: 1; min-width: 0; overflow: hidden; }
         .ed-hero-name { margin: 0 0 2px; font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.3px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .ed-hero-role { margin: 0; font-size: 10px; color: rgba(255,255,255,.5); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* ── HERO CHIPS: 2-col on mobile, 3-col on desktop ── */
-        .ed-hero-chips {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 6px;
-          position: relative;
-          z-index: 1;
-          margin-bottom: 10px;
-          width: 100%;
-        }
-        /* Mobile: Employee ID + Mobile on row 1 (chips 1 & 3), Email spans full row 2 */
+        .ed-hero-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; position: relative; z-index: 1; margin-bottom: 10px; width: 100%; }
         .ed-hero-chips .ed-chip:nth-child(1) { order: 1; }
         .ed-hero-chips .ed-chip:nth-child(2) { order: 3; grid-column: 1 / -1; }
         .ed-hero-chips .ed-chip:nth-child(3) { order: 2; }
-        .ed-chip {
-          background: rgba(255,255,255,.08);
-          border: 1px solid rgba(255,255,255,.12);
-          border-radius: 8px;
-          padding: 7px 10px;
-          display: flex; flex-direction: column; gap: 2px;
-          min-width: 0; overflow: hidden;
-        }
+        .ed-chip { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 7px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow: hidden; }
         .ed-chip-label { font-size: 9px; color: rgba(255,255,255,.35); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; }
         .ed-chip-val   { font-size: 11px; color: rgba(255,255,255,.85); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* ── HERO STATUS BAR ── */
         .ed-hero-status-bar  { display: flex; flex-direction: column; gap: 10px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 11px 12px; position: relative; z-index: 1; width: 100%; }
         .ed-hero-status-row  { display: flex; align-items: flex-start; gap: 10px; }
         .ed-hero-status-text { flex: 1; min-width: 0; }
@@ -414,13 +845,10 @@ export default function EmployeeDashboard() {
         .ed-hero-edit-btn > button, .ed-hero-edit-btn > div { width: 100%; justify-content: center; }
         .ed-hero-select option { color: #111827 !important; background: #fff !important; }
 
-        /* ── CARDS ── */
         .ed-card       { background: #fff; border-radius: 14px; border: 1px solid #eef0f6; min-width: 0; overflow: hidden; }
         .ed-card-title { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1.2px; padding: 14px 14px 0; margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
 
-        /* ── MAIN LAYOUT ── */
         .ed-main   { padding: 12px 12px 100px; display: flex; flex-direction: column; gap: 10px; width: 100%; overflow: hidden; }
-        /* Single column on mobile */
         .ed-grid-2 { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; }
         .ed-docs-grid { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 0 14px 14px; }
 
@@ -439,66 +867,48 @@ export default function EmployeeDashboard() {
         .ed-view-btn { display: flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 7px; background: #f0f4ff; border: 1px solid #c7d2fe; color: #4f8ef7; font-size: 11px; font-weight: 700; text-decoration: none; flex-shrink: 0; transition: all .15s; white-space: nowrap; }
         .ed-view-btn:hover { background: #4f8ef7; color: #fff; }
 
-        /* ── SCORE CARD: side-by-side arc + text on mobile ── */
         .ed-score-wrap     { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; overflow: hidden; }
-        /* Scale down arc slightly on very small screens */
         .ed-score-arc-wrap { flex-shrink: 0; transform: scale(0.78); transform-origin: left center; }
         .ed-score-num      { font-size: 24px; font-weight: 800; line-height: 1; letter-spacing: -1px; font-family: 'JetBrains Mono', monospace; }
 
-        /* ── CAREER BUTTON ── */
         .ed-career-btn {
-          width: 100%; margin-top: 12px;
-          padding: 9px 0;
-          border: 1.5px solid #bfdbfe;
-          border-radius: 9px;
-          background: #eff6ff;
-          color: #2563eb;
-          font-size: 13px; font-weight: 700;
-          cursor: pointer;
-          font-family: 'Manrope', sans-serif;
-          transition: all .15s;
+          width: 100%; margin-top: 12px; padding: 9px 0;
+          border: 1.5px solid #bfdbfe; border-radius: 9px;
+          background: #eff6ff; color: #2563eb;
+          font-size: 13px; font-weight: 700; cursor: pointer;
+          font-family: 'Manrope', sans-serif; transition: all .15s;
           display: flex; align-items: center; justify-content: center; gap: 6px;
         }
         .ed-career-btn:hover { background: #2563eb; color: #fff; border-color: #2563eb; }
 
-        /* ── DESKTOP OVERRIDES (768px+) ── */
         @media (min-width: 768px) {
           .ed-topbar { display: none; }
-
           .ed-pill-text { display: inline; }
           .ed-status-pill { padding: 5px 10px; font-size: 11px; }
-
           .ed-hero { padding: 28px 32px; }
           .ed-hero-profile-row { margin-bottom: 20px; gap: 14px; }
           .ed-avatar { width: 68px; height: 68px; }
           .ed-hero-name { font-size: 22px; white-space: normal; }
           .ed-hero-role { font-size: 13px; white-space: normal; }
-
-          /* 3-col chips on desktop, reset order & span */
           .ed-hero-chips { grid-template-columns: 1fr 1fr 1fr; }
           .ed-hero-chips .ed-chip:nth-child(1) { order: unset; }
           .ed-hero-chips .ed-chip:nth-child(2) { order: unset; grid-column: auto; }
           .ed-hero-chips .ed-chip:nth-child(3) { order: unset; }
           .ed-chip-val { font-size: 12px; }
-
           .ed-hero-status-bar { flex-direction: row; align-items: center; }
           .ed-hero-status-row { flex: 1; }
           .ed-hero-edit-btn { width: auto; }
           .ed-hero-edit-btn > button, .ed-hero-edit-btn > div { width: auto; }
-
           .ed-card-title { padding: 18px 20px 0; margin-bottom: 14px; }
           .ed-ann-row  { padding: 12px 20px; gap: 11px; }
           .ed-info-pair{ padding: 11px 20px; }
           .ed-info-value { white-space: normal; }
-
           .ed-main   { padding: 20px 28px 32px; gap: 16px; }
           .ed-grid-2 { grid-template-columns: 1fr 1fr; gap: 16px; }
           .ed-docs-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; padding: 0 20px 20px; }
           .ed-doc-item  { padding: 12px 14px; gap: 11px; }
-
           .ed-score-arc-wrap { transform: scale(1); }
           .ed-score-num { font-size: 30px; }
-
           .ed-topbar-actions { display: flex; align-items: center; gap: 8px; }
           .ed-topbar-avatar { display: none; }
           .ed-topbar-name { font-size: 13px; max-width: none; }
@@ -509,9 +919,8 @@ export default function EmployeeDashboard() {
 
       <div className="emp-dash">
 
-        {/* ── Topbar (mobile only) ── */}
+        {/* Topbar (mobile only) */}
         <div className="ed-topbar">
-          {/* Left: avatar + name */}
           <div className="ed-topbar-left">
             <div className="ed-topbar-avatar" style={{ width: 30, height: 30, borderRadius: "50%", overflow: "hidden", border: "2px solid #eef0f6", flexShrink: 0 }}>
               <img
@@ -525,34 +934,21 @@ export default function EmployeeDashboard() {
               <p className="ed-topbar-sub">{employee.designation}</p>
             </div>
           </div>
-
-          {/* Right: Bell icon always visible */}
           <div className="ed-topbar-right">
-            <button
-              className="ed-notif-btn"
-              onClick={() => window.location.href = "/employee/notifications"}
-              title="Notifications"
-              style={{ background: "#f7f8fc", border: "1.5px solid #eef0f6", color: "#6b7280" }}
-            >
+            <button className="ed-notif-btn" onClick={() => window.location.href = "/employee/notifications"} title="Notifications" style={{ background: "#f7f8fc", border: "1.5px solid #eef0f6", color: "#6b7280" }}>
               <Bell size={17} />
-              {unreadCount > 0 && (
-                <span className="ed-notif-badge">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
+              {unreadCount > 0 && <span className="ed-notif-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>}
             </button>
           </div>
         </div>
 
-        {/* ── Hero Banner ── */}
+        {/* Hero Banner */}
         <div className="ed-hero">
           <div className="ed-hero-profile-row">
-            {/* Avatar */}
             <div className="ed-avatar-wrap">
               <img
                 src={employee.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=252a45&color=7fa8f7&size=72`}
-                alt="profile"
-                className="ed-avatar"
+                alt="profile" className="ed-avatar"
               />
               <div className="ed-avatar-overlay">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
@@ -571,7 +967,6 @@ export default function EmployeeDashboard() {
               )}
             </div>
 
-            {/* Name / edit block */}
             <div className="ed-hero-name-block">
               {isEditing ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -603,23 +998,12 @@ export default function EmployeeDashboard() {
               )}
             </div>
 
-            {/* Bell icon (desktop hero, hidden on mobile via media query) */}
-            <button
-              className="ed-notif-btn ed-hero-bell-desktop"
-              onClick={() => window.location.href = "/employee/notifications"}
-              title="Notifications"
-              style={{ background: "rgba(255,255,255,.1)", border: "1.5px solid rgba(255,255,255,.18)", color: "#fff" }}
-            >
+            <button className="ed-notif-btn ed-hero-bell-desktop" onClick={() => window.location.href = "/employee/notifications"} title="Notifications" style={{ background: "rgba(255,255,255,.1)", border: "1.5px solid rgba(255,255,255,.18)", color: "#fff" }}>
               <Bell size={16} />
-              {unreadCount > 0 && (
-                <span className="ed-notif-badge">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
+              {unreadCount > 0 && <span className="ed-notif-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>}
             </button>
           </div>
 
-          {/* Chips */}
           <div className="ed-hero-chips">
             {[
               { label: "Employee ID", value: employee.employeeId || "—" },
@@ -633,7 +1017,6 @@ export default function EmployeeDashboard() {
             ))}
           </div>
 
-          {/* Status bar */}
           <div className="ed-hero-status-bar">
             <div className="ed-hero-status-row">
               <div style={{
@@ -655,7 +1038,7 @@ export default function EmployeeDashboard() {
           </div>
         </div>
 
-        {/* ── Main ── */}
+        {/* Main */}
         <div className="ed-main">
           <div className="ed-grid-2">
 
@@ -701,7 +1084,6 @@ export default function EmployeeDashboard() {
             {/* Announcements Card */}
             <div className="ed-card" style={{ overflow: "hidden" }}>
               <p className="ed-card-title"><Megaphone size={12} /> Announcements</p>
-
               {impactAnnouncements.map((ib, i) => {
                 const empName = getImpactEmployeeName(ib);
                 return (
@@ -727,7 +1109,6 @@ export default function EmployeeDashboard() {
                   </div>
                 );
               })}
-
               {announcements.length === 0 && impactAnnouncements.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "16px 14px 20px" }}>
                   <div style={{ width: 38, height: 38, borderRadius: 10, background: "#f7f8fc", border: "1px solid #eef0f6", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
@@ -755,7 +1136,7 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          {/* ── Grade Card ── */}
+          {/* Grade Card */}
           {employeeGrade && (
             <div className="ed-card" style={{ padding: "14px" }}>
               <p className="ed-card-title" style={{ padding: 0, marginBottom: 14 }}>
@@ -826,8 +1207,77 @@ export default function EmployeeDashboard() {
               </button>
             </div>
           )}
+
+          {/* Internal Job Opportunities Card */}
+          {internalJobs.length > 0 && (
+            <div className="ed-card" style={{ overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 0" }}>
+                <p className="ed-card-title" style={{ padding: 0, margin: 0 }}>
+                  <BadgeCheck size={12} /> Internal Opportunities
+                </p>
+                <span style={{
+                  background: "#f5f3ff", color: "#7c3aed",
+                  fontSize: 10, fontWeight: 700,
+                  padding: "2px 9px", borderRadius: 99,
+                  border: "1px solid #ddd6fe", whiteSpace: "nowrap"
+                }}>
+                  🔒 Employees only
+                </span>
+              </div>
+              <div style={{
+                margin: "12px 16px 0",
+                background: "linear-gradient(120deg, #1a1d2e 0%, #252a45 100%)",
+                borderRadius: 10, padding: "10px 14px",
+                display: "flex", alignItems: "center", gap: 10
+              }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                  background: "rgba(124,58,237,.25)",
+                  display: "flex", alignItems: "center", justifyContent: "center"
+                }}>
+                  <Users size={15} color="#a78bfa" />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ margin: "0 0 1px", fontSize: 12, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    Radnus Retail Expansion
+                  </p>
+                  <p style={{ margin: 0, fontSize: 10, color: "rgba(255,255,255,.45)" }}>
+                    {internalJobs.length} open position{internalJobs.length > 1 ? "s" : ""} — grow your career within Radnus
+                  </p>
+                </div>
+              </div>
+              <div style={{ marginTop: 10 }}>
+                {internalJobs.map((job, i) => (
+                  <InternalJobRow
+                    key={job._id || i}
+                    job={job}
+                    employeeId={employee?._id || employee?.id}
+                    apiBase={API_BASE}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
+
+      {/* Job Toast Notifications */}
+  {toastQueue.length > 0 && toastIndex < toastQueue.length && (
+  <JobToastNotification
+    key={`${toastQueue[toastIndex]._id || toastIndex}-${toastIndex}`}
+    job={toastQueue[toastIndex]}
+    employeeId={employee?._id || employee?.id}
+    apiBase={API_BASE}
+    initialApplied={toastQueue[toastIndex].applicants?.some((a) => {
+      const appEmpId = a.employeeId?._id || a.employeeId;
+      return appEmpId?.toString() === (employee?._id || employee?.id)?.toString();
+    })}
+    onDismiss={() => {
+      setTimeout(() => setToastIndex(i => i + 1), 400);
+    }}
+  />
+)}
 
       <CareerPathModal
         open={showCareer}

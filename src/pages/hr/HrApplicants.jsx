@@ -27,6 +27,28 @@ const statusStyle = (status) => {
   return { background: c.bg, color: c.color };
 };
 
+const mapInternalStatusToDisplay = (backendStatus) => {
+  const map = {
+    "applied": "New",
+    "under_review": "Shortlisted",
+    "interview": "Interview",
+    "selected": "Hired",
+    "rejected": "Rejected",
+  };
+  return map[backendStatus] || backendStatus || "New";
+};
+
+const mapDisplayToInternalStatus = (displayStatus) => {
+  const map = {
+    "New": "applied",
+    "Shortlisted": "under_review",
+    "Interview": "interview",
+    "Hired": "selected",
+    "Rejected": "rejected",
+  };
+  return map[displayStatus] || "applied";
+};
+
 const toPreviewUrl = (url) => {
   if (!url) return url;
   return url.replace("/fl_attachment/", "/").replace("fl_attachment,", "").replace(",fl_attachment", "");
@@ -41,6 +63,9 @@ export default function HrApplicants() {
   const [updatingId, setUpdatingId] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [tooltip, setTooltip] = useState({ visible: false, text: "", x: 0, y: 0 });
+
+  // ── NEW: Public / Internal tab split ──
+  const [activeTab, setActiveTab] = useState("public"); // "public" | "internal"
 
   // Rejection modal state
   const [rejectModal, setRejectModal] = useState({ open: false, applicantId: null, applicantName: "" });
@@ -58,14 +83,39 @@ export default function HrApplicants() {
     setApplicants(data.applications || []);
   };
 
+  // ── UPDATED: internal applications இப்போ proper ah remove ஆகும் ──
   const handleDelete = async (id) => {
+    if (id.startsWith("internal_")) {
+      const parts = id.split("_"); // ["internal", jobId, empId]
+      const jobId = parts[1];
+      const empId = parts[2];
+      if (!window.confirm("Remove this applicant from the internal job posting?")) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/jobs/${jobId}/applicant/${empId}`, { method: "DELETE" });
+        if (!res.ok) {
+          const errText = await res.text().catch(() => "");
+          console.error("Remove applicant failed:", res.status, errText);
+          alert(`Remove failed (HTTP ${res.status}).`);
+          return;
+        }
+        const data = await res.json();
+        if (data.success) {
+          setApplicants((prev) => prev.filter((a) => a._id !== id));
+        } else {
+          alert(data.msg || "Failed to remove applicant.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Failed to remove applicant: " + err.message);
+      }
+      return;
+    }
     if (!window.confirm("Delete this applicant?")) return;
     await fetch(`${API_BASE}/api/hr/applications/${id}`, { method: "DELETE" });
     setApplicants(applicants.filter((a) => a._id !== id));
   };
 
   const handleStatusChange = async (id, newStatus, applicantName) => {
-    // If "Rejected" → open reason modal instead of saving directly
     if (newStatus === "Rejected") {
       setRejectReason("");
       setRejectCustom("");
@@ -75,17 +125,70 @@ export default function HrApplicants() {
     await saveStatus(id, newStatus, null);
   };
 
+  // ── UPDATED: internal status update தனியா handle பண்றோம் ──
   const saveStatus = async (id, newStatus, rejectionReason) => {
     setUpdatingId(id);
     try {
       const body = { status: newStatus };
       if (rejectionReason) body.rejectionReason = rejectionReason;
 
+      // Internal application — வேற endpoint
+      if (id.startsWith("internal_")) {
+        const parts = id.split("_"); // ["internal", jobId, empId]
+        const jobId = parts[1];
+        const empId = parts[2];
+
+        const internalStatus = mapDisplayToInternalStatus(newStatus);
+
+        const res = await fetch(`${API_BASE}/api/jobs/${jobId}/applicant-status`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ employeeId: empId, status: internalStatus, rejectionReason }),
+        });
+
+        // ── NEW: surface real failure instead of silently reverting the dropdown ──
+        if (!res.ok) {
+          const errText = await res.text().catch(() => "");
+          console.error("Internal status update failed:", res.status, errText);
+          alert(
+            `Status update failed (HTTP ${res.status}).\nCheck that PUT /api/jobs/${jobId}/applicant-status exists on the backend.`
+          );
+          setUpdatingId(null);
+          return;
+        }
+
+        const data = await res.json();
+        if (data.success) {
+          setApplicants((prev) =>
+            prev.map((a) =>
+              a._id === id
+                ? { ...a, status: newStatus, ...(rejectionReason ? { rejectionReason } : {}) }
+                : a
+            )
+          );
+        } else {
+          console.error("Internal status update — backend returned success:false:", data);
+          alert(data.message || "Status update failed for internal applicant.");
+        }
+        setUpdatingId(null);
+        return; // early return — existing logic skip
+      }
+
+      // Existing public applicant flow — unchanged
       const res = await fetch(`${API_BASE}/api/hr/applications/${id}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        console.error("Status update failed:", res.status, errText);
+        alert(`Status update failed (HTTP ${res.status}).`);
+        setUpdatingId(null);
+        return;
+      }
+
       const data = await res.json();
       if (data.success) {
         setApplicants((prev) =>
@@ -95,8 +198,14 @@ export default function HrApplicants() {
               : a
           )
         );
+      } else {
+        console.error("Status update — backend returned success:false:", data);
+        alert(data.message || "Status update failed.");
       }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+      alert("Status update failed: " + err.message);
+    }
     finally { setUpdatingId(null); }
   };
 
@@ -140,14 +249,23 @@ export default function HrApplicants() {
     setTooltip({ visible: false, text: "", x: 0, y: 0 });
   };
 
-  const filtered = applicants.filter((a) => {
+  // ── NEW: counts for the two tabs ──
+  const publicCount = applicants.filter((a) => !a.isInternal).length;
+  const internalCount = applicants.filter((a) => a.isInternal).length;
+
+  // ── NEW: restrict everything below to the active tab ──
+  const tabApplicants = applicants.filter((a) =>
+    activeTab === "public" ? !a.isInternal : a.isInternal
+  );
+
+  const filtered = tabApplicants.filter((a) => {
     const matchSearch = (a.name + a.email + a.jobTitle).toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "" || a.status === statusFilter;
     return matchSearch && matchStatus;
   });
 
   const counts = STATUS_OPTIONS.reduce((acc, s) => {
-    acc[s] = applicants.filter((a) => (a.status || "New") === s).length;
+    acc[s] = tabApplicants.filter((a) => (a.status || "New") === s).length;
     return acc;
   }, {});
 
@@ -161,6 +279,15 @@ export default function HrApplicants() {
         .ha-heading { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 2px; letter-spacing: -0.3px; }
         .ha-subheading { font-size: 13px; color: #94a3b8; margin: 0; }
         .ha-total-badge { background: #0f172a; color: #fff; border-radius: 7px; padding: 5px 13px; font-size: 13px; font-weight: 700; }
+
+        /* ── NEW: tabs ── */
+        .ha-tabs { display: flex; gap: 4px; margin-bottom: 18px; background: #fff; border: 1px solid #e2e8f0; border-radius: 11px; padding: 4px; width: fit-content; }
+        .ha-tab-btn { display: flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; color: #64748b; background: transparent; border: none; cursor: pointer; transition: background 0.15s, color 0.15s; }
+        .ha-tab-btn:hover { background: #f1f5f9; color: #334155; }
+        .ha-tab-btn.active { background: #0f172a; color: #fff; }
+        .ha-tab-count { font-size: 11px; font-weight: 800; background: rgba(255,255,255,0.15); padding: 1px 7px; border-radius: 999px; }
+        .ha-tab-btn:not(.active) .ha-tab-count { background: #e2e8f0; color: #475569; }
+
         .ha-summary { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
         .ha-stat-chip { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 16px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; min-width: 100px; }
         .ha-stat-chip:hover { border-color: #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
@@ -190,6 +317,8 @@ export default function HrApplicants() {
         .ha-candidate-phone { font-size: 12px; color: #94a3b8; margin-top: 2px; }
         .ha-duplicate-badge { display: inline-flex; align-items: center; gap: 4px; background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; border-radius: 5px; padding: 2px 7px; font-size: 11px; font-weight: 700; margin-top: 4px; cursor: help; transition: background 0.15s, border-color 0.15s; }
         .ha-duplicate-badge:hover { background: #ffedd5; border-color: #fb923c; }
+        .ha-internal-badge { display: inline-flex; align-items: center; gap: 4px; background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; border-radius: 5px; padding: 2px 7px; font-size: 11px; font-weight: 700; margin-top: 4px; }
+        .ha-internal-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
         .ha-tooltip { position: fixed; z-index: 99999; background: #1e293b; color: #f8fafc; font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 8px; pointer-events: none; white-space: nowrap; box-shadow: 0 8px 24px rgba(0,0,0,0.25); transform: translate(-50%, -100%); animation: haTooltipIn 0.12s ease; max-width: 320px; white-space: normal; text-align: center; }
         .ha-tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #1e293b; }
         @keyframes haTooltipIn { from { opacity: 0; transform: translate(-50%, -90%); } to { opacity: 1; transform: translate(-50%, -100%); } }
@@ -256,6 +385,8 @@ export default function HrApplicants() {
           .ha-table td { display: block; padding: 6px 14px; }
           .ha-table tr { display: block; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
           .ha-reason-grid { grid-template-columns: 1fr; }
+          .ha-tabs { width: 100%; }
+          .ha-tab-btn { flex: 1; justify-content: center; }
         }
       `}</style>
 
@@ -351,7 +482,25 @@ export default function HrApplicants() {
             <h1 className="ha-heading">HR Applicants</h1>
             <p className="ha-subheading">Manage and track all job applications</p>
           </div>
-          <span className="ha-total-badge">{filtered.length} of {applicants.length}</span>
+          <span className="ha-total-badge">{filtered.length} of {tabApplicants.length}</span>
+        </div>
+
+        {/* ── NEW: Public / Internal tabs ── */}
+        <div className="ha-tabs">
+          <button
+            className={`ha-tab-btn${activeTab === "public" ? " active" : ""}`}
+            onClick={() => setActiveTab("public")}
+          >
+            🌐 Public Applicants
+            <span className="ha-tab-count">{publicCount}</span>
+          </button>
+          <button
+            className={`ha-tab-btn${activeTab === "internal" ? " active" : ""}`}
+            onClick={() => setActiveTab("internal")}
+          >
+            🔒 Internal Applicants
+            <span className="ha-tab-count">{internalCount}</span>
+          </button>
         </div>
 
         {/* Status Summary */}
@@ -395,65 +544,183 @@ export default function HrApplicants() {
         {/* Table */}
         <div className="ha-table-card">
           <div style={{ overflowX: "auto" }}>
-            <table className="ha-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Candidate</th>
-                  <th>Email</th>
-                  <th>Job Role</th>
-                  <th>Location</th>
-                  <th>Aadhaar (Last 4)</th>
-                  <th>Applied</th>
-                  <th>AI Score</th>
-                  <th>Status</th>
-                  <th className="center">Resume</th>
-                  <th className="center">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
+            {activeTab === "public" ? (
+              /* ── Public Applicants table — unchanged ── */
+              <table className="ha-table">
+                <thead>
                   <tr>
-                    <td colSpan="11">
-                      <div className="ha-empty">
-                        <div className="ha-empty-text">No applicants found</div>
-                      </div>
-                    </td>
+                    <th>#</th>
+                    <th>Candidate</th>
+                    <th>Email</th>
+                    <th>Job Role</th>
+                    <th>Location</th>
+                    <th>Aadhaar (Last 4)</th>
+                    <th>Applied</th>
+                    <th>AI Score</th>
+                    <th>Status</th>
+                    <th className="center">Resume</th>
+                    <th className="center">Action</th>
                   </tr>
-                ) : filtered.map((a, i) => {
-                  const dupTooltip = getDuplicateTooltip(a);
-                  return (
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan="11">
+                        <div className="ha-empty">
+                          <div className="ha-empty-text">No applicants found</div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filtered.map((a, i) => {
+                    const dupTooltip = getDuplicateTooltip(a);
+                    return (
+                      <tr key={a._id}>
+                        <td><span className="ha-num">{i + 1}</span></td>
+
+                        <td>
+                          <div className="ha-candidate-name">{a.name}</div>
+                          {a.phone && <div className="ha-candidate-phone">{a.phone}</div>}
+
+                          {dupTooltip && (
+                            <div
+                              className="ha-duplicate-badge"
+                              onMouseEnter={(e) => handleBadgeMouseEnter(e, dupTooltip)}
+                              onMouseLeave={handleBadgeMouseLeave}
+                            >
+                              ⚠ Duplicate
+                            </div>
+                          )}
+                        </td>
+
+                        <td><span className="ha-email">{a.email}</span></td>
+                        <td><span className="ha-job-chip">{a.jobTitle}</span></td>
+                        <td>
+                          {a.location
+                            ? <span className="ha-location-text">{a.location}</span>
+                            : <span className="ha-na">—</span>
+                          }
+                        </td>
+                        <td>
+                          {a.aadhaarLast4
+                            ? <span className="ha-aadhaar-text">•••• {a.aadhaarLast4}</span>
+                            : <span className="ha-na">—</span>
+                          }
+                        </td>
+                        <td>
+                          <span className="ha-date">
+                            {a.createdAt
+                              ? new Date(a.createdAt).toLocaleDateString("en-GB", {
+                                  day: "2-digit", month: "short", year: "numeric",
+                                })
+                              : "—"}
+                          </span>
+                        </td>
+                        <td>
+                          {a.aiScore != null ? (
+                            <span
+                              className="ha-ai-badge"
+                              title={a.aiReason || ""}
+                              style={{
+                                background:
+                                  a.aiGrade === "A" ? "#f0fdf4" :
+                                  a.aiGrade === "B" ? "#fefce8" : "#fff1f2",
+                                color:
+                                  a.aiGrade === "A" ? "#15803d" :
+                                  a.aiGrade === "B" ? "#a16207" : "#b91c1c",
+                              }}
+                            >
+                              <span className="ha-ai-dot" style={{
+                                background:
+                                  a.aiGrade === "A" ? "#22c55e" :
+                                  a.aiGrade === "B" ? "#eab308" : "#ef4444",
+                              }} />
+                              {a.aiScore}/100 · {a.aiGrade}
+                            </span>
+                          ) : (
+                            <span className="ha-ai-pending">Screening...</span>
+                          )}
+                        </td>
+                        <td>
+                          <div>
+                            <select
+                              className="ha-status-select"
+                              value={a.status || "New"}
+                              onChange={(e) => handleStatusChange(a._id, e.target.value, a.name)}
+                              disabled={updatingId === a._id}
+                              style={statusStyle(a.status || "New")}
+                            >
+                              {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                            {(a.status === "Rejected" || a.status === "rejected") && a.rejectionReason && (
+                              <div className="ha-reject-reason-tag" title={a.rejectionReason}>
+                                <span>↳ {a.rejectionReason}</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="center">
+                          {a.resumeUrl ? (
+                            <button
+                              className="ha-preview-btn"
+                              onClick={() => setPreviewUrl(toPreviewUrl(a.resumeUrl))}
+                            >
+                              Preview
+                            </button>
+                          ) : (
+                            <span className="ha-no-file">No file</span>
+                          )}
+                        </td>
+                        <td className="center">
+                          <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              /* ── NEW: Internal Applicants table — simplified columns ── */
+              <table className="ha-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Candidate</th>
+                    <th>Department</th>
+                    <th>Role Applied For</th>
+                    <th>Applied</th>
+                    <th>Status</th>
+                    <th className="center">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan="7">
+                        <div className="ha-empty">
+                          <div className="ha-empty-text">No internal applicants found</div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filtered.map((a, i) => (
                     <tr key={a._id}>
                       <td><span className="ha-num">{i + 1}</span></td>
 
                       <td>
                         <div className="ha-candidate-name">{a.name}</div>
-                        {a.phone && <div className="ha-candidate-phone">{a.phone}</div>}
-                        {dupTooltip && (
-                          <div
-                            className="ha-duplicate-badge"
-                            onMouseEnter={(e) => handleBadgeMouseEnter(e, dupTooltip)}
-                            onMouseLeave={handleBadgeMouseLeave}
-                          >
-                            ⚠ Duplicate
-                          </div>
-                        )}
+                        <div className="ha-internal-sub">{a.employeeCode}</div>
                       </td>
 
-                      <td><span className="ha-email">{a.email}</span></td>
+                      <td>
+                        {a.department || a.designation
+                          ? <span className="ha-location-text">{a.department || a.designation}</span>
+                          : <span className="ha-na">—</span>
+                        }
+                      </td>
+
                       <td><span className="ha-job-chip">{a.jobTitle}</span></td>
-                      <td>
-                        {a.location
-                          ? <span className="ha-location-text">{a.location}</span>
-                          : <span className="ha-na">—</span>
-                        }
-                      </td>
-                      <td>
-                        {a.aadhaarLast4
-                          ? <span className="ha-aadhaar-text">•••• {a.aadhaarLast4}</span>
-                          : <span className="ha-na">—</span>
-                        }
-                      </td>
+
                       <td>
                         <span className="ha-date">
                           {a.createdAt
@@ -463,72 +730,57 @@ export default function HrApplicants() {
                             : "—"}
                         </span>
                       </td>
+
                       <td>
-                        {a.aiScore != null ? (
-                          <span
-                            className="ha-ai-badge"
-                            title={a.aiReason || ""}
-                            style={{
-                              background:
-                                a.aiGrade === "A" ? "#f0fdf4" :
-                                a.aiGrade === "B" ? "#fefce8" : "#fff1f2",
-                              color:
-                                a.aiGrade === "A" ? "#15803d" :
-                                a.aiGrade === "B" ? "#a16207" : "#b91c1c",
-                            }}
-                          >
-                            <span className="ha-ai-dot" style={{
-                              background:
-                                a.aiGrade === "A" ? "#22c55e" :
-                                a.aiGrade === "B" ? "#eab308" : "#ef4444",
-                            }} />
-                            {a.aiScore}/100 · {a.aiGrade}
-                          </span>
-                        ) : (
-                          <span className="ha-ai-pending">Screening...</span>
-                        )}
-                      </td>
-                      <td>
-                        <div>
-                          <select
-                            className="ha-status-select"
-                            value={a.status || "New"}
-                            onChange={(e) => handleStatusChange(a._id, e.target.value, a.name)}
-                            disabled={updatingId === a._id}
-                            style={statusStyle(a.status || "New")}
-                          >
-                            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-                          </select>
-                          {/* Show rejection reason tag below the select */}
-                          {(a.status === "Rejected" || a.status === "rejected") && a.rejectionReason && (
-                            <div className="ha-reject-reason-tag" title={a.rejectionReason}>
-                              <span>↳ {a.rejectionReason}</span>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="center">
-                        {a.resumeUrl ? (
-                          <button
-                            className="ha-preview-btn"
-                            onClick={() => setPreviewUrl(toPreviewUrl(a.resumeUrl))}
-                          >
-                            Preview
-                          </button>
-                        ) : (
-                          <span className="ha-no-file">No file</span>
-                        )}
-                      </td>
+  <div>
+    {/* Show "Applied" badge when employee has applied */}
+    {(a.rawStatus === "applied" || a.status === "applied") && (
+      <div style={{ 
+        display: "inline-flex", 
+        alignItems: "center", 
+        gap: 5, 
+        background: "#ecfdf5", 
+        color: "#059669", 
+        border: "1px solid #6ee7b7",
+        borderRadius: 6, 
+        padding: "3px 10px", 
+        fontSize: 11, 
+        fontWeight: 700,
+        marginBottom: 6 
+      }}>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
+        ✓ Applied by employee
+      </div>
+    )}
+    
+    <select
+      className="ha-status-select"
+      value={mapInternalStatusToDisplay(a.status)}
+      onChange={(e) => handleStatusChange(a._id, e.target.value, a.name)}
+      disabled={updatingId === a._id}
+      style={statusStyle(mapInternalStatusToDisplay(a.status))}
+    >
+      {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+    </select>
+    
+    {(a.status === "Rejected" || a.status === "rejected") && a.rejectionReason && (
+      <div className="ha-reject-reason-tag" title={a.rejectionReason}>
+        <span>↳ {a.rejectionReason}</span>
+      </div>
+    )}
+  </div>
+</td>
+
                       <td className="center">
                         <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
                           Remove
                         </button>
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

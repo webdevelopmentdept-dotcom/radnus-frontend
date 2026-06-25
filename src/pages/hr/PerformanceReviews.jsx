@@ -94,6 +94,7 @@ export default function PerformanceReviews() {
   const [logsLoading, setLogsLoading] = useState(false);
 
   const [incentiveResult, setIncentiveResult] = useState(null);
+  const [unlockingLog, setUnlockingLog] = useState(null); // ← NEW
 
   useEffect(() => { fetchData(); }, []);
 
@@ -318,6 +319,51 @@ export default function PerformanceReviews() {
     } catch { showToast("Failed to load logs", "error"); }
     finally { setLogsLoading(false); }
   };
+
+  // ── HR Unlock Log ──────────────────────────────
+const handleUnlockLog = async (logId) => {
+  setUnlockingLog(logId);
+  try {
+    const res = await axios.patch(`${API_BASE}/api/daily-logs/${logId}/unlock`, {
+      unlockedBy: 'HR'
+    });
+    if (res.data.success) {
+      showToast('Log unlocked! Employee can now edit it.');
+      // Local state update — re-fetch வேண்டாம்
+      setEmployeeLogs(prev =>
+        prev.map(log =>
+          log._id === logId ? { ...log, isUnlocked: true } : log
+        )
+      );
+    }
+  } catch (err) {
+    showToast('Unlock failed', 'error');
+  } finally {
+    setUnlockingLog(null);
+  }
+};
+
+
+const handleLockLog = async (logId) => {
+  setUnlockingLog(logId);
+  try {
+    const res = await axios.patch(`${API_BASE}/api/daily-logs/${logId}/lock`);
+    if (res.data.success) {
+      showToast('Log locked again.');
+      setEmployeeLogs(prev =>
+        prev.map(log =>
+          log._id === logId ? { ...log, isUnlocked: false } : log
+        )
+      );
+    }
+  } catch (err) {
+    showToast('Lock failed', 'error');
+  } finally {
+    setUnlockingLog(null);
+  }
+};
+
+// ───────────────────────────────────────────────
 
   const handleEmployeeLogSelect = (assignmentId) => {
     setSelectedEmployeeLog(assignmentId);
@@ -741,7 +787,36 @@ export default function PerformanceReviews() {
     {new Date(log.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
   </span>
 </span>
-                        </div>
+                        {/* ── Unlock Button ── */}
+  {/* ── Lock / Unlock Icon Button ── */}
+{log.isUnlocked ? (
+  <button
+    onClick={() => handleLockLog(log._id)}
+    disabled={unlockingLog === log._id}
+    title="Click to Lock"
+    style={{
+      background: "#f0fdf4", border: "1px solid #bbf7d0",
+      borderRadius: 99, padding: "5px 8px",
+      cursor: "pointer", display: "flex", alignItems: "center"
+    }}
+  >
+    {unlockingLog === log._id ? "..." : "🔓"}
+  </button>
+) : (
+  <button
+    onClick={() => handleUnlockLog(log._id)}
+    disabled={unlockingLog === log._id}
+    title="Click to Unlock"
+    style={{
+      background: "#fffbeb", border: "1px solid #fde68a",
+      borderRadius: 99, padding: "5px 8px",
+      cursor: "pointer", display: "flex", alignItems: "center"
+    }}
+  >
+    {unlockingLog === log._id ? "..." : "🔒"}
+  </button>
+)}
+</div>
                       ))}
                     </div>
                   ))}
