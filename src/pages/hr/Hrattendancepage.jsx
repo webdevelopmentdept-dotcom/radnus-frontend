@@ -185,6 +185,13 @@ export const calcLateMinutes = (checkIn, shiftStartMins = DEFAULT_SHIFT_START) =
 export const calcEarlyOut = (checkOut, shiftEndMins = DEFAULT_SHIFT_END) => {
   if (!checkOut) return 0;
   const total = new Date(checkOut).getHours() * 60 + new Date(checkOut).getMinutes();
+  
+  // 12:00 AM = 0 → midnight checkout, not early out
+  if (total === 0) return 0;
+  
+  // After shift end → no early out
+  if (total >= shiftEndMins) return 0;
+  
   return Math.max(shiftEndMins - total, 0);
 };
 
@@ -487,7 +494,7 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
   })()} 
   valueColor="#2563eb" 
 />
-              <Row label="Work Hours" value={workHrs()} valueColor="#2563eb" />
+              
               {punches.length > 0 && <Row label="Total Punches" value={`${punches.length} punches`} valueColor="#6b7280" />}
               {record?.remark && <div style={{ padding: "8px 0", fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>Remark: {record.remark}</div>}
             </div>
