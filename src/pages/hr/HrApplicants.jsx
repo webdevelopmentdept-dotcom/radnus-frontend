@@ -734,7 +734,7 @@ export default function HrApplicants() {
                       <td>
   <div>
     {/* Show "Applied" badge when employee has applied */}
-    {(a.rawStatus === "applied" || a.status === "applied") && (
+    {/* {(a.rawStatus === "applied" || a.status === "applied") && (
       <div style={{ 
         display: "inline-flex", 
         alignItems: "center", 
@@ -751,7 +751,7 @@ export default function HrApplicants() {
         <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
         ✓ Applied by employee
       </div>
-    )}
+    )} */}
     
     <select
       className="ha-status-select"
