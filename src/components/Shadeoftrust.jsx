@@ -752,7 +752,7 @@ function ShadeOfTrust() {
                 <div className="bc-commit-label">🎯 Our Commitment</div>
                 <div className="bc-commit-num">10,00,000</div>
                 <div className="bc-commit-desc">
-                  Free branded umbrellas distributed across India to roadside vendors & micro-entrepreneurs
+                 Free branded umbrellas will be distributed across India to roadside vendors and micro-entrepreneurs
                 </div>
               </motion.div>
 
@@ -775,7 +775,7 @@ function ShadeOfTrust() {
                 <div>
                   <div className="bento-card-label">Beyond Branding</div>
                   <p className="bc-beyond-desc">
-                    This is not just a marketing campaign. Every umbrella distributed represents our commitment to empowering local entrepreneurs who contribute to India's economy every day.
+                  This will not be just a marketing campaign. Every umbrella that will be distributed will represent our commitment to empowering local entrepreneurs who contribute to India's economy every day
                   </p>
                 </div>
                 <div className="bc-val-grid">
