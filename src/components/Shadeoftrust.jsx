@@ -345,7 +345,7 @@ function ShadeOfTrust() {
           margin-bottom: 36px;
         }
         .sot-eyebrow {
-          font-size: 11px; font-weight: 700; letter-spacing: 3px;
+          font-size: 12px; font-weight: 700; letter-spacing: 3px;
           color: #CC0000; text-transform: uppercase;
           display: block; margin-bottom: 10px;
         }
@@ -379,7 +379,7 @@ function ShadeOfTrust() {
           overflow: hidden;
         }
         .bento-card-label {
-          font-size: 10px; font-weight: 700; letter-spacing: 2.5px;
+          font-size: 12px; font-weight: 700; letter-spacing: 2.5px;
           color: #CC0000; text-transform: uppercase; margin-bottom: 16px;
         }
 
@@ -400,11 +400,11 @@ function ShadeOfTrust() {
         }
         .bc-umb-info {}
         .bc-umb-name {
-          font-size: 22px; font-weight: 700; color: #F5A200; margin-bottom: 14px;
+          font-size: 26px; font-weight: 700; color: #F5A200; margin-bottom: 14px;
         }
         .bc-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
         .bc-tag {
-          font-size: 10px; font-weight: 700; padding: 5px 12px;
+          font-size: 11px; font-weight: 700; padding: 5px 12px;
           border-radius: 4px; letter-spacing: 0.5px;
           background: #CC0000; color: white;
         }
@@ -420,7 +420,7 @@ function ShadeOfTrust() {
           min-height: 200px;
         }
         .bc-commit-label {
-          font-size: 10px; font-weight: 700; letter-spacing: 2px;
+          font-size: 12px; font-weight: 700; letter-spacing: 2px;
           color: rgba(255,255,255,0.65); text-transform: uppercase; margin-bottom: 14px;
         }
         .bc-commit-num {
@@ -428,7 +428,7 @@ function ShadeOfTrust() {
           font-weight: 700; color: #F5A200; line-height: 1; margin-bottom: 12px;
         }
         .bc-commit-desc {
-          font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.6;
+          font-size: 14px; color: rgba(255,255,255,0.8); line-height: 1.6;
           max-width: 200px;
         }
 
@@ -458,7 +458,7 @@ function ShadeOfTrust() {
           display: flex; flex-direction: column; justify-content: space-between;
         }
         .bc-beyond-desc {
-          font-size: 13px; color: #666; line-height: 1.7; margin-bottom: 18px;
+          font-size: 14px; color: #666; line-height: 1.7; margin-bottom: 18px;
         }
         .bc-val-grid {
           display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
@@ -489,7 +489,7 @@ function ShadeOfTrust() {
           line-height: 1.3; margin-bottom: 12px;
         }
         .bc-vis-tagline em { color: #CC0000; font-style: normal; }
-        .bc-vis-desc { font-size: 14px; color: #777; line-height: 1.65; }
+        .bc-vis-desc { font-size: 15px; color: #777; line-height: 1.65; }
         .bc-vis-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
         .bc-vis-item {
           display: flex; align-items: flex-start; gap: 12px;
@@ -775,7 +775,7 @@ function ShadeOfTrust() {
                 <div>
                   <div className="bento-card-label">Beyond Branding</div>
                   <p className="bc-beyond-desc">
-                  This will not be just a marketing campaign. Every umbrella that will be distributed will represent our commitment to empowering local entrepreneurs who contribute to India's economy every day
+                  This will not be just a marketing campaign. Every umbrella that will be distributed will represent our commitment to empowering local entrepreneurs who contribute to India's economy every day.
                   </p>
                 </div>
                 <div className="bc-val-grid">

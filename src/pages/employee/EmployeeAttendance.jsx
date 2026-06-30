@@ -650,17 +650,17 @@ export default function EmployeeAttendance() {
 
   const pctColor = monthDetail.pct >= 90 ? "#16a34a" : monthDetail.pct >= 75 ? "#b45309" : "#dc2626";
   const pctBg = monthDetail.pct >= 90 ? "#f0fdf4" : monthDetail.pct >= 75 ? "#fffbeb" : "#fef2f2";
-  const pctBorder = monthDetail.pct >= 90 ? "#bbf7d0" : monthDetail.pct >= 75 ? "#fde68a" : "#fecaca";
+ const pctBorder = monthDetail.pct >= 90 ? "#bbf7d0" : monthDetail.pct >= 75 ? "#fde68a" : "#fecaca";
 
-  const SUMMARY_CARDS = [
-    { label: "Present",   value: summary.present  || 0, color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
-    { label: "Absent",    value: summary.absent   || 0, color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
-    { label: "Late",      value: summary.late     || 0, color: "#b45309", bg: "#fffbeb", border: "#fde68a" },
-    { label: "On Leave",  value: summary.onLeave  || 0, color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd" },
-    { label: "Half Day",  value: summary.halfDay  || 0, color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff" },
-    { label: "Work Days", value: summary.totalDays|| 0, color: "#374151", bg: "#f9fafb", border: "#e5e7eb" },
-    { label: "This Month",value: `${monthDetail.pct}%`, color: pctColor, bg: pctBg, border: pctBorder },
-  ];
+ const SUMMARY_CARDS = [
+  { label: "Present",   value: monthDetail.presentCount,        color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
+  { label: "Absent",    value: monthDetail.absentCount,         color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
+  { label: "Late",      value: monthDetail.lateCount,           color: "#b45309", bg: "#fffbeb", border: "#fde68a" },
+  { label: "On Leave",  value: monthDetail.leaveCount,          color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd" },
+  { label: "Half Day",  value: monthDetail.halfCount,           color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff" },
+  { label: "Work Days", value: monthDetail.workingDays,         color: "#374151", bg: "#f9fafb", border: "#e5e7eb" },
+  { label: "This Month",value: `${monthDetail.pct}%`,           color: pctColor,  bg: pctBg,      border: pctBorder },
+];
 
   const TABS = [
     { id: "today",    label: "Today" },
