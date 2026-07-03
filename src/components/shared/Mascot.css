@@ -1,0 +1,292 @@
+/* ===== Chikku Mascot ===== */
+
+.mascot-wrapper {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1050;
+  width: 150px;
+  height: 150px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  perspective: 900px;
+
+  /* Base transition for size changes (scroll) */
+  transition: width 0.35s ease, height 0.35s ease, right 0.35s ease, bottom 0.35s ease;
+}
+
+/* ===== Flip container ===== */
+.mascot-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+.mascot-face {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.25));
+  pointer-events: none;
+}
+
+.mascot-face-front {
+  transform: rotateY(0deg);
+}
+
+.mascot-face-back {
+  transform: rotateY(180deg);
+}
+
+/* Speech bubble */
+.mascot-bubble {
+  position: absolute;
+  top: -55px;
+  right: 0;
+  background: #ffffff;
+  color: #231f1f;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  white-space: normal;
+  width: 180px;
+  line-height: 1.4;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  opacity: 1;
+  z-index: 1051;
+}
+
+/* ===== Slide-in entrance on page load ===== */
+.mascot-entering {
+  animation: chikkuSlideIn 0.9s ease-out forwards;
+}
+
+@keyframes chikkuSlideIn {
+  0% {
+    right: -140px;
+    opacity: 0;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    right: 16px;
+    opacity: 1;
+  }
+}
+
+/* ===== Scroll-based shrink ===== */
+.mascot-scrolled {
+  width: 70px;
+  height: 70px;
+  right: 8px;
+  bottom: 8px;
+}
+
+.mascot-scrolled .mascot-bubble {
+  transform: scale(0.8);
+  transform-origin: right bottom;
+}
+
+/* ============================================================
+   PHASE-BASED ANIMATIONS
+   ============================================================ */
+
+/* ----- PHASE: IDLE (Normal + Dance) ----- */
+.mascot-phase-idle {
+  /* No special transforms, just base position */
+}
+
+/* ----- PHASE: FLIPPING (Front → Back, 0.7s) ----- */
+.mascot-phase-flipping .mascot-flip-inner {
+  transform: rotateY(180deg);
+}
+
+/* ----- PHASE: FLYING OUT (Back face flies UP off-screen, 1s) ----- */
+.mascot-phase-flying-out {
+  animation: chikkuFlyOut 2.4s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes chikkuFlyOut {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  20% {
+    /* Pause to show flipped back before flying */
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-92vw, -100vh) scale(0.15) rotate(-25deg);
+    opacity: 0;
+  }
+}
+
+/* Keep back face visible during fly-out */
+.mascot-phase-flying-out .mascot-flip-inner {
+  transform: rotateY(180deg);
+}
+
+/* ----- PHASE: HIDDEN (Completely gone, parked above screen) ----- */
+.mascot-phase-hidden {
+  transform: translate(-92vw, -100vh) scale(0.15);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Keep back face ready for fly-in */
+.mascot-phase-hidden .mascot-flip-inner {
+  transform: rotateY(180deg);
+}
+
+/* ----- PHASE: FLYING IN (Back face comes DOWN from top, 1s) ----- */
+.mascot-phase-flying-in {
+  animation: chikkuFlyIn 2.4s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+}
+
+@keyframes chikkuFlyIn {
+  0% {
+    transform: translate(-92vw, -100vh) scale(0.15) rotate(-25deg);
+    opacity: 0;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* Keep back face during fly-in */
+.mascot-phase-flying-in .mascot-flip-inner {
+  transform: rotateY(180deg);
+}
+
+/* ----- PHASE: RETURNING (Back → Front turn, 0.7s) ----- */
+.mascot-phase-returning .mascot-flip-inner {
+  transform: rotateY(0deg);
+  transition: transform 0.7s cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+/* ============================================================
+   IDLE DANCE (only when phase is 'idle')
+   ============================================================ */
+
+.mascot-dancing .mascot-flip-inner {
+  animation: chikkuDance 1.6s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes chikkuDance {
+  0%   { transform: translateY(0) rotate(0deg); }
+  20%  { transform: translateY(-10px) rotate(-6deg); }
+  40%  { transform: translateY(0) rotate(0deg); }
+  60%  { transform: translateY(-10px) rotate(6deg); }
+  80%  { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .mascot-wrapper {
+    width: 78px;
+    height: 78px;
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .mascot-scrolled {
+    width: 50px;
+    height: 50px;
+    right: 6px;
+    bottom: 6px;
+  }
+
+  .mascot-bubble {
+    width: 150px;
+    font-size: 11px;
+    top: -50px;
+  }
+
+  /* Mobile fly-out (up off-screen) */
+  .mascot-phase-flying-out {
+    animation: chikkuFlyOutMobile 2.4s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+  }
+
+  @keyframes chikkuFlyOutMobile {
+    0% {
+      transform: translate(0, 0) scale(1) rotate(0deg);
+      opacity: 1;
+    }
+    20% {
+      transform: translate(0, 0) scale(1) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-88vw, -100vh) scale(0.15) rotate(-25deg);
+      opacity: 0;
+    }
+  }
+
+  .mascot-phase-hidden {
+    transform: translate(-88vw, -100vh) scale(0.15);
+    opacity: 0;
+  }
+
+  /* Mobile fly-in (down from top) */
+  .mascot-phase-flying-in {
+    animation: chikkuFlyInMobile 2.4s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+  }
+
+  @keyframes chikkuFlyInMobile {
+    0% {
+      transform: translate(-88vw, -100vh) scale(0.15) rotate(-25deg);
+      opacity: 0;
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate(0, 0) scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot-entering,
+  .mascot-dancing .mascot-flip-inner,
+  .mascot-phase-flying-out,
+  .mascot-phase-flying-in {
+    animation: none !important;
+  }
+
+  .mascot-wrapper,
+  .mascot-flip-inner {
+    transition: none !important;
+  }
+
+  .mascot-phase-hidden {
+    opacity: 0;
+    transform: none;
+  }
+}

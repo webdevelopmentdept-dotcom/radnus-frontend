@@ -63,6 +63,34 @@ const STYLES = `
     border-radius: 99px; font-size: 10px; font-weight: 700; color: #0369a1;
   }
 
+  .kpi-search-wrap {
+    position: relative;
+    max-width: 360px;
+    width: 100%;
+  }
+  .kpi-search-input {
+    width: 100%;
+    padding: 10px 14px 10px 38px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1a1a2e;
+    background: #fff;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+  }
+  .kpi-search-input:focus { border-color: #2563eb; }
+  .kpi-search-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: #9ca3af; font-size: 14px; pointer-events: none;
+  }
+  .kpi-search-clear {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 14px;
+    padding: 2px 4px;
+  }
+
   @media (max-width: 768px) {
     .kpi-page { padding: 16px; }
     .kpi-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px; }
@@ -81,6 +109,7 @@ const STYLES = `
     .kpi-card-actions button { padding: 10px 0 !important; font-size: 14px !important; }
     .kpi-item-grid { grid-template-columns: 1fr !important; }
     .prog-target-row { flex-wrap: wrap; }
+    .kpi-search-wrap { max-width: 100%; }
   }
 `;
 
@@ -113,6 +142,9 @@ export default function KpiTemplates() {
   const [newProgName,   setNewProgName]   = useState("");
   const [addingProg,    setAddingProg]    = useState(false);
   const [showAddProg,   setShowAddProg]   = useState(false);
+
+  // Search state (UI-only, does not touch any existing data/logic)
+  const [searchQuery,   setSearchQuery]   = useState("");
 
   // Month Management states
   const [monthVersions, setMonthVersions] = useState([]);
@@ -504,7 +536,18 @@ const removeMonthKpiItem = (idx) => {
   }));
 };
 
-
+  // ===== SEARCH (UI-only, filters existing "templates" data, no data/logic change) =====
+  const filteredTemplates = templates.filter(t => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    const inBasic =
+      t.template_name?.toLowerCase().includes(q) ||
+      t.role?.toLowerCase().includes(q) ||
+      t.department?.toLowerCase().includes(q) ||
+      t.description?.toLowerCase().includes(q);
+    const inKpiNames = t.kpi_items?.some(item => item.kpi_name?.toLowerCase().includes(q));
+    return inBasic || inKpiNames;
+  });
 
   return (
     <div className="kpi-page" style={{ fontFamily: "'Segoe UI', sans-serif", minHeight: "100vh", background: "#f4f6fb" }}>
@@ -527,6 +570,28 @@ const removeMonthKpiItem = (idx) => {
         </button>
       </div>
 
+      {/* Search Bar (new, does not affect existing data/logic) */}
+      <div style={{ marginBottom: 20 }}>
+        <div className="kpi-search-wrap">
+          <span className="kpi-search-icon">🔍</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search templates by name, role, department, KPI..."
+            className="kpi-search-input"
+          />
+          {searchQuery && (
+            <button className="kpi-search-clear" onClick={() => setSearchQuery("")} title="Clear search">✕</button>
+          )}
+        </div>
+        {searchQuery && (
+          <p style={{ margin: "8px 0 0", fontSize: 12, color: "#6b7280" }}>
+            {filteredTemplates.length} of {templates.length} template{templates.length !== 1 ? "s" : ""} matched
+          </p>
+        )}
+      </div>
+
       {/* Templates Grid */}
       {loading ? (
         <div style={{ textAlign: "center", padding: 60, color: "#6b7280" }}>Loading templates...</div>
@@ -536,9 +601,15 @@ const removeMonthKpiItem = (idx) => {
           <p style={{ color: "#6b7280", fontSize: 15 }}>No KPI templates yet. Create your first one!</p>
           <button onClick={openCreate} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 600, cursor: "pointer", marginTop: 8 }}>Create Template</button>
         </div>
+      ) : filteredTemplates.length === 0 ? (
+        <div style={{ background: "#fff", borderRadius: 12, padding: "60px 0", textAlign: "center", border: "1px solid #e5e7eb" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+          <p style={{ color: "#6b7280", fontSize: 15 }}>No templates match "{searchQuery}"</p>
+          <button onClick={() => setSearchQuery("")} style={{ background: "#fff", border: "1px solid #d1d5db", color: "#374151", borderRadius: 8, padding: "10px 20px", fontWeight: 600, cursor: "pointer", marginTop: 8 }}>Clear Search</button>
+        </div>
       ) : (
         <div className="kpi-grid" style={{ display: "grid", gap: 20 }}>
-          {templates.map(t => (
+          {filteredTemplates.map(t => (
             <div key={t._id} style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
               <div style={{ background: "#2563eb", padding: "16px 20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>

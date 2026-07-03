@@ -24,6 +24,7 @@ import CareerDetail from "./components/shared/CareerDetail";
 import ThankYou from "./ThankYou";
 import jobsData from "./components/jobsData";
 import ShadeOfTrust from "./components/Shadeoftrust";
+import Mascot from "./components/shared/Mascot";
 
 /* Auth */
 import Login from "./pages/auth/Login";
@@ -170,7 +171,7 @@ location.pathname.startsWith("/radnus-connect/find-technician")
     <>
       <ScrollToTop />
       {!hideHeaderFooter && <RadnusNavbar />}
-
+      {!hideHeaderFooter && <Mascot />}
       <Routes>
         {/* PUBLIC */}
         <Route path="/" element={<RadnusHome />} />
