@@ -765,8 +765,8 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
         employee_id: employee._id,
         date,
         status: form.status,
-        checkIn: (!isNoTime && form.checkIn) ? `${date}T${form.checkIn}:00` : null,
-        checkOut: (!isNoTime && form.checkOut) ? `${date}T${form.checkOut}:00` : null,
+        checkIn: (!isNoTime && form.checkIn) ? `${date}T${form.checkIn}:00+05:30` : null,
+        checkOut: (!isNoTime && form.checkOut) ? `${date}T${form.checkOut}:00+05:30` : null,
         remark: form.remark,
       }, { headers: authHeader() });
       onSave("success", `${employee.name} — attendance marked!`);
