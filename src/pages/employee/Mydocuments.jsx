@@ -298,36 +298,48 @@ const handleView = async (docId) => {
           {error && <p style={{ fontSize: 11, color: "#dc2626", margin: "4px 0 6px" }}>{error}</p>}
           <div className="d-flex gap-2 mt-2 flex-wrap">
             {isUploaded ? (
-              <>
-                <button
-                  onClick={() => handleView(uploaded._id)}
-                  className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
-                >
-                  <ExternalLink size={13} /> View
-                </button>
-                <button
-                  onClick={() => handleDownload(uploaded._id, docType)}
-                  disabled={downloading[docType]}
-                  className="btn btn-sm btn-primary d-flex align-items-center gap-1"
-                >
-                  <Download size={13} /> {downloading[docType] ? "..." : "Download"}
-                </button>
-              </>
-            ) : (
-              !isEmployeeActive ? (
-                <button
-                  onClick={() => fileRefs.current[docType]?.click()}
-                  disabled={isUploading}
-                  className="btn btn-sm btn-primary d-flex align-items-center gap-1"
-                >
-                  {isUploading
-                    ? <><span className="spinner-border spinner-border-sm me-1" />Uploading...</>
-                    : <><Upload size={13} /> Upload</>}
-                </button>
-              ) : (
-                <LockedBadge />
-              )
-            )}
+  <>
+    <button
+      onClick={() => handleView(uploaded._id)}
+      className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+    >
+      <ExternalLink size={13} /> View
+    </button>
+    <button
+      onClick={() => handleDownload(uploaded._id, docType)}
+      disabled={downloading[docType]}
+      className="btn btn-sm btn-primary d-flex align-items-center gap-1"
+    >
+      <Download size={13} /> {downloading[docType] ? "..." : "Download"}
+    </button>
+    {!isEmployeeActive && (
+      <button
+        onClick={() => fileRefs.current[docType]?.click()}
+        disabled={isUploading}
+        className="btn btn-sm btn-warning d-flex align-items-center gap-1"
+      >
+        {isUploading
+          ? <><span className="spinner-border spinner-border-sm me-1" />Uploading...</>
+          : <><RefreshCw size={13} /> Replace</>}
+      </button>
+    )}
+  </>
+) : (
+  !isEmployeeActive ? (
+    <button
+      onClick={() => fileRefs.current[docType]?.click()}
+      disabled={isUploading}
+      className="btn btn-sm btn-primary d-flex align-items-center gap-1"
+    >
+      {isUploading
+        ? <><span className="spinner-border spinner-border-sm me-1" />Uploading...</>
+        : <><Upload size={13} /> Upload</>}
+    </button>
+  ) : (
+    <LockedBadge />
+  )
+)}
+          
           </div>
         </div>
       </div>
