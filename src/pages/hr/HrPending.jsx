@@ -2,7 +2,14 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { getSecureUrl } from "../../utils/secureDoc";
 
 // ✅ Text-only doc types (not files — just plain values)
-const TEXT_DOCS = ["CGPA", "PF Number", "ESI Number", "PG CGPA"];
+const TEXT_DOCS = [
+  "CGPA",
+  "PF Number",
+  "ESI Number",
+  "PG CGPA",
+  "Reference Number 1",
+  "Reference Number 2",
+];
 
 export default function HrPending() {
   const [employees, setEmployees] = useState([]);
