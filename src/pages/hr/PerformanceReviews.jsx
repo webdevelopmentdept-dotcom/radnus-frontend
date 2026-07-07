@@ -835,7 +835,7 @@ const handleLockLog = async (logId) => {
               ) : Object.keys(logTotals).length === 0 ? (
                 <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "20px 0" }}>No logs yet</p>
               ) : (
-                selectedAssignmentData?.template_id?.kpi_items?.map((item, i) => {
+                (selectedAssignmentData?.month_version_id?.kpi_items || selectedAssignmentData?.template_id?.kpi_items)?.map((item, i) => {
                   const total = logTotals[item._id] || 0;
                   const pct = Math.min(Math.round((total / item.target) * 100), 100);
                   const color = pct >= 100 ? "#16a34a" : pct >= 75 ? "#2563eb" : pct >= 50 ? "#d97706" : "#dc2626";
