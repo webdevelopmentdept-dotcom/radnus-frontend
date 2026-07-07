@@ -286,22 +286,31 @@ export default function HrPending() {
                             </small>
                           </div>
 
-                        ) : isPDF(fileUrl) ? (
-                          <button
-                            className="btn btn-outline-primary btn-sm w-100"
-onClick={() => openPreview(fileUrl, doc.docType)}                         >
-                            📄 View PDF
-                          </button>
+                       ) : isPDF(fileUrl) ? (
+  <button
+    className="btn btn-outline-primary btn-sm w-100"
+    onClick={() => openPreview(fileUrl, doc.docType)}
+  >
+    📄 View PDF
+  </button>
 
-                        ) : (
-                          <img
-                            src={fileUrl}
-                            alt="doc"
-                            className="img-fluid rounded"
-                            style={{ height: "100px", objectFit: "cover", cursor: "pointer" }}
-onClick={() => openPreview(fileUrl, doc.docType)}                   
-       />
-                        )}
+) : isDoc(fileUrl) ? (
+  <button
+    className="btn btn-outline-primary btn-sm w-100"
+    onClick={() => openPreview(fileUrl, doc.docType)}
+  >
+    📝 View Document
+  </button>
+
+) : (
+  <img
+    src={fileUrl}
+    alt="doc"
+    className="img-fluid rounded"
+    style={{ height: "100px", objectFit: "cover", cursor: "pointer" }}
+    onClick={() => openPreview(fileUrl, doc.docType)}
+  />
+)}
 
                       </div>
                     </div>
