@@ -356,7 +356,7 @@ const handleEdit = (a) => {
       const payload = {
         employee_id: form.employee_id,
         template_id: form.template_id,
-        monthly_version_id: form.monthly_version_id || null,
+         month_version_id: form.monthly_version_id || null, 
         period: getPeriodLabel(),
         period_type: form.period_type,
         notes: form.notes.trim()
@@ -555,7 +555,7 @@ const openView = async (assignment) => {
                           <span style={{ background: "#f3f4f6", color: "#374151", fontWeight: 600, padding: "4px 10px", borderRadius: 6, fontSize: 12, whiteSpace: "nowrap" }}>{a.period}</span>
                           {a.monthly_version_id && (
                             <span style={{ marginLeft: 6, background: "#dcfce7", color: "#16a34a", fontWeight: 600, padding: "2px 8px", borderRadius: 4, fontSize: 10, whiteSpace: "nowrap" }}>
-                              📅 {a.monthly_version_id.month}
+                              📅 {a.month_version_id.month}
                             </span>
                           )}
                         </td>

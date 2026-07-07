@@ -114,15 +114,22 @@ export default function SelfAssessment() {
       const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/${employeeId}`);
       // const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/pending/${employeeId}`);
 
+      // if (assignRes.data.success && assignRes.data.data) {
+      //   const assign = assignRes.data.data;
+      //   console.log("KPI Items:", assign.template_id?.kpi_items);
+      //   setAssignment(assign);
+      //   const kpiItems = assign.template_id?.kpi_items || [];
+
+
       if (assignRes.data.success && assignRes.data.data) {
-        const assign = assignRes.data.data;
-        console.log("KPI Items:", assign.template_id?.kpi_items);
-        setAssignment(assign);
-        const kpiItems = assign.template_id?.kpi_items || [];
+  const assign = assignRes.data.data;
+ const kpiItems = assign.month_version_id?.kpi_items || assign.template_id?.kpi_items || [];
+console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "month_version" : "template_default");
+  setAssignment(assign);
 
         // ── CHANGE 1: owner_role include பண்றோம் ──
         const initItems = kpiItems.map(item => ({
-          kpi_item_id: item._id,
+          kpi_item_id: String(item._id),
           kpi_name: item.kpi_name,
           target: item.target,
           unit: item.unit,
@@ -372,8 +379,10 @@ export default function SelfAssessment() {
         await fetchLogs(assignment._id);
       }
     } catch (err) {
-      showToast("Failed to save log", "error");
-    } finally {
+  showToast(err.response?.data?.message || "Failed to save log", "error");
+  console.error("Daily log save error:", err.response?.data || err.message);
+}
+     finally {
       setSavingLog(false);
     }
   };

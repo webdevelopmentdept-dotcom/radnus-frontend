@@ -742,16 +742,49 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
   const noTimeStatus = ["absent", "leave", "holiday", "weekend"];
   const [currentShift, setCurrentShift] = useState(employee.shift);
 
-  const [form, setForm] = useState({
+ const [form, setForm] = useState({
     status: existing?.status || "present",
     checkIn: existingFirstIn ? new Date(existingFirstIn).toTimeString().slice(0, 5) : "10:00",
     checkOut: existingLastOut ? new Date(existingLastOut).toTimeString().slice(0, 5) : "",
     remark: existing?.remark || "",
+    permissionStart: existing?.permission?.start || "",
+    permissionEnd: existing?.permission?.end || "",
+    usePermission: !!(existing?.permission?.start && existing?.permission?.end),
   });
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const isNoTime = noTimeStatus.includes(form.status);
+
+
+  // ✅ Middle punches (lunch/break etc.) preserve பண்ணி, first-in & last-out மட்டும் replace
+  const buildPunchesPayload = () => {
+    if (isNoTime) return [];
+
+    const existingPunches = existing?.punches || [];
+    const sorted = [...existingPunches].sort((a, b) => new Date(a.time) - new Date(b.time));
+
+    const firstInIdx = sorted.findIndex(p => p.type === "in");
+    let lastOutIdx = -1;
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      if (sorted[i].type === "out") { lastOutIdx = i; break; }
+    }
+
+    const middlePunches = sorted.filter((p, idx) => idx !== firstInIdx && idx !== lastOutIdx);
+
+    const newFirstIn = form.checkIn
+      ? { type: "in", time: `${date}T${form.checkIn}:00+05:30`, remark: form.remark || "" }
+      : null;
+    const newLastOut = form.checkOut
+      ? { type: "out", time: `${date}T${form.checkOut}:00+05:30`, remark: form.remark || "" }
+      : null;
+
+    return [
+      ...(newFirstIn ? [newFirstIn] : []),
+      ...middlePunches,
+      ...(newLastOut ? [newLastOut] : []),
+    ];
+  };
 
   const handle = async () => {
     if (form.status === "leave" && !form.remark.trim()) {
@@ -768,6 +801,8 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
         checkIn: (!isNoTime && form.checkIn) ? `${date}T${form.checkIn}:00+05:30` : null,
         checkOut: (!isNoTime && form.checkOut) ? `${date}T${form.checkOut}:00+05:30` : null,
         remark: form.remark,
+         permissionStart: (!isNoTime && form.usePermission && form.permissionStart) ? form.permissionStart : null,
+        permissionEnd: (!isNoTime && form.usePermission && form.permissionEnd) ? form.permissionEnd : null,
       }, { headers: authHeader() });
       onSave("success", `${employee.name} — attendance marked!`);
     } catch (err) {
@@ -830,6 +865,37 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
             employee.shift = newShift;
           }}
         />
+
+        {!isNoTime && (
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 8, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={form.usePermission}
+                onChange={e => setForm(f => ({ ...f, usePermission: e.target.checked }))}
+              />
+              Grant Permission (late-a mark pannadha)
+            </label>
+
+            {form.usePermission && (
+              <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: 10 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#1e40af", display: "block", marginBottom: 3 }}>Permission Start</label>
+                    <input type="time" value={form.permissionStart} onChange={e => setForm(f => ({ ...f, permissionStart: e.target.value }))} style={inp} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#1e40af", display: "block", marginBottom: 3 }}>Permission End</label>
+                    <input type="time" value={form.permissionEnd} onChange={e => setForm(f => ({ ...f, permissionEnd: e.target.value }))} style={inp} />
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: "#1e40af", marginTop: 6 }}>
+                  If the employee comes in by this time, they won't be marked Late.
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div style={{ marginBottom: 18 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 4 }}>
