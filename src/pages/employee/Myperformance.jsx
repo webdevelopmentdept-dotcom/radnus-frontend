@@ -188,36 +188,45 @@ export default function MyPerformance() {
     );
     if (byPeriod) return byPeriod;
 
-    const sorted = [...reviews]
-      .filter(r => r.status === "finalized")
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    return sorted[0] || null;
+    // ✅ FIX: current assignment (July)-க்கு exact review இல்லைனா,
+    // வேற period-ன review-ஐ (June) எடுத்து காட்டாதே — null return பண்ணு
+    return null;
   };
 
-  const calcCurrentScore = () => {
-    const hrReview = getReviewForCurrentAssignment();
+  const calcCurrentScore = (reviewOverride) => {
+  const hrReview = reviewOverride || getReviewForCurrentAssignment();
+  if (hrReview?.final_score != null) return hrReview.final_score;
 
-    if (hrReview?.final_score != null) return hrReview.final_score;
+  const items = assignment?.month_version_id?.kpi_items || assignment?.template_id?.kpi_items || [];
+  if (!items.length) return 0;
+  const totalWeight = items.reduce((s, i) => s + (i.weight || 0), 0);
+  const equalWeight = 100 / items.length;
+  let total = 0;
+  items.forEach(item => {
+    const actual = actuals[item._id] || 0;
+    const pct = Math.min((actual / item.target) * 100, 100);
+    const w = totalWeight === 0 ? equalWeight : (item.weight || 0);
+    const divisor = totalWeight === 0 ? 100 : totalWeight;
+    total += pct * (w / divisor);
+  });
+  return Math.round(total);
+};
 
-    if (!assignment?.template_id?.kpi_items) return 0;
-    const items = assignment.template_id.kpi_items;
-    const totalWeight = items.reduce((s, i) => s + (i.weight || 0), 0);
-    const equalWeight = 100 / items.length;
-    let total = 0;
-    items.forEach(item => {
-      const actual = actuals[item._id] || 0;
-      const pct = Math.min((actual / item.target) * 100, 100);
-      const w = totalWeight === 0 ? equalWeight : (item.weight || 0);
-      const divisor = totalWeight === 0 ? 100 : totalWeight;
-      total += pct * (w / divisor);
-    });
-    return Math.round(total);
-  };
+  const getLatestCompletedReview = () => {
+  if (!reviews.length) return null;
+  return [...reviews].sort(
+    (a, b) => new Date(b.createdAt || b.reviewed_at) - new Date(a.createdAt || a.reviewed_at)
+  )[0];
+};
 
-  const currentReview = getReviewForCurrentAssignment();
-  const isHRReviewed  = currentReview != null;
-  const currentScore  = calcCurrentScore();
-  const kpiItems      = assignment?.template_id?.kpi_items || [];
+const exactReview = getReviewForCurrentAssignment();
+const fallbackReview = exactReview ? null : getLatestCompletedReview();
+const currentReview = exactReview || fallbackReview;
+const isHRReviewed  = currentReview != null;
+const isShowingLastMonth = !exactReview && !!fallbackReview;
+const currentScore  = calcCurrentScore(currentReview);
+  const kpiItems = assignment?.month_version_id?.kpi_items || assignment?.template_id?.kpi_items || [];
+
 
   const reviewKpis  = currentReview?.kpi_breakdown || [];
   const metTargets  = isHRReviewed
@@ -294,11 +303,11 @@ export default function MyPerformance() {
                   </div>
                   <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
                     {[
-                      { label: "Period",       value: assignment.period },
-                      { label: "Total KPIs",   value: totalKpis },
-                      { label: "Targets Met",  value: `${metTargets} / ${totalKpis}` },
-                      { label: "Past Reviews", value: reviews.length },
-                    ].map((s, i) => (
+  { label: "Period",       value: isHRReviewed ? currentReview.period : assignment.period },
+  { label: "Total KPIs",   value: totalKpis },
+  { label: "Targets Met",  value: `${metTargets} / ${totalKpis}` },
+  { label: "Past Reviews", value: reviews.length },
+].map((s, i) => (
                       <div key={i}>
                         <p style={{ margin: 0, fontSize: 11, color: "#9ca3af", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>{s.label}</p>
                         <p style={{ margin: "2px 0 0", fontSize: 18, fontWeight: 800, color: "#1a1a2e" }}>{s.value}</p>
@@ -338,7 +347,14 @@ export default function MyPerformance() {
             {activeTab === "current" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 <div style={{ background: "#fff", borderRadius: 14, padding: 24, border: "1px solid #e5e7eb" }}>
-                  <h3 style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 700, color: "#1a1a2e" }}>KPI Progress — {assignment.period}</h3>
+                  <h3 style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 700, color: "#1a1a2e" }}>
+  KPI Progress — {isHRReviewed ? currentReview.period : assignment.period}
+</h3>
+{isShowingLastMonth && (
+  <p style={{ margin: "0 0 12px", fontSize: 12, color: "#2563eb", fontWeight: 600 }}>
+    📅 Showing your last reviewed month ({currentReview.period}) — {assignment.period} review pending
+  </p>
+)}
                   <p style={{ margin: "0 0 20px", color: "#6b7280", fontSize: 13 }}>{assignment.template_id?.role} · {assignment.template_id?.department}</p>
 
                   {isHRReviewed ? (

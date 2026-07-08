@@ -616,14 +616,18 @@ export default function EmployeeDashboard() {
           setKpiPeriod(assign.period || "");
           let scoreSet = false;
           try {
-            const prRes = await axios.get(`${API_BASE}/api/performance-reviews/${id}`);
-            if (prRes.data.success && prRes.data.data?.length > 0) {
-              const sorted = prRes.data.data
-                .filter(r => r.status === "finalized" && r.final_score != null)
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-              if (sorted.length > 0) { setKpiScore(sorted[0].final_score); scoreSet = true; }
-            }
-          } catch (_) { }
+  const prRes = await axios.get(`${API_BASE}/api/performance-reviews/${id}`);
+  if (prRes.data.success && prRes.data.data?.length > 0) {
+    const sorted = prRes.data.data
+      .filter(r => r.status === "finalized" && r.final_score != null)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    if (sorted.length > 0) {
+      setKpiScore(sorted[0].final_score);
+      setKpiPeriod(sorted[0].period || assign.period || "");  // ← review-ன் actual period
+      scoreSet = true;
+    }
+  }
+} catch (_) { }
           if (!scoreSet) {
             try {
               const saRes = await axios.get(`${API_BASE}/api/self-assessment/by-assignment/${assign._id}`);

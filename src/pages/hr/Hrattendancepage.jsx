@@ -48,41 +48,66 @@ export const getLastOut = (r) => {
   if (!r.punches || r.punches.length === 0) {
     return r.checkOut || r.last_out || null;
   }
+  const sorted = [...r.punches].sort((a, b) => new Date(a.time) - new Date(b.time));
 
-  // Sort by time
-  const sorted = [...r.punches].sort((a, b) => 
-    new Date(a.time) - new Date(b.time)
-  );
-
-  // Get all IN times (rounded to seconds)
   const inTimes = new Set(
-    sorted
-      .filter(p => p.type === "in")
+    sorted.filter(p => p.type === "in")
       .map(p => Math.round(new Date(p.time).getTime() / 1000))
   );
 
-  // Find last IN index
   let lastInIndex = -1;
   for (let i = sorted.length - 1; i >= 0; i--) {
-    if (sorted[i].type === "in") {
-      lastInIndex = i;
-      break;
-    }
+    if (sorted[i].type === "in") { lastInIndex = i; break; }
   }
-
-  // No IN found
   if (lastInIndex === -1) return null;
 
-  // Find last OUT after last IN (skip same time as IN)
   for (let i = sorted.length - 1; i > lastInIndex; i--) {
     if (sorted[i].type === "out") {
       const outTime = Math.round(new Date(sorted[i].time).getTime() / 1000);
-      // Skip if same time as any IN (duplicate)
       if (inTimes.has(outTime)) continue;
+
+      // ✅ ADD THIS: lunch-window out-a final-out-a edukkadhu
+      const t = new Date(sorted[i].time);
+      const mins = t.getHours() * 60 + t.getMinutes();
+      const isLunchOut = mins >= LUNCH_START_TOTAL && mins <= LUNCH_END_TOTAL;
+      if (isLunchOut) continue;
+
       return sorted[i].time;
     }
   }
+  return null;
+};
 
+
+export const isStuckOnLunch = (r, dateStr) => {
+  if (!r.punches || r.punches.length === 0) return false;
+  const sorted = [...r.punches].sort((a, b) => new Date(a.time) - new Date(b.time));
+  const last = sorted[sorted.length - 1];
+  if (!last || last.type !== "out") return false;
+
+  const t = new Date(last.time);
+  const mins = t.getHours() * 60 + t.getMinutes();
+  const isLunchOut = mins >= LUNCH_START_TOTAL && mins <= LUNCH_END_TOTAL;
+  if (!isLunchOut) return false;
+
+  const today = todayStr();
+  if (dateStr === today) {
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    return nowMins >= LUNCH_RETURN_CUTOFF;
+  }
+  return true;
+};
+
+export const getEffectiveLastOut = (r, dateStr) => {
+  const realOut = getLastOut(r);
+  if (realOut) return realOut;
+
+  if (isStuckOnLunch(r, dateStr)) {
+    const sorted = [...(r.punches || [])].sort((a, b) => new Date(a.time) - new Date(b.time));
+    const last = sorted[sorted.length - 1];
+    return last?.time || null;
+  }
   return null;
 };
 
@@ -162,6 +187,7 @@ export const workHrsFromPunches = (r) => {
 
 export const LUNCH_START_TOTAL = 13 * 60 + 30;
 export const LUNCH_END_TOTAL = 14 * 60 + 30;
+export const LUNCH_RETURN_CUTOFF = 15 * 60;
 
 const DEFAULT_SHIFT_START = 10 * 60;
 const DEFAULT_SHIFT_END = 19 * 60;
@@ -471,19 +497,19 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
               <Row 
   label="Last Out" 
   value={(() => {
-    const lo = getLastOut(record); // ✅ Use function
-    if (lo) return fmt(lo);
+    const eo = getEffectiveLastOut(record, date);   // ✅ CHANGE
+    if (eo) return fmt(eo);
     const fi = getFirstIn(record);
     if (fi) return "Pending";
     return "—";
   })()} 
-  valueColor={getLastOut(record) ? "#dc2626" : "#f59e0b"} 
+  valueColor={getEffectiveLastOut(record, date) ? "#dc2626" : "#f59e0b"} 
 />
 <Row 
   label="Work Hours" 
   value={(() => {
     const fi = getFirstIn(record);
-    const lo = getLastOut(record);
+    const lo = getEffectiveLastOut(record, date);   // ✅ CHANGE
     if (!fi) return "—";
     if (!lo) return "Ongoing";
     const diffMs = new Date(lo) - new Date(fi);
@@ -1158,7 +1184,7 @@ if (isMissingOut) flags.push({ label: "No Out", color: "#b91c1c", bg: "#fff1f2" 
 
                       <td style={{ ...S.tableCell, color: "#16a34a", fontWeight: 700, fontFamily: "monospace" }}>{fmt(r._firstIn)}</td>
 
-<td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
+{/* <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
   {(() => {
     const lastOut = getLastOut(r); // ✅ Call function here
     const firstIn = getFirstIn(r); // ✅ Call function here
@@ -1175,8 +1201,33 @@ if (isMissingOut) flags.push({ label: "No Out", color: "#b91c1c", bg: "#fff1f2" 
     }
     return "—";
   })()}
+</td> */}
+
+<td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
+  {(() => {
+    const effectiveOut = getEffectiveLastOut(r, date);   // ✅ CHANGE
+    const firstIn = getFirstIn(r);
+
+    if (effectiveOut) {
+      const isRealOut = getLastOut(r) !== null;
+      return (
+        <span style={{ color: isRealOut ? "#dc2626" : "#7c3aed" }}>
+          {fmt(effectiveOut)}
+        </span>
+      );
+    }
+    if (firstIn) {
+      return (
+        <span style={{ color: "#f59e0b", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>
+          <AlertCircle size={11} /> Pending
+        </span>
+      );
+    }
+    return "—";
+  })()}
 </td>
-<td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>
+
+{/* <td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>
   {(() => {
     const firstIn = getFirstIn(r);
     const lastOut = getLastOut(r);
@@ -1191,6 +1242,27 @@ if (isMissingOut) flags.push({ label: "No Out", color: "#b91c1c", bg: "#fff1f2" 
     }
     
     const diffMs = new Date(lastOut) - new Date(firstIn);
+    const totalMins = Math.round(diffMs / 60000);
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    return `${h}h ${String(m).padStart(2, '0')}m`;
+  })()}
+</td> */}
+
+<td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>
+  {(() => {
+    const firstIn = getFirstIn(r);
+    const effectiveOut = getEffectiveLastOut(r, date);   // ✅ CHANGE
+
+    if (!firstIn) return "—";
+    if (!effectiveOut) {
+      return (
+        <span style={{ color: "#f59e0b", fontWeight: 700, fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>
+          <AlertCircle size={11} /> No Out
+        </span>
+      );
+    }
+    const diffMs = new Date(effectiveOut) - new Date(firstIn);
     const totalMins = Math.round(diffMs / 60000);
     const h = Math.floor(totalMins / 60);
     const m = totalMins % 60;

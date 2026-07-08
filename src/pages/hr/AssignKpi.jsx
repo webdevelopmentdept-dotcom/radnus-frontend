@@ -113,6 +113,50 @@ const STYLES = `
     margin: 3px 0;
   }
 
+  /* ✅ NEW: Filter bar styles */
+  .ak-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ak-status-tabs {
+    display: flex;
+    gap: 4px;
+    background: #f1f5f9;
+    padding: 3px;
+    border-radius: 9px;
+  }
+  .ak-status-tab-btn {
+    padding: 7px 16px;
+    border: none;
+    border-radius: 7px;
+    font-weight: 700;
+    font-size: 12.5px;
+    cursor: pointer;
+    background: transparent;
+    color: #6b7280;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .ak-status-tab-btn.active-tab {
+    background: #fff;
+    color: #1a1a2e;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .ak-month-select {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #374151;
+    background: #fff;
+    outline: none;
+    cursor: pointer;
+  }
+
   @media (max-width: 768px) {
     .ak-page { padding: 16px !important; }
     .ak-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px; }
@@ -125,6 +169,10 @@ const STYLES = `
     .ak-tpl-row-right { flex-direction: row; gap: 8px; }
     .ak-table-wrap { display: none !important; }
     .ak-card-list { display: flex !important; flex-direction: column; gap: 12px; padding: 12px 16px; }
+    .ak-filter-bar { flex-direction: column !important; align-items: stretch !important; }
+    .ak-status-tabs { width: 100%; }
+    .ak-status-tab-btn { flex: 1; text-align: center; }
+    .ak-month-select { width: 100%; }
   }
   @media (max-width: 480px) {
     .ak-stats { grid-template-columns: 1fr !important; }
@@ -139,16 +187,6 @@ function ActionDropdown({ assignment, onView, onEdit, onCancel, onDelete }) {
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
   const dropdownRef = useRef(null); 
-
-//   useEffect(() => {
-//     if (!open) return;
-//     const close = (e) => {
-//   if (btnRef.current && !btnRef.current.contains(e.target)) setOpen(false);
-// };
-// document.addEventListener("mousedown", close);
-// return () => document.removeEventListener("mousedown", close);
-//     return () => document.removeEventListener("mousedown", close);
-//   }, [open]);
 
 useEffect(() => {
   if (!open) return;
@@ -234,6 +272,10 @@ export default function AssignKpi() {
 
   const [monthVersions, setMonthVersions] = useState([]);
   const [selectedMonthVersion, setSelectedMonthVersion] = useState(null);
+
+  // ✅ NEW: Filter states (status tab + month filter)
+  const [statusTab, setStatusTab] = useState("all"); // "all" | "active" | "completed"
+  const [monthFilter, setMonthFilter] = useState("all");
 
   const [form, setForm] = useState({
     employee_id: "", template_id: "", period_type: "monthly",
@@ -454,6 +496,22 @@ const openView = async (assignment) => {
     );
   };
 
+  // ✅ NEW: Filtered list — statusTab + monthFilter apply பண்ணும், original `assignments` touch பண்ணல
+  const filteredAssignments = assignments.filter(a => {
+    const matchStatus = statusTab === "all" ? true : a.status === statusTab;
+
+    let matchMonth = true;
+    if (monthFilter !== "all") {
+      if (a.period_type === "monthly") {
+        const monthName = (a.period || "").split(" ")[0];
+        matchMonth = monthName === monthFilter;
+      } else {
+        matchMonth = false; // quarterly/annual-க்கு month filter apply ஆகாது
+      }
+    }
+    return matchStatus && matchMonth;
+  });
+
   return (
     <div className="ak-page" style={{ fontFamily: "'Segoe UI', sans-serif", minHeight: "100vh", background: "#f4f6fb" }}>
       <style>{STYLES}</style>
@@ -495,7 +553,37 @@ const openView = async (assignment) => {
       {/* Table Card */}
       <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", overflow: "hidden" }}>
         <div style={{ padding: "18px 24px", borderBottom: "1px solid #f3f4f6" }}>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1a1a2e" }}>All Assignments</h3>
+          <div className="ak-filter-bar">
+            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1a1a2e" }}>All Assignments</h3>
+
+            {/* ✅ NEW: Status tabs + Month filter */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+              <div className="ak-status-tabs">
+                {[
+                  { id: "all", label: "All" },
+                  { id: "active", label: "Active" },
+                  { id: "completed", label: "Completed" },
+                ].map(t => (
+                  <button
+                    key={t.id}
+                    className={`ak-status-tab-btn ${statusTab === t.id ? "active-tab" : ""}`}
+                    onClick={() => setStatusTab(t.id)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              <select
+                className="ak-month-select"
+                value={monthFilter}
+                onChange={e => setMonthFilter(e.target.value)}
+              >
+                <option value="all">All Months</option>
+                {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
         </div>
 
         {loading ? (
@@ -506,6 +594,13 @@ const openView = async (assignment) => {
               <Inbox size={40} color="#d1d5db" />
             </div>
             <p style={{ color: "#6b7280" }}>No KPIs assigned yet. Click "Assign KPI" to get started.</p>
+          </div>
+        ) : filteredAssignments.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "56px 0" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+              <Inbox size={40} color="#d1d5db" />
+            </div>
+            <p style={{ color: "#6b7280" }}>No assignments match the selected filter.</p>
           </div>
         ) : (
           <>
@@ -530,7 +625,7 @@ const openView = async (assignment) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {assignments.map((a, i) => {
+                  {filteredAssignments.map((a, i) => {
                     const st = getStatusStyle(a.status);
                     return (
                       <tr key={a._id}>
@@ -583,7 +678,7 @@ const openView = async (assignment) => {
 
             {/* Mobile Cards */}
             <div className="ak-card-list">
-              {assignments.map((a) => {
+              {filteredAssignments.map((a) => {
                 const st = getStatusStyle(a.status);
                 return (
                   <div key={a._id} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px", background: "#fff" }}>
