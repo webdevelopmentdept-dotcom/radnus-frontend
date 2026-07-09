@@ -4,7 +4,7 @@ import {
   FileText, Building2, LayoutDashboard, User,
   LogOut, TrendingUp, ClipboardList, Wallet,
   Bell, Settings, CalendarCheck, X,
-  ChevronRight, Sun, Moon, Sparkles, MessageCircle
+  ChevronRight, Sun, Moon, Sparkles, MessageCircle, Lock
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -34,6 +34,12 @@ const NAV_ITEMS = [
   { href: "/employee/settings",              icon: Settings,        label: "Settings"         },
 ];
 
+// ✅ LOCK LOGIC — status "approved"/"active" varakkum idhu mattum access pannalam.
+// Vera page kudukkanumna, idhula path add pannunga.
+const ALWAYS_ALLOWED_PATHS = [
+  "/employee/my-documents",
+];
+
 // ── EmployeeSidebar ──────────────────────────────────────────────────────────
 // Props:
 //   handleLogout  — logout callback from EmployeeLayout
@@ -46,6 +52,7 @@ const NAV_ITEMS = [
 export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsOpen }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [active,      setActive]      = useState(window.location.pathname);
+  const [lockToast,   setLockToast]   = useState(false); // ✅ NEW — lock message toast
 
   const [dark, setDark] = useState(() => {
     return localStorage.getItem("esb-theme") !== "light";
@@ -80,6 +87,16 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
     const iv = setInterval(fetchUnread, 30000);
     return () => clearInterval(iv);
   }, []);
+
+  // ✅ NEW — auto-hide lock toast
+  useEffect(() => {
+    if (!lockToast) return;
+    const t = setTimeout(() => setLockToast(false), 2600);
+    return () => clearTimeout(t);
+  }, [lockToast]);
+
+  // ✅ NEW — employee approved-a irukka check pannurom
+  const isApproved = employee?.status === "approved" || employee?.status === "active";
 
   const avatarUrl =
     employee?.profileImage ||
@@ -284,6 +301,17 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
           flex-shrink: 0;
         }
 
+        /* ✅ NEW — Pending badge (when not approved yet) */
+        .esb-pending-badge {
+          background: ${dark ? "rgba(217,119,6,0.18)" : "rgba(217,119,6,0.10)"};
+          color: #d97706;
+          font-size: 8px; font-weight: 700;
+          letter-spacing: 0.4px; text-transform: uppercase;
+          padding: 3px 7px; border-radius: 20px;
+          border: 1px solid rgba(217,119,6,0.3);
+          flex-shrink: 0;
+        }
+
         /* ═══════════════════════════════════════════
            DARK / LIGHT TOGGLE
         ═══════════════════════════════════════════ */
@@ -402,6 +430,19 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
         .esb-link:hover .esb-arrow,
         .esb-link.active .esb-arrow { opacity: 1; transform: translateX(2px); }
 
+        /* ✅ NEW — Locked nav item look */
+        .esb-link.locked {
+          color: ${T.muted};
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
+        .esb-link.locked:hover {
+          background: transparent;
+          color: ${T.muted};
+        }
+        .esb-link.locked .esb-link-icon { background: transparent !important; }
+        .esb-lock-icon { flex-shrink: 0; opacity: 0.7; }
+
         /* ── Notif badge ─────────────────────────── */
         .esb-badge {
           background: linear-gradient(135deg, #ef4444, #f97316);
@@ -468,6 +509,33 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
           transition: color 0.28s;
           user-select: none;
         }
+
+        /* ✅ NEW — Lock toast */
+        .esb-lock-toast {
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #1a1a2e;
+          color: #fff;
+          padding: 10px 18px;
+          border-radius: 10px;
+          font-size: 12.5px;
+          font-weight: 600;
+          font-family: 'Sora', sans-serif;
+          box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+          z-index: 500;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          animation: esb-toast-in 0.25s ease;
+          max-width: 90vw;
+          text-align: center;
+        }
+        @keyframes esb-toast-in {
+          from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
       `}</style>
 
       {/* ── Overlay — tap to close ── */}
@@ -476,6 +544,14 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
         onClick={() => setIsOpen(false)}
         aria-hidden="true"
       />
+
+      {/* ✅ NEW — Lock toast message */}
+      {lockToast && (
+        <div className="esb-lock-toast">
+          <Lock size={13} />
+          Your account is pending approval. Please upload/complete your documents.
+        </div>
+      )}
 
       {/* ── Sidebar ── */}
       <aside className={`esb ${isOpen ? "open" : ""}`} aria-label="Navigation">
@@ -513,7 +589,12 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
                   {employee.department || employee.designation || "Employee"}
                 </div>
               </div>
-              <div className="esb-active-badge">Active</div>
+              {/* ✅ CHANGED — Active badge only when approved, else Pending badge */}
+              {isApproved ? (
+                <div className="esb-active-badge">Active</div>
+              ) : (
+                <div className="esb-pending-badge">Pending</div>
+              )}
             </>
           ) : (
             <>
@@ -548,6 +629,24 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
         <nav className="esb-nav">
           {NAV_ITEMS.map(({ href, icon: Icon, label, badge }) => {
             const isActive = active === href;
+
+            // ✅ NEW — locked check: not approved AND path not in allowed list
+            const isLocked = !isApproved && !ALWAYS_ALLOWED_PATHS.includes(href);
+
+            if (isLocked) {
+              return (
+                <div
+                  key={href}
+                  className="esb-link locked"
+                  onClick={() => setLockToast(true)}
+                >
+                  <span className="esb-link-icon"><Icon size={15} /></span>
+                  <span className="esb-link-label">{label}</span>
+                  <Lock size={12} className="esb-lock-icon" />
+                </div>
+              );
+            }
+
             return (
               <a
                 key={href}
