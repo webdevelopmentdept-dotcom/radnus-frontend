@@ -215,6 +215,7 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
       const formData = new FormData();
       formData.append("file", file);
       formData.append("employeeId", employeeId);
+       formData.append("docType", docType);  
       formData.append("isHrUpload", isHrDoc ? "true" : "false");
       let res;
       if (isHrDoc) {
