@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import ApplicantProfileDrawer from "./Applicantprofiledrawer";
 
 const STATUS_OPTIONS = ["New", "Shortlisted", "Interview", "Hired", "Rejected"];
 
@@ -72,6 +73,7 @@ export default function HrApplicants() {
   const [rejectReason, setRejectReason] = useState("");
   const [rejectCustom, setRejectCustom] = useState("");
   const [rejectSubmitting, setRejectSubmitting] = useState(false);
+  const [profileDrawer, setProfileDrawer] = useState({ open: false, employeeId: null, jobTitle: "" });
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -670,11 +672,11 @@ export default function HrApplicants() {
                             <span className="ha-no-file">No file</span>
                           )}
                         </td>
-                        <td className="center">
-                          <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
-                            Remove
-                          </button>
-                        </td>
+                           <td className="center">
+  <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
+    Remove
+  </button>
+</td>
                       </tr>
                     );
                   })}
@@ -772,10 +774,21 @@ export default function HrApplicants() {
 </td>
 
                       <td className="center">
-                        <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
-                          Remove
-                        </button>
-                      </td>
+  <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+    <button
+      className="ha-preview-btn"
+      onClick={() => {
+        const empId = a._id.split("_")[2]; // internal_<jobId>_<empId>
+        setProfileDrawer({ open: true, employeeId: empId, jobTitle: a.jobTitle });
+      }}
+    >
+      View Profile
+    </button>
+    <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
+      Remove
+    </button>
+  </div>
+</td>
                     </tr>
                   ))}
                 </tbody>
@@ -784,6 +797,15 @@ export default function HrApplicants() {
           </div>
         </div>
       </div>
+      {/* ✅ NEW — Applicant Profile Drawer */}
+      {profileDrawer.open && (
+        <ApplicantProfileDrawer
+          employeeId={profileDrawer.employeeId}
+          jobTitle={profileDrawer.jobTitle}
+          apiBase={API_BASE}
+          onClose={() => setProfileDrawer({ open: false, employeeId: null, jobTitle: "" })}
+        />
+      )}
     </>
   );
 }

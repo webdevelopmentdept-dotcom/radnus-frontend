@@ -62,7 +62,7 @@ const getImpactEmployeeName = (ib) => {
 };
 
 // ── Job Toast Notification ──
-function JobToastNotification({ job, employeeId, apiBase, onDismiss, initialApplied }) {
+function JobToastNotification({ job, employeeId, apiBase, onDismiss, initialApplied, onApplySuccess }) {
   const [visible, setVisible] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
 const [applyStatus, setApplyStatus] = useState(initialApplied ? "applied" : null);
@@ -177,6 +177,7 @@ const [applyStatus, setApplyStatus] = useState(initialApplied ? "applied" : null
     try {
       await axios.post(`${apiBase}/api/jobs/${job._id}/apply`, { employeeId });
       setApplyStatus("applied");
+      onApplySuccess && onApplySuccess(job._id);   // ✅ NEW
     } catch (err) {
       if (err?.response?.status === 409) {
         setApplyStatus("applied");
@@ -433,15 +434,19 @@ const [applyStatus, setApplyStatus] = useState(initialApplied ? "applied" : null
 }
 
 // ── Internal Job Row Component ──
-function InternalJobRow({ job, employeeId, apiBase }) {
-  const [status, setStatus] = useState(() => {
-    const alreadyApplied = job.applicants?.some((a) => {
+function InternalJobRow({ job, employeeId, apiBase, onApplySuccess, onWithdrawSuccess }) {
+  const [status, setStatus] = useState(null);
+
+  useEffect(() => {
+    const myApplication = job.applicants?.find((a) => {
       const appEmpId = a.employeeId?._id || a.employeeId;
       return appEmpId?.toString() === employeeId?.toString();
     });
-    return alreadyApplied ? "applied" : null;
-  });
-
+    if (!myApplication) { setStatus(null); return; }
+    // status "applied" nu இருந்தா மட்டும் "applied" (withdraw allowed)
+    // வேற எதுவா இருந்தா அந்த real status-ஐயே வெச்சுக்கோ (withdraw hide ஆகும்)
+    setStatus(myApplication.status === "applied" ? "applied" : `locked_${myApplication.status}`);
+  }, [job, employeeId]);
   const expLabel = {
     "Fresher": "Fresher",
     "0-1 Years": "0–1 yr",
@@ -450,12 +455,13 @@ function InternalJobRow({ job, employeeId, apiBase }) {
     "3–5 Years": "3–5 yrs",
   }[job.experience] || job.experience;
 
-  const handleApply = async () => {
+const handleApply = async () => {
     if (status === "applied" || status === "applying") return;
     setStatus("applying");
     try {
       await axios.post(`${apiBase}/api/jobs/${job._id}/apply`, { employeeId });
       setStatus("applied");
+      onApplySuccess && onApplySuccess(job._id);   // ✅ NEW
     } catch (err) {
       if (err?.response?.status === 409) {
         setStatus("applied");
@@ -463,6 +469,21 @@ function InternalJobRow({ job, employeeId, apiBase }) {
         setStatus("error");
         setTimeout(() => setStatus(null), 2500);
       }
+    }
+  };
+
+const handleWithdraw = async (e) => {
+    e.stopPropagation();
+    if (status !== "applied") return;
+    if (!window.confirm(`Withdraw your application for "${job.title}"?`)) return;
+    setStatus("withdrawing");
+    try {
+      await axios.delete(`${apiBase}/api/jobs/${job._id}/withdraw/${employeeId}`);
+      setStatus(null);
+      onWithdrawSuccess && onWithdrawSuccess(job._id);
+    } catch (err) {
+      alert(err?.response?.data?.msg || "Withdraw failed");
+      setStatus("applied");
     }
   };
 
@@ -508,16 +529,21 @@ function InternalJobRow({ job, employeeId, apiBase }) {
             }}>💰 {job.salary}</span>
           )}
         </div>
-        <button
-          onClick={handleApply}
-          disabled={status === "applying" || status === "applied"}
+       <button
+          onClick={status === "applied" ? handleWithdraw : status?.startsWith("locked_") ? undefined : handleApply}
+          disabled={status === "applying" || status === "withdrawing" || status?.startsWith("locked_")}
           style={{
             padding: "5px 14px", borderRadius: 7, fontSize: 11,
-            fontWeight: 700, cursor: (status === "applied" || status === "applying") ? "default" : "pointer",
+            fontWeight: 700,
+            cursor: (status === "applying" || status === "withdrawing" || status?.startsWith("locked_")) ? "default" : "pointer",
             border: "1.5px solid", fontFamily: "'Manrope', sans-serif",
             transition: "all .15s",
             ...(status === "applied"
               ? { background: "#ecfdf5", color: "#059669", borderColor: "#6ee7b7" }
+              : status?.startsWith("locked_")
+              ? { background: "#f5f3ff", color: "#7c3aed", borderColor: "#ddd6fe" }
+              : status === "withdrawing"
+              ? { background: "#fef2f2", color: "#dc2626", borderColor: "#fca5a5", opacity: .7 }
               : status === "error"
               ? { background: "#fef2f2", color: "#dc2626", borderColor: "#fca5a5" }
               : status === "applying"
@@ -526,7 +552,15 @@ function InternalJobRow({ job, employeeId, apiBase }) {
             )
           }}
         >
-          {status === "applied" ? "✓ Applied" : status === "applying" ? "Submitting..." : status === "error" ? "Try again" : "Apply Now"}
+          {status === "applied" ? "✓ Applied"
+            : status === "locked_under_review" ? "Shortlisted"
+            : status === "locked_interview" ? "Interview"
+            : status === "locked_selected" ? "✓ Hired"
+            : status === "locked_rejected" ? "Not Selected"
+            : status === "withdrawing" ? "Withdrawing..."
+            : status === "applying" ? "Submitting..."
+            : status === "error" ? "Try again"
+            : "Apply Now"}
         </button>
       </div>
     </div>
@@ -704,6 +738,29 @@ export default function EmployeeDashboard() {
     setEditData(p => ({ ...p, department: deptName, designation: "" }));
     const found = departments.find(d => d.name === deptName);
     setDeptDesigs(found ? (found.designations || []).filter(dg => dg.status === "active") : []);
+  };
+
+  const markJobApplied = (jobId) => {
+    const empId = employee?._id || employee?.id;
+    setInternalJobs(prev => prev.map(j =>
+      j._id === jobId
+        ? { ...j, applicants: [...(j.applicants || []), { employeeId: empId, status: "applied" }] }
+        : j
+    ));
+    setToastQueue(prev => prev.map(j =>
+      j._id === jobId
+        ? { ...j, applicants: [...(j.applicants || []), { employeeId: empId, status: "applied" }] }
+        : j
+    ));
+  };
+
+  const markJobWithdrawn = (jobId) => {
+    const empId = employee?._id || employee?.id;
+    const removeApplicant = (j) => j._id === jobId
+      ? { ...j, applicants: (j.applicants || []).filter(a => (a.employeeId?._id || a.employeeId)?.toString() !== empId?.toString()) }
+      : j;
+    setInternalJobs(prev => prev.map(removeApplicant));
+    setToastQueue(prev => prev.map(removeApplicant));
   };
 
   const handleDocChange = (i, f, v) => { const d = [...editData.documents]; d[i] = { ...d[i], [f]: v }; setEditData(p => ({ ...p, documents: d })); };
@@ -1252,13 +1309,15 @@ export default function EmployeeDashboard() {
               </div>
               <div style={{ marginTop: 10 }}>
                 {internalJobs.map((job, i) => (
-                  <InternalJobRow
-                    key={job._id || i}
-                    job={job}
-                    employeeId={employee?._id || employee?.id}
-                    apiBase={API_BASE}
-                  />
-                ))}
+  <InternalJobRow
+    key={job._id || i}
+    job={job}
+    employeeId={employee?._id || employee?.id}
+    apiBase={API_BASE}
+    onApplySuccess={markJobApplied}
+    onWithdrawSuccess={markJobWithdrawn}
+  />
+))}
               </div>
             </div>
           )}
@@ -1280,6 +1339,7 @@ export default function EmployeeDashboard() {
     onDismiss={() => {
       setTimeout(() => setToastIndex(i => i + 1), 400);
     }}
+    onApplySuccess={markJobApplied}
   />
 )}
 

@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: "/employee/training",               icon: TrendingUp,      label: "Training Roadmap" },
   { href: "/employee/self-assessment",        icon: ClipboardList,   label: "Self Assessment"  },
   { href: "/employee/360-feedback",           icon: MessageCircle,   label: "360° Feedback"    },
+   { href: "/employee/my-applications",        icon: FileText,       label: "My Applications"  },
   { href: "/employee/my-salary",              icon: Wallet,          label: "My Salary" },
   { href: "/employee/appraisal", icon: TrendingUp, label: "My Appraisals" },
   { href: "/employee/my-incentive", icon: Wallet, label: "My Incentive" },

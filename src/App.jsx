@@ -59,6 +59,7 @@ import EmployeeSOPView from "./pages/employee/Employeesopview";
 import ForgotPassword from "./pages/employee/Forgotpassword";
 import ResetPassword from "./pages/employee/Resetpassword";
 import EmployeeAnnouncements from "./pages/employee/Employeeannouncements";
+import MyApplications from "./pages/employee/Myapplications";
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
@@ -215,6 +216,7 @@ location.pathname.startsWith("/radnus-connect/find-technician")
 
         <Route path="/employee/performance" element={<MyPerformance />} />
         <Route path="/employee/self-assessment" element={<SelfAssessment />} />
+        <Route path="/employee/my-applications" element={<MyApplications />} />
         <Route path="/employee/my-salary" element={<MyPackage />} />
         <Route path="/employee/my-documents" element={<MyDocuments />} />
         <Route path="/employee/attendance" element={<EmployeeAttendance />} />
