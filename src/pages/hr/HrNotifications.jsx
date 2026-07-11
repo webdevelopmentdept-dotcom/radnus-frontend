@@ -288,10 +288,16 @@ export default function HrNotifications() {
     finally { setLoading(false); }
   };
 
+  // ✅ Small helper — tells the layout (bell/toast) to refresh unread count instantly
+  const notifyLayoutToRefresh = () => {
+    window.dispatchEvent(new Event("notifications-updated"));
+  };
+
   const markAsRead = async (id) => {
     try {
       await axios.put(`${API_BASE}/api/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+      notifyLayoutToRefresh(); // ✅ bell/toast updates immediately
     } catch (e) { console.error(e); }
   };
 
@@ -300,6 +306,7 @@ export default function HrNotifications() {
     try {
       await axios.put(`${API_BASE}/api/notifications/mark-all-read/hr/${hrId}`);
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      notifyLayoutToRefresh(); // ✅ bell/toast updates immediately
     } catch (e) { console.error(e); }
     finally { setMarkingAll(false); }
   };
