@@ -65,31 +65,31 @@ const getImpactEmployeeName = (ib) => {
 function JobToastNotification({ job, employeeId, apiBase, onDismiss, initialApplied, onApplySuccess }) {
   const [visible, setVisible] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
-const [applyStatus, setApplyStatus] = useState(initialApplied ? "applied" : null);
+  const [applyStatus, setApplyStatus] = useState(initialApplied ? "applied" : null);
   const toastRef = useRef(null);
   const startXRef = useRef(0);
   const currentXRef = useRef(0);
   const draggingRef = useRef(false);
-    const hasDismissedRef = useRef(false);
+  const hasDismissedRef = useRef(false);
 
   // Slide in from RIGHT after mount
   useEffect(() => {
     setVisible(true);
-    return () => {};
+    return () => { };
   }, []);
 
   // ✅ FIXED: Cancel button click → swipe LEFT animation (same as touch swipe)
   const dismiss = () => {
-  if (hasDismissedRef.current) return; // ✅ Prevent double dismiss
-  hasDismissedRef.current = true;
-  
-  if (toastRef.current) {
-    toastRef.current.style.transition = "transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s ease";
-    toastRef.current.style.transform = "translateX(-110%)";
-    toastRef.current.style.opacity = "0";
-  }
-  setTimeout(() => onDismiss && onDismiss(), 370);
-};
+    if (hasDismissedRef.current) return; // ✅ Prevent double dismiss
+    hasDismissedRef.current = true;
+
+    if (toastRef.current) {
+      toastRef.current.style.transition = "transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s ease";
+      toastRef.current.style.transform = "translateX(-110%)";
+      toastRef.current.style.opacity = "0";
+    }
+    setTimeout(() => onDismiss && onDismiss(), 370);
+  };
 
   // ── Touch: swipe LEFT to dismiss ──
   const onTouchStart = (e) => {
@@ -216,6 +216,7 @@ const [applyStatus, setApplyStatus] = useState(initialApplied ? "applied" : null
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         onMouseDown={onMouseDown}
+        className="ed-job-toast"
         style={{
           position: "fixed",
           top: 16,
@@ -304,131 +305,131 @@ const [applyStatus, setApplyStatus] = useState(initialApplied ? "applied" : null
       </div>
 
       {/* ── Detail bottom sheet ── */}
-     {/* ── Detail bottom sheet ── */}
-{showSheet && (
-  <div
-    style={{
-      position: "fixed", inset: 0, zIndex: 1000,
-      background: "rgba(0,0,0,0.35)",
-      display: "flex", alignItems: "flex-end", justifyContent: "center"
-    }}
-    onClick={() => setShowSheet(false)}
-  >
-    <div
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        width: "100%", maxWidth: 480,
-        background: "#fff", borderRadius: "18px 18px 0 0",
-        padding: "18px 20px 0",
-        animation: "slideUpSheet .3s cubic-bezier(.4,0,.2,1)",
-        position: "relative",
-        maxHeight: "65vh",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      {/* Drag handle */}
-      <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e5e7eb", margin: "0 auto 16px", flexShrink: 0 }} />
-
-      {/* Close button */}
-      <button
-        onClick={() => setShowSheet(false)}
-        style={{
-          position: "absolute", top: 16, right: 16,
-          width: 28, height: 28, borderRadius: "50%",
-          background: "#f3f4f6", border: "none", cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          zIndex: 2,
-        }}
-      >
-        <X size={14} color="#6b7280" />
-      </button>
-
-      {/* ✅ SCROLLABLE CONTENT */}
-      <div style={{ overflowY: "auto", flex: 1, paddingRight: 4 }}>
-        
-        <p style={{ margin: "0 0 3px", fontSize: 17, fontWeight: 800, color: "#1a1d2e" }}>{job.title}</p>
-        <p style={{ margin: "0 0 12px", fontSize: 12, color: "#6b7280" }}>{job.type}</p>
-
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
-          {job.experience && (
-            <span style={{ fontSize: 11, color: "#6b7280", background: "#f3f4f6", padding: "3px 10px", borderRadius: 99, fontWeight: 600 }}>
-              👤 {expLabel}
-            </span>
-          )}
-          {job.salary && job.salary !== "N/A" && (
-            <span style={{ fontSize: 11, color: "#059669", background: "#ecfdf5", padding: "3px 10px", borderRadius: 99, fontWeight: 700, border: "1px solid #6ee7b7" }}>
-              💰 {job.salary}
-            </span>
-          )}
-        </div>
-
-        {/* REQUIREMENTS */}
-        {job.requirements && job.requirements.length > 0 && (
-          <>
-            <p style={{ margin: "0 0 5px", fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em" }}>Requirements</p>
-            <ul style={{ margin: "0 0 14px", paddingLeft: 16, fontSize: 13, color: "#374151", lineHeight: 1.65 }}>
-              {Array.isArray(job.requirements)
-                ? job.requirements.map((req, i) => <li key={i}>{req}</li>)
-                : typeof job.requirements === "string"
-                  ? job.requirements.split("\n").filter(Boolean).map((req, i) => <li key={i}>{req}</li>)
-                  : null
-              }
-            </ul>
-          </>
-        )}
-
-        {/* RESPONSIBILITIES */}
-        {job.responsibilities && job.responsibilities.length > 0 && (
-          <>
-            <p style={{ margin: "0 0 5px", fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em" }}>Responsibilities</p>
-            <ul style={{ margin: "0 0 14px", paddingLeft: 16, fontSize: 13, color: "#374151", lineHeight: 1.65 }}>
-              {Array.isArray(job.responsibilities)
-                ? job.responsibilities.map((resp, i) => <li key={i}>{resp}</li>)
-                : typeof job.responsibilities === "string"
-                  ? job.responsibilities.split("\n").filter(Boolean).map((resp, i) => <li key={i}>{resp}</li>)
-                  : null
-              }
-            </ul>
-          </>
-        )}
-
-      </div> {/* ✅ END SCROLLABLE CONTENT */}
-
-      {/* ✅ STICKY APPLY BUTTON */}
-      <div style={{ 
-        padding: "12px 0 20px", 
-        background: "#fff",
-        borderTop: "1px solid #f3f4f6",
-        marginTop: 4,
-        flexShrink: 0,
-      }}>
-        <button
-          onClick={handleApply}
-          disabled={applyStatus === "applying" || applyStatus === "applied"}
+      {/* ── Detail bottom sheet ── */}
+      {showSheet && (
+        <div
           style={{
-            width: "100%", padding: "11px",
-            borderRadius: 10, fontSize: 14, fontWeight: 700,
-            border: "1.5px solid",
-            cursor: (applyStatus === "applied" || applyStatus === "applying") ? "default" : "pointer",
-            fontFamily: "'Manrope',sans-serif", transition: "all .15s",
-            ...(applyStatus === "applied"
-              ? { background: "#ecfdf5", color: "#059669", borderColor: "#6ee7b7" }
-              : applyStatus === "error"
-              ? { background: "#fef2f2", color: "#dc2626", borderColor: "#fca5a5" }
-              : applyStatus === "applying"
-              ? { background: "#f5f3ff", color: "#7c3aed", borderColor: "#ddd6fe", opacity: .7 }
-              : { background: "#7c3aed", color: "#fff", borderColor: "#7c3aed" }
-            )
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(0,0,0,0.35)",
+            display: "flex", alignItems: "flex-end", justifyContent: "center"
           }}
+          onClick={() => setShowSheet(false)}
         >
-          {applyStatus === "applied" ? "✓ Applied!" : applyStatus === "applying" ? "Submitting..." : applyStatus === "error" ? "Try again" : "Apply for this role"}
-        </button>
-      </div>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%", maxWidth: 480,
+              background: "#fff", borderRadius: "18px 18px 0 0",
+              padding: "18px 20px 0",
+              animation: "slideUpSheet .3s cubic-bezier(.4,0,.2,1)",
+              position: "relative",
+              maxHeight: "65vh",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {/* Drag handle */}
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e5e7eb", margin: "0 auto 16px", flexShrink: 0 }} />
 
-    </div>
-  </div>
-)}
+            {/* Close button */}
+            <button
+              onClick={() => setShowSheet(false)}
+              style={{
+                position: "absolute", top: 16, right: 16,
+                width: 28, height: 28, borderRadius: "50%",
+                background: "#f3f4f6", border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                zIndex: 2,
+              }}
+            >
+              <X size={14} color="#6b7280" />
+            </button>
+
+            {/* ✅ SCROLLABLE CONTENT */}
+            <div style={{ overflowY: "auto", flex: 1, paddingRight: 4 }}>
+
+              <p style={{ margin: "0 0 3px", fontSize: 17, fontWeight: 800, color: "#1a1d2e" }}>{job.title}</p>
+              <p style={{ margin: "0 0 12px", fontSize: 12, color: "#6b7280" }}>{job.type}</p>
+
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+                {job.experience && (
+                  <span style={{ fontSize: 11, color: "#6b7280", background: "#f3f4f6", padding: "3px 10px", borderRadius: 99, fontWeight: 600 }}>
+                    👤 {expLabel}
+                  </span>
+                )}
+                {job.salary && job.salary !== "N/A" && (
+                  <span style={{ fontSize: 11, color: "#059669", background: "#ecfdf5", padding: "3px 10px", borderRadius: 99, fontWeight: 700, border: "1px solid #6ee7b7" }}>
+                    💰 {job.salary}
+                  </span>
+                )}
+              </div>
+
+              {/* REQUIREMENTS */}
+              {job.requirements && job.requirements.length > 0 && (
+                <>
+                  <p style={{ margin: "0 0 5px", fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em" }}>Requirements</p>
+                  <ul style={{ margin: "0 0 14px", paddingLeft: 16, fontSize: 13, color: "#374151", lineHeight: 1.65 }}>
+                    {Array.isArray(job.requirements)
+                      ? job.requirements.map((req, i) => <li key={i}>{req}</li>)
+                      : typeof job.requirements === "string"
+                        ? job.requirements.split("\n").filter(Boolean).map((req, i) => <li key={i}>{req}</li>)
+                        : null
+                    }
+                  </ul>
+                </>
+              )}
+
+              {/* RESPONSIBILITIES */}
+              {job.responsibilities && job.responsibilities.length > 0 && (
+                <>
+                  <p style={{ margin: "0 0 5px", fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em" }}>Responsibilities</p>
+                  <ul style={{ margin: "0 0 14px", paddingLeft: 16, fontSize: 13, color: "#374151", lineHeight: 1.65 }}>
+                    {Array.isArray(job.responsibilities)
+                      ? job.responsibilities.map((resp, i) => <li key={i}>{resp}</li>)
+                      : typeof job.responsibilities === "string"
+                        ? job.responsibilities.split("\n").filter(Boolean).map((resp, i) => <li key={i}>{resp}</li>)
+                        : null
+                    }
+                  </ul>
+                </>
+              )}
+
+            </div> {/* ✅ END SCROLLABLE CONTENT */}
+
+            {/* ✅ STICKY APPLY BUTTON */}
+            <div style={{
+              padding: "12px 0 20px",
+              background: "#fff",
+              borderTop: "1px solid #f3f4f6",
+              marginTop: 4,
+              flexShrink: 0,
+            }}>
+              <button
+                onClick={handleApply}
+                disabled={applyStatus === "applying" || applyStatus === "applied"}
+                style={{
+                  width: "100%", padding: "11px",
+                  borderRadius: 10, fontSize: 14, fontWeight: 700,
+                  border: "1.5px solid",
+                  cursor: (applyStatus === "applied" || applyStatus === "applying") ? "default" : "pointer",
+                  fontFamily: "'Manrope',sans-serif", transition: "all .15s",
+                  ...(applyStatus === "applied"
+                    ? { background: "#ecfdf5", color: "#059669", borderColor: "#6ee7b7" }
+                    : applyStatus === "error"
+                      ? { background: "#fef2f2", color: "#dc2626", borderColor: "#fca5a5" }
+                      : applyStatus === "applying"
+                        ? { background: "#f5f3ff", color: "#7c3aed", borderColor: "#ddd6fe", opacity: .7 }
+                        : { background: "#7c3aed", color: "#fff", borderColor: "#7c3aed" }
+                  )
+                }}
+              >
+                {applyStatus === "applied" ? "✓ Applied!" : applyStatus === "applying" ? "Submitting..." : applyStatus === "error" ? "Try again" : "Apply for this role"}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -455,7 +456,7 @@ function InternalJobRow({ job, employeeId, apiBase, onApplySuccess, onWithdrawSu
     "3–5 Years": "3–5 yrs",
   }[job.experience] || job.experience;
 
-const handleApply = async () => {
+  const handleApply = async () => {
     if (status === "applied" || status === "applying") return;
     setStatus("applying");
     try {
@@ -472,7 +473,7 @@ const handleApply = async () => {
     }
   };
 
-const handleWithdraw = async (e) => {
+  const handleWithdraw = async (e) => {
     e.stopPropagation();
     if (status !== "applied") return;
     if (!window.confirm(`Withdraw your application for "${job.title}"?`)) return;
@@ -488,7 +489,7 @@ const handleWithdraw = async (e) => {
   };
 
   return (
-    <div style={{
+    <div className="ed-internal-job-row" style={{
       display: "flex", alignItems: "flex-start", gap: 10,
       padding: "11px 16px",
       borderBottom: "1px solid #f4f5f8",
@@ -529,7 +530,8 @@ const handleWithdraw = async (e) => {
             }}>💰 {job.salary}</span>
           )}
         </div>
-       <button
+        <button
+          className="ed-internal-job-btn"
           onClick={status === "applied" ? handleWithdraw : status?.startsWith("locked_") ? undefined : handleApply}
           disabled={status === "applying" || status === "withdrawing" || status?.startsWith("locked_")}
           style={{
@@ -541,26 +543,26 @@ const handleWithdraw = async (e) => {
             ...(status === "applied"
               ? { background: "#ecfdf5", color: "#059669", borderColor: "#6ee7b7" }
               : status?.startsWith("locked_")
-              ? { background: "#f5f3ff", color: "#7c3aed", borderColor: "#ddd6fe" }
-              : status === "withdrawing"
-              ? { background: "#fef2f2", color: "#dc2626", borderColor: "#fca5a5", opacity: .7 }
-              : status === "error"
-              ? { background: "#fef2f2", color: "#dc2626", borderColor: "#fca5a5" }
-              : status === "applying"
-              ? { background: "#f5f3ff", color: "#7c3aed", borderColor: "#ddd6fe", opacity: .7 }
-              : { background: "#7c3aed", color: "#fff", borderColor: "#7c3aed" }
+                ? { background: "#f5f3ff", color: "#7c3aed", borderColor: "#ddd6fe" }
+                : status === "withdrawing"
+                  ? { background: "#fef2f2", color: "#dc2626", borderColor: "#fca5a5", opacity: .7 }
+                  : status === "error"
+                    ? { background: "#fef2f2", color: "#dc2626", borderColor: "#fca5a5" }
+                    : status === "applying"
+                      ? { background: "#f5f3ff", color: "#7c3aed", borderColor: "#ddd6fe", opacity: .7 }
+                      : { background: "#7c3aed", color: "#fff", borderColor: "#7c3aed" }
             )
           }}
         >
           {status === "applied" ? "✓ Applied"
             : status === "locked_under_review" ? "Shortlisted"
-            : status === "locked_interview" ? "Interview"
-            : status === "locked_selected" ? "✓ Hired"
-            : status === "locked_rejected" ? "Not Selected"
-            : status === "withdrawing" ? "Withdrawing..."
-            : status === "applying" ? "Submitting..."
-            : status === "error" ? "Try again"
-            : "Apply Now"}
+              : status === "locked_interview" ? "Interview"
+                : status === "locked_selected" ? "✓ Hired"
+                  : status === "locked_rejected" ? "Not Selected"
+                    : status === "withdrawing" ? "Withdrawing..."
+                      : status === "applying" ? "Submitting..."
+                        : status === "error" ? "Try again"
+                          : "Apply Now"}
         </button>
       </div>
     </div>
@@ -585,6 +587,9 @@ export default function EmployeeDashboard() {
   const [internalJobs, setInternalJobs] = useState([]);
   const [toastQueue, setToastQueue] = useState([]);
   const [toastIndex, setToastIndex] = useState(0);
+  const [performersRanked, setPerformersRanked] = useState([]);   // full list (not sliced)
+  const [showAllPerformers, setShowAllPerformers] = useState(false); // toggle
+
 
   useEffect(() => {
     const hideCrisp = () => { if (window.$crisp) window.$crisp.push(["do", "chat:hide"]); };
@@ -604,7 +609,7 @@ export default function EmployeeDashboard() {
         const res = await axios.get(`${API_BASE}/api/notifications/${id}`);
         const data = res.data?.data || res.data || [];
         setUnreadCount(data.filter(n => !n.isRead).length);
-      } catch (_) {}
+      } catch (_) { }
     };
     fetchUnread();
     const notifInterval = setInterval(fetchUnread, 30000);
@@ -650,18 +655,18 @@ export default function EmployeeDashboard() {
           setKpiPeriod(assign.period || "");
           let scoreSet = false;
           try {
-  const prRes = await axios.get(`${API_BASE}/api/performance-reviews/${id}`);
-  if (prRes.data.success && prRes.data.data?.length > 0) {
-    const sorted = prRes.data.data
-      .filter(r => r.status === "finalized" && r.final_score != null)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    if (sorted.length > 0) {
-      setKpiScore(sorted[0].final_score);
-      setKpiPeriod(sorted[0].period || assign.period || "");  // ← review-ன் actual period
-      scoreSet = true;
-    }
-  }
-} catch (_) { }
+            const prRes = await axios.get(`${API_BASE}/api/performance-reviews/${id}`);
+            if (prRes.data.success && prRes.data.data?.length > 0) {
+              const sorted = prRes.data.data
+                .filter(r => r.status === "finalized" && r.final_score != null)
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+              if (sorted.length > 0) {
+                setKpiScore(sorted[0].final_score);
+                setKpiPeriod(sorted[0].period || assign.period || "");  // ← review-ன் actual period
+                scoreSet = true;
+              }
+            }
+          } catch (_) { }
           if (!scoreSet) {
             try {
               const saRes = await axios.get(`${API_BASE}/api/self-assessment/by-assignment/${assign._id}`);
@@ -706,6 +711,23 @@ export default function EmployeeDashboard() {
           const jobs = ijRes.data.jobs || [];
           setInternalJobs(jobs);
           setToastQueue(prev => prev.length === 0 ? jobs : prev);
+        }
+      } catch (_) { }
+
+      // ✅ NEW — Top Performers fetch
+      // ✅ Top Performers fetch
+      try {
+        const revRes = await axios.get(`${API_BASE}/api/self-assessment/performance-reviews/all`);
+        if (revRes.data.success) {
+          const all = revRes.data.data || [];
+          const latestPeriod = all.length
+            ? [...all].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0].period
+            : null;
+          const periodReviews = latestPeriod ? all.filter(r => r.period === latestPeriod) : all;
+          const ranked = [...periodReviews]
+            .filter(r => r.final_score != null)
+            .sort((a, b) => (b.final_score || 0) - (a.final_score || 0));
+          setPerformersRanked(ranked);   // ✅ full list, no slice here
         }
       } catch (_) { }
 
@@ -829,7 +851,8 @@ export default function EmployeeDashboard() {
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
         .emp-dash *, .emp-dash *::before, .emp-dash *::after { box-sizing: border-box; }
-        .emp-dash { font-family: 'Manrope', sans-serif; background: #f7f8fc; min-height: 100vh; color: #1a1d2e; overflow-x: hidden; width: 100%; max-width: 100%; }
+        .emp-dash { font-family: 'Manrope', sans-serif; background: #f7f8fc; min-height: 100vh; color: #1a1d2e; overflow-x: hidden; width: 100%; max-width: 100vw; }
+        .emp-dash img { max-width: 100%; }
 
         .ed-topbar {
           background: #fff;
@@ -841,21 +864,22 @@ export default function EmployeeDashboard() {
           position: sticky;
           top: 0;
           z-index: 40;
-          padding: 0 14px 0 56px;
+          padding: 0 12px 0 52px;
           width: 100%;
+          gap: 8px;
         }
         .ed-topbar-left  { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden; }
         .ed-topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-        .ed-topbar-name  { font-size: 12px; font-weight: 700; color: #1a1d2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; max-width: 140px; }
+        .ed-topbar-name  { font-size: 12px; font-weight: 700; color: #1a1d2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; max-width: 130px; }
         .ed-topbar-sub   { font-size: 10px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
         .ed-topbar-avatar { display: flex; flex-shrink: 0; }
 
         .ed-status-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 99px; font-size: 10px; font-weight: 700; border: 1.5px solid; white-space: nowrap; flex-shrink: 0; }
         .ed-pill-text { display: none; }
 
-        .ed-btn-primary { display: inline-flex; align-items: center; gap: 5px; padding: 7px 13px; border-radius: 8px; background: #4f8ef7; border: none; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Manrope', sans-serif; transition: background .15s; white-space: nowrap; flex-shrink: 0; }
+        .ed-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 9px 14px; border-radius: 8px; background: #4f8ef7; border: none; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Manrope', sans-serif; transition: background .15s; white-space: nowrap; flex-shrink: 0; min-height: 38px; }
         .ed-btn-primary:hover { background: #3a7be8; }
-        .ed-btn-outline  { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 8px; background: #fff; border: 1.5px solid #e8eaf0; color: #374151; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Manrope', sans-serif; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
+        .ed-btn-outline  { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 12px; border-radius: 8px; background: #fff; border: 1.5px solid #e8eaf0; color: #374151; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Manrope', sans-serif; transition: all .15s; white-space: nowrap; flex-shrink: 0; min-height: 38px; }
         .ed-btn-outline:hover { border-color: #4f8ef7; color: #4f8ef7; }
         .ed-topbar-actions { display: none; }
 
@@ -883,7 +907,7 @@ export default function EmployeeDashboard() {
         .ed-hero-profile-row { display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; margin-bottom: 12px; width: 100%; }
         .ed-avatar-wrap { position: relative; flex-shrink: 0; }
         .ed-avatar { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2.5px solid rgba(255,255,255,.2); display: block; }
-        .ed-avatar-overlay { position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,.5); display: flex; align-items: center; justifyContent: center; opacity: 0; transition: opacity .2s; cursor: pointer; }
+        .ed-avatar-overlay { position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; cursor: pointer; }
         .ed-avatar-wrap:hover .ed-avatar-overlay { opacity: 1; }
         .ed-avatar-wrap input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 5; border-radius: 50%; }
 
@@ -933,7 +957,7 @@ export default function EmployeeDashboard() {
         .ed-score-num      { font-size: 24px; font-weight: 800; line-height: 1; letter-spacing: -1px; font-family: 'JetBrains Mono', monospace; }
 
         .ed-career-btn {
-          width: 100%; margin-top: 12px; padding: 9px 0;
+          width: 100%; margin-top: 12px; padding: 11px 0;
           border: 1.5px solid #bfdbfe; border-radius: 9px;
           background: #eff6ff; color: #2563eb;
           font-size: 13px; font-weight: 700; cursor: pointer;
@@ -941,6 +965,45 @@ export default function EmployeeDashboard() {
           display: flex; align-items: center; justify-content: center; gap: 6px;
         }
         .ed-career-btn:hover { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+        /* ── Internal job row / apply button — comfortable tap target on touch screens ── */
+        .ed-internal-job-btn { min-height: 34px; }
+
+        /* ── Extra-small phones (<=380px): tighten spacing & scale text down further ── */
+        @media (max-width: 380px) {
+          .ed-topbar { padding: 0 10px 0 48px; }
+          .ed-topbar-name { max-width: 110px; font-size: 11px; }
+          .ed-topbar-sub { font-size: 9px; }
+
+          .ed-hero { padding: 12px 10px 14px; }
+          .ed-hero-profile-row { gap: 8px; margin-bottom: 10px; }
+          .ed-avatar { width: 44px; height: 44px; }
+          .ed-hero-name { font-size: 13.5px; }
+          .ed-hero-role { font-size: 9.5px; }
+
+          .ed-hero-chips { gap: 5px; margin-bottom: 8px; }
+          .ed-chip { padding: 6px 8px; }
+          .ed-chip-label { font-size: 8px; }
+          .ed-chip-val { font-size: 10px; }
+
+          .ed-hero-status-bar { padding: 10px; gap: 8px; }
+
+          .ed-main { padding: 10px 8px 90px; gap: 8px; }
+          .ed-card-title { font-size: 10px; padding: 12px 12px 0; margin-bottom: 8px; letter-spacing: 1px; }
+
+          .ed-score-arc-wrap { transform: scale(0.68); }
+          .ed-score-num { font-size: 20px; }
+
+          .ed-docs-grid { padding: 0 12px 12px; }
+          .ed-ann-row { padding: 10px 12px; gap: 8px; }
+          .ed-info-pair { padding: 10px 12px; }
+          .ed-doc-item { padding: 10px; gap: 8px; }
+        }
+
+        /* ── Job toast: keep comfortably within very narrow viewports ── */
+        @media (max-width: 380px) {
+          .ed-job-toast { top: 10px !important; right: 10px !important; width: calc(100% - 20px) !important; padding: 9px 10px 13px !important; }
+        }
 
         @media (min-width: 768px) {
           .ed-topbar { display: none; }
@@ -1197,6 +1260,66 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
+
+          {/* ✅ Top Performers Card — Expand in place */}
+          {performersRanked.length > 0 && (
+            <div className="ed-card" style={{ overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 14px 0" }}>
+                <p className="ed-card-title" style={{ padding: 0, margin: 0 }}>
+                  <Trophy size={12} /> Top Performers
+                </p>
+                {performersRanked.length > 5 && (
+                  <button
+                    onClick={() => setShowAllPerformers(v => !v)}
+                    style={{
+                      background: "none", border: "none", cursor: "pointer",
+                      fontSize: 12, color: "#4f8ef7", fontWeight: 700,
+                      display: "inline-flex", alignItems: "center", gap: 3,
+                      fontFamily: "'Manrope',sans-serif", padding: 0,
+                    }}
+                  >
+                    {showAllPerformers ? "Show Less ▲" : "View All ▼"}
+                  </button>
+                )}
+              </div>
+
+              <div style={{ marginTop: 10 }}>
+                {(showAllPerformers ? performersRanked : performersRanked.slice(0, 5)).map((r, i) => {
+                  const medal = ["🥇", "🥈", "🥉"][i];
+                  const empId = r.employee_id?._id || r.employee_id;
+                  const isMe = empId?.toString() === (employee?._id || employee?.id)?.toString();
+                  const scoreColor = r.final_score >= 90 ? "#00c896" : r.final_score >= 75 ? "#4f8ef7" : r.final_score >= 60 ? "#f0a500" : "#f45b5b";
+                  return (
+                    <div key={r._id} className="ed-ann-row" style={isMe ? { background: "#eff6ff" } : {}}>
+                      <div style={{ width: 26, textAlign: "center", fontSize: 14, fontWeight: 800, color: "#9ca3af", flexShrink: 0 }}>
+                        {medal || `#${i + 1}`}
+                      </div>
+                      <div style={{
+                        width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+                        background: "#f0f4ff", border: "1px solid #c7d2fe",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontWeight: 800, color: "#4f8ef7", fontSize: 12
+                      }}>
+                        {r.employee_id?.name?.charAt(0) || "?"}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: "0 0 1px", fontSize: 12, fontWeight: 700, color: "#1a1d2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {r.employee_id?.name || "—"}{isMe ? " (You)" : ""}
+                        </p>
+                        <p style={{ margin: 0, fontSize: 11, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {r.employee_id?.department || ""}
+                        </p>
+                      </div>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: scoreColor, flexShrink: 0 }}>
+                        {r.final_score}%
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Grade Card */}
           {employeeGrade && (
             <div className="ed-card" style={{ padding: "14px" }}>
@@ -1309,15 +1432,15 @@ export default function EmployeeDashboard() {
               </div>
               <div style={{ marginTop: 10 }}>
                 {internalJobs.map((job, i) => (
-  <InternalJobRow
-    key={job._id || i}
-    job={job}
-    employeeId={employee?._id || employee?.id}
-    apiBase={API_BASE}
-    onApplySuccess={markJobApplied}
-    onWithdrawSuccess={markJobWithdrawn}
-  />
-))}
+                  <InternalJobRow
+                    key={job._id || i}
+                    job={job}
+                    employeeId={employee?._id || employee?.id}
+                    apiBase={API_BASE}
+                    onApplySuccess={markJobApplied}
+                    onWithdrawSuccess={markJobWithdrawn}
+                  />
+                ))}
               </div>
             </div>
           )}
@@ -1326,22 +1449,22 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* Job Toast Notifications */}
-  {toastQueue.length > 0 && toastIndex < toastQueue.length && (
-  <JobToastNotification
-    key={`${toastQueue[toastIndex]._id || toastIndex}-${toastIndex}`}
-    job={toastQueue[toastIndex]}
-    employeeId={employee?._id || employee?.id}
-    apiBase={API_BASE}
-    initialApplied={toastQueue[toastIndex].applicants?.some((a) => {
-      const appEmpId = a.employeeId?._id || a.employeeId;
-      return appEmpId?.toString() === (employee?._id || employee?.id)?.toString();
-    })}
-    onDismiss={() => {
-      setTimeout(() => setToastIndex(i => i + 1), 400);
-    }}
-    onApplySuccess={markJobApplied}
-  />
-)}
+      {toastQueue.length > 0 && toastIndex < toastQueue.length && (
+        <JobToastNotification
+          key={`${toastQueue[toastIndex]._id || toastIndex}-${toastIndex}`}
+          job={toastQueue[toastIndex]}
+          employeeId={employee?._id || employee?.id}
+          apiBase={API_BASE}
+          initialApplied={toastQueue[toastIndex].applicants?.some((a) => {
+            const appEmpId = a.employeeId?._id || a.employeeId;
+            return appEmpId?.toString() === (employee?._id || employee?.id)?.toString();
+          })}
+          onDismiss={() => {
+            setTimeout(() => setToastIndex(i => i + 1), 400);
+          }}
+          onApplySuccess={markJobApplied}
+        />
+      )}
 
       <CareerPathModal
         open={showCareer}
