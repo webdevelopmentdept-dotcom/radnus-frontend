@@ -127,13 +127,14 @@ function getHrId() {
 }
 
 // புதுசு — active employees மட்டும் வரும்
+// puthusu — approved + active employees rendume varum
 async function fetchAllEmployees(apiBase) {
   try {
     const res = await axios.get(`${apiBase}/api/hr/employees`);
     const data = res.data?.data || res.data || [];
     const arr = Array.isArray(data) ? data : [];
-    // Active employees மட்டும் filter பண்ணு
-    return arr.filter(emp => emp.status === "active");
+    // approved + active status employees mattum filter pannu
+    return arr.filter(emp => emp.status === "approved" || emp.status === "active");
   } catch (_) {
     return [];
   }
