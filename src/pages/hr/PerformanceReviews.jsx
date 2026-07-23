@@ -311,7 +311,7 @@ export default function PerformanceReviews() {
     setLogsLoading(true);
     try {
       const [logsRes, totalsRes] = await Promise.all([
-        axios.get(`${API_BASE}/api/daily-logs/${employeeId}/${assignmentId}`),
+        axios.get(`${API_BASE}/api/daily-logs/${employeeId}/${assignmentId}?includeDeleted=true`),
         axios.get(`${API_BASE}/api/daily-logs/totals/${employeeId}/${assignmentId}`)
       ]);
       if (logsRes.data.success) setEmployeeLogs(logsRes.data.data);
@@ -748,13 +748,22 @@ const handleLockLog = async (logId) => {
                             <div>
                               <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: "#1f2937" }}>
                                 {log.kpi_name} — <span style={{ color: "#2563eb" }}>{log.value} {log.unit}</span>
-                                {log.isEdited && (
+                               {log.isEdited && !log.isDeleted && (
                                   <span style={{
                                     marginLeft: 6, fontSize: 10, fontWeight: 700,
                                     background: "#fef3c7", color: "#d97706",
                                     padding: "1px 7px", borderRadius: 99, border: "1px solid #fde68a"
                                   }}>
                                     ✏️ Edited
+                                  </span>
+                                )}
+                                {log.isDeleted && (
+                                  <span style={{
+                                    marginLeft: 6, fontSize: 10, fontWeight: 700,
+                                    background: "#fef2f2", color: "#dc2626",
+                                    padding: "1px 7px", borderRadius: 99, border: "1px solid #fecaca"
+                                  }}>
+                                    🗑️ Deleted {log.deletedAt ? `on ${new Date(log.deletedAt).toLocaleDateString("en-IN")}` : ""}
                                   </span>
                                 )}
                               </p>

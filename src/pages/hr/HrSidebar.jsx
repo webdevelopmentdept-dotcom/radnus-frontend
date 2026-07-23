@@ -373,6 +373,16 @@ export default function HrSidebar() {
                 eSSL Manager
               </NavLink>
 
+              {/* PAYROLL */}
+              <div className="hr-section">Payroll</div>
+
+              <NavLink to="/hr/dashboard/payroll"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={BarChartIcon} size={18} color="currentColor" strokeWidth={1.8} />
+                Payroll
+              </NavLink>
+
               {/* PERFORMANCE — KPI */}
               <div className="hr-section">Performance — KPI</div>
 

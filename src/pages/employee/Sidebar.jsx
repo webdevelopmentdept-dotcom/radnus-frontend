@@ -10,29 +10,30 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const NAV_ITEMS = [
-  { href: "/employee/dashboard",              icon: LayoutDashboard, label: "Dashboard"        },
-  { href: "/employee/profile",                icon: User,            label: "My Profile"       },
-  { href: "/employee/attendance",             icon: CalendarCheck,   label: "Attendance"       },
-  { href: "/employee/performance",            icon: TrendingUp,      label: "My Performance"   },
-  { href: "/employee/training",               icon: TrendingUp,      label: "Training Roadmap" },
-  { href: "/employee/self-assessment",        icon: ClipboardList,   label: "Self Assessment"  },
-  { href: "/employee/360-feedback",           icon: MessageCircle,   label: "360° Feedback"    },
-   { href: "/employee/my-applications",        icon: FileText,       label: "My Applications"  },
-  { href: "/employee/my-salary",              icon: Wallet,          label: "My Salary" },
+  { href: "/employee/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/employee/profile", icon: User, label: "My Profile" },
+  { href: "/employee/attendance", icon: CalendarCheck, label: "Attendance" },
+  { href: "/employee/performance", icon: TrendingUp, label: "My Performance" },
+  { href: "/employee/training", icon: TrendingUp, label: "Training Roadmap" },
+  { href: "/employee/self-assessment", icon: ClipboardList, label: "Self Assessment" },
+  { href: "/employee/360-feedback", icon: MessageCircle, label: "360° Feedback" },
+  { href: "/employee/my-applications", icon: FileText, label: "My Applications" },
+  { href: "/employee/my-salary", icon: Wallet, label: "My Salary" },
+  { href: "/employee/my-payslips", icon: Wallet, label: "My Payslips" },
   { href: "/employee/appraisal", icon: TrendingUp, label: "My Appraisals" },
   { href: "/employee/my-incentive", icon: Wallet, label: "My Incentive" },
-  { href: "/employee/dashboard/impact-bonus", icon: Sparkles,        label: "Impact Bonus"     },
-  { href: "/employee/my-documents",           icon: FileText,        label: "My Documents"     },
-  { href: "/employee/wellness",               icon: Sparkles,        label: "Wellness"         },
-  { href: "/employee/alumni-network",         icon: User,            label: "Alumni Network"   },
-  { href: "/employee/clubs",                  icon: Building2,       label: "My Clubs"         },
-  { href: "/employee/leadership-track",       icon: TrendingUp,      label: "Leadership Track" },
-  { href: "/employee/retention",              icon: User,            label: "Retention Plan"   },
+  { href: "/employee/dashboard/impact-bonus", icon: Sparkles, label: "Impact Bonus" },
+  { href: "/employee/my-documents", icon: FileText, label: "My Documents" },
+  { href: "/employee/wellness", icon: Sparkles, label: "Wellness" },
+  { href: "/employee/alumni-network", icon: User, label: "Alumni Network" },
+  { href: "/employee/clubs", icon: Building2, label: "My Clubs" },
+  { href: "/employee/leadership-track", icon: TrendingUp, label: "Leadership Track" },
+  { href: "/employee/retention", icon: User, label: "Retention Plan" },
   { href: "/employee/sops", icon: Wallet, label: "My SOPs" },
-  { href: "/employee/policies",               icon: FileText,        label: "Policies"         },
+  { href: "/employee/policies", icon: FileText, label: "Policies" },
   { href: "/employee/announcements", icon: Bell, label: "Announcements" },
-  { href: "/employee/notifications",          icon: Bell,            label: "Notifications", badge: true },
-  { href: "/employee/settings",              icon: Settings,        label: "Settings"         },
+  { href: "/employee/notifications", icon: Bell, label: "Notifications", badge: true },
+  { href: "/employee/settings", icon: Settings, label: "Settings" },
 ];
 
 // ✅ LOCK LOGIC — status "approved"/"active" varakkum idhu mattum access pannalam.
@@ -52,8 +53,8 @@ const ALWAYS_ALLOWED_PATHS = [
 // ─────────────────────────────────────────────────────────────────────────────
 export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsOpen }) {
   const [unreadCount, setUnreadCount] = useState(0);
-  const [active,      setActive]      = useState(window.location.pathname);
-  const [lockToast,   setLockToast]   = useState(false); // ✅ NEW — lock message toast
+  const [active, setActive] = useState(window.location.pathname);
+  const [lockToast, setLockToast] = useState(false); // ✅ NEW — lock message toast
 
   const [dark, setDark] = useState(() => {
     return localStorage.getItem("esb-theme") !== "light";
@@ -104,39 +105,39 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
     `https://ui-avatars.com/api/?name=${encodeURIComponent(employee?.name || "U")}&background=${dark ? "6366f1" : "3d5af1"}&color=fff&size=128`;
 
   const T = dark ? {
-    bg:          "#0f1117",
-    surface:     "#16181f",
-    border:      "rgba(255,255,255,0.07)",
-    accent:      "#6366f1",
-    accent2:     "#8b5cf6",
-    text:        "#e2e8f0",
-    muted:       "rgba(255,255,255,0.38)",
-    hover:       "rgba(99,102,241,0.13)",
-    activeBg:    "rgba(99,102,241,0.20)",
-    profBg:      "#16181f",
-    dotGrid:     "rgba(99,102,241,0.04)",
-    skelBg:      "rgba(255,255,255,0.08)",
-    sbShadow:    "rgba(0,0,0,0.55)",
+    bg: "#0f1117",
+    surface: "#16181f",
+    border: "rgba(255,255,255,0.07)",
+    accent: "#6366f1",
+    accent2: "#8b5cf6",
+    text: "#e2e8f0",
+    muted: "rgba(255,255,255,0.38)",
+    hover: "rgba(99,102,241,0.13)",
+    activeBg: "rgba(99,102,241,0.20)",
+    profBg: "#16181f",
+    dotGrid: "rgba(99,102,241,0.04)",
+    skelBg: "rgba(255,255,255,0.08)",
+    sbShadow: "rgba(0,0,0,0.55)",
     scrollThumb: "rgba(99,102,241,0.35)",
     scrollTrack: "rgba(255,255,255,0.04)",
-    hamShadow:   "rgba(99,102,241,0.45)",
+    hamShadow: "rgba(99,102,241,0.45)",
   } : {
-    bg:          "#ffffff",
-    surface:     "#f4f6fc",
-    border:      "rgba(0,0,0,0.07)",
-    accent:      "#3d5af1",
-    accent2:     "#6366f1",
-    text:        "#1e293b",
-    muted:       "rgba(30,41,59,0.42)",
-    hover:       "rgba(61,90,241,0.07)",
-    activeBg:    "rgba(61,90,241,0.11)",
-    profBg:      "#eef1fd",
-    dotGrid:     "rgba(61,90,241,0.04)",
-    skelBg:      "rgba(0,0,0,0.07)",
-    sbShadow:    "rgba(0,0,0,0.10)",
+    bg: "#ffffff",
+    surface: "#f4f6fc",
+    border: "rgba(0,0,0,0.07)",
+    accent: "#3d5af1",
+    accent2: "#6366f1",
+    text: "#1e293b",
+    muted: "rgba(30,41,59,0.42)",
+    hover: "rgba(61,90,241,0.07)",
+    activeBg: "rgba(61,90,241,0.11)",
+    profBg: "#eef1fd",
+    dotGrid: "rgba(61,90,241,0.04)",
+    skelBg: "rgba(0,0,0,0.07)",
+    sbShadow: "rgba(0,0,0,0.10)",
     scrollThumb: "rgba(61,90,241,0.25)",
     scrollTrack: "rgba(0,0,0,0.04)",
-    hamShadow:   "rgba(61,90,241,0.38)",
+    hamShadow: "rgba(61,90,241,0.38)",
   };
 
   return (
@@ -602,7 +603,7 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
               <div className="esb-skel" style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0 }} />
               <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 7, minWidth: 0 }}>
                 <div className="esb-skel" style={{ height: 11, width: "80%" }} />
-                <div className="esb-skel" style={{ height: 9,  width: "55%" }} />
+                <div className="esb-skel" style={{ height: 9, width: "55%" }} />
               </div>
             </>
           )}
@@ -618,7 +619,7 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
             <span className="esb-thumb">
               {dark
                 ? <Moon size={8} color={T.accent} />
-                : <Sun  size={8} color="#f59e0b"  />}
+                : <Sun size={8} color="#f59e0b" />}
             </span>
           </button>
         </div>

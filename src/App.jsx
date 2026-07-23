@@ -60,6 +60,8 @@ import ForgotPassword from "./pages/employee/Forgotpassword";
 import ResetPassword from "./pages/employee/Resetpassword";
 import EmployeeAnnouncements from "./pages/employee/Employeeannouncements";
 import MyApplications from "./pages/employee/Myapplications";
+import MyPayslips from "./pages/employee/MyPayslips";
+
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
@@ -112,7 +114,8 @@ import DeptGradeSalary from "./pages/hr/DeptGradeSalary";
 import HRAnnouncements from "./pages/hr/Hrannouncements";
 import EsslEmployeeManager from "./pages/hr/EsslEmployeeManager";
 import DepartmentScoreboard from "./pages/hr/DepartmentScoreboard";
-
+import PayrollDashboard from "./pages/hr/PayrollDashboard";
+import PayslipDetail from "./pages/hr/PayslipDetail";
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -164,8 +167,8 @@ function App() {
       location.pathname.toLowerCase() !== "/channel/login") ||
     location.pathname.startsWith("/radnus-connect/technician") ||
     location.pathname.startsWith("/radnus-connect/shop-owner");
-    location.pathname.startsWith("/radnus-connect/jobs") ||
-location.pathname.startsWith("/radnus-connect/find-technician")
+  location.pathname.startsWith("/radnus-connect/jobs") ||
+    location.pathname.startsWith("/radnus-connect/find-technician")
 
 
   return (
@@ -234,11 +237,12 @@ location.pathname.startsWith("/radnus-connect/find-technician")
         <Route path="/employee/my-incentive" element={<MyIncentive />} />
         <Route path="/employee/policies" element={<EmployeePolicies />} />
         <Route path="/employee/sops" element={<EmployeeSOPView />} />
-        <Route path="/employee/forgot-password"        element={<ForgotPassword />} />
-<Route path="/employee/reset-password/:token"  element={<ResetPassword />} />
-<Route path="/employee/announcements" element={<EmployeeAnnouncements />} />
+        <Route path="/employee/forgot-password" element={<ForgotPassword />} />
+        <Route path="/employee/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/employee/announcements" element={<EmployeeAnnouncements />} />
+        <Route path="/employee/my-payslips" element={<MyPayslips />} />
 
- 
+
         {/* HR Routes */}
 
         <Route path="/hr/dashboard" element={<HrDashboard />}>
@@ -320,6 +324,9 @@ location.pathname.startsWith("/radnus-connect/find-technician")
           <Route path="announcements" element={<HRAnnouncements />} />
           <Route path="essl-manager" element={<EsslEmployeeManager />} />
 
+          <Route path="payroll" element={<PayrollDashboard />} />
+          <Route path="payroll/payslip/:id" element={<PayslipDetail />} />
+
         </Route>
 
 
@@ -361,7 +368,7 @@ location.pathname.startsWith("/radnus-connect/find-technician")
         <Route path="/radnus-connect/technician" element={<TechnicianForm />} />
         <Route path="/radnus-connect/shop-owner" element={<ShopOwnerForm />} />
         <Route path="/radnus-connect/jobs" element={<JobBoard />} />
-<Route path="/radnus-connect/find-technician" element={<TechnicianBoard />} />
+        <Route path="/radnus-connect/find-technician" element={<TechnicianBoard />} />
       </Routes>
 
       {!hideHeaderFooter && <RadnusFooter />}

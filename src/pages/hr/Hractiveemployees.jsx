@@ -385,6 +385,40 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
 };
 
 
+// ─── Edit Info Tab — shared styles & field components (module-level, NOT re-created on every render) ──
+const editInfoInputStyle  = { width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:8, fontSize:13, outline:"none", background:"#fff", boxSizing:"border-box", color:"#1a1a2e", transition:"border-color 0.15s" };
+const editInfoSelectStyle = { ...editInfoInputStyle, cursor:"pointer", appearance:"auto" };
+const editInfoLabelStyle  = { fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4, display:"block" };
+
+const editInfoSectionTitle = (title) => (
+  <p style={{ margin:"0 0 10px", fontSize:12, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", paddingBottom:6, borderBottom:"1.5px solid #f0f0f0" }}>{title}</p>
+);
+
+const EditInfoField = ({ label, value, onChange, type="text", placeholder="" }) => (
+  <div>
+    <label style={editInfoLabelStyle}>{label}</label>
+    <input type={type} value={value} placeholder={placeholder}
+      onChange={e => onChange(e.target.value)}
+      onFocus={e => e.target.style.borderColor="#2563eb"}
+      onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+      style={editInfoInputStyle} />
+  </div>
+);
+
+const EditInfoAmountField = ({ label, value, onChange }) => (
+  <div>
+    <label style={editInfoLabelStyle}>{label}</label>
+    <div style={{ position:"relative" }}>
+      <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"#9ca3af", fontWeight:600 }}>₹</span>
+      <input type="number" value={value} placeholder="0"
+        onChange={e => onChange(e.target.value)}
+        onFocus={e => e.target.style.borderColor="#2563eb"}
+        onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+        style={{ ...editInfoInputStyle, paddingLeft:24 }} />
+    </div>
+  </div>
+);
+
 // ─── Edit Info Tab ────────────────────────────────────────────────────────────
 const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
   const emp = activation?.employment || {};
@@ -403,14 +437,17 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
         ? new Date(employee.date_of_joining).toISOString().split("T")[0]
         : "",
     essl_id:         employee.essl_id         || emp.essl_id || "",
-    basic:           activation?.salary?.basic           || "",
-    hra:             activation?.salary?.hra             || "",
-    da:              activation?.salary?.da              || "",
-    ta:              activation?.salary?.ta              || "",
-    other_allowance: activation?.salary?.other_allowance || "",
-    pf_deduction:    activation?.salary?.pf_deduction    || "",
-    esi_deduction:   activation?.salary?.esi_deduction   || "",
-    pt:              activation?.salary?.pt              || "",
+    ctc:                  activation?.salary?.ctc                  || "",
+    basic:                activation?.salary?.basic                || "",
+    hra:                  activation?.salary?.hra                  || "",
+    special_allowance:    activation?.salary?.special_allowance    || "",
+    conveyance_allowance: activation?.salary?.conveyance_allowance || "",
+    gross_salary:         activation?.salary?.gross_salary         || "",
+    net_salary:           activation?.salary?.net_salary           || "",
+    professional_tax:     activation?.salary?.professional_tax     || "",
+    pf_applicable:        activation?.salary?.pf_applicable        || false,
+    esi_applicable:       activation?.salary?.esi_applicable       || false,
+    tds_applicable:       activation?.salary?.tds_applicable       || false,
   });
 
   const [saving,  setSaving]  = useState(false);
@@ -439,14 +476,17 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
       const s = activation.salary;
       setForm(prev => ({
         ...prev,
-        basic:           s.basic           ?? prev.basic,
-        hra:             s.hra             ?? prev.hra,
-        da:              s.da              ?? prev.da,
-        ta:              s.ta              ?? prev.ta,
-        other_allowance: s.other_allowance ?? prev.other_allowance,
-        pf_deduction:    s.pf_deduction    ?? prev.pf_deduction,
-        esi_deduction:   s.esi_deduction   ?? prev.esi_deduction,
-        pt:              s.pt              ?? prev.pt,
+        ctc:                  s.ctc                  ?? prev.ctc,
+        basic:                s.basic                ?? prev.basic,
+        hra:                  s.hra                  ?? prev.hra,
+        special_allowance:    s.special_allowance    ?? prev.special_allowance,
+        conveyance_allowance: s.conveyance_allowance ?? prev.conveyance_allowance,
+        gross_salary:         s.gross_salary         ?? prev.gross_salary,
+        net_salary:           s.net_salary           ?? prev.net_salary,
+        professional_tax:     s.professional_tax     ?? prev.professional_tax,
+        pf_applicable:        s.pf_applicable        ?? prev.pf_applicable,
+        esi_applicable:       s.esi_applicable       ?? prev.esi_applicable,
+        tds_applicable:       s.tds_applicable       ?? prev.tds_applicable,
       }));
     }
   }, [activation]);
@@ -491,9 +531,13 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
     setChanged(true);
   };
 
-  const gross      = ["basic","hra","da","ta","other_allowance"].reduce((s,k) => s + (parseFloat(form[k])||0), 0);
-  const deductions = ["pf_deduction","esi_deduction","pt"].reduce((s,k) => s + (parseFloat(form[k])||0), 0);
+ const gross      = ["basic","hra","special_allowance","conveyance_allowance"].reduce((s,k) => s + (parseFloat(form[k])||0), 0);
+  const deductions = ["professional_tax"].reduce((s,k) => s + (parseFloat(form[k])||0), 0);
   const net        = gross - deductions;
+
+  // ✅ Preview boxes la, typed Gross/Net Salary field value ah priority kudu; illana auto-sum fallback
+  const grossDisplay = parseFloat(form.gross_salary) || gross;
+  const netDisplay   = parseFloat(form.net_salary)   || (grossDisplay - deductions);
 
   const handleSave = async () => {
     setSaving(true);
@@ -509,15 +553,17 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
         date_of_joining: form.date_of_joining,
         essl_id:         form.essl_id,
         salary: {
-          basic:           parseFloat(form.basic)           || 0,
-          hra:             parseFloat(form.hra)             || 0,
-          da:              parseFloat(form.da)              || 0,
-          ta:              parseFloat(form.ta)              || 0,
-          other_allowance: parseFloat(form.other_allowance) || 0,
-          pf_deduction:    parseFloat(form.pf_deduction)    || 0,
-          esi_deduction:   parseFloat(form.esi_deduction)   || 0,
-          pt:              parseFloat(form.pt)              || 0,
-          gross, net,
+          ctc:                  parseFloat(form.ctc)                  || 0,
+          basic:                parseFloat(form.basic)                || 0,
+          hra:                  parseFloat(form.hra)                  || 0,
+          special_allowance:    parseFloat(form.special_allowance)    || 0,
+          conveyance_allowance: parseFloat(form.conveyance_allowance) || 0,
+          gross_salary:         parseFloat(form.gross_salary)         || gross,
+          net_salary:           parseFloat(form.net_salary)           || net,
+          professional_tax:     parseFloat(form.professional_tax)     || 0,
+          pf_applicable:        form.pf_applicable  || false,
+          esi_applicable:       form.esi_applicable || false,
+          tds_applicable:       form.tds_applicable || false,
         },
       };
       const res  = await fetch(`${API_BASE}/api/hr/activation/update/${employee._id}`, {
@@ -540,39 +586,6 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
       setSaving(false);
     }
   };
-
-  const inputStyle  = { width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:8, fontSize:13, outline:"none", background:"#fff", boxSizing:"border-box", color:"#1a1a2e", transition:"border-color 0.15s" };
-  const selectStyle = { ...inputStyle, cursor:"pointer", appearance:"auto" };
-  const labelStyle  = { fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4, display:"block" };
-
-  const sectionTitle = (title) => (
-    <p style={{ margin:"0 0 10px", fontSize:12, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", paddingBottom:6, borderBottom:"1.5px solid #f0f0f0" }}>{title}</p>
-  );
-
-  const Field = ({ label, field, type="text", placeholder="" }) => (
-    <div>
-      <label style={labelStyle}>{label}</label>
-      <input type={type} value={form[field]} placeholder={placeholder}
-        onChange={e => handleChange(field, e.target.value)}
-        onFocus={e => e.target.style.borderColor="#2563eb"}
-        onBlur={e  => e.target.style.borderColor="#e5e7eb"}
-        style={inputStyle} />
-    </div>
-  );
-
-  const AmountField = ({ label, field }) => (
-    <div>
-      <label style={labelStyle}>{label}</label>
-      <div style={{ position:"relative" }}>
-        <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"#9ca3af", fontWeight:600 }}>₹</span>
-        <input type="number" value={form[field]} placeholder="0"
-          onChange={e => handleChange(field, e.target.value)}
-          onFocus={e => e.target.style.borderColor="#2563eb"}
-          onBlur={e  => e.target.style.borderColor="#e5e7eb"}
-          style={{ ...inputStyle, paddingLeft:24 }} />
-      </div>
-    </div>
-  );
 
   const deptOptions = () => {
     const names = departments.map(d => d.name);
@@ -598,22 +611,22 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
 
       {/* Basic Info */}
       <div>
-        {sectionTitle("Basic Information")}
+        {editInfoSectionTitle("Basic Information")}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:12 }}>
-          <Field label="Full Name"   field="name"       placeholder="Employee name" />
-          <Field label="Email"       field="email"      type="email" placeholder="email@company.com" />
-          <Field label="Mobile"      field="mobile"     type="tel"   placeholder="+91 XXXXX XXXXX" />
-          <Field label="Employee ID" field="employeeId" placeholder="EMP001" />
+          <EditInfoField label="Full Name"   value={form.name}       onChange={v => handleChange("name", v)}       placeholder="Employee name" />
+          <EditInfoField label="Email"       value={form.email}      onChange={v => handleChange("email", v)}      type="email" placeholder="email@company.com" />
+          <EditInfoField label="Mobile"      value={form.mobile}     onChange={v => handleChange("mobile", v)}     type="tel"   placeholder="+91 XXXXX XXXXX" />
+          <EditInfoField label="Employee ID" value={form.employeeId} onChange={v => handleChange("employeeId", v)} placeholder="EMP001" />
         </div>
       </div>
 
       {/* Employment Details */}
       <div>
-        {sectionTitle("Employment Details")}
+        {editInfoSectionTitle("Employment Details")}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:12 }}>
 
           <div>
-            <label style={labelStyle}>
+            <label style={editInfoLabelStyle}>
               Department
               {loadingDepts && <span style={{ marginLeft:5, fontSize:10, color:"#9ca3af" }}>(loading…)</span>}
             </label>
@@ -622,7 +635,7 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
               onChange={e => handleChange("department", e.target.value)}
               onFocus={e => e.target.style.borderColor="#2563eb"}
               onBlur={e  => e.target.style.borderColor="#e5e7eb"}
-              style={selectStyle}
+              style={editInfoSelectStyle}
             >
               <option value="">Select Department</option>
               {deptOptions().map(name => (
@@ -632,13 +645,13 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
           </div>
 
           <div>
-            <label style={labelStyle}>Designation</label>
+            <label style={editInfoLabelStyle}>Designation</label>
             <select
               value={form.designation}
               onChange={e => handleChange("designation", e.target.value)}
               onFocus={e => e.target.style.borderColor="#2563eb"}
               onBlur={e  => e.target.style.borderColor="#e5e7eb"}
-              style={selectStyle}
+              style={editInfoSelectStyle}
               disabled={!form.department || loadingDepts}
             >
               <option value="">
@@ -660,22 +673,22 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
           </div>
 
           <div>
-            <label style={labelStyle}>Employment Type</label>
+            <label style={editInfoLabelStyle}>Employment Type</label>
             <select
               value={form.employment_type}
               onChange={e => handleChange("employment_type", e.target.value)}
               onFocus={e => e.target.style.borderColor="#2563eb"}
               onBlur={e  => e.target.style.borderColor="#e5e7eb"}
-              style={selectStyle}
+              style={editInfoSelectStyle}
             >
               {EMP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
 
-          <Field label="Date of Joining" field="date_of_joining" type="date" />
+          <EditInfoField label="Date of Joining" value={form.date_of_joining} onChange={v => handleChange("date_of_joining", v)} type="date" />
 
           <div>
-            <label style={labelStyle}>eSSL Device ID</label>
+            <label style={editInfoLabelStyle}>eSSL Device ID</label>
             <input
               type="text"
               value={form.essl_id}
@@ -683,7 +696,7 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
               onChange={e => handleChange("essl_id", e.target.value)}
               onFocus={e => e.target.style.borderColor="#2563eb"}
               onBlur={e  => e.target.style.borderColor="#e5e7eb"}
-              style={{ ...inputStyle, fontFamily:"monospace" }}
+              style={{ ...editInfoInputStyle, fontFamily:"monospace" }}
             />
           </div>
         </div>
@@ -691,26 +704,26 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
 
       {/* Salary */}
       <div>
-        {sectionTitle("Salary Structure")}
+        {editInfoSectionTitle("Salary Structure")}
         <p style={{ margin:"0 0 10px", fontSize:12, color:"#6b7280" }}>Earnings</p>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:10, marginBottom:14 }}>
-          <AmountField label="Basic"           field="basic" />
-          <AmountField label="HRA"             field="hra" />
-          <AmountField label="DA"              field="da" />
-          <AmountField label="TA"              field="ta" />
-          <AmountField label="Other Allowance" field="other_allowance" />
+          <EditInfoAmountField label="CTC (Annual)"          value={form.ctc}                  onChange={v => handleChange("ctc", v)} />
+          <EditInfoAmountField label="Basic"                 value={form.basic}                onChange={v => handleChange("basic", v)} />
+          <EditInfoAmountField label="HRA"                   value={form.hra}                  onChange={v => handleChange("hra", v)} />
+          <EditInfoAmountField label="Special Allowance"     value={form.special_allowance}    onChange={v => handleChange("special_allowance", v)} />
+          <EditInfoAmountField label="Conveyance Allowance"  value={form.conveyance_allowance} onChange={v => handleChange("conveyance_allowance", v)} />
+          <EditInfoAmountField label="Gross Salary"          value={form.gross_salary}         onChange={v => handleChange("gross_salary", v)} />
+          <EditInfoAmountField label="Net Salary"            value={form.net_salary}           onChange={v => handleChange("net_salary", v)} />
         </div>
         <p style={{ margin:"0 0 10px", fontSize:12, color:"#6b7280" }}>Deductions</p>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:10, marginBottom:14 }}>
-          <AmountField label="PF Deduction"     field="pf_deduction" />
-          <AmountField label="ESI Deduction"    field="esi_deduction" />
-          <AmountField label="Professional Tax" field="pt" />
+          <EditInfoAmountField label="Professional Tax" value={form.professional_tax} onChange={v => handleChange("professional_tax", v)} />
         </div>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap", background:"#f8fafc", border:"1px solid #e5e7eb", borderRadius:10, padding:"12px 16px" }}>
-          {[
-            { label:"Gross Salary",     value:gross,      color:"#16a34a", bg:"#f0fdf4", border:"#86efac" },
-            { label:"Total Deductions", value:deductions, color:"#dc2626", bg:"#fef2f2", border:"#fecaca" },
-            { label:"Net Salary",       value:net,        color:"#2563eb", bg:"#eff6ff", border:"#bfdbfe" },
+            {[
+            { label:"Gross Salary",     value:grossDisplay, color:"#16a34a", bg:"#f0fdf4", border:"#86efac" },
+            { label:"Total Deductions", value:deductions,   color:"#dc2626", bg:"#fef2f2", border:"#fecaca" },
+            { label:"Net Salary",       value:netDisplay,   color:"#2563eb", bg:"#eff6ff", border:"#bfdbfe" },
           ].map((s,i) => (
             <div key={i} style={{ flex:1, minWidth:120, textAlign:"center", background:s.bg, border:`1px solid ${s.border}`, borderRadius:8, padding:"8px 12px" }}>
               <p style={{ margin:0, fontSize:10, fontWeight:700, color:s.color, textTransform:"uppercase", letterSpacing:"0.05em" }}>{s.label}</p>
