@@ -4,7 +4,7 @@ import {
   FileText, Building2, LayoutDashboard, User,
   LogOut, TrendingUp, ClipboardList, Wallet,
   Bell, Settings, CalendarCheck, X,
-  ChevronRight, Sun, Moon, Sparkles, MessageCircle, Lock
+  ChevronRight, Sun, Moon, Sparkles, MessageCircle, Lock, LifeBuoy
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -32,6 +32,7 @@ const NAV_ITEMS = [
   { href: "/employee/sops", icon: Wallet, label: "My SOPs" },
   { href: "/employee/policies", icon: FileText, label: "Policies" },
   { href: "/employee/announcements", icon: Bell, label: "Announcements" },
+  { href: "/employee/raise-ticket", icon: LifeBuoy, label: "Raise Ticket" },
   { href: "/employee/notifications", icon: Bell, label: "Notifications", badge: true },
   { href: "/employee/settings", icon: Settings, label: "Settings" },
 ];

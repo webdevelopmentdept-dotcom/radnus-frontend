@@ -61,6 +61,7 @@ import ResetPassword from "./pages/employee/Resetpassword";
 import EmployeeAnnouncements from "./pages/employee/Employeeannouncements";
 import MyApplications from "./pages/employee/Myapplications";
 import MyPayslips from "./pages/employee/MyPayslips";
+import RaiseTicket from "./pages/employee/RaiseTicket";
 
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
@@ -241,6 +242,7 @@ function App() {
         <Route path="/employee/reset-password/:token" element={<ResetPassword />} />
         <Route path="/employee/announcements" element={<EmployeeAnnouncements />} />
         <Route path="/employee/my-payslips" element={<MyPayslips />} />
+        <Route path="/employee/raise-ticket" element={<RaiseTicket />} />
 
 
         {/* HR Routes */}
