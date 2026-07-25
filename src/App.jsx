@@ -117,6 +117,7 @@ import EsslEmployeeManager from "./pages/hr/EsslEmployeeManager";
 import DepartmentScoreboard from "./pages/hr/DepartmentScoreboard";
 import PayrollDashboard from "./pages/hr/PayrollDashboard";
 import PayslipDetail from "./pages/hr/PayslipDetail";
+import HrTickets from "./pages/hr/HrTickets";
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -328,6 +329,8 @@ function App() {
 
           <Route path="payroll" element={<PayrollDashboard />} />
           <Route path="payroll/payslip/:id" element={<PayslipDetail />} />
+
+          <Route path="tickets" element={<HrTickets />} />
 
         </Route>
 

@@ -5,7 +5,48 @@ import { usePayslipDetail } from "../../hooks/usePayroll";
 const MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"];
 
+// ── EDIT THESE TO YOUR ACTUAL COMPANY DETAILS ──────────────────────
+const COMPANY = {
+  name: "Radnus Communication",
+  addressLine1: "Sinnaya Plaza, 242/244, Mahatma Gandhi Rd,", // TODO: put real address
+  addressLine2: " Puducherry, 605001",
+  logo: "/image.png", // same logo already used in RadnusNavbar.jsx
+};
+
 const fmt = (v) => `₹${Number(v || 0).toLocaleString("en-IN")}`;
+
+// ── Number → words (Indian numbering system) ───────────────────────
+const ONES = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+  "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen",
+  "Eighteen", "Nineteen"];
+const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+function twoDigits(n) {
+  if (n < 20) return ONES[n];
+  return TENS[Math.floor(n / 10)] + (n % 10 ? " " + ONES[n % 10] : "");
+}
+function threeDigits(n) {
+  if (n < 100) return twoDigits(n);
+  return ONES[Math.floor(n / 100)] + " Hundred" + (n % 100 ? " " + twoDigits(n % 100) : "");
+}
+function numberToWords(num) {
+  num = Math.round(Number(num) || 0);
+  if (num === 0) return "Zero";
+  const crore = Math.floor(num / 10000000); num %= 10000000;
+  const lakh = Math.floor(num / 100000); num %= 100000;
+  const thousand = Math.floor(num / 1000); num %= 1000;
+  const rest = num;
+  let parts = [];
+  if (crore) parts.push(threeDigits(crore) + " Crore");
+  if (lakh) parts.push(threeDigits(lakh) + " Lakh");
+  if (thousand) parts.push(threeDigits(thousand) + " Thousand");
+  if (rest) parts.push(threeDigits(rest));
+  return parts.join(" ");
+}
+const amountInWords = (v) => `${numberToWords(v)} Rupees Only`;
+
+const WORKED_DAYS = (p) =>
+  (p.present_days || 0) + (p.half_days || 0) * 0.5 + (p.paid_leave_days || 0);
 
 export default function PayslipDetail() {
   const { id } = useParams();
@@ -15,144 +56,164 @@ export default function PayslipDetail() {
   if (isLoading) return <div style={{ padding: 60, textAlign: "center", color: "#6b7280" }}>Loading...</div>;
   if (!p) return <div style={{ padding: 60, textAlign: "center", color: "#9ca3af" }}>Payslip not found.</div>;
 
+  const lopAmount = (p.absent_days || 0) * (p.per_day_rate || 0);
+  const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount;
+  const totalEarnings = p.earnings?.gross_earnings || 0;
+
   return (
-    <div style={{ padding: 24, maxWidth: 760, margin: "0 auto" }}>
-      <button onClick={() => navigate(-1)} style={{
+    <div style={{ padding: 24, maxWidth: 820, margin: "0 auto" }}>
+      <button onClick={() => navigate(-1)} className="no-print" style={{
         background: "none", border: "none", color: "#2563eb", fontSize: 13, fontWeight: 600,
         cursor: "pointer", marginBottom: 16,
       }}>← Back</button>
 
       <div id="payslip-print" style={{
         background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden",
+        padding: "32px 40px", fontFamily: "inherit",
       }}>
         {/* Header */}
-        <div style={{ background: "#1a1a2e", padding: "24px 28px" }}>
-          <p style={{ margin: 0, color: "#9ca3af", fontSize: 12, letterSpacing: 1 }}>PAYSLIP</p>
-          <h2 style={{ margin: "4px 0 0", color: "#fff", fontSize: 20, fontWeight: 800 }}>
-            {MONTH_NAMES[p.month]} {p.year}
-          </h2>
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <img src={COMPANY.logo} alt="Radnus Logo" style={{ height: 56, marginBottom: 8, objectFit: "contain" }} />
+          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#111827" }}>Payslip</h1>
+          <p style={{ margin: "6px 0 0", fontSize: 15, fontWeight: 600, color: "#374151" }}>{COMPANY.name}</p>
+          <p style={{ margin: "2px 0 0", fontSize: 13, color: "#6b7280" }}>
+            {COMPANY.addressLine1}<br />{COMPANY.addressLine2}
+          </p>
         </div>
 
-        {/* Employee info */}
-        <div style={{ padding: "20px 28px", borderBottom: "1px solid #f3f4f6", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Info label="Employee" value={p.employee_name} />
-          <Info label="Employee Code" value={p.employee_code || "—"} />
-          <Info label="Department" value={p.department} />
-          <Info label="Designation" value={p.designation} />
+        {/* Employee / period info — two columns, like a classic payslip */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 24px",
+          margin: "24px 0", fontSize: 14,
+        }}>
+          <InfoRow label="Date of Joining" value={p.date_of_joining || "—"} />
+          <InfoRow label="Employee name" value={p.employee_name} />
+          <InfoRow label="Pay Period" value={`${MONTH_NAMES[p.month]} ${p.year}`} />
+          <InfoRow label="Designation" value={p.designation} />
+          <InfoRow label="Worked Days" value={WORKED_DAYS(p)} />
+          <InfoRow label="Department" value={p.department} />
+          {p.employee_code && <InfoRow label="Employee Code" value={p.employee_code} />}
+          <InfoRow label="Absent (LOP) Days" value={p.absent_days || 0} />
         </div>
 
-        {/* Attendance summary */}
-        <div style={{ padding: "20px 28px", borderBottom: "1px solid #f3f4f6" }}>
-          <h4 style={sectionTitle}>Attendance Summary</h4>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-            <StatBox label="Total Days" value={p.total_days_in_month} />
-            <StatBox label="Present" value={p.present_days} />
-            <StatBox label="Half Days" value={p.half_days} />
-            <StatBox label="Paid Leave" value={p.paid_leave_days} />
-            <StatBox label="Unpaid Leave" value={p.unpaid_leave_days} />
-            <StatBox label="Absent (LOP)" value={p.absent_days} highlight />
-            <StatBox label="Holidays" value={p.holiday_days} />
-            <StatBox label="Payable Days" value={p.payable_days} bold />
+        {/* Earnings | Deductions table */}
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, marginTop: 8 }}>
+          <thead>
+            <tr>
+              <th style={thStyle}>Earnings</th>
+              <th style={{ ...thStyle, textAlign: "right" }}>Amount</th>
+              <th style={thStyle}>Deductions</th>
+              <th style={{ ...thStyle, textAlign: "right" }}>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {buildRows(p, lopAmount).map((row, i) => (
+              <tr key={i}>
+                <td style={tdStyle}>{row.eLabel}</td>
+                <td style={{ ...tdStyle, textAlign: "right" }}>{row.eAmount}</td>
+                <td style={tdStyle}>{row.dLabel}</td>
+                <td style={{ ...tdStyle, textAlign: "right" }}>{row.dAmount}</td>
+              </tr>
+            ))}
+            <tr>
+              <td style={{ ...tdStyle, ...totalStyle, textAlign: "right" }}>Total Earnings</td>
+              <td style={{ ...tdStyle, ...totalStyle, textAlign: "right" }}>{fmt(totalEarnings)}</td>
+              <td style={{ ...tdStyle, ...totalStyle, textAlign: "right" }}>Total Deductions</td>
+              <td style={{ ...tdStyle, ...totalStyle, textAlign: "right" }}>{fmt(totalDeductions)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Net Pay */}
+        <div style={{
+          display: "flex", justifyContent: "flex-end", padding: "14px 0",
+          borderTop: "2px solid #111827", marginTop: 4,
+        }}>
+          <span style={{ fontSize: 15, fontWeight: 700, marginRight: 24 }}>Net Pay</span>
+          <span style={{ fontSize: 15, fontWeight: 800 }}>{fmt(p.net_pay)}</span>
+        </div>
+
+        {/* Amount in words */}
+        <div style={{ textAlign: "center", margin: "20px 0" }}>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{fmt(p.net_pay)}</p>
+          <p style={{ margin: "2px 0 0", fontSize: 13, color: "#374151" }}>{amountInWords(p.net_pay)}</p>
+        </div>
+
+        {/* Signatures */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24,
+          marginTop: 56, fontSize: 13, textAlign: "center",
+        }}>
+          <div>
+            <p style={{ margin: 0 }}>MD Signature</p>
+            <div style={{ borderTop: "1px solid #111827", marginTop: 48 }} />
+          </div>
+          <div>
+            <p style={{ margin: 0 }}>Employee Signature</p>
+            <div style={{ borderTop: "1px solid #111827", marginTop: 48 }} />
           </div>
         </div>
 
-        {/* Earnings */}
-        <div style={{ padding: "20px 28px", borderBottom: "1px solid #f3f4f6" }}>
-          <h4 style={sectionTitle}>Earnings</h4>
-          <Row label={`Gross Salary (Monthly Fixed)`} value={fmt(p.gross_salary_monthly)} muted />
-          <Row label={`Per Day Rate (÷ ${p.total_days_in_month} days)`} value={fmt(p.per_day_rate)} muted />
-          <Row label="Basic" value={fmt(p.earnings?.basic)} />
-          <Row label="HRA" value={fmt(p.earnings?.hra)} />
-          <Row label="Special Allowance" value={fmt(p.earnings?.special_allowance)} />
-          <Row label="Conveyance Allowance" value={fmt(p.earnings?.conveyance_allowance)} />
-          {p.earnings?.overtime_amount > 0 && <Row label="Overtime" value={fmt(p.earnings.overtime_amount)} />}
-          <Row label="Gross Earnings" value={fmt(p.earnings?.gross_earnings)} bold />
-        </div>
-
-        {/* Deductions */}
-        {/* <div style={{ padding: "20px 28px", borderBottom: "1px solid #f3f4f6" }}>
-          <h4 style={sectionTitle}>Deductions</h4>
-          {p.deductions?.total_deductions === 0 ? (
-            <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>No deductions applied (PF/ESI/TDS process not yet active for this employee).</p>
-          ) : (
-            <>
-              {p.deductions?.pf > 0 && <Row label="PF" value={fmt(p.deductions.pf)} />}
-              {p.deductions?.esi > 0 && <Row label="ESI" value={fmt(p.deductions.esi)} />}
-              {p.deductions?.tds > 0 && <Row label="TDS" value={fmt(p.deductions.tds)} />}
-              {p.deductions?.professional_tax > 0 && <Row label="Professional Tax" value={fmt(p.deductions.professional_tax)} />}
-              <Row label="Total Deductions" value={fmt(p.deductions?.total_deductions)} bold />
-            </>
-          )}
-        </div> */}
-
-        {/* Deductions */}
-<div style={{ padding: "20px 28px", borderBottom: "1px solid #f3f4f6" }}>
-  <h4 style={sectionTitle}>Deductions</h4>
-
-  {/* LOP as a visible deduction line */}
-  {p.absent_days > 0 && (
-    <Row
-      label={`LOP (${p.absent_days} day${p.absent_days > 1 ? "s" : ""} × ${fmt(p.per_day_rate)})`}
-      value={fmt(p.absent_days * p.per_day_rate)}
-    />
-  )}
-
-  {p.deductions?.total_deductions === 0 ? (
-    <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>No deductions applied (PF/ESI/TDS process not yet active for this employee).</p>
-  ) : (
-    <>
-      {p.deductions?.pf > 0 && <Row label="PF" value={fmt(p.deductions.pf)} />}
-      {p.deductions?.esi > 0 && <Row label="ESI" value={fmt(p.deductions.esi)} />}
-      {p.deductions?.tds > 0 && <Row label="TDS" value={fmt(p.deductions.tds)} />}
-      {p.deductions?.professional_tax > 0 && <Row label="Professional Tax" value={fmt(p.deductions.professional_tax)} />}
-      <Row label="Total Deductions" value={fmt(p.deductions?.total_deductions)} bold />
-    </>
-  )}
-</div>
-
-        {/* Net Pay */}
-        <div style={{ padding: "24px 28px", background: "#f0f9ff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Net Pay</span>
-          <span style={{ fontSize: 24, fontWeight: 800, color: "#059669" }}>{fmt(p.net_pay)}</span>
-        </div>
+        <p style={{ textAlign: "center", fontSize: 11, color: "#9ca3af", marginTop: 40 }}>
+          This is system generated payslip
+        </p>
       </div>
 
-      <button onClick={() => window.print()} style={{
+      <button onClick={() => window.print()} className="no-print" style={{
         marginTop: 16, background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 8,
         padding: "10px 22px", fontWeight: 700, fontSize: 13, cursor: "pointer",
       }}>🖨️ Print Payslip</button>
+
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          #payslip-print { border: none !important; }
+        }
+      `}</style>
     </div>
   );
 }
 
-const sectionTitle = { margin: "0 0 14px", fontSize: 13, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: 0.5 };
+// ── Build side-by-side earnings/deductions rows (pads shorter column with blanks) ──
+function buildRows(p, lopAmount) {
+  const earningsList = [
+    { label: "Basic", amount: p.earnings?.basic },
+    { label: "HRA", amount: p.earnings?.hra },
+    { label: "Special Allowance", amount: p.earnings?.special_allowance },
+    { label: "Conveyance Allowance", amount: p.earnings?.conveyance_allowance },
+  ];
+  if (p.earnings?.overtime_amount > 0) earningsList.push({ label: "Overtime", amount: p.earnings.overtime_amount });
 
-function Info({ label, value }) {
+  const deductionsList = [];
+  if (p.absent_days > 0) deductionsList.push({ label: `LOP (${p.absent_days} day${p.absent_days > 1 ? "s" : ""})`, amount: lopAmount });
+  if (p.deductions?.pf > 0) deductionsList.push({ label: "Provident Fund", amount: p.deductions.pf });
+  if (p.deductions?.esi > 0) deductionsList.push({ label: "ESI", amount: p.deductions.esi });
+  if (p.deductions?.tds > 0) deductionsList.push({ label: "TDS", amount: p.deductions.tds });
+  if (p.deductions?.professional_tax > 0) deductionsList.push({ label: "Professional Tax", amount: p.deductions.professional_tax });
+  if (deductionsList.length === 0) deductionsList.push({ label: "No deductions applied", amount: 0 });
+
+  const rowCount = Math.max(earningsList.length, deductionsList.length);
+  const rows = [];
+  for (let i = 0; i < rowCount; i++) {
+    rows.push({
+      eLabel: earningsList[i]?.label || "",
+      eAmount: earningsList[i] ? fmt(earningsList[i].amount) : "",
+      dLabel: deductionsList[i]?.label || "",
+      dAmount: deductionsList[i] ? fmt(deductionsList[i].amount) : "",
+    });
+  }
+  return rows;
+}
+
+function InfoRow({ label, value }) {
   return (
-    <div>
-      <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>{label}</p>
-      <p style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 600, color: "#111827" }}>{value || "—"}</p>
+    <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dotted #e5e7eb", padding: "3px 0" }}>
+      <span style={{ color: "#6b7280" }}>{label}</span>
+      <span style={{ fontWeight: 600, color: "#111827" }}>{value ?? "—"}</span>
     </div>
   );
 }
 
-function StatBox({ label, value, highlight, bold }) {
-  return (
-    <div style={{
-      background: highlight ? "#fef2f2" : "#f8fafc", borderRadius: 8, padding: "10px 12px",
-      border: `1px solid ${highlight ? "#fecaca" : "#e5e7eb"}`,
-    }}>
-      <p style={{ margin: 0, fontSize: 11, color: highlight ? "#dc2626" : "#6b7280" }}>{label}</p>
-      <p style={{ margin: "2px 0 0", fontSize: 16, fontWeight: bold ? 800 : 700, color: highlight ? "#dc2626" : "#111827" }}>{value}</p>
-    </div>
-  );
-}
-
-function Row({ label, value, bold, muted }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
-      <span style={{ fontSize: 13, color: muted ? "#9ca3af" : "#374151", fontWeight: bold ? 700 : 400 }}>{label}</span>
-      <span style={{ fontSize: 13, color: muted ? "#9ca3af" : "#111827", fontWeight: bold ? 700 : 600 }}>{value}</span>
-    </div>
-  );
-}
+const thStyle = { textAlign: "left", padding: "8px 6px", background: "#f3f4f6", borderBottom: "2px solid #111827", fontSize: 13 };
+const tdStyle = { padding: "6px 6px", borderBottom: "1px solid #f3f4f6" };
+const totalStyle = { fontWeight: 700, borderTop: "2px solid #111827", borderBottom: "none" };

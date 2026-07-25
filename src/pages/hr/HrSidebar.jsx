@@ -270,11 +270,11 @@ export default function HrSidebar() {
               </NavLink>
 
               <NavLink to="/hr/dashboard/performance/department-scoreboard"
-  className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
-  onClick={close}>
-  <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
-  Department Scoreboard
-</NavLink>
+                className={({ isActive }) => isActive ? "active hr-sub-item" : "hr-sub-item"}
+                onClick={close}>
+                <HugeiconsIcon icon={ChartAverageIcon} size={16} color="currentColor" strokeWidth={1.8} />
+                Department Scoreboard
+              </NavLink>
 
             </>
           ) : (
@@ -697,6 +697,16 @@ export default function HrSidebar() {
                 onClick={close}>
                 <HugeiconsIcon icon={Building04Icon} size={18} color="currentColor" strokeWidth={1.8} />
                 Alumni Network
+              </NavLink>
+
+              {/* IT SUPPORT */}
+              <div className="hr-section">IT Support</div>
+
+              <NavLink to="/hr/dashboard/tickets"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Task01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Ticket Management
               </NavLink>
 
               {/* SETTINGS */}

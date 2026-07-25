@@ -255,7 +255,7 @@ IT team will get back to you there.
                     <StatusIcon size={11} /> {cfg.label}
                   </div>
                 </div>
-              );
+              ); 
             })
           )}
         </div>
