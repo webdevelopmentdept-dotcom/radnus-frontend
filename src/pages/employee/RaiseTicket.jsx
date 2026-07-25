@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import EmployeeLayout from "./EmployeeLayout";
 import {
   LifeBuoy, ExternalLink, Package, Laptop2, KeyRound, WifiOff,
@@ -8,6 +8,9 @@ import {
 // 🔧 Replace with your real ticketing portal link (or set VITE_TICKET_PORTAL_URL)
 const TICKET_PORTAL_URL =
   import.meta.env.VITE_TICKET_PORTAL_URL || "https://support.yourcompany.com/tickets/new";
+
+// Base URL of your backend API (same one used across the rest of the app)
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 // Only SYSTEM / TECHNICAL issue categories — this page is not for HR,
 // payroll, or facilities queries.
@@ -19,18 +22,57 @@ const CATEGORIES = [
   { id: "other", label: "Other System Issue", icon: HelpCircle, color: "#6b7280" },
 ];
 
-// Real tickets will come from your backend once it's ready.
-// Keeping this empty for now — no fake/sample rows.
-const sampleTickets = [];
-
+// Status pills — mapped to the actual statuses used by the ticket backend
+// (open, in-progress, resolved, closed)
 const STATUS_CFG = {
-  open: { label: "Open", color: "#d97706", bg: "#fffbeb", icon: Clock },
-  resolved: { label: "Resolved", color: "#16a34a", bg: "#f0fdf4", icon: CheckCircle2 },
-  pending: { label: "Pending", color: "#3d5af1", bg: "#eef1fd", icon: AlertCircle },
+  open:          { label: "Open",        color: "#d97706", bg: "#fffbeb", icon: Clock },
+  "in-progress": { label: "In Progress", color: "#3d5af1", bg: "#eef1fd", icon: AlertCircle },
+  resolved:      { label: "Resolved",    color: "#16a34a", bg: "#f0fdf4", icon: CheckCircle2 },
+  closed:        { label: "Closed",      color: "#6b7280", bg: "#f3f4f6", icon: CheckCircle2 },
 };
 
 export default function RaiseTicket() {
   const [selectedCategory, setSelectedCategory] = useState(null);
+
+  // ── Real tickets state (fetched from backend) ──────────────────────────
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      const token =
+        localStorage.getItem("employeeToken") ||
+        sessionStorage.getItem("employeeToken");
+
+      if (!token) {
+        setError("You're not logged in — please log in again.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/employee/tickets`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Request failed with status ${res.status}`);
+        }
+
+        const data = await res.json();
+        setTickets(Array.isArray(data) ? data : []);
+        setError("");
+      } catch (err) {
+        console.error("Failed to load tickets:", err);
+        setError("Couldn't load your tickets right now.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTickets();
+  }, []);
 
   const openTicketPortal = (category) => {
     const url = category
@@ -122,20 +164,39 @@ export default function RaiseTicket() {
           overflow: hidden;
         }
         .rt-row {
-          display: flex; align-items: center; gap: 14px;
-          padding: 14px 16px;
+          display: flex; align-items: flex-start; gap: 14px;
+          padding: 16px 18px;
           border-bottom: 1px solid #f4f5f9;
+          transition: background 0.15s ease;
         }
+        .rt-row:hover { background: #fafbfe; }
         .rt-row:last-child { border-bottom: none; }
-        .rt-row-id { font-size: 11px; font-weight: 700; color: #94a3b8; width: 78px; flex-shrink: 0; }
+        .rt-row-icon {
+          width: 38px; height: 38px; border-radius: 11px;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0; margin-top: 1px;
+        }
         .rt-row-main { flex: 1; min-width: 0; }
-        .rt-row-subject { font-size: 13px; font-weight: 600; color: #1e293b; }
-        .rt-row-meta { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+        .rt-row-top {
+          display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+        }
+        .rt-row-subject { font-size: 13.5px; font-weight: 700; color: #1e293b; }
+        .rt-row-ticketno {
+          font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+          color: #94a3b8; background: #f4f5f9;
+          padding: 2px 8px; border-radius: 6px; white-space: nowrap;
+        }
+        .rt-row-meta {
+          font-size: 11.5px; color: #94a3b8; margin-top: 5px;
+          display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+        }
+        .rt-priority-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
         .rt-status-pill {
           display: flex; align-items: center; gap: 5px;
           font-size: 10.5px; font-weight: 700;
-          padding: 5px 10px; border-radius: 20px;
-          flex-shrink: 0;
+          padding: 6px 12px; border-radius: 20px;
+          flex-shrink: 0; white-space: nowrap;
+          margin-top: 1px;
         }
 
         .rt-empty {
@@ -179,13 +240,13 @@ export default function RaiseTicket() {
           .rt-note { font-size: 11.5px; padding: 11px 12px; }
 
           .rt-row {
-            flex-wrap: wrap;
-            padding: 12px 14px;
-            gap: 8px;
+            padding: 14px;
+            gap: 10px;
           }
-          .rt-row-id { width: auto; order: 1; }
-          .rt-row-main { order: 3; flex-basis: 100%; }
-          .rt-status-pill { order: 2; margin-left: auto; }
+          .rt-row-icon { width: 34px; height: 34px; border-radius: 10px; }
+          .rt-row-subject { font-size: 13px; }
+          .rt-row-ticketno { font-size: 9.5px; }
+          .rt-status-pill { padding: 5px 10px; font-size: 10px; }
         }
 
         @media (max-width: 380px) {
@@ -235,27 +296,46 @@ IT team will get back to you there.
           This takes you to our support ticketing portal in a new tab.
         </div>
 
-        {/* Recent tickets (sample data until the ticketing backend is connected) */}
+        {/* Recent tickets — fetched live from /api/employee/tickets */}
         <div className="rt-section-title">My Recent Tickets</div>
         <div className="rt-list">
-          {sampleTickets.length === 0 ? (
+          {loading ? (
+            <div className="rt-empty">Loading your tickets…</div>
+          ) : error ? (
+            <div className="rt-empty">{error}</div>
+          ) : tickets.length === 0 ? (
             <div className="rt-empty">No system issues raised yet — click a category above to report one.</div>
           ) : (
-            sampleTickets.map((t) => {
+            tickets.map((t) => {
               const cfg = STATUS_CFG[t.status] || STATUS_CFG.open;
               const StatusIcon = cfg.icon;
+              const priorityColor =
+                { low: "#16a34a", medium: "#d97706", high: "#dc2626", critical: "#b91c1c" }[t.priority] ||
+                "#94a3b8";
               return (
-                <div className="rt-row" key={t.id}>
-                  <div className="rt-row-id">{t.id}</div>
+                <div className="rt-row" key={t._id || t.id}>
+                  <div className="rt-row-icon" style={{ background: cfg.bg }}>
+                    <StatusIcon size={17} color={cfg.color} />
+                  </div>
                   <div className="rt-row-main">
-                    <div className="rt-row-subject">{t.subject}</div>
-                    <div className="rt-row-meta">{t.category} · {t.date}</div>
+                    <div className="rt-row-top">
+                      <span className="rt-row-subject">{t.subject}</span>
+                      <span className="rt-row-ticketno">{t.ticket_no}</span>
+                    </div>
+                    <div className="rt-row-meta">
+                      <span className="rt-priority-dot" style={{ background: priorityColor }} />
+                      {t.priority
+                        ? t.priority.charAt(0).toUpperCase() + t.priority.slice(1)
+                        : "Normal"}{" "}
+                      priority · {t.category}
+                      {t.created_at ? ` · ${new Date(t.created_at).toLocaleDateString()}` : ""}
+                    </div>
                   </div>
                   <div className="rt-status-pill" style={{ background: cfg.bg, color: cfg.color }}>
                     <StatusIcon size={11} /> {cfg.label}
                   </div>
                 </div>
-              ); 
+              );
             })
           )}
         </div>
