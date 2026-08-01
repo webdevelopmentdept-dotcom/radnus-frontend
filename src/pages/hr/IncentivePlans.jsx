@@ -20,36 +20,36 @@ const lbl = {
   color: "#64748b", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em",
 };
 
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1];
 
 const VALUE_TYPES = [
-  { value: "count",      label: "Count" },
+  { value: "count", label: "Count" },
   { value: "percentage", label: "Percentage %" },
-  { value: "amount",     label: "Amount ₹" },
-  { value: "rating",     label: "Rating" },
+  { value: "amount", label: "Amount ₹" },
+  { value: "rating", label: "Rating" },
 ];
 const OPERATORS = [
   { value: ">=", label: "≥ (At least)" },
-  { value: ">",  label: "> (More than)" },
-  { value: "=",  label: "= (Exactly)" },
+  { value: ">", label: "> (More than)" },
+  { value: "=", label: "= (Exactly)" },
   { value: "<=", label: "≤ (At most)" },
-  { value: "<",  label: "< (Less than)" },
+  { value: "<", label: "< (Less than)" },
 ];
 
 // ── Standalone target measurement types ──────────────────────────────────────
 const STANDALONE_TARGET_TYPES = [
   { value: "revenue", label: "Revenue (₹)", icon: "💰", placeholder: "e.g. 100000" },
-  { value: "units",   label: "Units / Count", icon: "📦", placeholder: "e.g. 50" },
+  { value: "units", label: "Units / Count", icon: "📦", placeholder: "e.g. 50" },
   { value: "percent", label: "Percentage (%)", icon: "📊", placeholder: "e.g. 75" },
 ];
 
 // ── Standalone payout types ───────────────────────────────────────────────────
 const STANDALONE_PAYOUT_TYPES = [
-  { value: "fixed",              label: "Fixed Amount (₹)" },
+  { value: "fixed", label: "Fixed Amount (₹)" },
   { value: "percent_of_achieved", label: "% of Achieved Value" },
-  { value: "percent_of_salary",  label: "% of Salary" },
+  { value: "percent_of_salary", label: "% of Salary" },
 ];
 
 const EMPTY_STANDALONE_SLAB = () => ({
@@ -60,18 +60,18 @@ const EMPTY_STANDALONE_SLAB = () => ({
 });
 
 const EMPTY_KPI_CONFIG = (kpiItem) => ({
-  kpi_name:         kpiItem.kpi_name,
-  weight:           kpiItem.weight,
-  target:           kpiItem.target || "",
-  value_type:       "count",
-  operator:         ">=",
-  rule_label:       "",
+  kpi_name: kpiItem.kpi_name,
+  weight: kpiItem.weight,
+  target: kpiItem.target || "",
+  value_type: "count",
+  operator: ">=",
+  rule_label: "",
   is_admission_kpi: kpiItem.is_admission_kpi || false,
-  program_targets:  kpiItem.program_targets  || [],
-  program_slabs:    (kpiItem.program_targets || []).map(pt => ({
-    program_id:   pt.program_id,
+  program_targets: kpiItem.program_targets || [],
+  program_slabs: (kpiItem.program_targets || []).map(pt => ({
+    program_id: pt.program_id,
     program_name: pt.program_name,
-    slabs:        [],
+    slabs: [],
   })),
   slabs: [],
 });
@@ -91,12 +91,12 @@ const EMPTY_FORM = {
 };
 
 const DEPT_COLORS = {
-  Sales:       { color: "#2563eb", bg: "#eff6ff" },
+  Sales: { color: "#2563eb", bg: "#eff6ff" },
   Engineering: { color: "#7c3aed", bg: "#f5f3ff" },
-  Marketing:   { color: "#d97706", bg: "#fffbeb" },
-  HR:          { color: "#16a34a", bg: "#f0fdf4" },
-  Finance:     { color: "#ea580c", bg: "#fff7ed" },
-  Operations:  { color: "#0891b2", bg: "#ecfeff" },
+  Marketing: { color: "#d97706", bg: "#fffbeb" },
+  HR: { color: "#16a34a", bg: "#f0fdf4" },
+  Finance: { color: "#ea580c", bg: "#fff7ed" },
+  Operations: { color: "#0891b2", bg: "#ecfeff" },
 };
 const getColor = (d) => DEPT_COLORS[d] || { color: "#6b7280", bg: "#f3f4f6" };
 
@@ -110,11 +110,11 @@ function buildRuleLabel(cfg) {
 function periodLabel(f) {
   const y = f.period_year;
   switch (f.period_type) {
-    case "Monthly":     return `${MONTHS[(f.period_month || 1) - 1].slice(0, 3)} ${y}`;
-    case "Quarterly":   return `${f.period_quarter} ${y}`;
+    case "Monthly": return `${MONTHS[(f.period_month || 1) - 1].slice(0, 3)} ${y}`;
+    case "Quarterly": return `${f.period_quarter} ${y}`;
     case "Half-Yearly": return `${f.period_half} ${y}`;
-    case "Yearly":      return `FY ${y}`;
-    default:            return `${y}`;
+    case "Yearly": return `FY ${y}`;
+    default: return `${y}`;
   }
 }
 
@@ -153,7 +153,7 @@ function formatTarget(val, type) {
 // ── Standalone Slab Editor ────────────────────────────────────────────────────
 function StandaloneSlabEditor({ slabs, targetType, onAdd, onUpdate, onRemove }) {
   const errors = validateStandaloneSlabs(slabs);
-  const tInfo  = STANDALONE_TARGET_TYPES.find(t => t.value === targetType) || STANDALONE_TARGET_TYPES[0];
+  const tInfo = STANDALONE_TARGET_TYPES.find(t => t.value === targetType) || STANDALONE_TARGET_TYPES[0];
 
   return (
     <div>
@@ -363,7 +363,7 @@ function AdmissionKpiConfig({ cfg, onAddProgSlab, onUpdateProgSlab, onRemoveProg
   useEffect(() => {
     if (!cfg.program_targets?.length) return;
     const currentKey = cfg.program_targets.map(pt => pt.program_id).join(",");
-    const prevKey    = prevProgramTargetsRef.current;
+    const prevKey = prevProgramTargetsRef.current;
     if (currentKey !== prevKey) {
       prevProgramTargetsRef.current = currentKey;
       setActiveProgram(prev => {
@@ -377,16 +377,16 @@ function AdmissionKpiConfig({ cfg, onAddProgSlab, onUpdateProgSlab, onRemoveProg
     return <p style={{ fontSize: 12, color: "#f59e0b", fontStyle: "italic" }}>⚠ No programs found for this KPI.</p>;
   }
 
-  const activePt      = cfg.program_targets.find(pt => pt.program_id === activeProgram);
+  const activePt = cfg.program_targets.find(pt => pt.program_id === activeProgram);
   const progSlabEntry = (cfg.program_slabs || []).find(ps => ps.program_id === activeProgram);
-  const progSlabs     = progSlabEntry?.slabs || [];
-  const totalTarget   = cfg.program_targets.reduce((s, pt) => s + (Number(pt.target) || 0), 0);
+  const progSlabs = progSlabEntry?.slabs || [];
+  const totalTarget = cfg.program_targets.reduce((s, pt) => s + (Number(pt.target) || 0), 0);
 
   return (
     <div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
         {cfg.program_targets.map((pt) => {
-          const pSlabs  = (cfg.program_slabs || []).find(ps => ps.program_id === pt.program_id)?.slabs || [];
+          const pSlabs = (cfg.program_slabs || []).find(ps => ps.program_id === pt.program_id)?.slabs || [];
           const isActive = activeProgram === pt.program_id;
           return (
             <div key={pt.program_id} style={{
@@ -433,15 +433,15 @@ function AdmissionKpiConfig({ cfg, onAddProgSlab, onUpdateProgSlab, onRemoveProg
 
 // ════════════════════════════════════════════════════════════════════════════
 export default function IncentivePlans() {
-  const [plans,        setPlans]        = useState([]);
-  const [depts,        setDepts]        = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [depts, setDepts] = useState([]);
   const [kpiTemplates, setKpiTemplates] = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [showForm,     setShowForm]     = useState(false);
-  const [editId,       setEditId]       = useState(null);
-  const [form,         setForm]         = useState(EMPTY_FORM);
-  const [saving,       setSaving]       = useState(false);
-  const [toast,        setToast]        = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -467,11 +467,11 @@ export default function IncentivePlans() {
   };
 
   const filteredTemplates = kpiTemplates.filter(t => !form.department || t.department === form.department);
-  const selectedTemplate  = kpiTemplates.find(t => t._id === form.kpi_template_id);
+  const selectedTemplate = kpiTemplates.find(t => t._id === form.kpi_template_id);
 
   // ── KPI handlers (unchanged) ──────────────────────────────────────────────
   const toggleKpi = (kpiItem) => {
-    const name       = kpiItem.kpi_name;
+    const name = kpiItem.kpi_name;
     const isSelected = form.selected_kpis.includes(name);
     if (isSelected) {
       setForm(f => ({ ...f, selected_kpis: f.selected_kpis.filter(k => k !== name), kpi_configs: f.kpi_configs.filter(c => c.kpi_name !== name) }));
@@ -492,18 +492,18 @@ export default function IncentivePlans() {
     }));
   };
 
-  const addSlabToKpi   = (kpiName) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; const last = c.slabs[c.slabs.length - 1]; const newMin = last ? last.max_score + 1 : 0; return { ...c, slabs: [...c.slabs, { min_score: newMin, max_score: Math.min(newMin + 10, 100), type: "fixed", value: 0 }] }; }) }));
-  const updateKpiSlab  = (kpiName, slabIdx, field, val) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; const slabs = [...c.slabs]; slabs[slabIdx] = { ...slabs[slabIdx], [field]: field === "type" ? val : Number(val) }; return { ...c, slabs }; }) }));
-  const removeKpiSlab  = (kpiName, slabIdx) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; return { ...c, slabs: c.slabs.filter((_, i) => i !== slabIdx) }; }) }));
+  const addSlabToKpi = (kpiName) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; const last = c.slabs[c.slabs.length - 1]; const newMin = last ? last.max_score + 1 : 0; return { ...c, slabs: [...c.slabs, { min_score: newMin, max_score: Math.min(newMin + 10, 100), type: "fixed", value: 0 }] }; }) }));
+  const updateKpiSlab = (kpiName, slabIdx, field, val) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; const slabs = [...c.slabs]; slabs[slabIdx] = { ...slabs[slabIdx], [field]: field === "type" ? val : Number(val) }; return { ...c, slabs }; }) }));
+  const removeKpiSlab = (kpiName, slabIdx) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; return { ...c, slabs: c.slabs.filter((_, i) => i !== slabIdx) }; }) }));
 
-  const addProgSlab    = (kpiName, progId) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; const ps = [...(c.program_slabs || [])]; const progIdx = ps.findIndex(p => p.program_id === progId); const mkNew = () => ({ min_score: 0, max_score: 10, type: "fixed", value: 0 }); if (progIdx >= 0) { ps[progIdx] = { ...ps[progIdx], slabs: [...ps[progIdx].slabs, mkNew()] }; } else { const ptEntry = c.program_targets.find(p => p.program_id === progId); ps.push({ program_id: progId, program_name: ptEntry?.program_name || progId, slabs: [mkNew()] }); } return { ...c, program_slabs: ps }; }) }));
+  const addProgSlab = (kpiName, progId) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; const ps = [...(c.program_slabs || [])]; const progIdx = ps.findIndex(p => p.program_id === progId); const mkNew = () => ({ min_score: 0, max_score: 10, type: "fixed", value: 0 }); if (progIdx >= 0) { ps[progIdx] = { ...ps[progIdx], slabs: [...ps[progIdx].slabs, mkNew()] }; } else { const ptEntry = c.program_targets.find(p => p.program_id === progId); ps.push({ program_id: progId, program_name: ptEntry?.program_name || progId, slabs: [mkNew()] }); } return { ...c, program_slabs: ps }; }) }));
   const updateProgSlab = (kpiName, progId, slabIdx, field, val) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; const ps = [...(c.program_slabs || [])]; const progIdx = ps.findIndex(p => p.program_id === progId); if (progIdx < 0) return c; const slabs = [...ps[progIdx].slabs]; slabs[slabIdx] = { ...slabs[slabIdx], [field]: field === "type" ? val : Number(val) }; ps[progIdx] = { ...ps[progIdx], slabs }; return { ...c, program_slabs: ps }; }) }));
   const removeProgSlab = (kpiName, progId, slabIdx) => setForm(f => ({ ...f, kpi_configs: f.kpi_configs.map(c => { if (c.kpi_name !== kpiName) return c; const ps = [...(c.program_slabs || [])]; const progIdx = ps.findIndex(p => p.program_id === progId); if (progIdx < 0) return c; ps[progIdx] = { ...ps[progIdx], slabs: ps[progIdx].slabs.filter((_, i) => i !== slabIdx) }; return { ...c, program_slabs: ps }; }) }));
 
   // ── Standalone slab handlers ──────────────────────────────────────────────
   const addStandaloneSlab = () => {
     setForm(f => {
-      const last   = f.standalone_slabs[f.standalone_slabs.length - 1];
+      const last = f.standalone_slabs[f.standalone_slabs.length - 1];
       const newMin = last ? (Number(last.max_target) + 1) : 0;
       return {
         ...f,
@@ -552,26 +552,26 @@ export default function IncentivePlans() {
     });
 
     setForm({
-      name:                    p.name,
-      department:              p.department,
-      plan_type:               p.plan_type      ?? "kpi_linked",
-      period_type:             p.period_type    || "Monthly",
-      period_month:            p.period_month   || new Date().getMonth() + 1,
-      period_quarter:          p.period_quarter || "Q1",
-      period_half:             p.period_half    || "H1",
-      period_year:             p.period_year    || CURRENT_YEAR,
-      kpi_template_id:         p.kpi_template_id?._id || p.kpi_template_id || "",
-      selected_kpis:           configs.map(c => c.kpi_name),
-      kpi_configs:             configs,
-      completion_reward_type:  p.completion_reward_type  || "none",
+      name: p.name,
+      department: p.department,
+      plan_type: p.plan_type ?? "kpi_linked",
+      period_type: p.period_type || "Monthly",
+      period_month: p.period_month || new Date().getMonth() + 1,
+      period_quarter: p.period_quarter || "Q1",
+      period_half: p.period_half || "H1",
+      period_year: p.period_year || CURRENT_YEAR,
+      kpi_template_id: p.kpi_template_id?._id || p.kpi_template_id || "",
+      selected_kpis: configs.map(c => c.kpi_name),
+      kpi_configs: configs,
+      completion_reward_type: p.completion_reward_type || "none",
       completion_reward_value: p.completion_reward_value || 0,
       completion_reward_label: p.completion_reward_label || "",
-      standalone_payout_type:  p.standalone_payout_type  || "fixed",
+      standalone_payout_type: p.standalone_payout_type || "fixed",
       standalone_payout_value: p.standalone_payout_value || 0,
-      standalone_metric:       p.standalone_metric       || "manual",
+      standalone_metric: p.standalone_metric || "manual",
       standalone_metric_label: p.standalone_metric_label || "",
-      standalone_target_type:  p.standalone_target_type  || "revenue",
-      standalone_slabs:        p.standalone_slabs        || [],
+      standalone_target_type: p.standalone_target_type || "revenue",
+      standalone_slabs: p.standalone_slabs || [],
       slabs: p.slabs || [],
     });
     setEditId(p._id);
@@ -583,7 +583,7 @@ export default function IncentivePlans() {
       showToast("Plan name & department are required", "error"); return;
     }
     if (form.plan_type === "kpi_linked") {
-      if (!form.kpi_template_id)         { showToast("Please select a KPI template", "error"); return; }
+      if (!form.kpi_template_id) { showToast("Please select a KPI template", "error"); return; }
       if (form.kpi_configs.length === 0) { showToast("Select at least one KPI", "error"); return; }
     }
     if (form.plan_type === "standalone") {
@@ -594,29 +594,29 @@ export default function IncentivePlans() {
     try {
       const payload = {
         name: form.name, department: form.department, plan_type: form.plan_type,
-        period_type:    form.period_type,
-        period_month:   form.period_type === "Monthly"     ? form.period_month   : null,
-        period_quarter: form.period_type === "Quarterly"   ? form.period_quarter : null,
-        period_half:    form.period_type === "Half-Yearly" ? form.period_half    : null,
-        period_year:    form.period_year,
+        period_type: form.period_type,
+        period_month: form.period_type === "Monthly" ? form.period_month : null,
+        period_quarter: form.period_type === "Quarterly" ? form.period_quarter : null,
+        period_half: form.period_type === "Half-Yearly" ? form.period_half : null,
+        period_year: form.period_year,
         ...(form.plan_type === "kpi_linked" ? {
-          kpi_template_id:         form.kpi_template_id,
-          kpi_configs:             form.kpi_configs,
-          completion_reward_type:  form.completion_reward_type,
+          kpi_template_id: form.kpi_template_id,
+          kpi_configs: form.kpi_configs,
+          completion_reward_type: form.completion_reward_type,
           completion_reward_value: form.completion_reward_value,
           completion_reward_label: form.completion_reward_label,
         } : {
-          standalone_metric:        form.standalone_metric,
-          standalone_metric_label:  form.standalone_metric_label,
-          standalone_payout_type:   form.standalone_payout_type,
-          standalone_payout_value:  form.standalone_payout_value,
-          standalone_target_type:   form.standalone_target_type,
-          standalone_slabs:         form.standalone_slabs,
+          standalone_metric: form.standalone_metric,
+          standalone_metric_label: form.standalone_metric_label,
+          standalone_payout_type: form.standalone_payout_type,
+          standalone_payout_value: form.standalone_payout_value,
+          standalone_target_type: form.standalone_target_type,
+          standalone_slabs: form.standalone_slabs,
         }),
       };
 
       if (editId) await axios.put(`${API_BASE}/api/incentive-plans/${editId}`, payload);
-      else        await axios.post(`${API_BASE}/api/incentive-plans`, payload);
+      else await axios.post(`${API_BASE}/api/incentive-plans`, payload);
 
       showToast(editId ? "Plan updated ✅" : "Plan created ✅");
       setShowForm(false);
@@ -634,7 +634,19 @@ export default function IncentivePlans() {
     } catch { showToast("Delete failed", "error"); }
   };
 
-  const totalWeight       = form.kpi_configs.reduce((s, c) => s + (c.weight || 0), 0);
+  const handleDuplicate = (plan) => {
+  // existing plan-oda data-va form-la load pannுறோம், but department blank + editing mode = false (new create)
+  setForm({
+    ...plan,
+    name: `${plan.name} (Copy)`,
+    department: "",          // HR puthu dept select pannanumnu
+    _id: undefined,          // idhu new plan, existing id illa
+  });
+  setEditingId(null);        // "Add New" mode
+  setIsModalOpen(true);
+};
+
+  const totalWeight = form.kpi_configs.reduce((s, c) => s + (c.weight || 0), 0);
   const totalTemplateKpis = selectedTemplate?.kpi_items?.length || 0;
 
   return (
@@ -669,10 +681,10 @@ export default function IncentivePlans() {
       {/* Summary Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 14, marginBottom: 24 }}>
         {[
-          { label: "Total Plans",  value: plans.length,                                           color: "#4f46e5" },
-          { label: "KPI-Linked",   value: plans.filter(p => p.plan_type === "kpi_linked").length, color: "#7c3aed" },
-          { label: "Standalone",   value: plans.filter(p => p.plan_type === "standalone").length, color: "#d97706" },
-          { label: "Departments",  value: [...new Set(plans.map(p => p.department))].length,      color: "#16a34a" },
+          { label: "Total Plans", value: plans.length, color: "#4f46e5" },
+          { label: "KPI-Linked", value: plans.filter(p => p.plan_type === "kpi_linked").length, color: "#7c3aed" },
+          { label: "Standalone", value: plans.filter(p => p.plan_type === "standalone").length, color: "#d97706" },
+          { label: "Departments", value: [...new Set(plans.map(p => p.department))].length, color: "#16a34a" },
         ].map(s => (
           <div key={s.label} style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", border: "1px solid #e2e8f0" }}>
             <p style={{ margin: "0 0 4px", fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</p>
@@ -697,7 +709,7 @@ export default function IncentivePlans() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(340px,1fr))", gap: 16 }}>
           {plans.map(plan => {
             const { color, bg } = getColor(plan.department);
-            const isKpi  = plan.plan_type === "kpi_linked";
+            const isKpi = plan.plan_type === "kpi_linked";
             const period = periodLabel(plan);
             return (
               <div key={plan._id} className="plan-card" style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", transition: "all 0.15s" }}>
@@ -725,6 +737,11 @@ export default function IncentivePlans() {
                       <button onClick={() => openEdit(plan)} style={{ background: "#eff6ff", border: "none", borderRadius: 7, padding: "6px 10px", cursor: "pointer" }}>
                         <HugeiconsIcon icon={PencilEdit01Icon} size={14} color="#2563eb" strokeWidth={2} />
                       </button>
+                      {/* 🆕 Duplicate button */}
+<button onClick={() => handleDuplicate(plan)} title="Duplicate to another department"
+  style={{ background: "#f0fdf4", border: "none", borderRadius: 7, padding: "6px 10px", cursor: "pointer" }}>
+  <span style={{ fontSize: 14, color: "#16a34a" }}>⧉</span>
+</button>
                       <button onClick={() => handleDelete(plan._id)} style={{ background: "#fef2f2", border: "none", borderRadius: 7, padding: "6px 10px", cursor: "pointer" }}>
                         <HugeiconsIcon icon={Delete02Icon} size={14} color="#dc2626" strokeWidth={2} />
                       </button>
@@ -859,7 +876,7 @@ export default function IncentivePlans() {
                     <div>
                       <label style={lbl}>Quarter</label>
                       <select value={form.period_quarter} onChange={e => setForm({ ...form, period_quarter: e.target.value })} style={inp}>
-                        {["Q1","Q2","Q3","Q4"].map(q => <option key={q}>{q}</option>)}
+                        {["Q1", "Q2", "Q3", "Q4"].map(q => <option key={q}>{q}</option>)}
                       </select>
                     </div>
                   )}

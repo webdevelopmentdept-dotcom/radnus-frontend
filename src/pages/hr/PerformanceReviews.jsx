@@ -95,21 +95,25 @@ export default function PerformanceReviews() {
 
   const [incentiveResult, setIncentiveResult] = useState(null);
   const [unlockingLog, setUnlockingLog] = useState(null); // ← NEW
+    const [incentiveAssignments, setIncentiveAssignments] = useState([]);
+
 
   useEffect(() => { fetchData(); }, []);
 
-  const fetchData = async () => {
+    const fetchData = async () => {
     try {
-      const [assessRes, reviewRes, assignRes, planRes] = await Promise.all([
+      const [assessRes, reviewRes, assignRes, planRes, incAsgnRes] = await Promise.all([
         axios.get(`${API_BASE}/api/self-assessment/all`),
         axios.get(`${API_BASE}/api/performance-reviews/all`),
         axios.get(`${API_BASE}/api/kpi-assignments`),
         axios.get(`${API_BASE}/api/incentive-plans`),
+        axios.get(`${API_BASE}/api/incentive-assignments`), // 🆕
       ]);
       if (assessRes.data.success) setAssessments(assessRes.data.data);
       if (reviewRes.data.success) setCompletedReviews(reviewRes.data.data);
       if (assignRes.data.success) setAllAssignments(assignRes.data.data.filter(a => a.status === "active"));
       setIncentivePlans(planRes.data?.data || planRes.data || []);
+      setIncentiveAssignments(incAsgnRes.data?.data || incAsgnRes.data || []); // 🆕
     } catch { showToast("Failed to load data", "error"); }
     finally { setLoading(false); }
   };
@@ -185,11 +189,20 @@ export default function PerformanceReviews() {
     return Math.round(s);
   };
 
+  // 🆕 Find the REAL assigned plan for this employee (via Assign Plans page)
+  // — NOT a department guess. Only returns a plan if HR actually assigned one.
   const findMatchingPlan = (assessment) => {
-    const dept = assessment.employee_id?.department;
-    const kpiPlan = incentivePlans.find(p => p.plan_type === "kpi_linked" && p.department === dept);
-    if (kpiPlan) return kpiPlan;
-    return incentivePlans.find(p => p.plan_type === "standalone" && p.department === dept) || null;
+    const empId = assessment.employee_id?._id || assessment.employee_id;
+    const asgn = incentiveAssignments.find(a => (a.employee_id?._id || a.employee_id) === empId);
+    if (!asgn) return null;
+    const planId = asgn.plan_id?._id || asgn.plan_id;
+    return incentivePlans.find(p => p._id === planId) || asgn.plan_id || null;
+  };
+
+  // 🆕 Find the employee's existing assignment (needed to update its linked result)
+  const findMatchingAssignment = (assessment) => {
+    const empId = assessment.employee_id?._id || assessment.employee_id;
+    return incentiveAssignments.find(a => (a.employee_id?._id || a.employee_id) === empId) || null;
   };
 
   const calcIncentiveAmount = (plan, finalScore, salary = 0) => {
@@ -269,33 +282,45 @@ export default function PerformanceReviews() {
         return;
       }
 
-      const matchedPlan = findMatchingPlan(selectedAssessment);
+      const matchedPlan      = findMatchingPlan(selectedAssessment);
+      const matchedAssignment = findMatchingAssignment(selectedAssessment);
       const empSalary = selectedAssessment.employee_id?.salary || 0;
       const { amount, slabLabel } = calcIncentiveAmount(matchedPlan, finalScore, empSalary);
 
       let incentiveCreated = false;
-      try {
-        const resultPayload = {
-          employee_id: selectedAssessment.employee_id._id || selectedAssessment.employee_id,
-          review_id: reviewRes.data.data?._id,
-          plan_id: matchedPlan?._id || null,
-          performance_score: finalScore,
-          calculated_amount: amount,
-          cycle_period: selectedAssessment.period,
-          status: "pending",
-        };
-        const incentiveRes = await axios.post(`${API_BASE}/api/incentive-results`, resultPayload);
-        if (incentiveRes.data?.success || incentiveRes.status === 201) incentiveCreated = true;
-      } catch (incentiveErr) {
-        if (incentiveErr.response?.status !== 409)
-          console.warn("Incentive result creation failed:", incentiveErr.message);
+      if (matchedAssignment) {
+        // ✅ Employee HAS a real assignment (via Assign Plans page) —
+        // update the existing pending IncentiveResult that was auto-created at assign time.
+        // We NEVER create a brand-new result here based on a department guess.
+        try {
+          const empId = selectedAssessment.employee_id._id || selectedAssessment.employee_id;
+          const existingRes = await axios.get(`${API_BASE}/api/incentive-results/employee/${empId}`);
+          const existingList = existingRes.data?.data || [];
+          const existing = existingList.find(r =>
+            (r.assignment_id?._id || r.assignment_id) === matchedAssignment._id && r.status === "pending"
+          );
+
+          if (existing) {
+            await axios.put(`${API_BASE}/api/incentive-results/${existing._id}`, {
+              performance_score: finalScore,
+              calculated_amount: amount,
+            });
+            incentiveCreated = true;
+          }
+        } catch (incentiveErr) {
+          console.warn("Incentive result update failed:", incentiveErr.message);
+        }
       }
+      // ❌ No assignment → no incentive result touched. HR must assign a plan first
+      //    via "Assign Plans" page for this employee to get an incentive.
 
       setIncentiveResult({ finalScore, amount, slabLabel, planName: matchedPlan?.name || null, created: incentiveCreated });
       showToast(
         incentiveCreated
-          ? `Review finalized! Incentive ₹${amount.toLocaleString("en-IN")} auto-created ✅`
-          : "Review finalized! (No incentive plan matched for this dept)",
+          ? `Review finalized! Incentive ₹${amount.toLocaleString("en-IN")} updated ✅`
+          : matchedAssignment
+            ? "Review finalized! (No pending incentive result found to update)"
+            : "Review finalized! (Employee has no incentive plan assigned — use Assign Plans page)",
         incentiveCreated ? "success" : "warning"
       );
       fetchData();

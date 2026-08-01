@@ -577,12 +577,18 @@ export default function IncentiveResults() {
                             </td>
                             <td style={{ padding: "12px 16px", fontSize: 12, color: "#6b7280" }}>{plan?.name || "—"}</td>
                             <td style={{ padding: "12px 16px" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                <span style={{ fontWeight: 800, fontSize: 16, color: scoreColor }}>{score}%</span>
-                                <div style={{ width: 50, background: "#f3f4f6", borderRadius: 99, height: 6, overflow: "hidden" }}>
-                                  <div style={{ width: `${score}%`, height: "100%", background: scoreColor, borderRadius: 99 }} />
+                              {plan?.plan_type === "standalone" ? (
+                                <span style={{ background: "#fef9c3", color: "#a16207", padding: "3px 10px", borderRadius: 5, fontWeight: 700, fontSize: 12 }}>
+                                  📋 Standalone
+                                </span>
+                              ) : (
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                  <span style={{ fontWeight: 800, fontSize: 16, color: scoreColor }}>{score}%</span>
+                                  <div style={{ width: 50, background: "#f3f4f6", borderRadius: 99, height: 6, overflow: "hidden" }}>
+                                    <div style={{ width: `${score}%`, height: "100%", background: scoreColor, borderRadius: 99 }} />
+                                  </div>
                                 </div>
-                              </div>
+                              )}
                             </td>
                             <td style={{ padding: "12px 16px" }}>
                               <p style={{ margin: 0, fontWeight: 800, fontSize: 16, color: finalAmt > 0 ? "#16a34a" : "#9ca3af" }}>
@@ -590,7 +596,9 @@ export default function IncentiveResults() {
                               </p>
                             </td>
                             <td style={{ padding: "12px 16px", fontSize: 11, color: "#9ca3af", maxWidth: 220 }}>
-                              {hasBreakdown ? (
+                              {plan?.plan_type === "standalone" ? (
+                                <span style={{ color: "#9ca3af", fontSize: 11 }}>— not applicable</span>
+                              ) : hasBreakdown ? (
                                 <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                                   {slabLabel.split(" | ").map((l, idx) => (
                                     <span key={idx} style={{ color: l.includes("No Bonus") ? "#9ca3af" : "#374151", fontWeight: l.includes("No Bonus") ? 400 : 600 }}>{l}</span>
@@ -608,7 +616,7 @@ export default function IncentiveResults() {
                             </td>
                             <td style={{ padding: "12px 16px" }} onClick={e => e.stopPropagation()}>
                               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                                {r.status !== "paid" && (
+                                {r.status !== "paid" && plan?.plan_type !== "standalone" && (
                                   <button
                                     className="recalc-btn"
                                     onClick={() => recalculate(r)}

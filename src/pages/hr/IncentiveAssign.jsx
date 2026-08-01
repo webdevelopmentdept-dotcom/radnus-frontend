@@ -52,6 +52,12 @@ export default function IncentiveAssign() {
   const [filterDept, setFilterDept] = useState("All");
   const [search,     setSearch]     = useState("");
 
+  // 🆕 assignment mode: "department" (whole dept) | "employee" (specific person)
+  const [assignMode, setAssignMode] = useState("department");
+  const [bulkDept,   setBulkDept]   = useState("");
+  const [bulkPlan,   setBulkPlan]   = useState("");
+  const [bulkPeriod, setBulkPeriod] = useState("");
+
   useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
@@ -89,6 +95,14 @@ export default function IncentiveAssign() {
   // period options driven by selected plan
   const periodOptions = useMemo(() => getPeriodOptions(selectedPlan), [selectedPlan]);
 
+  // 🆕 bulk (whole department) selections
+  const bulkSelectedPlan    = plans.find(p => p._id === bulkPlan);
+  const bulkPeriodOptions   = useMemo(() => getPeriodOptions(bulkSelectedPlan), [bulkSelectedPlan]);
+  const bulkDeptEmpCount    = useMemo(
+    () => employees.filter(e => e.department === bulkDept).length,
+    [employees, bulkDept]
+  );
+
   // auto-fill plan when employee changes (match dept)
   const handleEmpChange = (empId) => {
     setSelEmp(empId);
@@ -121,6 +135,40 @@ export default function IncentiveAssign() {
     } catch (err) {
       const msg = err.response?.data?.message || "Assign failed";
       showToast(msg, "error");
+    }
+    finally { setSaving(false); }
+  };
+
+  // 🆕 Assign the SAME plan to EVERY active employee in a department
+  const handleBulkAssign = async () => {
+    if (!bulkDept || !bulkPlan || !bulkPeriod) {
+      showToast("Department, plan & period are required", "error"); return;
+    }
+    const deptEmps = employees.filter(e => e.department === bulkDept);
+    if (deptEmps.length === 0) {
+      showToast("No active employees found in this department", "error"); return;
+    }
+    setSaving(true);
+    try {
+      const results = await Promise.allSettled(deptEmps.map(emp =>
+        axios.post(`${API_BASE}/api/incentive-assignments`, {
+          employee_id: emp._id,
+          plan_id:     bulkPlan,
+          cycle:       bulkSelectedPlan?.period_type || "Monthly",
+          period:      bulkPeriod,
+        })
+      ));
+      const okCount   = results.filter(r => r.status === "fulfilled").length;
+      const failCount = results.length - okCount;
+      showToast(
+        failCount > 0
+          ? `Assigned to ${okCount} employees, ${failCount} skipped (already assigned)`
+          : `Assigned to all ${okCount} employees ✅`
+      );
+      setBulkDept(""); setBulkPlan(""); setBulkPeriod("");
+      fetchAll();
+    } catch {
+      showToast("Bulk assign failed", "error");
     }
     finally { setSaving(false); }
   };
@@ -171,6 +219,103 @@ export default function IncentiveAssign() {
       <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", padding:"20px 24px", marginBottom:24 }}>
         <p style={{ margin:"0 0 16px", fontWeight:800, fontSize:15, color:"#1a1a2e" }}>➕ New Assignment</p>
 
+        {/* 🆕 Mode Toggle */}
+        <div style={{ display:"flex", gap:10, marginBottom:18 }}>
+          <button
+            onClick={() => setAssignMode("department")}
+            style={{
+              padding:"9px 18px", borderRadius:8, border:"1.5px solid #1d4ed8", cursor:"pointer",
+              background: assignMode === "department" ? "#1d4ed8" : "#fff",
+              color:      assignMode === "department" ? "#fff"    : "#1d4ed8",
+              fontWeight:700, fontSize:13,
+            }}
+          >
+            🏢 Whole Department
+          </button>
+          <button
+            onClick={() => setAssignMode("employee")}
+            style={{
+              padding:"9px 18px", borderRadius:8, border:"1.5px solid #1d4ed8", cursor:"pointer",
+              background: assignMode === "employee" ? "#1d4ed8" : "#fff",
+              color:      assignMode === "employee" ? "#fff"    : "#1d4ed8",
+              fontWeight:700, fontSize:13,
+            }}
+          >
+            👤 Specific Employee
+          </button>
+        </div>
+
+        {assignMode === "department" ? (
+          /* ══════════ 🆕 WHOLE DEPARTMENT MODE ══════════ */
+          <>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:14, marginBottom:16 }}>
+              <div>
+                <label style={labelStyle}>Department *</label>
+                <select value={bulkDept} onChange={e => setBulkDept(e.target.value)} style={inputStyle}>
+                  <option value="">Select department...</option>
+                  {depts.filter(d => d !== "All").map(d => <option key={d}>{d}</option>)}
+                </select>
+                {bulkDept && (
+                  <p style={{ margin:"6px 0 0", fontSize:12, color:"#6b7280" }}>
+                    {bulkDeptEmpCount} active employee{bulkDeptEmpCount !== 1 ? "s" : ""} in this department
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label style={labelStyle}>Incentive Plan *</label>
+                <select value={bulkPlan} onChange={e => { setBulkPlan(e.target.value); setBulkPeriod(""); }} style={inputStyle}>
+                  <option value="">Select plan...</option>
+                  {plans.map(p => (
+                    <option key={p._id} value={p._id}>
+                      {p.name} ({p.department} · {p.period_type})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Cycle</label>
+                <input
+                  value={bulkSelectedPlan?.period_type || "—"}
+                  readOnly
+                  style={{ ...inputStyle, background:"#f8fafc", color:"#6b7280", cursor:"not-allowed" }}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Period *</label>
+                {bulkPeriodOptions.length > 0 ? (
+                  <select value={bulkPeriod} onChange={e => setBulkPeriod(e.target.value)} style={inputStyle}>
+                    <option value="">Select period...</option>
+                    {bulkPeriodOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    value={bulkPeriod}
+                    onChange={e => setBulkPeriod(e.target.value)}
+                    placeholder={bulkPlan ? "Select a plan first" : "e.g. 2026-04"}
+                    disabled={!bulkPlan}
+                    style={{ ...inputStyle, background: !bulkPlan ? "#f8fafc" : "#fff", color: !bulkPlan ? "#9ca3af" : "#1a1a2e" }}
+                  />
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={handleBulkAssign}
+              disabled={saving}
+              style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 24px", background:saving?"#93c5fd":"#1d4ed8", color:"#fff", border:"none", borderRadius:9, fontWeight:700, fontSize:14, cursor:saving?"not-allowed":"pointer" }}
+            >
+              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color="#fff" strokeWidth={2} />
+              {saving ? "Assigning..." : `Assign to All ${bulkDeptEmpCount || ""} Department Employees`}
+            </button>
+          </>
+        ) : (
+          /* ══════════ EXISTING SPECIFIC EMPLOYEE MODE (unchanged) ══════════ */
+          <>
         {/* Filter row */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 }}>
           <div>
@@ -310,6 +455,8 @@ export default function IncentiveAssign() {
           <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color="#fff" strokeWidth={2} />
           {saving ? "Assigning..." : "Assign Plan"}
         </button>
+          </>
+        )}
       </div>
 
       {/* Assigned List */}
