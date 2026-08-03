@@ -281,6 +281,11 @@ export default function AssignKpi() {
     employee_id: "", template_id: "", period_type: "monthly",
     month: "March", year: "2026", quarter: "Q1", notes: ""
   });
+  const [templateSearch, setTemplateSearch] = useState("");
+  const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
+
+  const [empSearch, setEmpSearch] = useState("");
+const [showEmpDropdown, setShowEmpDropdown] = useState(false);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -495,6 +500,23 @@ const openView = async (assignment) => {
       </span>
     );
   };
+
+  // ✅ NEW: Searchable template filter (Assign modal)
+  const filteredTemplates = templates.filter(t => {
+    const q = templateSearch.trim().toLowerCase();
+    if (!q) return true;
+    return t.template_name?.toLowerCase().includes(q)
+        || t.role?.toLowerCase().includes(q)
+        || t.department?.toLowerCase().includes(q);
+  });
+
+  const filteredEmployees = employees.filter(emp => {
+  const q = empSearch.trim().toLowerCase();
+  if (!q) return true;
+  return emp.name?.toLowerCase().includes(q)
+      || emp.designation?.toLowerCase().includes(q)
+      || emp.department?.toLowerCase().includes(q);
+});
 
   // ✅ NEW: Filtered list — statusTab + monthFilter apply பண்ணும், original `assignments` touch பண்ணல
   const filteredAssignments = assignments.filter(a => {
@@ -833,24 +855,91 @@ const openView = async (assignment) => {
               <button onClick={closeModal} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#6b7280" }}>✕</button>
             </div>
             <div style={{ padding: "20px 24px" }}>
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 20, position: "relative" }}>
                 <label style={labelStyle}>1. Select Employee *</label>
-                <select value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))} style={inputStyle}>
-                  <option value="">-- Choose Employee --</option>
-                  {employees.map(emp => (
-                    <option key={emp._id} value={emp._id}>{emp.name} — {emp.designation} ({emp.department})</option>
-                  ))}
-                </select>
+                {(() => {
+                  const selectedEmp = employees.find(emp => emp._id === form.employee_id) || null;
+                  return (
+                    <input
+                      type="text"
+                      value={selectedEmp ? `${selectedEmp.name} — ${selectedEmp.designation} (${selectedEmp.department})` : empSearch}
+                      onChange={e => {
+                        setEmpSearch(e.target.value);
+                        setShowEmpDropdown(true);
+                        if (selectedEmp) setForm(f => ({ ...f, employee_id: "" }));
+                      }}
+                      onFocus={() => { setShowEmpDropdown(true); if (selectedEmp) setEmpSearch(""); }}
+                      onBlur={() => setTimeout(() => setShowEmpDropdown(false), 150)}
+                      placeholder="Search employee by name, role, department..."
+                      style={inputStyle}
+                    />
+                  );
+                })()}
+                {showEmpDropdown && (
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, marginTop: 4, maxHeight: 240, overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}>
+                    {filteredEmployees.length === 0 ? (
+                      <div style={{ padding: "12px 14px", fontSize: 13, color: "#9ca3af" }}>No employees found</div>
+                    ) : (
+                      filteredEmployees.map(emp => (
+                        <div
+                          key={emp._id}
+                          onMouseDown={() => {
+                            setForm(f => ({ ...f, employee_id: emp._id }));
+                            setEmpSearch("");
+                            setShowEmpDropdown(false);
+                          }}
+                          style={{ padding: "10px 14px", fontSize: 13, cursor: "pointer", borderBottom: "1px solid #f3f4f6" }}
+                          onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
+                          onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+                        >
+                          <span style={{ fontWeight: 600, color: "#1a1a2e" }}>{emp.name}</span>
+                          <span style={{ color: "#6b7280" }}> — {emp.designation} ({emp.department})</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
                 <p style={{ margin: "5px 0 0", fontSize: 12, color: "#9ca3af" }}>Only active employees are shown</p>
               </div>
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 20, position: "relative" }}>
                 <label style={labelStyle}>2. Select KPI Template *</label>
-                <select value={form.template_id} onChange={e => handleTemplateChange(e.target.value)} style={inputStyle}>
-                  <option value="">-- Choose Template --</option>
-                  {templates.map(t => (
-                    <option key={t._id} value={t._id}>{t.template_name} — {t.role} ({t.department})</option>
-                  ))}
-                </select>
+                <input
+                  type="text"
+                  value={selectedTemplate ? `${selectedTemplate.template_name} — ${selectedTemplate.role} (${selectedTemplate.department})` : templateSearch}
+                  onChange={e => {
+                    setTemplateSearch(e.target.value);
+                    setShowTemplateDropdown(true);
+                    if (selectedTemplate) { handleTemplateChange(""); }
+                  }}
+                  onFocus={() => { setShowTemplateDropdown(true); if (selectedTemplate) setTemplateSearch(""); }}
+                  onBlur={() => setTimeout(() => setShowTemplateDropdown(false), 150)}
+                  placeholder="Search template by name, role, department..."
+                  style={inputStyle}
+                />
+                {showTemplateDropdown && (
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, marginTop: 4, maxHeight: 240, overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}>
+                    {filteredTemplates.length === 0 ? (
+                      <div style={{ padding: "12px 14px", fontSize: 13, color: "#9ca3af" }}>No templates found</div>
+                    ) : (
+                      filteredTemplates.map(t => (
+                        <div
+                          key={t._id}
+                          onMouseDown={() => {
+                            handleTemplateChange(t._id);
+                            setTemplateSearch("");
+                            setShowTemplateDropdown(false);
+                          }}
+                          style={{ padding: "10px 14px", fontSize: 13, cursor: "pointer", borderBottom: "1px solid #f3f4f6" }}
+                          onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
+                          onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+                        >
+                          <span style={{ fontWeight: 600, color: "#1a1a2e" }}>{t.template_name}</span>
+                          <span style={{ color: "#6b7280" }}> — {t.role} ({t.department})</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
               {selectedTemplate && (
                 <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: 16, marginBottom: 20 }}>

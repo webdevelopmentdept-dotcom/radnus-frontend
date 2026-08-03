@@ -95,12 +95,12 @@ export default function PerformanceReviews() {
 
   const [incentiveResult, setIncentiveResult] = useState(null);
   const [unlockingLog, setUnlockingLog] = useState(null); // ← NEW
-    const [incentiveAssignments, setIncentiveAssignments] = useState([]);
+  const [incentiveAssignments, setIncentiveAssignments] = useState([]);
 
 
   useEffect(() => { fetchData(); }, []);
 
-    const fetchData = async () => {
+  const fetchData = async () => {
     try {
       const [assessRes, reviewRes, assignRes, planRes, incAsgnRes] = await Promise.all([
         axios.get(`${API_BASE}/api/self-assessment/all`),
@@ -282,7 +282,7 @@ export default function PerformanceReviews() {
         return;
       }
 
-      const matchedPlan      = findMatchingPlan(selectedAssessment);
+      const matchedPlan = findMatchingPlan(selectedAssessment);
       const matchedAssignment = findMatchingAssignment(selectedAssessment);
       const empSalary = selectedAssessment.employee_id?.salary || 0;
       const { amount, slabLabel } = calcIncentiveAmount(matchedPlan, finalScore, empSalary);
@@ -346,49 +346,49 @@ export default function PerformanceReviews() {
   };
 
   // ── HR Unlock Log ──────────────────────────────
-const handleUnlockLog = async (logId) => {
-  setUnlockingLog(logId);
-  try {
-    const res = await axios.patch(`${API_BASE}/api/daily-logs/${logId}/unlock`, {
-      unlockedBy: 'HR'
-    });
-    if (res.data.success) {
-      showToast('Log unlocked! Employee can now edit it.');
-      // Local state update — re-fetch வேண்டாம்
-      setEmployeeLogs(prev =>
-        prev.map(log =>
-          log._id === logId ? { ...log, isUnlocked: true } : log
-        )
-      );
+  const handleUnlockLog = async (logId) => {
+    setUnlockingLog(logId);
+    try {
+      const res = await axios.patch(`${API_BASE}/api/daily-logs/${logId}/unlock`, {
+        unlockedBy: 'HR'
+      });
+      if (res.data.success) {
+        showToast('Log unlocked! Employee can now edit it.');
+        // Local state update — re-fetch வேண்டாம்
+        setEmployeeLogs(prev =>
+          prev.map(log =>
+            log._id === logId ? { ...log, isUnlocked: true } : log
+          )
+        );
+      }
+    } catch (err) {
+      showToast('Unlock failed', 'error');
+    } finally {
+      setUnlockingLog(null);
     }
-  } catch (err) {
-    showToast('Unlock failed', 'error');
-  } finally {
-    setUnlockingLog(null);
-  }
-};
+  };
 
 
-const handleLockLog = async (logId) => {
-  setUnlockingLog(logId);
-  try {
-    const res = await axios.patch(`${API_BASE}/api/daily-logs/${logId}/lock`);
-    if (res.data.success) {
-      showToast('Log locked again.');
-      setEmployeeLogs(prev =>
-        prev.map(log =>
-          log._id === logId ? { ...log, isUnlocked: false } : log
-        )
-      );
+  const handleLockLog = async (logId) => {
+    setUnlockingLog(logId);
+    try {
+      const res = await axios.patch(`${API_BASE}/api/daily-logs/${logId}/lock`);
+      if (res.data.success) {
+        showToast('Log locked again.');
+        setEmployeeLogs(prev =>
+          prev.map(log =>
+            log._id === logId ? { ...log, isUnlocked: false } : log
+          )
+        );
+      }
+    } catch (err) {
+      showToast('Lock failed', 'error');
+    } finally {
+      setUnlockingLog(null);
     }
-  } catch (err) {
-    showToast('Lock failed', 'error');
-  } finally {
-    setUnlockingLog(null);
-  }
-};
+  };
 
-// ───────────────────────────────────────────────
+  // ───────────────────────────────────────────────
 
   const handleEmployeeLogSelect = (assignmentId) => {
     setSelectedEmployeeLog(assignmentId);
@@ -773,7 +773,7 @@ const handleLockLog = async (logId) => {
                             <div>
                               <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: "#1f2937" }}>
                                 {log.kpi_name} — <span style={{ color: "#2563eb" }}>{log.value} {log.unit}</span>
-                               {log.isEdited && !log.isDeleted && (
+                                {log.isEdited && !log.isDeleted && (
                                   <span style={{
                                     marginLeft: 6, fontSize: 10, fontWeight: 700,
                                     background: "#fef3c7", color: "#d97706",
@@ -813,44 +813,44 @@ const handleLockLog = async (logId) => {
                               )}
                             </div>
                           </div>
-                         <span style={{ fontSize: 12, color: "#9ca3af", flexShrink: 0, textAlign: "right" }}>
-  <span style={{ display: "block", fontWeight: 600, color: "#6b7280" }}>
-    {new Date(log.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-  </span>
-  <span style={{ display: "block" }}>
-    {new Date(log.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
-  </span>
-</span>
-                        {/* ── Unlock Button ── */}
-  {/* ── Lock / Unlock Icon Button ── */}
-{log.isUnlocked ? (
-  <button
-    onClick={() => handleLockLog(log._id)}
-    disabled={unlockingLog === log._id}
-    title="Click to Lock"
-    style={{
-      background: "#f0fdf4", border: "1px solid #bbf7d0",
-      borderRadius: 99, padding: "5px 8px",
-      cursor: "pointer", display: "flex", alignItems: "center"
-    }}
-  >
-    {unlockingLog === log._id ? "..." : "🔓"}
-  </button>
-) : (
-  <button
-    onClick={() => handleUnlockLog(log._id)}
-    disabled={unlockingLog === log._id}
-    title="Click to Unlock"
-    style={{
-      background: "#fffbeb", border: "1px solid #fde68a",
-      borderRadius: 99, padding: "5px 8px",
-      cursor: "pointer", display: "flex", alignItems: "center"
-    }}
-  >
-    {unlockingLog === log._id ? "..." : "🔒"}
-  </button>
-)}
-</div>
+                          <span style={{ fontSize: 12, color: "#9ca3af", flexShrink: 0, textAlign: "right" }}>
+                            <span style={{ display: "block", fontWeight: 600, color: "#6b7280" }}>
+                              {new Date(log.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                            </span>
+                            <span style={{ display: "block" }}>
+                              {new Date(log.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </span>
+                          {/* ── Unlock Button ── */}
+                          {/* ── Lock / Unlock Icon Button ── */}
+                          {log.isUnlocked ? (
+                            <button
+                              onClick={() => handleLockLog(log._id)}
+                              disabled={unlockingLog === log._id}
+                              title="Click to Lock"
+                              style={{
+                                background: "#f0fdf4", border: "1px solid #bbf7d0",
+                                borderRadius: 99, padding: "5px 8px",
+                                cursor: "pointer", display: "flex", alignItems: "center"
+                              }}
+                            >
+                              {unlockingLog === log._id ? "..." : "🔓"}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleUnlockLog(log._id)}
+                              disabled={unlockingLog === log._id}
+                              title="Click to Unlock"
+                              style={{
+                                background: "#fffbeb", border: "1px solid #fde68a",
+                                borderRadius: 99, padding: "5px 8px",
+                                cursor: "pointer", display: "flex", alignItems: "center"
+                              }}
+                            >
+                              {unlockingLog === log._id ? "..." : "🔒"}
+                            </button>
+                          )}
+                        </div>
                       ))}
                     </div>
                   ))}
@@ -877,6 +877,8 @@ const handleLockLog = async (logId) => {
                     <div key={i} style={{ marginBottom: 16 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>{item.kpi_name}</span>
+                        <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, background: "#f3f4f6", color: "#6b7280", padding: "1px 6px", borderRadius: 4 }}>Wt: {item.weight}%</span>
+
                         <span style={{ fontSize: 13, fontWeight: 700, color }}>{total} / {item.target} {item.unit}</span>
                       </div>
                       <div style={{ background: "#f3f4f6", borderRadius: 99, height: 8, overflow: "hidden" }}>

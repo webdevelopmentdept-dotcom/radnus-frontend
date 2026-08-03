@@ -61,6 +61,9 @@ function KpiBar({ item, actual }) {
           <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, color: pct >= 100 ? "#16a34a" : "#6b7280" }}>{actual ? `${pct}%` : "Pending"}</span>
         </div>
       </div>
+      {item.notes && (
+        <p style={{ margin: "0 0 6px", fontSize: 12, color: "#9ca3af" }}>ℹ️ {item.notes}</p>
+      )}
       <div style={{ background: "#f3f4f6", borderRadius: 99, height: 10, overflow: "hidden" }}>
         <div style={{ width: `${Math.min(pct, 100)}%`, height: "100%", background: color, borderRadius: 99, transition: "width 1s ease" }}/>
       </div>
@@ -445,7 +448,11 @@ const currentScore  = calcCurrentScore(currentReview);
                                 <span style={{ fontSize: 13, fontWeight: 700, color }}>{k.actual_value ?? "—"} / {k.target} {k.unit}</span>
                                 <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, color: pct >= 100 ? "#16a34a" : color }}>{pct}%</span>
                               </div>
+          
                             </div>
+                            {k.notes && (
+                              <p style={{ margin: "0 0 6px", fontSize: 12, color: "#9ca3af" }}>ℹ️ {k.notes}</p>
+                            )}
                             <div style={{ background: "#f3f4f6", borderRadius: 99, height: 10, overflow: "hidden" }}>
                               <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 99, transition: "width 1s ease" }}/>
                             </div>

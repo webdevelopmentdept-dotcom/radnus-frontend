@@ -188,6 +188,7 @@ export const workHrsFromPunches = (r) => {
 export const LUNCH_START_TOTAL = 13 * 60 + 30;
 export const LUNCH_END_TOTAL = 14 * 60 + 30;
 export const LUNCH_RETURN_CUTOFF = 15 * 60;
+export const GRACE_MINUTES = 5;
 
 const DEFAULT_SHIFT_START = 10 * 60;
 const DEFAULT_SHIFT_END = 19 * 60;
@@ -205,7 +206,9 @@ export const calcLateMinutes = (checkIn, shiftStartMins = DEFAULT_SHIFT_START) =
   if (!checkIn) return 0;
   const total = new Date(checkIn).getHours() * 60 + new Date(checkIn).getMinutes();
   if (total >= LUNCH_START_TOTAL && total <= LUNCH_END_TOTAL) return 0;
-  return Math.max(total - shiftStartMins, 0);
+
+  const diff = Math.max(total - shiftStartMins, 0);
+  return diff > GRACE_MINUTES ? diff : 0;   // ← 5 mins grace-ku ulla late illa
 };
 
 export const calcEarlyOut = (checkOut, shiftEndMins = DEFAULT_SHIFT_END) => {
@@ -233,6 +236,8 @@ export const fmtMins = (mins) => {
   const m = mins % 60;
   return h > 0 ? `${h}h ${pad(m)}m` : `${m}m`;
 };
+
+
 
 // ═══════════════════════════════════════════
 //  STYLES

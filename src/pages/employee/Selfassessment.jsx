@@ -134,6 +134,7 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
           target: item.target,
           unit: item.unit,
           weight: item.weight || 0,
+            notes: item.notes || "",
           is_admission_kpi: item.is_admission_kpi || false,
           program_targets: item.program_targets || [],
           owner_role: item.owner_role || "self",   // ← NEW
@@ -161,6 +162,7 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
               ? {
                 ...item,
                 weight: item.weight,
+                notes: item.notes,
                 is_admission_kpi: item.is_admission_kpi,
                 program_targets: item.program_targets,
                 owner_role: item.owner_role,     // ← keep owner_role
@@ -1227,6 +1229,9 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
                                 Target: {item.target} {item.unit} · Wt: {item.weight}%
                                 {logTotal !== undefined && <span style={{ color: "#2563eb", marginLeft: 6 }}>· Logged: {logTotal}</span>}
                               </p>
+                              {item.notes && (
+  <p style={{ margin: "3px 0 0", fontSize: 11, color: "#9ca3af" }}>ℹ️ {item.notes}</p>
+)}
                               {item.is_admission_kpi && item.program_targets?.length > 0 && (
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 5 }}>
                                   {item.program_targets.map((pt, pi) => (

@@ -1,26 +1,26 @@
 import { useState, useEffect } from "react";
 
-const API_BASE    = import.meta.env.VITE_API_BASE_URL;
-const KPI_API     = `${API_BASE}/api/kpi-templates`;
-const DEPT_API    = `${API_BASE}/api/departments`;
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const KPI_API = `${API_BASE}/api/kpi-templates`;
+const DEPT_API = `${API_BASE}/api/departments`;
 const PROGRAM_API = `${API_BASE}/api/programs`;
 const MONTH_VERSION_API = `${API_BASE}/api/kpi-monthly-versions`;
 
-const UNITS       = ["tasks", "count", "value", "₹", "%", "hours", "tickets", "calls", "deals", "score", "admissions"];
+const UNITS = ["tasks", "count", "value", "₹", "%", "hours", "tickets", "calls", "deals", "score", "admissions"];
 const FREQUENCIES = ["daily", "weekly", "monthly", "quarterly"];
-const MONTHS      = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const YEARS       = [2024,2025,2026,2027,2028];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const YEARS = [2024, 2025, 2026, 2027, 2028];
 
 const KPI_OWNERS = [
-  { value: "self",    label: "Self (Employee)" },
+  { value: "self", label: "Self (Employee)" },
   { value: "manager", label: "Manager" },
-  { value: "md",      label: "MD / Director" },
-  { value: "hr",      label: "HR" },
+  { value: "md", label: "MD / Director" },
+  { value: "hr", label: "HR" },
 ];
 
 const defaultItem = {
   kpi_name: "", target: "", unit: "tasks", weight: "", frequency: "monthly",
-  owner_role: "self", is_admission_kpi: false, program_targets: []
+  owner_role: "self", notes: "", is_admission_kpi: false, program_targets: []
 };
 const defaultForm = {
   template_name: "", role: "", department: "", description: "",
@@ -114,10 +114,10 @@ const STYLES = `
 `;
 
 const ownerStyles = {
-  self:    { bg: "#f0fdf4", color: "#16a34a" },
+  self: { bg: "#f0fdf4", color: "#16a34a" },
   manager: { bg: "#eff6ff", color: "#2563eb" },
-  md:      { bg: "#f5f3ff", color: "#7c3aed" },
-  hr:      { bg: "#fffbeb", color: "#d97706" },
+  md: { bg: "#f5f3ff", color: "#7c3aed" },
+  hr: { bg: "#fffbeb", color: "#d97706" },
 };
 
 function OwnerBadge({ role }) {
@@ -127,24 +127,24 @@ function OwnerBadge({ role }) {
 }
 
 export default function KpiTemplates() {
-  const [templates,     setTemplates]     = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [showModal,     setShowModal]     = useState(false);
-  const [editingId,     setEditingId]     = useState(null);
-  const [form,          setForm]          = useState(defaultForm);
-  const [viewTemplate,  setViewTemplate]  = useState(null);
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState(defaultForm);
+  const [viewTemplate, setViewTemplate] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [toast,         setToast]         = useState(null);
-  const [saving,        setSaving]        = useState(false);
-  const [departments,   setDepartments]   = useState([]);
-  const [roles,         setRoles]         = useState([]);
-  const [programs,      setPrograms]      = useState([]);
-  const [newProgName,   setNewProgName]   = useState("");
-  const [addingProg,    setAddingProg]    = useState(false);
-  const [showAddProg,   setShowAddProg]   = useState(false);
+  const [toast, setToast] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [newProgName, setNewProgName] = useState("");
+  const [addingProg, setAddingProg] = useState(false);
+  const [showAddProg, setShowAddProg] = useState(false);
 
   // Search state (UI-only, does not touch any existing data/logic)
-  const [searchQuery,   setSearchQuery]   = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Month Management states
   const [monthVersions, setMonthVersions] = useState([]);
@@ -160,9 +160,9 @@ export default function KpiTemplates() {
   useEffect(() => {
     const fetchDepts = async () => {
       try {
-        const res  = await fetch(DEPT_API);
+        const res = await fetch(DEPT_API);
         const data = await res.json();
-        const all  = data.data || data || [];
+        const all = data.data || data || [];
         setDepartments(all.filter(d => d.status === "active"));
       } catch { setDepartments([]); }
     };
@@ -199,7 +199,7 @@ export default function KpiTemplates() {
 
   const fetchTemplates = async () => {
     try {
-      const res  = await fetch(KPI_API);
+      const res = await fetch(KPI_API);
       const data = await res.json();
       if (data.success) setTemplates(data.data);
     } catch { showToast("Failed to load templates", "error"); }
@@ -215,7 +215,7 @@ export default function KpiTemplates() {
     if (!newProgName.trim()) return;
     setAddingProg(true);
     try {
-      const res  = await fetch(PROGRAM_API, {
+      const res = await fetch(PROGRAM_API, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newProgName.trim() })
       });
@@ -253,7 +253,7 @@ export default function KpiTemplates() {
   const openEdit = (t) => {
     setForm({
       template_name: t.template_name, role: t.role,
-      department:    t.department,    description: t.description || "",
+      department: t.department, description: t.description || "",
       kpi_items: t.kpi_items.map(i => ({
         ...defaultItem, ...i,
         program_targets: i.program_targets || []
@@ -273,17 +273,17 @@ export default function KpiTemplates() {
   const handleItemChange = (idx, field, value) => {
     setForm(f => {
       const items = [...f.kpi_items];
-      items[idx]  = { ...items[idx], [field]: value };
+      items[idx] = { ...items[idx], [field]: value };
       if (field === "is_admission_kpi" && value === true) {
         items[idx].owner_role = "manager";
-        items[idx].unit       = "admissions";
+        items[idx].unit = "admissions";
         items[idx].program_targets = programs.map(p => ({
           program_id: p._id, program_name: p.name, target: 0
         }));
       }
       if (field === "is_admission_kpi" && value === false) {
         items[idx].program_targets = [];
-        items[idx].unit   = "tasks";
+        items[idx].unit = "tasks";
         items[idx].target = "";
       }
       return { ...f, kpi_items: items };
@@ -293,7 +293,7 @@ export default function KpiTemplates() {
   const handleProgTargetChange = (itemIdx, progId, value) => {
     setForm(f => {
       const items = [...f.kpi_items];
-      const pt    = [...(items[itemIdx].program_targets || [])];
+      const pt = [...(items[itemIdx].program_targets || [])];
       const found = pt.findIndex(p => p.program_id === progId);
       if (found >= 0) {
         pt[found] = { ...pt[found], target: Number(value) };
@@ -313,7 +313,7 @@ export default function KpiTemplates() {
   const toggleProgram = (itemIdx, prog) => {
     setForm(f => {
       const items = [...f.kpi_items];
-      const pt    = [...(items[itemIdx].program_targets || [])];
+      const pt = [...(items[itemIdx].program_targets || [])];
       const found = pt.findIndex(p => p.program_id === prog._id);
       if (found >= 0) { pt.splice(found, 1); }
       else { pt.push({ program_id: prog._id, program_name: prog.name, target: 0 }); }
@@ -326,7 +326,7 @@ export default function KpiTemplates() {
     });
   };
 
-  const addItem    = () => setForm(f => ({ ...f, kpi_items: [...f.kpi_items, { ...defaultItem }] }));
+  const addItem = () => setForm(f => ({ ...f, kpi_items: [...f.kpi_items, { ...defaultItem }] }));
   const removeItem = (idx) => setForm(f => ({ ...f, kpi_items: f.kpi_items.filter((_, i) => i !== idx) }));
   const totalWeight = form.kpi_items.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0);
 
@@ -341,9 +341,9 @@ export default function KpiTemplates() {
       const item = form.kpi_items[i];
       if (item.is_admission_kpi) {
         if (!item.program_targets || item.program_targets.length === 0)
-          return showToast(`KPI #${i+1}: Select at least one program`, "error");
+          return showToast(`KPI #${i + 1}: Select at least one program`, "error");
         if (!item.program_targets.some(p => Number(p.target) > 0))
-          return showToast(`KPI #${i+1}: Set target for at least one program`, "error");
+          return showToast(`KPI #${i + 1}: Set target for at least one program`, "error");
       }
     }
     if (totalWeight !== 100)
@@ -351,9 +351,9 @@ export default function KpiTemplates() {
 
     setSaving(true);
     try {
-      const url    = editingId ? `${KPI_API}/${editingId}` : KPI_API;
+      const url = editingId ? `${KPI_API}/${editingId}` : KPI_API;
       const method = editingId ? "PUT" : "POST";
-      const res    = await fetch(url, {
+      const res = await fetch(url, {
         method, headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)
       });
@@ -368,12 +368,49 @@ export default function KpiTemplates() {
 
   const handleDelete = async (id) => {
     try {
-      const res  = await fetch(`${KPI_API}/${id}`, { method: "DELETE" });
+      const res = await fetch(`${KPI_API}/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) { showToast("Template deleted"); fetchTemplates(); }
     } catch { showToast("Delete failed", "error"); }
     setDeleteConfirm(null);
   };
+
+  const handleDuplicate = async (t) => {
+  try {
+    const payload = {
+      template_name: `Copy of ${t.template_name}`,
+      role: t.role,
+      department: t.department,
+      description: t.description || "",
+      is_admission: t.is_admission || false,
+      program: t.program || "",
+      kpi_items: t.kpi_items.map(item => ({
+        kpi_name: item.kpi_name,
+        target: item.target,
+        unit: item.unit,
+        weight: item.weight,
+        frequency: item.frequency,
+        owner_role: item.owner_role,
+        notes: item.notes || "",
+        is_admission_kpi: item.is_admission_kpi || false,
+        program_targets: item.program_targets || []
+      }))
+    };
+    const res  = await fetch(KPI_API, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast("Template duplicated!");
+      fetchTemplates();
+    } else {
+      showToast(data.message || "Duplicate failed", "error");
+    }
+  } catch {
+    showToast("Duplicate failed", "error");
+  }
+};
 
   // ===== MONTH MANAGEMENT FUNCTIONS =====
   const fetchMonthVersions = async (templateId) => {
@@ -452,18 +489,18 @@ export default function KpiTemplates() {
   };
 
   const handleMonthItemChange = (idx, field, value) => {
-  setEditingMonthVersion(v => {
-    const items = [...v.kpi_items];
-    items[idx] = { ...items[idx], [field]: value };
-    
-    // Auto-calculate total for admission KPI
-    if (field === 'program_targets' || (items[idx].is_admission_kpi && field.startsWith('program'))) {
-      items[idx].target = items[idx].program_targets?.reduce((s, p) => s + (Number(p.target) || 0), 0) || 0;
-    }
-    
-    return { ...v, kpi_items: items };
-  });
-};
+    setEditingMonthVersion(v => {
+      const items = [...v.kpi_items];
+      items[idx] = { ...items[idx], [field]: value };
+
+      // Auto-calculate total for admission KPI
+      if (field === 'program_targets' || (items[idx].is_admission_kpi && field.startsWith('program'))) {
+        items[idx].target = items[idx].program_targets?.reduce((s, p) => s + (Number(p.target) || 0), 0) || 0;
+      }
+
+      return { ...v, kpi_items: items };
+    });
+  };
 
   const handleMonthProgTargetChange = (itemIdx, progIdx, value) => {
     setEditingMonthVersion(v => {
@@ -509,32 +546,33 @@ export default function KpiTemplates() {
   };
 
   // ✅ NEW: Add KPI item to month version
-const addMonthKpiItem = () => {
-  setEditingMonthVersion(v => ({
-    ...v,
-    kpi_items: [
-      ...v.kpi_items,
-      {
-        kpi_name: "",
-        target: 0,
-        unit: "tasks",
-        weight: 0,
-        frequency: "monthly",
-        owner_role: "self",
-        is_admission_kpi: false,
-        program_targets: []
-      }
-    ]
-  }));
-};
+  const addMonthKpiItem = () => {
+    setEditingMonthVersion(v => ({
+      ...v,
+      kpi_items: [
+        ...v.kpi_items,
+        {
+          kpi_name: "",
+          target: 0,
+          unit: "tasks",
+          weight: 0,
+          frequency: "monthly",
+          owner_role: "self",
+          notes: "",
+          is_admission_kpi: false,
+          program_targets: []
+        }
+      ]
+    }));
+  };
 
-// ✅ NEW: Remove KPI item from month version
-const removeMonthKpiItem = (idx) => {
-  setEditingMonthVersion(v => ({
-    ...v,
-    kpi_items: v.kpi_items.filter((_, i) => i !== idx)
-  }));
-};
+  // ✅ NEW: Remove KPI item from month version
+  const removeMonthKpiItem = (idx) => {
+    setEditingMonthVersion(v => ({
+      ...v,
+      kpi_items: v.kpi_items.filter((_, i) => i !== idx)
+    }));
+  };
 
   // ===== SEARCH (UI-only, filters existing "templates" data, no data/logic change) =====
   const filteredTemplates = templates.filter(t => {
@@ -653,7 +691,8 @@ const removeMonthKpiItem = (idx) => {
               <div className="kpi-card-actions" style={{ padding: "12px 20px", borderTop: "1px solid #f3f4f6", display: "flex", gap: 8 }}>
                 <button onClick={() => setViewTemplate(t)} style={{ flex: 1, padding: "8px 0", border: "1px solid #e5e7eb", borderRadius: 7, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>View</button>
                 <button onClick={() => openEdit(t)} style={{ flex: 1, padding: "8px 0", border: "1px solid #2563eb", borderRadius: 7, background: "#eff6ff", color: "#2563eb", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>Edit Info</button>
-                <button onClick={() => openMonthManagement(t)} style={{ flex: 1, padding: "8px 0", border: "1px solid #16a34a", borderRadius: 7, background: "#f0fdf4", color: "#16a34a", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>📅 Months</button>
+                <button onClick={() => openMonthManagement(t)} style={{ flex: 1, padding: "8px 0", border: "1px solid #16a34a", borderRadius: 7, background: "#f0fdf4", color: "#16a34a", fontSize: 13, fontWeight: 500, cursor: "pointer" }}> Months</button>
+                <button onClick={() => handleDuplicate(t)} style={{ flex: 1, padding: "8px 0", border: "1px solid #7c3aed", borderRadius: 7, background: "#f5f3ff", color: "#7c3aed", fontSize: 13, fontWeight: 500, cursor: "pointer" }}> Duplicate</button>
                 <button onClick={() => setDeleteConfirm(t._id)} style={{ flex: 1, padding: "8px 0", border: "1px solid #fecaca", borderRadius: 7, background: "#fff5f5", color: "#ef4444", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>Delete</button>
               </div>
             </div>
@@ -799,6 +838,16 @@ const removeMonthKpiItem = (idx) => {
                           {KPI_OWNERS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                       </div>
+                      <div style={{ marginBottom: 12 }}>
+                        <label style={labelStyle}>Notes (optional)</label>
+                        <textarea
+                          value={item.notes || ""}
+                          onChange={e => handleItemChange(idx, "notes", e.target.value)}
+                          placeholder="Briefly explain this KPI for the employee..."
+                          rows={2}
+                          style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }}
+                        />
+                      </div>
                     </div>
 
                     {/* ===== ADMISSION KPI TOGGLE ===== */}
@@ -807,7 +856,7 @@ const removeMonthKpiItem = (idx) => {
                       style={{ marginBottom: item.is_admission_kpi ? 12 : 0 }}
                       onClick={() => handleItemChange(idx, "is_admission_kpi", !item.is_admission_kpi)}
                     >
-                      <input type="radio" checked={item.is_admission_kpi} onChange={() => {}} onClick={e => e.stopPropagation()} />
+                      <input type="radio" checked={item.is_admission_kpi} onChange={() => { }} onClick={e => e.stopPropagation()} />
                       <div style={{ flex: 1 }}>
                         <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: item.is_admission_kpi ? "#0369a1" : "#374151" }}>
                           🎓 Enable Admission KPI — Program-wise Breakdown
@@ -943,6 +992,8 @@ const removeMonthKpiItem = (idx) => {
                       <span style={{ fontSize: 11, color: "#6b7280", textTransform: "capitalize" }}>{item.frequency}</span>
                     </div>
                   </div>
+                  {item.notes && <p style={{ margin: 0, padding: "8px 16px", fontSize: 12, color: "#6b7280" }}>📝 {item.notes}</p>}
+
 
                   {/* Program-wise breakdown in view */}
                   {item.is_admission_kpi && item.program_targets?.length > 0 && (
@@ -994,7 +1045,7 @@ const removeMonthKpiItem = (idx) => {
       {showMonthModal && selectedTemplateForMonths && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
-            
+
             {/* Header */}
             <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", zIndex: 1 }}>
               <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>
@@ -1004,7 +1055,7 @@ const removeMonthKpiItem = (idx) => {
             </div>
 
             <div style={{ padding: "24px" }}>
-              
+
               {/* Existing Month Versions */}
               <div style={{ marginBottom: 24 }}>
                 <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700, color: "#374151" }}>Existing Versions</h4>
@@ -1016,9 +1067,9 @@ const removeMonthKpiItem = (idx) => {
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {monthVersions.map(v => (
-                      <div key={v._id} style={{ 
-                        display: "flex", 
-                        justifyContent: "space-between", 
+                      <div key={v._id} style={{
+                        display: "flex",
+                        justifyContent: "space-between",
                         alignItems: "center",
                         padding: "12px 16px",
                         background: v.month_status === 'locked' ? '#f9fafb' : '#fff',
@@ -1027,7 +1078,7 @@ const removeMonthKpiItem = (idx) => {
                       }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <span style={{ fontWeight: 600, fontSize: 14, color: "#1a1a2e" }}>{v.month}</span>
-                          <span style={{ 
+                          <span style={{
                             padding: "2px 8px",
                             borderRadius: 4,
                             fontSize: 11,
@@ -1040,12 +1091,12 @@ const removeMonthKpiItem = (idx) => {
                           </span>
                         </div>
                         <div style={{ display: "flex", gap: 8 }}>
-                          <button 
+                          <button
                             onClick={() => openEditMonthVersion(v)}
                             disabled={v.month_status === 'locked'}
-                            style={{ 
-                              padding: "5px 14px", 
-                              border: "1px solid #bfdbfe", 
+                            style={{
+                              padding: "5px 14px",
+                              border: "1px solid #bfdbfe",
                               borderRadius: 6,
                               background: v.month_status === 'locked' ? '#f9fafb' : '#eff6ff',
                               color: v.month_status === 'locked' ? '#9ca3af' : '#2563eb',
@@ -1057,11 +1108,11 @@ const removeMonthKpiItem = (idx) => {
                             {v.month_status === 'locked' ? '🔒 Locked' : 'Edit KPIs'}
                           </button>
                           {v.month_status !== 'locked' && (
-                            <button 
+                            <button
                               onClick={() => handleDeleteMonthVersion(v._id)}
-                              style={{ 
-                                padding: "5px 12px", 
-                                border: "1px solid #fecaca", 
+                              style={{
+                                padding: "5px 12px",
+                                border: "1px solid #fecaca",
                                 borderRadius: 6,
                                 background: '#fff5f5',
                                 color: '#ef4444',
@@ -1083,12 +1134,12 @@ const removeMonthKpiItem = (idx) => {
               {/* Create New Month Version */}
               <div style={{ padding: "16px", background: "#f8fafc", borderRadius: 10, border: "1.5px solid #e5e7eb" }}>
                 <h4 style={{ margin: "0 0 14px", fontSize: 14, fontWeight: 700, color: "#374151" }}>+ Add New Month</h4>
-                
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
                   <div>
                     <label style={{ ...labelStyle, marginBottom: 4 }}>Month</label>
-                    <select 
-                      value={newMonthForm.month} 
+                    <select
+                      value={newMonthForm.month}
                       onChange={e => setNewMonthForm(f => ({ ...f, month: e.target.value }))}
                       style={inputStyle}
                     >
@@ -1098,8 +1149,8 @@ const removeMonthKpiItem = (idx) => {
                   </div>
                   <div>
                     <label style={{ ...labelStyle, marginBottom: 4 }}>Year</label>
-                    <select 
-                      value={newMonthForm.year} 
+                    <select
+                      value={newMonthForm.year}
                       onChange={e => setNewMonthForm(f => ({ ...f, year: e.target.value }))}
                       style={inputStyle}
                     >
@@ -1107,11 +1158,11 @@ const removeMonthKpiItem = (idx) => {
                     </select>
                   </div>
                 </div>
-                
+
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ ...labelStyle, marginBottom: 4 }}>Copy KPIs from:</label>
-                  <select 
-                    value={newMonthForm.copy_from} 
+                  <select
+                    value={newMonthForm.copy_from}
                     onChange={e => setNewMonthForm(f => ({ ...f, copy_from: e.target.value }))}
                     style={inputStyle}
                   >
@@ -1121,16 +1172,16 @@ const removeMonthKpiItem = (idx) => {
                     ))}
                   </select>
                 </div>
-                
-                <button 
+
+                <button
                   onClick={handleCreateMonthVersion}
                   disabled={!newMonthForm.month}
-                  style={{ 
-                    width: "100%", 
-                    padding: "11px", 
-                    background: !newMonthForm.month ? '#93c5fd' : '#2563eb', 
-                    color: '#fff', 
-                    border: 'none', 
+                  style={{
+                    width: "100%",
+                    padding: "11px",
+                    background: !newMonthForm.month ? '#93c5fd' : '#2563eb',
+                    color: '#fff',
+                    border: 'none',
                     borderRadius: 8,
                     cursor: !newMonthForm.month ? 'not-allowed' : 'pointer',
                     fontWeight: 700,
@@ -1147,387 +1198,397 @@ const removeMonthKpiItem = (idx) => {
       )}
 
       {/* ===== MONTH VERSION EDIT MODAL ===== */}
-{showMonthEditModal && editingMonthVersion && (
-  <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1001, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-    <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 750, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
-      
-      <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, background: "#fff", zIndex: 1 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>
-              ✏️ Edit {editingMonthVersion.month} Version
-            </h3>
-            <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 13 }}>
-              Changes apply ONLY to this month. Template defaults won't change.
-            </p>
-          </div>
-          <button onClick={closeMonthEditModal} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#6b7280" }}>✕</button>
-        </div>
-      </div>
+      {showMonthEditModal && editingMonthVersion && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1001, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 750, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
 
-      <div style={{ padding: "24px" }}>
-        
-        {/* ✅ NEW: Total Weight Display */}
-        <div style={{ 
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center",
-          padding: "12px 16px",
-          background: "#f8fafc",
-          borderRadius: 8,
-          marginBottom: 16,
-          border: "1px solid #e5e7eb"
-        }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>
-            Total Weight
-          </span>
-          <span style={{ 
-            fontSize: 14, 
-            fontWeight: 700,
-            color: editingMonthVersion.kpi_items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) === 100 ? "#16a34a" : "#f59e0b"
-          }}>
-            {editingMonthVersion.kpi_items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0)}% 
-            {editingMonthVersion.kpi_items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) === 100 ? "✓" : "(Need 100%)"}
-          </span>
-        </div>
-
-        {editingMonthVersion.kpi_items?.map((item, idx) => (
-          <div key={idx} style={{ marginBottom: 20, padding: 16, background: "#f8fafc", border: `1.5px solid ${item.is_admission_kpi ? "#bae6fd" : "#e5e7eb"}`, borderRadius: 10 }}>
-            
-            {/* KPI Header with Delete Button */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>{item.kpi_name || "Untitled KPI"}</span>
-                {item.is_admission_kpi && <span className="adm-badge">🎓 Admission</span>}
-                <OwnerBadge role={item.owner_role || "self"} />
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ background: "#eff6ff", color: "#2563eb", fontSize: 12, fontWeight: 700, padding: "3px 8px", borderRadius: 4 }}>
-                  {item.weight || 0}%
-                </span>
-                {/* ✅ NEW: Delete KPI button */}
-                {editingMonthVersion.kpi_items.length > 1 && (
-                  <button 
-                    onClick={() => removeMonthKpiItem(idx)}
-                    style={{ 
-                      background: "none", 
-                      border: "none", 
-                      color: "#ef4444", 
-                      cursor: "pointer",
-                      fontSize: 13,
-                      padding: "4px 8px"
-                    }}
-                    title="Remove this KPI"
-                  >
-                    🗑️
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* ✅ NEW: KPI Name Edit */}
-            <div style={{ marginBottom: 10 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>KPI Name</label>
-              <input 
-                type="text"
-                value={item.kpi_name}
-                onChange={e => handleMonthItemChange(idx, 'kpi_name', e.target.value)}
-                style={{ ...inputStyle }}
-                placeholder="Enter KPI name"
-              />
-            </div>
-
-            {/* Target & Weight in row */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>Target</label>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <input 
-                    type="number"
-                    value={item.target}
-                    onChange={e => handleMonthItemChange(idx, 'target', Number(e.target.value))}
-                    style={{ ...inputStyle, width: "100%" }}
-                  />
-                  <span style={{ fontSize: 13, color: "#6b7280", whiteSpace: "nowrap" }}>{item.unit}</span>
-                </div>
-              </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>Weight %</label>
-                <input 
-                  type="number"
-                  value={item.weight}
-                  onChange={e => handleMonthItemChange(idx, 'weight', Number(e.target.value))}
-                  style={{ ...inputStyle, width: "100%" }}
-                  placeholder="e.g. 25"
-                />
-              </div>
-            </div>
-
-            {/* Unit & Frequency */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>Unit</label>
-                <select 
-                  value={item.unit}
-                  onChange={e => handleMonthItemChange(idx, 'unit', e.target.value)}
-                  style={inputStyle}
-                >
-                  {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>Frequency</label>
-                <select 
-                  value={item.frequency}
-                  onChange={e => handleMonthItemChange(idx, 'frequency', e.target.value)}
-                  style={inputStyle}
-                >
-                  {FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
-                </select>
-              </div>
-            </div>
-
-                        {/* Owner Role */}
-            <div style={{ marginBottom: 10 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>Filled By</label>
-              <select 
-                value={item.owner_role || "self"}
-                onChange={e => handleMonthItemChange(idx, 'owner_role', e.target.value)}
-                style={inputStyle}
-              >
-                {KPI_OWNERS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-
-            {/* ===== ADMISSION KPI TOGGLE ===== */}
-            <div
-              style={{
-                marginTop: 12,
-                marginBottom: item.is_admission_kpi ? 12 : 0,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "12px 16px",
-                background: item.is_admission_kpi ? "#f0f9ff" : "#f8fafc",
-                border: `1.5px solid ${item.is_admission_kpi ? "#0369a1" : "#e5e7eb"}`,
-                borderRadius: 10,
-                cursor: "pointer"
-              }}
-              onClick={() => {
-                setEditingMonthVersion(v => {
-                  const items = [...v.kpi_items];
-                  const newVal = !items[idx].is_admission_kpi;
-                  items[idx] = { 
-                    ...items[idx], 
-                    is_admission_kpi: newVal,
-                    ...(newVal ? {
-                      unit: "admissions",
-                      owner_role: "manager",
-                      program_targets: programs.map(p => ({
-                        program_id: p._id, 
-                        program_name: p.name, 
-                        target: 0
-                      }))
-                    } : {
-                      unit: "tasks",
-                      program_targets: [],
-                      target: 0
-                    })
-                  };
-                  return { ...v, kpi_items: items };
-                });
-              }}
-            >
-              <input 
-                type="radio" 
-                checked={item.is_admission_kpi} 
-                onChange={() => {}} 
-                onClick={e => e.stopPropagation()}
-                style={{ width: 16, height: 16, accentColor: "#0369a1", cursor: "pointer" }}
-              />
-              <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: item.is_admission_kpi ? "#0369a1" : "#374151" }}>
-                  🎓 Enable Admission KPI — Program-wise Breakdown
-                </p>
-                <p style={{ margin: "2px 0 0", fontSize: 11, color: "#6b7280" }}>
-                  Set separate targets per program. Total = sum of all program targets.
-                </p>
-              </div>
-              {item.is_admission_kpi && (
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#0369a1", background: "#e0f2fe", padding: "3px 10px", borderRadius: 99, whiteSpace: "nowrap" }}>
-                  Active
-                </span>
-              )}
-            </div>
-
-            {/* ===== PROGRAM-WISE TARGETS (if admission enabled) ===== */}
-            {item.is_admission_kpi && (
-              <div style={{ marginTop: 12, padding: 14, background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10 }}>
-                <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
-                  Select Programs & Set Targets
-                  <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 400, color: "#6b7280" }}>click to add/remove</span>
-                </p>
-
-                {programs.length === 0 ? (
-                  <p style={{ margin: 0, fontSize: 12, color: "#f59e0b" }}>
-                    ⚠ No programs available. Add programs in template first.
+            <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 0, background: "#fff", zIndex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>
+                    ✏️ Edit {editingMonthVersion.month} Version
+                  </h3>
+                  <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 13 }}>
+                    Changes apply ONLY to this month. Template defaults won't change.
                   </p>
-                ) : (
-                  <>
-                    {/* Program chips */}
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
-                      {programs.map(p => {
-                        const isSelected = item.program_targets?.some(pt => pt.program_id === p._id);
-                        return (
-                          <span
-                            key={p._id}
-                            onClick={() => {
-                              setEditingMonthVersion(v => {
-                                const items = [...v.kpi_items];
-                                const pt = [...(items[idx].program_targets || [])];
-                                const found = pt.findIndex(x => x.program_id === p._id);
-                                if (found >= 0) {
-                                  pt.splice(found, 1);
-                                } else {
-                                  pt.push({ program_id: p._id, program_name: p.name, target: 0 });
-                                }
-                                items[idx] = {
-                                  ...items[idx],
-                                  program_targets: pt,
-                                  target: pt.reduce((s, p) => s + (Number(p.target) || 0), 0)
-                                };
-                                return { ...v, kpi_items: items };
-                              });
-                            }}
-                            style={{
-                              padding: "5px 14px", borderRadius: 99, fontSize: 12, fontWeight: 600,
-                              cursor: "pointer", transition: "all 0.15s",
-                              background: isSelected ? "#0369a1" : "#fff",
-                              color: isSelected ? "#fff" : "#374151",
-                              border: `1.5px solid ${isSelected ? "#0369a1" : "#d1d5db"}`
-                            }}
-                          >
-                            {isSelected ? "✓ " : "+ "}{p.name}
-                          </span>
-                        );
-                      })}
-                    </div>
-
-                    {/* Target inputs for selected programs */}
-                    {item.program_targets?.length > 0 && (
-                      <>
-                        {item.program_targets.map((pt, pi) => (
-                          <div key={pi} style={{ display: "flex", gap: 10, marginTop: 8, padding: "10px 14px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, alignItems: "center" }}>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{pt.program_name}</p>
-                              <p style={{ margin: "1px 0 0", fontSize: 10, color: "#9ca3af" }}>HR / Manager fills actual value</p>
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <label style={{ fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>Target:</label>
-                              <input
-                                type="number" value={pt.target} min="0"
-                                onChange={e => {
-                                  setEditingMonthVersion(v => {
-                                    const items = [...v.kpi_items];
-                                    const ptArr = [...(items[idx].program_targets || [])];
-                                    const found = ptArr.findIndex(x => x.program_id === pt.program_id);
-                                    if (found >= 0) {
-                                      ptArr[found] = { ...ptArr[found], target: Number(e.target.value) };
-                                    }
-                                    items[idx] = {
-                                      ...items[idx],
-                                      program_targets: ptArr,
-                                      target: ptArr.reduce((s, p) => s + (Number(p.target) || 0), 0)
-                                    };
-                                    return { ...v, kpi_items: items };
-                                  });
-                                }}
-                                style={{ ...inputStyle, width: 80, textAlign: "center" }}
-                                placeholder="0"
-                              />
-                            </div>
-                          </div>
-                        ))}
-
-                        {/* Total */}
-                        <div style={{ marginTop: 10, padding: "8px 14px", background: "#0369a1", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>🎯 Total Target</span>
-                          <span style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "monospace" }}>
-                            {item.program_targets.reduce((s, p) => s + (Number(p.target) || 0), 0)}
-                          </span>
-                        </div>
-                      </>
-                    )}
-
-                    {(!item.program_targets || item.program_targets.length === 0) && (
-                      <p style={{ margin: "8px 0 0", fontSize: 12, color: "#f59e0b" }}>
-                        ⚠ Select at least one program above
-                      </p>
-                    )}
-                  </>
-                )}
+                </div>
+                <button onClick={closeMonthEditModal} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#6b7280" }}>✕</button>
               </div>
-            )}
+            </div>
 
+            <div style={{ padding: "24px" }}>
 
-            {/* Total for admission KPI */}
-            {item.is_admission_kpi && (
-              <div style={{ marginTop: 10, padding: "8px 14px", background: "#0369a1", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>🎯 Total Target</span>
-                <span style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "monospace" }}>
-                  {item.program_targets?.reduce((s, p) => s + (Number(p.target) || 0), 0) || item.target}
+              {/* ✅ NEW: Total Weight Display */}
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "12px 16px",
+                background: "#f8fafc",
+                borderRadius: 8,
+                marginBottom: 16,
+                border: "1px solid #e5e7eb"
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>
+                  Total Weight
+                </span>
+                <span style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: editingMonthVersion.kpi_items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) === 100 ? "#16a34a" : "#f59e0b"
+                }}>
+                  {editingMonthVersion.kpi_items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0)}%
+                  {editingMonthVersion.kpi_items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) === 100 ? "✓" : "(Need 100%)"}
                 </span>
               </div>
-            )}
+
+              {editingMonthVersion.kpi_items?.map((item, idx) => (
+                <div key={idx} style={{ marginBottom: 20, padding: 16, background: "#f8fafc", border: `1.5px solid ${item.is_admission_kpi ? "#bae6fd" : "#e5e7eb"}`, borderRadius: 10 }}>
+
+                  {/* KPI Header with Delete Button */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>{item.kpi_name || "Untitled KPI"}</span>
+                      {item.is_admission_kpi && <span className="adm-badge">🎓 Admission</span>}
+                      <OwnerBadge role={item.owner_role || "self"} />
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ background: "#eff6ff", color: "#2563eb", fontSize: 12, fontWeight: 700, padding: "3px 8px", borderRadius: 4 }}>
+                        {item.weight || 0}%
+                      </span>
+                      {/* ✅ NEW: Delete KPI button */}
+                      {editingMonthVersion.kpi_items.length > 1 && (
+                        <button
+                          onClick={() => removeMonthKpiItem(idx)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#ef4444",
+                            cursor: "pointer",
+                            fontSize: 13,
+                            padding: "4px 8px"
+                          }}
+                          title="Remove this KPI"
+                        >
+                          🗑️
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ✅ NEW: KPI Name Edit */}
+                  <div style={{ marginBottom: 10 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>KPI Name</label>
+                    <input
+                      type="text"
+                      value={item.kpi_name}
+                      onChange={e => handleMonthItemChange(idx, 'kpi_name', e.target.value)}
+                      style={{ ...inputStyle }}
+                      placeholder="Enter KPI name"
+                    />
+                  </div>
+
+                  {/* Target & Weight in row */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>Target</label>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <input
+                          type="number"
+                          value={item.target}
+                          onChange={e => handleMonthItemChange(idx, 'target', Number(e.target.value))}
+                          style={{ ...inputStyle, width: "100%" }}
+                        />
+                        <span style={{ fontSize: 13, color: "#6b7280", whiteSpace: "nowrap" }}>{item.unit}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>Weight %</label>
+                      <input
+                        type="number"
+                        value={item.weight}
+                        onChange={e => handleMonthItemChange(idx, 'weight', Number(e.target.value))}
+                        style={{ ...inputStyle, width: "100%" }}
+                        placeholder="e.g. 25"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Unit & Frequency */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>Unit</label>
+                      <select
+                        value={item.unit}
+                        onChange={e => handleMonthItemChange(idx, 'unit', e.target.value)}
+                        style={inputStyle}
+                      >
+                        {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>Frequency</label>
+                      <select
+                        value={item.frequency}
+                        onChange={e => handleMonthItemChange(idx, 'frequency', e.target.value)}
+                        style={inputStyle}
+                      >
+                        {FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Owner Role */}
+                  <div style={{ marginBottom: 10 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>Filled By</label>
+                    <select
+                      value={item.owner_role || "self"}
+                      onChange={e => handleMonthItemChange(idx, 'owner_role', e.target.value)}
+                      style={inputStyle}
+                    >
+                      {KPI_OWNERS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                    <div style={{ marginTop: 10 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>Notes (optional) — shown to employee</label>
+                      <textarea
+                        value={item.notes || ""}
+                        onChange={e => handleMonthItemChange(idx, "notes", e.target.value)}
+                        placeholder="Briefly explain this KPI for the employee..."
+                        rows={2}
+                        style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* ===== ADMISSION KPI TOGGLE ===== */}
+                  <div
+                    style={{
+                      marginTop: 12,
+                      marginBottom: item.is_admission_kpi ? 12 : 0,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "12px 16px",
+                      background: item.is_admission_kpi ? "#f0f9ff" : "#f8fafc",
+                      border: `1.5px solid ${item.is_admission_kpi ? "#0369a1" : "#e5e7eb"}`,
+                      borderRadius: 10,
+                      cursor: "pointer"
+                    }}
+                    onClick={() => {
+                      setEditingMonthVersion(v => {
+                        const items = [...v.kpi_items];
+                        const newVal = !items[idx].is_admission_kpi;
+                        items[idx] = {
+                          ...items[idx],
+                          is_admission_kpi: newVal,
+                          ...(newVal ? {
+                            unit: "admissions",
+                            owner_role: "manager",
+                            program_targets: programs.map(p => ({
+                              program_id: p._id,
+                              program_name: p.name,
+                              target: 0
+                            }))
+                          } : {
+                            unit: "tasks",
+                            program_targets: [],
+                            target: 0
+                          })
+                        };
+                        return { ...v, kpi_items: items };
+                      });
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      checked={item.is_admission_kpi}
+                      onChange={() => { }}
+                      onClick={e => e.stopPropagation()}
+                      style={{ width: 16, height: 16, accentColor: "#0369a1", cursor: "pointer" }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: item.is_admission_kpi ? "#0369a1" : "#374151" }}>
+                        🎓 Enable Admission KPI — Program-wise Breakdown
+                      </p>
+                      <p style={{ margin: "2px 0 0", fontSize: 11, color: "#6b7280" }}>
+                        Set separate targets per program. Total = sum of all program targets.
+                      </p>
+                    </div>
+                    {item.is_admission_kpi && (
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#0369a1", background: "#e0f2fe", padding: "3px 10px", borderRadius: 99, whiteSpace: "nowrap" }}>
+                        Active
+                      </span>
+                    )}
+                  </div>
+
+                  {/* ===== PROGRAM-WISE TARGETS (if admission enabled) ===== */}
+                  {item.is_admission_kpi && (
+                    <div style={{ marginTop: 12, padding: 14, background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10 }}>
+                      <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 700, color: "#0369a1" }}>
+                        Select Programs & Set Targets
+                        <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 400, color: "#6b7280" }}>click to add/remove</span>
+                      </p>
+
+                      {programs.length === 0 ? (
+                        <p style={{ margin: 0, fontSize: 12, color: "#f59e0b" }}>
+                          ⚠ No programs available. Add programs in template first.
+                        </p>
+                      ) : (
+                        <>
+                          {/* Program chips */}
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+                            {programs.map(p => {
+                              const isSelected = item.program_targets?.some(pt => pt.program_id === p._id);
+                              return (
+                                <span
+                                  key={p._id}
+                                  onClick={() => {
+                                    setEditingMonthVersion(v => {
+                                      const items = [...v.kpi_items];
+                                      const pt = [...(items[idx].program_targets || [])];
+                                      const found = pt.findIndex(x => x.program_id === p._id);
+                                      if (found >= 0) {
+                                        pt.splice(found, 1);
+                                      } else {
+                                        pt.push({ program_id: p._id, program_name: p.name, target: 0 });
+                                      }
+                                      items[idx] = {
+                                        ...items[idx],
+                                        program_targets: pt,
+                                        target: pt.reduce((s, p) => s + (Number(p.target) || 0), 0)
+                                      };
+                                      return { ...v, kpi_items: items };
+                                    });
+                                  }}
+                                  style={{
+                                    padding: "5px 14px", borderRadius: 99, fontSize: 12, fontWeight: 600,
+                                    cursor: "pointer", transition: "all 0.15s",
+                                    background: isSelected ? "#0369a1" : "#fff",
+                                    color: isSelected ? "#fff" : "#374151",
+                                    border: `1.5px solid ${isSelected ? "#0369a1" : "#d1d5db"}`
+                                  }}
+                                >
+                                  {isSelected ? "✓ " : "+ "}{p.name}
+                                </span>
+                              );
+                            })}
+                          </div>
+
+                          {/* Target inputs for selected programs */}
+                          {item.program_targets?.length > 0 && (
+                            <>
+                              {item.program_targets.map((pt, pi) => (
+                                <div key={pi} style={{ display: "flex", gap: 10, marginTop: 8, padding: "10px 14px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, alignItems: "center" }}>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{pt.program_name}</p>
+                                    <p style={{ margin: "1px 0 0", fontSize: 10, color: "#9ca3af" }}>HR / Manager fills actual value</p>
+                                  </div>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <label style={{ fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>Target:</label>
+                                    <input
+                                      type="number" value={pt.target} min="0"
+                                      onChange={e => {
+                                        setEditingMonthVersion(v => {
+                                          const items = [...v.kpi_items];
+                                          const ptArr = [...(items[idx].program_targets || [])];
+                                          const found = ptArr.findIndex(x => x.program_id === pt.program_id);
+                                          if (found >= 0) {
+                                            ptArr[found] = { ...ptArr[found], target: Number(e.target.value) };
+                                          }
+                                          items[idx] = {
+                                            ...items[idx],
+                                            program_targets: ptArr,
+                                            target: ptArr.reduce((s, p) => s + (Number(p.target) || 0), 0)
+                                          };
+                                          return { ...v, kpi_items: items };
+                                        });
+                                      }}
+                                      style={{ ...inputStyle, width: 80, textAlign: "center" }}
+                                      placeholder="0"
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+
+                              {/* Total */}
+                              <div style={{ marginTop: 10, padding: "8px 14px", background: "#0369a1", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>🎯 Total Target</span>
+                                <span style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "monospace" }}>
+                                  {item.program_targets.reduce((s, p) => s + (Number(p.target) || 0), 0)}
+                                </span>
+                              </div>
+                            </>
+                          )}
+
+                          {(!item.program_targets || item.program_targets.length === 0) && (
+                            <p style={{ margin: "8px 0 0", fontSize: 12, color: "#f59e0b" }}>
+                              ⚠ Select at least one program above
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+
+
+                  {/* Total for admission KPI */}
+                  {item.is_admission_kpi && (
+                    <div style={{ marginTop: 10, padding: "8px 14px", background: "#0369a1", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>🎯 Total Target</span>
+                      <span style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "monospace" }}>
+                        {item.program_targets?.reduce((s, p) => s + (Number(p.target) || 0), 0) || item.target}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* ✅ NEW: Add KPI Button */}
+              <button
+                onClick={addMonthKpiItem}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "2px dashed #d1d5db",
+                  borderRadius: 8,
+                  background: "none",
+                  color: "#6b7280",
+                  fontSize: 14,
+                  cursor: "pointer",
+                  fontWeight: 500,
+                  marginBottom: 20
+                }}
+              >
+                + Add New KPI to {editingMonthVersion.month}
+              </button>
+
+              <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                <button onClick={closeMonthEditModal} style={{ flex: 1, padding: "12px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>
+                  Cancel
+                </button>
+                <button
+                  onClick={saveMonthVersion}
+                  disabled={savingMonthVersion || editingMonthVersion.kpi_items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) !== 100}
+                  style={{
+                    flex: 2,
+                    padding: "12px",
+                    background: savingMonthVersion ? "#93c5fd" : "#2563eb",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    cursor: savingMonthVersion ? "not-allowed" : "pointer",
+                    fontSize: 14,
+                    opacity: editingMonthVersion.kpi_items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) !== 100 ? 0.6 : 1
+                  }}
+                >
+                  {savingMonthVersion ? "Saving..." : `Save ${editingMonthVersion.month} Changes`}
+                </button>
+              </div>
+            </div>
           </div>
-        ))}
-
-        {/* ✅ NEW: Add KPI Button */}
-        <button 
-          onClick={addMonthKpiItem}
-          style={{ 
-            width: "100%", 
-            padding: "12px", 
-            border: "2px dashed #d1d5db", 
-            borderRadius: 8, 
-            background: "none", 
-            color: "#6b7280", 
-            fontSize: 14, 
-            cursor: "pointer", 
-            fontWeight: 500,
-            marginBottom: 20
-          }}
-        >
-          + Add New KPI to {editingMonthVersion.month}
-        </button>
-
-        <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-          <button onClick={closeMonthEditModal} style={{ flex: 1, padding: "12px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>
-            Cancel
-          </button>
-          <button 
-            onClick={saveMonthVersion} 
-            disabled={savingMonthVersion || editingMonthVersion.kpi_items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) !== 100}
-            style={{ 
-              flex: 2, 
-              padding: "12px", 
-              background: savingMonthVersion ? "#93c5fd" : "#2563eb", 
-              color: "#fff", 
-              border: "none", 
-              borderRadius: 8, 
-              fontWeight: 700,
-              cursor: savingMonthVersion ? "not-allowed" : "pointer",
-              fontSize: 14,
-              opacity: editingMonthVersion.kpi_items?.reduce((s, i) => s + (parseFloat(i.weight) || 0), 0) !== 100 ? 0.6 : 1
-            }}
-          >
-            {savingMonthVersion ? "Saving..." : `Save ${editingMonthVersion.month} Changes`}
-          </button>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
     </div>
   );
