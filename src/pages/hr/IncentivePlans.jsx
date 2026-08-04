@@ -50,6 +50,7 @@ const STANDALONE_PAYOUT_TYPES = [
   { value: "fixed", label: "Fixed Amount (₹)" },
   { value: "percent_of_achieved", label: "% of Achieved Value" },
   { value: "percent_of_salary", label: "% of Salary" },
+  { value: "per_unit", label: "Per Unit (₹ × count)" },
 ];
 
 const EMPTY_STANDALONE_SLAB = () => ({
@@ -77,7 +78,7 @@ const EMPTY_KPI_CONFIG = (kpiItem) => ({
 });
 
 const EMPTY_FORM = {
-  name: "", department: "", plan_type: "kpi_linked",
+  name: "", description: "", department: "", plan_type: "kpi_linked",
   period_type: "Monthly", period_month: new Date().getMonth() + 1,
   period_quarter: "Q1", period_half: "H1", period_year: CURRENT_YEAR,
   kpi_template_id: "", selected_kpis: [], kpi_configs: [],
@@ -207,18 +208,27 @@ function StandaloneSlabEditor({ slabs, targetType, onAdd, onUpdate, onRemove }) 
                 </span>
               </div>
 
-              {/* Max target */}
+            {/* Max target */}
               <div>
                 <input
                   type="number" min="0"
-                  value={slab.max_target}
+                  value={Number(slab.max_target) === 0 ? "" : slab.max_target}
                   onChange={e => onUpdate(si, "max_target", e.target.value)}
-                  placeholder="0 = no limit"
-                  style={{ ...inp, padding: "7px 8px", fontSize: 12 }}
+                  disabled={Number(slab.max_target) === 0}
+                  placeholder="e.g. 200000"
+                  style={{ ...inp, padding: "7px 8px", fontSize: 12, background: Number(slab.max_target) === 0 ? "#f8fafc" : "#fff", color: Number(slab.max_target) === 0 ? "#9ca3af" : "#1e293b" }}
                 />
-                <span style={{ fontSize: 10, color: "#94a3b8", marginTop: 2, display: "block" }}>
-                  {Number(slab.max_target) === 0 ? "No limit" : formatTarget(slab.max_target, targetType)}
-                </span>
+                <label style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 4, cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={Number(slab.max_target) === 0}
+                    onChange={e => onUpdate(si, "max_target", e.target.checked ? 0 : "")}
+                    style={{ width: 12, height: 12, cursor: "pointer" }}
+                  />
+                  <span style={{ fontSize: 10, fontWeight: 700, color: Number(slab.max_target) === 0 ? "#4f46e5" : "#94a3b8" }}>
+                    {Number(slab.max_target) === 0 ? "∞ No Limit (& Above)" : "No limit?"}
+                  </span>
+                </label>
               </div>
 
               {/* Payout type */}
@@ -238,14 +248,16 @@ function StandaloneSlabEditor({ slabs, targetType, onAdd, onUpdate, onRemove }) 
                   type="number" min="0" step="0.01"
                   value={slab.payout_value}
                   onChange={e => onUpdate(si, "payout_value", e.target.value)}
-                  placeholder={slab.payout_type === "fixed" ? "e.g. 1000" : "e.g. 5"}
+                  placeholder={slab.payout_type === "fixed" || slab.payout_type === "per_unit" ? "e.g. 150" : "e.g. 5"}
                   style={{ ...inp, padding: "7px 8px", fontSize: 12 }}
                 />
                 {slab.payout_value > 0 && (
                   <span style={{ fontSize: 10, fontWeight: 700, color: "#4f46e5", marginTop: 2, display: "block" }}>
                     {slab.payout_type === "fixed"
                       ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}`
-                      : `${slab.payout_value}%`}
+                      : slab.payout_type === "per_unit"
+                        ? `₹${Number(slab.payout_value).toLocaleString("en-IN")} / unit`
+                        : `${slab.payout_value}%`}
                   </span>
                 )}
               </div>
@@ -276,7 +288,9 @@ function StandaloneSlabEditor({ slabs, targetType, onAdd, onUpdate, onRemove }) 
                     <span style={{ color: "#16a34a", fontWeight: 700 }}>
                       {slab.payout_type === "fixed"
                         ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}`
-                        : `${slab.payout_value}% ${slab.payout_type === "percent_of_salary" ? "of salary" : "of achieved"}`}
+                        : slab.payout_type === "per_unit"
+                          ? `₹${Number(slab.payout_value).toLocaleString("en-IN")} / unit`
+                          : `${slab.payout_value}% ${slab.payout_type === "percent_of_salary" ? "of salary" : "of achieved"}`}
                     </span>
                   </div>
                 ))}
@@ -431,6 +445,90 @@ function AdmissionKpiConfig({ cfg, onAddProgSlab, onUpdateProgSlab, onRemoveProg
   );
 }
 
+// ── SearchableSelect — dropdown with search filter ────────────────────────────
+function SearchableSelect({ options = [], value, onChange, placeholder = "Search...", disabled = false }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selected = options.find(o => o.value === value);
+
+  const filtered = options.filter(o =>
+    !query.trim() ||
+    o.label?.toLowerCase().includes(query.toLowerCase()) ||
+    o.sublabel?.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <div
+        onClick={() => !disabled && setOpen(o => !o)}
+        style={{
+          ...inp,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          cursor: disabled ? "not-allowed" : "pointer",
+          background: disabled ? "#f8fafc" : "#fff",
+          color: selected ? "#1e293b" : "#94a3b8",
+        }}
+      >
+        <span>{selected ? selected.label : placeholder}</span>
+        <span style={{ fontSize: 10, color: "#94a3b8" }}>▼</span>
+      </div>
+
+      {open && !disabled && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
+          background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 10,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.12)", overflow: "hidden",
+        }}>
+          <input
+            autoFocus
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder={placeholder}
+            style={{ width: "100%", padding: "9px 12px", border: "none", borderBottom: "1px solid #f1f5f9", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+          />
+          <div style={{ maxHeight: 220, overflowY: "auto" }}>
+            {filtered.length === 0 ? (
+              <p style={{ margin: 0, padding: "10px 12px", fontSize: 12, color: "#94a3b8" }}>No matches</p>
+            ) : (
+              filtered.map(o => (
+                <div
+                  key={o.value}
+                  onClick={() => { onChange(o.value); setOpen(false); setQuery(""); }}
+                  style={{
+                    padding: "9px 12px", cursor: "pointer", fontSize: 13,
+                    background: o.value === value ? "#eef2ff" : "#fff",
+                    color: o.value === value ? "#4f46e5" : "#1e293b",
+                    fontWeight: o.value === value ? 700 : 500,
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = o.value === value ? "#eef2ff" : "#f8fafc"}
+                  onMouseLeave={e => e.currentTarget.style.background = o.value === value ? "#eef2ff" : "#fff"}
+                >
+                  {o.label}
+                  {o.sublabel && <span style={{ marginLeft: 6, fontSize: 11, color: "#94a3b8" }}>— {o.sublabel}</span>}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // ════════════════════════════════════════════════════════════════════════════
 export default function IncentivePlans() {
   const [plans, setPlans] = useState([]);
@@ -442,6 +540,7 @@ export default function IncentivePlans() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+    const [pageSearch, setPageSearch] = useState("");
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -553,6 +652,7 @@ export default function IncentivePlans() {
 
     setForm({
       name: p.name,
+      description: p.description || "",   // 🆕
       department: p.department,
       plan_type: p.plan_type ?? "kpi_linked",
       period_type: p.period_type || "Monthly",
@@ -593,7 +693,8 @@ export default function IncentivePlans() {
     setSaving(true);
     try {
       const payload = {
-        name: form.name, department: form.department, plan_type: form.plan_type,
+        name: form.name, description: form.description,
+        department: form.department, plan_type: form.plan_type,
         period_type: form.period_type,
         period_month: form.period_type === "Monthly" ? form.period_month : null,
         period_quarter: form.period_type === "Quarterly" ? form.period_quarter : null,
@@ -634,21 +735,16 @@ export default function IncentivePlans() {
     } catch { showToast("Delete failed", "error"); }
   };
 
-  const handleDuplicate = (plan) => {
-  // existing plan-oda data-va form-la load pannுறோம், but department blank + editing mode = false (new create)
-  setForm({
-    ...plan,
-    name: `${plan.name} (Copy)`,
-    department: "",          // HR puthu dept select pannanumnu
-    _id: undefined,          // idhu new plan, existing id illa
-  });
-  setEditingId(null);        // "Add New" mode
-  setIsModalOpen(true);
-};
-
   const totalWeight = form.kpi_configs.reduce((s, c) => s + (c.weight || 0), 0);
   const totalTemplateKpis = selectedTemplate?.kpi_items?.length || 0;
 
+   const filteredPlans = plans.filter(p =>
+    !pageSearch.trim() ||
+    p.name?.toLowerCase().includes(pageSearch.toLowerCase()) ||
+    p.department?.toLowerCase().includes(pageSearch.toLowerCase()) ||
+    p.kpi_template_id?.template_name?.toLowerCase().includes(pageSearch.toLowerCase())
+  );
+  
   return (
     <div style={{ padding: "28px 32px", fontFamily: "'Segoe UI',sans-serif", minHeight: "100vh", background: "#f4f6fb" }}>
       <style>{`
@@ -677,6 +773,12 @@ export default function IncentivePlans() {
           New Plan
         </button>
       </div>
+          <input
+        value={pageSearch}
+        onChange={e => setPageSearch(e.target.value)}
+        placeholder="🔍 Search plans by name, department, or template..."
+        style={{ ...inp, marginBottom: 20, maxWidth: 400 }}
+      />
 
       {/* Summary Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 14, marginBottom: 24 }}>
@@ -707,7 +809,7 @@ export default function IncentivePlans() {
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(340px,1fr))", gap: 16 }}>
-          {plans.map(plan => {
+         {filteredPlans.map(plan => {
             const { color, bg } = getColor(plan.department);
             const isKpi = plan.plan_type === "kpi_linked";
             const period = periodLabel(plan);
@@ -720,6 +822,11 @@ export default function IncentivePlans() {
                     </div>
                     <div>
                       <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "#1e293b" }}>{plan.name}</p>
+                      {plan.description && (
+                        <p style={{ margin: "2px 0 4px", fontSize: 12, color: "#64748b", lineHeight: 1.4 }}>
+                          {plan.description}
+                        </p>
+                      )}
                       <p style={{ margin: "3px 0 0", fontSize: 12, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                         <span style={{ background: bg, color, fontWeight: 700, padding: "1px 8px", borderRadius: 5, fontSize: 11 }}>{plan.department}</span>
                         <span style={{ color: "#94a3b8", display: "flex", alignItems: "center", gap: 3 }}>
@@ -737,11 +844,6 @@ export default function IncentivePlans() {
                       <button onClick={() => openEdit(plan)} style={{ background: "#eff6ff", border: "none", borderRadius: 7, padding: "6px 10px", cursor: "pointer" }}>
                         <HugeiconsIcon icon={PencilEdit01Icon} size={14} color="#2563eb" strokeWidth={2} />
                       </button>
-                      {/* 🆕 Duplicate button */}
-<button onClick={() => handleDuplicate(plan)} title="Duplicate to another department"
-  style={{ background: "#f0fdf4", border: "none", borderRadius: 7, padding: "6px 10px", cursor: "pointer" }}>
-  <span style={{ fontSize: 14, color: "#16a34a" }}>⧉</span>
-</button>
                       <button onClick={() => handleDelete(plan._id)} style={{ background: "#fef2f2", border: "none", borderRadius: 7, padding: "6px 10px", cursor: "pointer" }}>
                         <HugeiconsIcon icon={Delete02Icon} size={14} color="#dc2626" strokeWidth={2} />
                       </button>
@@ -783,7 +885,9 @@ export default function IncentivePlans() {
                               {formatTarget(slab.min_target, plan.standalone_target_type)} →{" "}
                               {slab.payout_type === "fixed"
                                 ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}`
-                                : `${slab.payout_value}%`}
+                                : slab.payout_type === "per_unit"
+                                  ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}/unit`
+                                  : `${slab.payout_value}%`}
                             </span>
                           ))}
                           {(plan.standalone_slabs || []).length > 4 && (
@@ -832,14 +936,24 @@ export default function IncentivePlans() {
                     <label style={lbl}>Plan Name *</label>
                     <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Sales Q1 2025 Incentive" style={inp} />
                   </div>
+                  <div style={{ gridColumn: "1/-1" }}>
+                    <label style={lbl}>Description</label>
+                    <textarea
+                      value={form.description}
+                      onChange={e => setForm({ ...form, description: e.target.value })}
+                      placeholder="e.g. Project Report Successfully Avail Your Incentive."
+                      rows={2}
+                      style={{ ...inp, resize: "vertical", fontFamily: "inherit" }}
+                    />
+                  </div>
                   <div>
                     <label style={lbl}>Department *</label>
-                    <select value={form.department}
-                      onChange={e => setForm(f => ({ ...f, department: e.target.value, kpi_template_id: "", selected_kpis: [], kpi_configs: [] }))}
-                      style={inp}>
-                      <option value="">Select department...</option>
-                      {depts.map(d => <option key={d}>{d}</option>)}
-                    </select>
+                    <SearchableSelect
+                      options={depts.map(d => ({ value: d, label: d }))}
+                      value={form.department}
+                      onChange={(v) => setForm(f => ({ ...f, department: v, kpi_template_id: "", selected_kpis: [], kpi_configs: [] }))}
+                      placeholder="Search department..."
+                    />
                   </div>
                   <div>
                     <label style={lbl}>Plan Type *</label>
@@ -908,10 +1022,13 @@ export default function IncentivePlans() {
                 <Section step={3} title="Select KPIs" icon="🎯">
                   <div style={{ marginBottom: 14 }}>
                     <label style={lbl}>KPI Template *</label>
-                    <select value={form.kpi_template_id} onChange={e => handleTemplateChange(e.target.value)} style={inp} disabled={!form.department}>
-                      <option value="">{!form.department ? "Select department first" : filteredTemplates.length === 0 ? "No templates for this department" : "Choose a KPI template..."}</option>
-                      {filteredTemplates.map(t => <option key={t._id} value={t._id}>{t.template_name} — {t.role}</option>)}
-                    </select>
+                    <SearchableSelect
+                      options={filteredTemplates.map(t => ({ value: t._id, label: t.template_name, sublabel: t.role }))}
+                      value={form.kpi_template_id}
+                      onChange={(v) => handleTemplateChange(v)}
+                      placeholder={!form.department ? "Select department first" : "Search KPI template..."}
+                      disabled={!form.department}
+                    />
                   </div>
                   {selectedTemplate && (<>
                     <p style={{ margin: "0 0 10px", fontSize: 12, color: "#64748b" }}>Check the KPIs you want to include:</p>

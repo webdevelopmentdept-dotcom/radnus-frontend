@@ -787,6 +787,7 @@ function HRReviewQueue({ onRefresh }) {
   const [amounts,  setAmounts]  = useState({});   // { [id]: string }
   const [busy,     setBusy]     = useState({});   // { [id]: bool }
   const [toast,    setToast]    = useState(null);
+    const [entryDrafts, setEntryDrafts] = useState({}); // 🆕 { [resultId]: { amount, note } }
 
   useEffect(() => { fetchReviews(); }, []);
 
@@ -796,21 +797,13 @@ function HRReviewQueue({ onRefresh }) {
       const res = await axios.get(`${API_BASE}/api/incentive-results/pending-reviews`);
       const data = res.data?.data || [];
       setReviews(data);
-      // Auto-fill suggested amounts
+
+      // 🆕 Backend already freezes calculated_amount correctly once the period
+      // locks (via syncResultState → plan.resolveStandalonePayout), so just use it.
       const autoAmts = {};
-      data.forEach(r => {
-        const slabs  = r.plan_id?.standalone_slabs || [];
-        const achVal = r.employee_submitted_value  || 0;
-        const matched = slabs.find(s =>
-          achVal >= s.min_target && (s.max_target === 0 || achVal <= s.max_target)
-        );
-        if (matched) {
-          autoAmts[r._id] = matched.payout_type === "fixed"
-            ? String(matched.payout_value)
-            : String(Math.round((matched.payout_value / 100) * (r.salary || 0)));
-        }
-      });
+      data.forEach(r => { autoAmts[r._id] = String(r.calculated_amount || 0); });
       setAmounts(autoAmts);
+
     } catch { showT("Failed to load reviews", "error"); }
     finally { setLoading(false); }
   };
@@ -845,6 +838,36 @@ function HRReviewQueue({ onRefresh }) {
     finally { setBusy(b => ({ ...b, [id]: false })); }
   };
 
+  // 🆕 HR correction: add entry even though period is locked
+  const handleHrAddEntry = async (id) => {
+    const draft = entryDrafts[id];
+    if (!draft?.amount || Number(draft.amount) <= 0) { showT("Enter a valid amount", "error"); return; }
+    try {
+      const res = await axios.post(`${API_BASE}/api/incentive-results/${id}/hr-entry`, {
+        amount: draft.amount, note: draft.note || "",
+      });
+      setEntryDrafts(d => ({ ...d, [id]: { amount: "", note: "" } }));
+      // Sync the auto-fill amount to the newly recalculated total
+      const updated = res.data?.data;
+      if (updated) setAmounts(a => ({ ...a, [id]: String(updated.calculated_amount || 0) }));
+      fetchReviews();
+      showT("Entry added ✅");
+    } catch { showT("Add entry failed", "error"); }
+  };
+
+  // 🆕 HR correction: remove a mistaken entry
+  // 🆕 HR correction: remove a mistaken entry (?by=hr bypasses the lock)
+  const handleDeleteEntry = async (resultId, entryId) => {
+    if (!window.confirm("Remove this entry?")) return;
+    try {
+      const res = await axios.delete(`${API_BASE}/api/incentive-results/${resultId}/entries/${entryId}?by=hr`);
+      const updated = res.data?.data;
+      if (updated) setAmounts(a => ({ ...a, [resultId]: String(updated.calculated_amount || 0) }));
+      fetchReviews();
+      showT("Entry removed ✅");
+    } catch (e) { showT(e.response?.data?.message || "Remove entry failed", "error"); }
+  };
+
   if (loading) return <div style={{ textAlign: "center", padding: 60, color: "#6b7280" }}>Loading reviews...</div>;
 
   return (
@@ -866,9 +889,22 @@ function HRReviewQueue({ onRefresh }) {
           {reviews.map(r => {
             const slabs   = r.plan_id?.standalone_slabs || [];
             const achVal  = r.employee_submitted_value || 0;
-            const matched = slabs.find(s =>
-              achVal >= s.min_target && (s.max_target === 0 || achVal <= s.max_target)
+            const entries = r.sale_entries || [];
+
+            // 🆕 Per-entry slab match (client-side mirror of backend logic)
+            const matchSlabFor = (amt) => slabs.find(s =>
+              amt >= s.min_target && (s.max_target === 0 || amt <= s.max_target)
             );
+            const payoutFor = (amt, slab) => {
+              if (!slab || !slab.payout_value) return 0;
+              switch (slab.payout_type) {
+                case "fixed":               return Number(slab.payout_value) || 0;
+                case "percent_of_achieved": return Math.round(((Number(slab.payout_value) || 0) / 100) * amt);
+                case "percent_of_salary":   return Math.round(((Number(slab.payout_value) || 0) / 100) * (r.salary || 0));
+                case "per_unit":            return Math.round(amt * (Number(slab.payout_value) || 0));
+                default:                    return 0;
+              }
+            };
 
             return (
               <div key={r._id} style={{ background: "#fff", borderRadius: 12, padding: "18px 20px", border: "1px solid #e5e7eb" }}>
@@ -881,35 +917,94 @@ function HRReviewQueue({ onRefresh }) {
                     </p>
                   </div>
                   <span style={{ fontSize: 11, background: "#fffbeb", color: "#d97706", padding: "3px 12px", borderRadius: 20, fontWeight: 700, border: "1px solid #fde68a" }}>
-                    ⏳ Pending Review
+                    🔒 Period Locked · Pending Review
                   </span>
                 </div>
 
-                {/* Employee data */}
-                <div style={{ background: "#f8fafc", borderRadius: 8, padding: "10px 14px", marginBottom: 14, display: "flex", gap: 24, flexWrap: "wrap" }}>
+                {/* Total + Matched slab */}
+                <div style={{ background: "#f8fafc", borderRadius: 8, padding: "10px 14px", marginBottom: 12, display: "flex", gap: 24, flexWrap: "wrap" }}>
                   <div>
-                    <p style={{ margin: "0 0 2px", fontSize: 10, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>Achieved Value</p>
+                    <p style={{ margin: "0 0 2px", fontSize: 10, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>Total Achieved</p>
                     <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#1a1a2e" }}>{achVal.toLocaleString("en-IN")}</p>
                   </div>
-                  {r.hr_review_note && (
-                    <div>
-                      <p style={{ margin: "0 0 2px", fontSize: 10, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>Employee Note</p>
-                      <p style={{ margin: 0, fontSize: 13, color: "#374151" }}>{r.hr_review_note}</p>
-                    </div>
-                  )}
-                  {matched && (
+                  {/* {matched && (
                     <div>
                       <p style={{ margin: "0 0 2px", fontSize: 10, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>Matched Slab</p>
                       <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#16a34a" }}>
                         {matched.min_target.toLocaleString("en-IN")} → {matched.max_target === 0 ? "∞" : matched.max_target.toLocaleString("en-IN")}
                         {" · "}
-                        {matched.payout_type === "fixed"
-                          ? `₹${Number(matched.payout_value).toLocaleString("en-IN")}`
+                        {matched.payout_type === "fixed" ? `₹${Number(matched.payout_value).toLocaleString("en-IN")}`
+                          : matched.payout_type === "per_unit" ? `₹${Number(matched.payout_value).toLocaleString("en-IN")}/unit`
                           : `${matched.payout_value}%`}
                       </p>
                     </div>
-                  )}
+                  )} */}
                 </div>
+
+                {/* 🆕 Entries breakdown table */}
+                <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden", marginBottom: 14 }}>
+                  <div style={{ padding: "8px 14px", background: "#f8fafc", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>📋 Entry Breakdown ({entries.length})</span>
+                  </div>
+                  {entries.length === 0 ? (
+                    <p style={{ margin: 0, padding: "12px 14px", fontSize: 12, color: "#9ca3af" }}>No entries logged.</p>
+                  ) : (
+                    entries.map((e, ei) => {
+                      const eMatched = matchSlabFor(Number(e.amount) || 0);
+                      const ePayout  = payoutFor(Number(e.amount) || 0, eMatched);
+                      return (
+                        <div key={ei} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 14px", borderBottom: ei < entries.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#1f2937" }}>{Number(e.amount).toLocaleString("en-IN")}</span>
+                            {e.note && <span style={{ fontSize: 11, color: "#9ca3af" }}>{e.note}</span>}
+                            {e.added_by === "hr" && <span style={{ fontSize: 10, background: "#fef9c3", color: "#a16207", padding: "1px 6px", borderRadius: 10, fontWeight: 700 }}>HR added</span>}
+                            {/* 🆕 per-entry slab + payout */}
+                            <span style={{ fontSize: 11, fontWeight: 700, color: ePayout > 0 ? "#16a34a" : "#dc2626" }}>
+                              {ePayout > 0 ? `→ ₹${ePayout.toLocaleString("en-IN")}` : "No slab match"}
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{ fontSize: 11, color: "#9ca3af" }}>{new Date(e.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                            <button
+                              onClick={() => handleDeleteEntry(r._id, e._id)}
+                              style={{ background: "#fef2f2", border: "none", borderRadius: 5, padding: "3px 7px", cursor: "pointer", fontSize: 11, color: "#dc2626", fontWeight: 700 }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                  {/* 🆕 HR correction — add entry even though period is locked */}
+                  <div style={{ display: "flex", gap: 8, padding: "8px 14px", background: "#fafafa", borderTop: "1px solid #f3f4f6" }}>
+                    <input
+                      type="number"
+                      placeholder="Amount"
+                      value={entryDrafts[r._id]?.amount || ""}
+                      onChange={e => setEntryDrafts(d => ({ ...d, [r._id]: { ...d[r._id], amount: e.target.value } }))}
+                      style={{ width: 100, padding: "6px 10px", border: "1.5px solid #e5e7eb", borderRadius: 6, fontSize: 12, outline: "none" }}
+                    />
+                    <input
+                      placeholder="Note (optional)"
+                      value={entryDrafts[r._id]?.note || ""}
+                      onChange={e => setEntryDrafts(d => ({ ...d, [r._id]: { ...d[r._id], note: e.target.value } }))}
+                      style={{ flex: 1, padding: "6px 10px", border: "1.5px solid #e5e7eb", borderRadius: 6, fontSize: 12, outline: "none" }}
+                    />
+                    <button
+                      onClick={() => handleHrAddEntry(r._id)}
+                      style={{ background: "#eef2ff", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: "#4f46e5", cursor: "pointer", whiteSpace: "nowrap" }}
+                    >
+                      + Add (HR)
+                    </button>
+                  </div>
+                </div>
+
+                {r.hr_review_note && (
+                  <p style={{ margin: "0 0 12px", fontSize: 12, color: "#6b7280" }}>
+                    <strong style={{ color: "#374151" }}>Employee's overall note:</strong> {r.hr_review_note}
+                  </p>
+                )}
 
                 {/* Approve form */}
                 <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>

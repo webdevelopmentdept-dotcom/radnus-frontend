@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import axios from "axios";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { CheckmarkCircle01Icon, Delete02Icon, UserMultiple02Icon } from "@hugeicons/core-free-icons";
+import { CheckmarkCircle01Icon, Delete02Icon, UserMultiple02Icon, Search01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -12,27 +12,129 @@ const inputStyle = {
 };
 const labelStyle = { display:"block", fontSize:12, fontWeight:700, color:"#374151", marginBottom:6 };
 
-// ── Generate period options based on plan period_type ─────────────────────────
-function getPeriodOptions(plan) {
+// 🆕 Year range for assignment period selection — independent of the plan's own period_year
+const CURRENT_YEAR = new Date().getFullYear();
+const ASSIGN_YEARS = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1];
+
+// ── Generate period options based on plan period_type + a chosen year ─────────
+function getPeriodOptions(plan, year) {
   if (!plan) return [];
-  const year  = plan.period_year || new Date().getFullYear();
+  const y     = year || plan.period_year || new Date().getFullYear();
   const ptype = plan.period_type || "Monthly";
 
   if (ptype === "Monthly") {
     const months = ["01","02","03","04","05","06","07","08","09","10","11","12"];
     const labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    return months.map((m, i) => ({ value: `${year}-${m}`, label: `${labels[i]} ${year}` }));
+    return months.map((m, i) => ({ value: `${y}-${m}`, label: `${labels[i]} ${y}` }));
   }
   if (ptype === "Quarterly") {
-    return ["Q1","Q2","Q3","Q4"].map(q => ({ value: `${year}-${q}`, label: `${q} ${year}` }));
+    return ["Q1","Q2","Q3","Q4"].map(q => ({ value: `${y}-${q}`, label: `${q} ${y}` }));
   }
   if (ptype === "Half-Yearly") {
-    return ["H1","H2"].map(h => ({ value: `${year}-${h}`, label: `${h} ${year}` }));
+    return ["H1","H2"].map(h => ({ value: `${y}-${h}`, label: `${h} ${y}` }));
   }
   if (ptype === "Yearly") {
-    return [{ value: `${year}`, label: `FY ${year}` }];
+    return [{ value: `${y}`, label: `FY ${y}` }];
   }
   return [];
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 🆕 SearchableSelect — type-to-search dropdown (combobox).
+// Drop-in UI replacement for a plain <select>: pass `options` as
+// [{ value, label, sublabel? }], current `value`, and `onChange(value)`.
+// Pure UI component — does not touch any assignment/save logic.
+// ══════════════════════════════════════════════════════════════════════════
+function SearchableSelect({ options, value, onChange, placeholder = "Select...", disabled = false, emptyText = "No results" }) {
+  const [open, setOpen]   = useState(false);
+  const [query, setQuery] = useState("");
+  const wrapRef = useRef(null);
+
+  const selected = options.find(o => o.value === value);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter(o =>
+      o.label.toLowerCase().includes(q) ||
+      (o.sublabel || "").toLowerCase().includes(q)
+    );
+  }, [options, query]);
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <div
+        onClick={() => !disabled && setOpen(o => !o)}
+        style={{
+          ...inputStyle,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+          cursor: disabled ? "not-allowed" : "pointer",
+          background: disabled ? "#f8fafc" : "#fff",
+          color: selected ? "#1a1a2e" : "#9ca3af",
+        }}
+      >
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <HugeiconsIcon icon={ArrowDown01Icon} size={14} color="#9ca3af" strokeWidth={2} />
+      </div>
+
+      {open && !disabled && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
+          background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.12)", overflow: "hidden",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderBottom: "1px solid #f3f4f6" }}>
+            <HugeiconsIcon icon={Search01Icon} size={14} color="#9ca3af" strokeWidth={2} />
+            <input
+              autoFocus
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Type to search..."
+              style={{ flex: 1, border: "none", outline: "none", fontSize: 13, color: "#1a1a2e" }}
+            />
+          </div>
+          <div style={{ maxHeight: 220, overflowY: "auto" }}>
+            {filtered.length === 0 ? (
+              <p style={{ margin: 0, padding: "12px 14px", fontSize: 12, color: "#9ca3af", textAlign: "center" }}>{emptyText}</p>
+            ) : (
+              filtered.map(opt => (
+                <div
+                  key={opt.value}
+                  onClick={() => { onChange(opt.value); setOpen(false); setQuery(""); }}
+                  style={{
+                    padding: "9px 14px", cursor: "pointer", fontSize: 13,
+                    background: opt.value === value ? "#eff6ff" : "#fff",
+                    color: opt.value === value ? "#1d4ed8" : "#1a1a2e",
+                    fontWeight: opt.value === value ? 700 : 500,
+                  }}
+                  onMouseEnter={e => { if (opt.value !== value) e.currentTarget.style.background = "#f8fafc"; }}
+                  onMouseLeave={e => { if (opt.value !== value) e.currentTarget.style.background = "#fff"; }}
+                >
+                  <div>{opt.label}</div>
+                  {opt.sublabel && (
+                    <div style={{ fontSize: 11, color: opt.value === value ? "#60a5fa" : "#9ca3af", marginTop: 1 }}>{opt.sublabel}</div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function IncentiveAssign() {
@@ -47,6 +149,7 @@ export default function IncentiveAssign() {
   const [selEmp,  setSelEmp]  = useState("");
   const [selPlan, setSelPlan] = useState("");
   const [period,  setPeriod]  = useState("");
+  const [selYear, setSelYear] = useState(CURRENT_YEAR); // 🆕 user-controlled year for this assignment
 
   // filters
   const [filterDept, setFilterDept] = useState("All");
@@ -57,6 +160,7 @@ export default function IncentiveAssign() {
   const [bulkDept,   setBulkDept]   = useState("");
   const [bulkPlan,   setBulkPlan]   = useState("");
   const [bulkPeriod, setBulkPeriod] = useState("");
+  const [bulkYear,   setBulkYear]   = useState(CURRENT_YEAR); // 🆕 user-controlled year for bulk assignment
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -92,15 +196,39 @@ export default function IncentiveAssign() {
   // selected plan object
   const selectedPlan = plans.find(p => p._id === selPlan);
 
-  // period options driven by selected plan
-  const periodOptions = useMemo(() => getPeriodOptions(selectedPlan), [selectedPlan]);
+  // 🆕 period options now driven by selected plan's cycle-type + the user-chosen year
+  const periodOptions = useMemo(() => getPeriodOptions(selectedPlan, selYear), [selectedPlan, selYear]);
 
   // 🆕 bulk (whole department) selections
   const bulkSelectedPlan    = plans.find(p => p._id === bulkPlan);
-  const bulkPeriodOptions   = useMemo(() => getPeriodOptions(bulkSelectedPlan), [bulkSelectedPlan]);
+  const bulkPeriodOptions   = useMemo(() => getPeriodOptions(bulkSelectedPlan, bulkYear), [bulkSelectedPlan, bulkYear]);
   const bulkDeptEmpCount    = useMemo(
     () => employees.filter(e => e.department === bulkDept).length,
     [employees, bulkDept]
+  );
+
+  // ── SearchableSelect option lists (UI only — no logic change) ──────────────
+  const deptOptions = useMemo(
+    () => depts.filter(d => d !== "All").map(d => ({ value: d, label: d })),
+    [depts]
+  );
+
+  const planOptionsAll = useMemo(
+    () => plans.map(p => ({
+      value: p._id,
+      label: p.name,
+      sublabel: `${p.department} · ${p.period_type}`,
+    })),
+    [plans]
+  );
+
+  const empOptions = useMemo(
+    () => filteredEmps.map(e => ({
+      value: e._id,
+      label: e.name,
+      sublabel: `${e.department}${e.designation ? " · " + e.designation : ""}`,
+    })),
+    [filteredEmps]
   );
 
   // auto-fill plan when employee changes (match dept)
@@ -251,10 +379,14 @@ export default function IncentiveAssign() {
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:14, marginBottom:16 }}>
               <div>
                 <label style={labelStyle}>Department *</label>
-                <select value={bulkDept} onChange={e => setBulkDept(e.target.value)} style={inputStyle}>
-                  <option value="">Select department...</option>
-                  {depts.filter(d => d !== "All").map(d => <option key={d}>{d}</option>)}
-                </select>
+                {/* 🔍 searchable */}
+                <SearchableSelect
+                  options={deptOptions}
+                  value={bulkDept}
+                  onChange={(v) => setBulkDept(v)}
+                  placeholder="Search department..."
+                  emptyText="No department found"
+                />
                 {bulkDept && (
                   <p style={{ margin:"6px 0 0", fontSize:12, color:"#6b7280" }}>
                     {bulkDeptEmpCount} active employee{bulkDeptEmpCount !== 1 ? "s" : ""} in this department
@@ -264,14 +396,14 @@ export default function IncentiveAssign() {
 
               <div>
                 <label style={labelStyle}>Incentive Plan *</label>
-                <select value={bulkPlan} onChange={e => { setBulkPlan(e.target.value); setBulkPeriod(""); }} style={inputStyle}>
-                  <option value="">Select plan...</option>
-                  {plans.map(p => (
-                    <option key={p._id} value={p._id}>
-                      {p.name} ({p.department} · {p.period_type})
-                    </option>
-                  ))}
-                </select>
+                {/* 🔍 searchable */}
+                <SearchableSelect
+                  options={planOptionsAll}
+                  value={bulkPlan}
+                  onChange={(v) => { setBulkPlan(v); setBulkPeriod(""); }}
+                  placeholder="Search plan..."
+                  emptyText="No plan found"
+                />
               </div>
 
               <div>
@@ -281,6 +413,19 @@ export default function IncentiveAssign() {
                   readOnly
                   style={{ ...inputStyle, background:"#f8fafc", color:"#6b7280", cursor:"not-allowed" }}
                 />
+              </div>
+
+              {/* 🆕 Year — freely selectable, independent of the plan's own period_year */}
+              <div>
+                <label style={labelStyle}>Year *</label>
+                <select
+                  value={bulkYear}
+                  onChange={e => { setBulkYear(Number(e.target.value)); setBulkPeriod(""); }}
+                  style={inputStyle}
+                  disabled={!bulkPlan}
+                >
+                  {ASSIGN_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
               </div>
 
               <div>
@@ -314,7 +459,7 @@ export default function IncentiveAssign() {
             </button>
           </>
         ) : (
-          /* ══════════ EXISTING SPECIFIC EMPLOYEE MODE (unchanged) ══════════ */
+          /* ══════════ EXISTING SPECIFIC EMPLOYEE MODE ══════════ */
           <>
         {/* Filter row */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 }}>
@@ -335,25 +480,27 @@ export default function IncentiveAssign() {
           {/* Employee */}
           <div>
             <label style={labelStyle}>Employee *</label>
-            <select value={selEmp} onChange={e => handleEmpChange(e.target.value)} style={inputStyle}>
-              <option value="">Select employee...</option>
-              {filteredEmps.map(e => (
-                <option key={e._id} value={e._id}>{e.name} — {e.department}</option>
-              ))}
-            </select>
+            {/* 🔍 searchable */}
+            <SearchableSelect
+              options={empOptions}
+              value={selEmp}
+              onChange={handleEmpChange}
+              placeholder="Search employee..."
+              emptyText="No employee found"
+            />
           </div>
 
           {/* Plan */}
           <div>
             <label style={labelStyle}>Incentive Plan *</label>
-            <select value={selPlan} onChange={e => handlePlanChange(e.target.value)} style={inputStyle}>
-              <option value="">Select plan...</option>
-              {plans.map(p => (
-                <option key={p._id} value={p._id}>
-                  {p.name} ({p.department} · {p.period_type})
-                </option>
-              ))}
-            </select>
+            {/* 🔍 searchable */}
+            <SearchableSelect
+              options={planOptionsAll}
+              value={selPlan}
+              onChange={handlePlanChange}
+              placeholder="Search plan..."
+              emptyText="No plan found"
+            />
           </div>
 
           {/* Cycle — read-only from plan */}
@@ -364,6 +511,19 @@ export default function IncentiveAssign() {
               readOnly
               style={{ ...inputStyle, background:"#f8fafc", color:"#6b7280", cursor:"not-allowed" }}
             />
+          </div>
+
+          {/* 🆕 Year — freely selectable, independent of the plan's own period_year */}
+          <div>
+            <label style={labelStyle}>Year *</label>
+            <select
+              value={selYear}
+              onChange={e => { setSelYear(Number(e.target.value)); setPeriod(""); }}
+              style={inputStyle}
+              disabled={!selPlan}
+            >
+              {ASSIGN_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
           </div>
 
           {/* Period — smart dropdown */}

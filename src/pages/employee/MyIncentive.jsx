@@ -26,6 +26,18 @@ function formatPeriod(cycleStr) {
 
 function standaloneLabel(plan) {
   if (!plan) return "—";
+  const slabs = plan.standalone_slabs || [];
+  if (slabs.length > 0) {
+    // Show the first slab's rule as a summary (or "Multiple slabs" if more than one)
+    if (slabs.length === 1) {
+      const s = slabs[0];
+      if (s.payout_type === "per_unit") return `₹${Number(s.payout_value).toLocaleString("en-IN")} / unit`;
+      if (s.payout_type === "fixed") return `₹${Number(s.payout_value).toLocaleString("en-IN")} Fixed`;
+      if (s.payout_type === "percent_of_salary") return `${s.payout_value}% of Salary`;
+      if (s.payout_type === "percent_of_achieved") return `${s.payout_value}% of Achieved`;
+    }
+    return "Slab-based";
+  }
   if (plan.standalone_payout_type === "percentage")
     return `${plan.standalone_payout_value}% of Salary`;
   return `₹${Number(plan.standalone_payout_value || 0).toLocaleString("en-IN")} Fixed`;
@@ -96,75 +108,203 @@ function calcKpiIncentive(plan, kpiBreakdown = [], salary = 0) {
   return { rows, total };
 }
 
-// ── SubmitReviewBox ───────────────────────────────────────────────────────────
-function SubmitReviewBox({ alreadyRequested, submittedValue, reviewNote, reviewRemark, onSubmit, slabs }) {
-  const [val, setVal] = useState("");
-  const [note, setNote] = useState("");
-  const [selectedSlab, setSelectedSlab] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const isValid = val && note.trim() && (slabs.length === 0 || selectedSlab !== null);
+// ── AddSaleEntry — cumulative entries + edit/delete + manual final submit ────
+function AddSaleEntry({ resultId, onUpdate }) {
+  const [entries, setEntries]     = useState([]);
+  const [total, setTotal]         = useState(0);
+  const [matchedSlab, setMatched] = useState(null);
+  const [estimated, setEstimated] = useState(0);
+  const [locked, setLocked]       = useState(false);
+  const [lockDate, setLockDate]   = useState(null);
+  const [loading, setLoading]     = useState(true);
 
-  const handleClick = async () => {
-    if (!isValid) return;
-    setSubmitting(true);
-    await onSubmit(val, note, selectedSlab);
-    setSubmitting(false);
+  const [amount, setAmount] = useState("");
+  const [note, setNote]     = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState("");
+
+  const [editingId, setEditingId] = useState(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editNote, setEditNote]     = useState("");
+  const [finalSubmitting, setFinalSubmitting] = useState(false);
+
+  const fetchEntries = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/incentive-results/${resultId}/entries`);
+      const d = res.data?.data || {};
+      setEntries(d.entries || []);
+      setTotal(d.total_achieved || 0);
+      setEstimated(d.estimated_amount || 0);
+      setLocked(!!d.period_locked);
+      setLockDate(d.lock_date || null);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
   };
 
-  if (alreadyRequested) {
-    return (
-      <div style={{ background: "#f0fdf4", borderRadius: 12, padding: "14px 18px", border: "1px solid #86efac" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 20 }}>⏳</span>
-          <div>
-            <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: "#15803d" }}>Review Requested — Waiting for HR</p>
-            <p style={{ margin: "2px 0 0", fontSize: 11, color: "#6b7280" }}>
-              Submitted value: <strong>{Number(submittedValue || 0).toLocaleString("en-IN")}</strong>
-              {reviewNote ? ` · Note: ${reviewNote}` : ""}
-            </p>
-            {reviewRemark && <p style={{ margin: "4px 0 0", fontSize: 11, color: "#dc2626", fontWeight: 600 }}>HR Remark: {reviewRemark}</p>}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => { fetchEntries(); }, [resultId]);
+
+  const handleAdd = async () => {
+    if (!amount || Number(amount) <= 0) { setErr("Enter a valid amount"); return; }
+    setErr(""); setSubmitting(true);
+    try {
+      await axios.post(`${API_BASE}/api/incentive-results/${resultId}/add-entry`, { amount, note });
+      setAmount(""); setNote("");
+      await fetchEntries();
+      onUpdate?.();
+    } catch (e) {
+      setErr(e.response?.data?.message || "Failed to add entry");
+    } finally { setSubmitting(false); }
+  };
+
+  const startEdit = (e) => {
+    setEditingId(e._id);
+    setEditAmount(String(e.amount));
+    setEditNote(e.note || "");
+  };
+
+  const cancelEdit = () => { setEditingId(null); setEditAmount(""); setEditNote(""); };
+
+  const saveEdit = async (entryId) => {
+    if (!editAmount || Number(editAmount) <= 0) return;
+    try {
+      await axios.put(`${API_BASE}/api/incentive-results/${resultId}/entries/${entryId}`, {
+        amount: editAmount, note: editNote,
+      });
+      cancelEdit();
+      await fetchEntries();
+      onUpdate?.();
+    } catch (e) {
+      setErr(e.response?.data?.message || "Failed to update entry");
+    }
+  };
+
+  const handleDelete = async (entryId) => {
+    if (!window.confirm("Remove this entry?")) return;
+    try {
+      await axios.delete(`${API_BASE}/api/incentive-results/${resultId}/entries/${entryId}`);
+      await fetchEntries();
+      onUpdate?.();
+    } catch (e) {
+      setErr(e.response?.data?.message || "Failed to remove entry");
+    }
+  };
+
+  const handleFinalSubmit = async () => {
+    if (entries.length === 0) { setErr("Add at least one entry before submitting"); return; }
+    if (!window.confirm(`Submit total ${total.toLocaleString("en-IN")} for HR review? You won't be able to edit entries after this.`)) return;
+    setFinalSubmitting(true);
+    try {
+      await axios.post(`${API_BASE}/api/incentive-results/${resultId}/final-submit`);
+      await fetchEntries();
+      onUpdate?.();
+    } catch (e) {
+      setErr(e.response?.data?.message || "Submit failed");
+    } finally { setFinalSubmitting(false); }
+  };
+
+  if (loading) return <p style={{ fontSize: 12, color: "#9ca3af" }}>Loading entries…</p>;
 
   return (
     <div style={{ background: "#f8fafc", borderRadius: 12, padding: "16px 20px", border: "1px solid #e5e7eb" }}>
-      <p style={{ margin: "0 0 14px", fontWeight: 700, fontSize: 13, color: "#374151" }}>🎯 Achieved your target? Submit to HR for review</p>
-      {slabs.length > 0 && (
-        <div style={{ marginBottom: 14 }}>
-          <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#6b7280" }}>Which slab did you achieve? <span style={{ color: "#dc2626" }}>*</span></p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {slabs.map((slab, si) => {
-              const isSelected = selectedSlab === si;
-              const rangeLabel = slab.max_target === 0 ? `${Number(slab.min_target).toLocaleString("en-IN")} → ∞` : `${Number(slab.min_target).toLocaleString("en-IN")} → ${Number(slab.max_target).toLocaleString("en-IN")}`;
-              const payoutLabel = slab.payout_type === "fixed" ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}` : `${slab.payout_value}%`;
-              return (
-                <button key={si} onClick={() => setSelectedSlab(isSelected ? null : si)} style={{ padding: "8px 14px", borderRadius: 10, border: isSelected ? "2px solid #6366f1" : "1.5px solid #e5e7eb", background: isSelected ? "#eef2ff" : "#fff", color: isSelected ? "#4f46e5" : "#374151", fontWeight: isSelected ? 800 : 600, fontSize: 12, cursor: "pointer", transition: "all 0.15s", textAlign: "left" }}>
-                  <span style={{ display: "block", fontSize: 11, color: isSelected ? "#6366f1" : "#9ca3af", marginBottom: 2 }}>{rangeLabel}</span>
-                  <span style={{ fontSize: 13 }}>{payoutLabel}</span>
-                  {isSelected && <span style={{ marginLeft: 6, fontSize: 11 }}>✓</span>}
-                </button>
-              );
-            })}
-          </div>
-          {selectedSlab === null && <p style={{ margin: "6px 0 0", fontSize: 11, color: "#dc2626" }}>* Please select a slab</p>}
+      <p style={{ margin: "0 0 14px", fontWeight: 700, fontSize: 13, color: "#374151" }}>🎯 Log your achievements for this period</p>
+
+      {/* Running total */}
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+        <div style={{ background: "#eef2ff", borderRadius: 10, padding: "10px 14px", border: "1px solid #c7d2fe", flex: 1, minWidth: 130 }}>
+          <p style={{ margin: "0 0 2px", fontSize: 10, color: "#4f46e5", fontWeight: 700, textTransform: "uppercase" }}>Total So Far</p>
+          <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#4f46e5" }}>{total.toLocaleString("en-IN")}</p>
+        </div>
+        <div style={{ background: "#f0fdf4", borderRadius: 10, padding: "10px 14px", border: "1px solid #86efac", flex: 1, minWidth: 130 }}>
+          <p style={{ margin: "0 0 2px", fontSize: 10, color: "#15803d", fontWeight: 700, textTransform: "uppercase" }}>Estimated Payout</p>
+          <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#15803d" }}>₹{estimated.toLocaleString("en-IN")}</p>
+        </div>
+      </div>
+
+      {/* Past entries — each with its OWN matched slab + payout */}
+      {entries.length > 0 && (
+        <div style={{ marginBottom: 14, border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden" }}>
+          {entries.map((e, i) => (
+            <div key={e._id || i} style={{ padding: "8px 12px", borderBottom: i < entries.length - 1 ? "1px solid #f3f4f6" : "none", background: "#fff" }}>
+              {editingId === e._id ? (
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <input type="number" value={editAmount} onChange={ev => setEditAmount(ev.target.value)}
+                    style={{ width: 100, padding: "5px 8px", border: "1.5px solid #6366f1", borderRadius: 6, fontSize: 12, outline: "none" }} />
+                  <input value={editNote} onChange={ev => setEditNote(ev.target.value)} placeholder="Note"
+                    style={{ flex: 1, minWidth: 100, padding: "5px 8px", border: "1.5px solid #e5e7eb", borderRadius: 6, fontSize: 12, outline: "none" }} />
+                  <button onClick={() => saveEdit(e._id)} style={{ background: "#f0fdf4", color: "#16a34a", border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ Save</button>
+                  <button onClick={cancelEdit} style={{ background: "#f3f4f6", color: "#6b7280", border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✕ Cancel</button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#1f2937" }}>{Number(e.amount).toLocaleString("en-IN")}</span>
+                    {e.note && <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: 8 }}>{e.note}</span>}
+                    {e.added_by === "hr" && <span style={{ fontSize: 10, marginLeft: 8, background: "#fef9c3", color: "#a16207", padding: "1px 6px", borderRadius: 10, fontWeight: 700 }}>HR</span>}
+                    {/* 🆕 per-entry matched slab + payout */}
+                    <div style={{ marginTop: 2 }}>
+                      {e.matched_slab ? (
+                        <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>
+                          → ₹{Number(e.payout || 0).toLocaleString("en-IN")}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 11, color: "#dc2626" }}>No matching slab</span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, color: "#9ca3af" }}>{new Date(e.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                    {!locked && (
+                      <>
+                        <button onClick={() => startEdit(e)} style={{ background: "#eff6ff", border: "none", borderRadius: 5, padding: "3px 7px", cursor: "pointer", fontSize: 11, color: "#2563eb", fontWeight: 700 }}>✎</button>
+                        <button onClick={() => handleDelete(e._id)} style={{ background: "#fef2f2", border: "none", borderRadius: 5, padding: "3px 7px", cursor: "pointer", fontSize: 11, color: "#dc2626", fontWeight: 700 }}>✕</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
-        <div style={{ flex: 1, minWidth: 130 }}>
-          <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Achieved Value <span style={{ color: "#dc2626" }}>*</span></p>
-          <input type="number" value={val} onChange={e => setVal(e.target.value)} placeholder="e.g. 150000" style={{ width: "100%", padding: "8px 12px", border: `1.5px solid ${!val ? "#fca5a5" : "#e5e7eb"}`, borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+
+      {/* Add form / locked message / final submit */}
+      {locked ? (
+        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 14px" }}>
+          <p style={{ margin: 0, fontSize: 12, color: "#92400e", fontWeight: 700 }}>
+            🔒 Submitted — now with HR for review.
+          </p>
+          <p style={{ margin: "3px 0 0", fontSize: 11, color: "#b45309" }}>Need a correction? Contact HR.</p>
         </div>
-        <div style={{ flex: 2, minWidth: 160 }}>
-          <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Note <span style={{ color: "#dc2626" }}>*</span></p>
-          <input value={note} onChange={e => setNote(e.target.value)} placeholder="Supporting info..." style={{ width: "100%", padding: "8px 12px", border: `1.5px solid ${!note.trim() ? "#fca5a5" : "#e5e7eb"}`, borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
-        </div>
-        <button onClick={handleClick} disabled={!isValid || submitting} style={{ padding: "8px 20px", background: !isValid || submitting ? "#a5b4fc" : "#6366f1", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: !isValid || submitting ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}>
-          {submitting ? "Sending..." : "Submit to HR"}
-        </button>
-      </div>
+      ) : (
+        <>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 12 }}>
+            <div style={{ flex: 1, minWidth: 130 }}>
+              <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Amount <span style={{ color: "#dc2626" }}>*</span></p>
+              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 100000" style={{ width: "100%", padding: "8px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ flex: 2, minWidth: 160 }}>
+              <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Note (optional)</p>
+              <input value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Client X deal" style={{ width: "100%", padding: "8px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <button onClick={handleAdd} disabled={submitting} style={{ padding: "8px 20px", background: submitting ? "#a5b4fc" : "#6366f1", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: submitting ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}>
+              {submitting ? "Adding..." : "+ Add Entry"}
+            </button>
+          </div>
+
+          {err && <p style={{ margin: "0 0 10px", fontSize: 11, color: "#dc2626" }}>{err}</p>}
+
+          {/* 🆕 Manual Final Submit */}
+          <div style={{ borderTop: "1px dashed #e5e7eb", paddingTop: 12, display: "flex", justifyContent: "flex-end" }}>
+            <button
+              onClick={handleFinalSubmit}
+              disabled={finalSubmitting || entries.length === 0}
+              style={{ padding: "9px 22px", background: finalSubmitting || entries.length === 0 ? "#d1d5db" : "#16a34a", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: finalSubmitting || entries.length === 0 ? "not-allowed" : "pointer" }}
+            >
+              {finalSubmitting ? "Submitting..." : "✅ Final Submit to HR"}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -320,42 +460,68 @@ function ExpandedDetail({ r, fetchMyIncentives }) {
       {/* Standalone detail */}
       {!isKpi && (() => {
         const slabs = r.plan_id?.standalone_slabs || [];
-        const alreadyRequested = r.hr_review_requested;
-        const handleSubmitReview = async (achievedVal, note, selectedSlabIndex) => {
-          try {
-            const slabList = r.plan_id?.standalone_slabs || [];
-            const selectedSlab = selectedSlabIndex !== null ? slabList[selectedSlabIndex] : null;
-            await axios.post(`${API_BASE}/api/incentive-results/${r._id}/request-review`, { achieved_value: achievedVal, note, selected_slab: selectedSlab ?? undefined });
-            const empId = localStorage.getItem("employeeId");
-            fetchMyIncentives(empId);
-          } catch (err) { alert(err.response?.data?.message || "Submit failed"); }
-        };
         return (
           <>
             <div style={{ background: "#fffbeb", borderRadius: 12, padding: "14px 16px", border: "1px solid #fde68a", marginBottom: 10 }}>
-              <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, color: "#92400e", textTransform: "uppercase" }}>Standalone Plan Details</p>
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                {[{ label: "Metric", value: metricLabel(r.plan_id) }, { label: "Payout Rule", value: standaloneLabel(r.plan_id) }, { label: "Your Payout", value: total > 0 ? `₹${total.toLocaleString("en-IN")}` : "Pending HR entry" }].map(d => (
-                  <div key={d.label}>
-                    <p style={{ margin: "0 0 2px", fontSize: 10, color: "#b45309", fontWeight: 600, textTransform: "uppercase" }}>{d.label}</p>
-                    <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#92400e" }}>{d.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+  <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: "#92400e", textTransform: "uppercase" }}>Standalone Plan Details</p>
+  {r.plan_id?.description && (
+    <p style={{ margin: "0 0 10px", fontSize: 12, color: "#78350f", fontWeight: 500, lineHeight: 1.4 }}>
+      {r.plan_id.description}
+    </p>
+  )}
+  <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+    {[
+      { label: "Metric", value: metricLabel(r.plan_id) },
+      { label: "Payout Rule", value: standaloneLabel(r.plan_id) },
+      ...(r.employee_submitted_value != null ? [{ label: "Achieved Value", value: Number(r.employee_submitted_value).toLocaleString("en-IN") }] : []),
+      { label: "Your Payout", value: total > 0 ? `₹${total.toLocaleString("en-IN")}` : "Pending HR entry" },
+    ].map(d => (
+      <div key={d.label}>
+        <p style={{ margin: "0 0 2px", fontSize: 10, color: "#b45309", fontWeight: 600, textTransform: "uppercase" }}>{d.label}</p>
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#92400e" }}>{d.value}</p>
+      </div>
+    ))}
+  </div>
+
+  {r.hr_review_note && (
+    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px dashed #fde68a" }}>
+      <p style={{ margin: "0 0 2px", fontSize: 10, color: "#b45309", fontWeight: 600, textTransform: "uppercase" }}>Your Note</p>
+      <p style={{ margin: 0, fontSize: 13, color: "#78350f" }}>{r.hr_review_note}</p>
+    </div>
+  )}
+
+  {r.hr_review_remark && (
+    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px dashed #fde68a" }}>
+      <p style={{ margin: "0 0 2px", fontSize: 10, color: "#15803d", fontWeight: 600, textTransform: "uppercase" }}>HR Remark</p>
+      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#15803d" }}>{r.hr_review_remark}</p>
+    </div>
+  )}
+</div>
             {slabs.length > 0 && (
               <div style={{ background: "#fff", borderRadius: 12, padding: "14px 16px", border: "1px solid #eee", marginBottom: 10 }}>
                 <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" }}>Slab Structure</p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {slabs.map((slab, si) => (
-                    <div key={si} style={{ padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "#f0fdf4", border: "1px solid #86efac", color: "#15803d" }}>
-                      {Number(slab.min_target).toLocaleString("en-IN")} → {slab.max_target === 0 ? "∞" : Number(slab.max_target).toLocaleString("en-IN")} : {slab.payout_type === "fixed" ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}` : `${slab.payout_value}%`}
-                    </div>
-                  ))}
+               {slabs.map((slab, si) => {
+  const payoutText =
+    slab.payout_type === "fixed"            ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}` :
+    slab.payout_type === "per_unit"          ? `₹${Number(slab.payout_value).toLocaleString("en-IN")} / unit` :
+    slab.payout_type === "percent_of_salary" ? `${slab.payout_value}% of Salary` :
+    `${slab.payout_value}%`; // percent_of_achieved
+  return (
+    <div key={si} style={{ padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "#f0fdf4", border: "1px solid #86efac", color: "#15803d" }}>
+      {Number(slab.min_target).toLocaleString("en-IN")} → {slab.max_target === 0 ? "∞" : Number(slab.max_target).toLocaleString("en-IN")} : {payoutText}
+    </div>
+  );
+})}
                 </div>
               </div>
             )}
-            {r.status === "pending" && <SubmitReviewBox alreadyRequested={alreadyRequested} submittedValue={r.employee_submitted_value} reviewNote={r.hr_review_note} reviewRemark={r.hr_review_remark} slabs={r.plan_id?.standalone_slabs || []} onSubmit={handleSubmitReview} />}
+            {r.status === "pending" && (
+              <AddSaleEntry
+                resultId={r._id}
+                onUpdate={() => { const empId = localStorage.getItem("employeeId"); fetchMyIncentives(empId); }}
+              />
+            )}
           </>
         );
       })()}
