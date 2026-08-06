@@ -247,7 +247,8 @@ export default function PayrollDashboard() {
                <tbody>
   {payslips.map((p) => {
     const lopAmount = (p.lop_days || 0) * (p.per_day_rate || 0);
-    const totalDeductionsWithLop = lopAmount + (p.deductions?.total_deductions || 0);
+const halfDayAmount = (p.half_days || 0) * (p.per_day_rate || 0) * 0.5;   // ✅ NEW — half-day cut
+const totalDeductionsWithLop = lopAmount + halfDayAmount + (p.deductions?.total_deductions || 0);
 
     return (
       <tr key={p._id} style={{ borderBottom: "1px solid #f3f4f6" }}>

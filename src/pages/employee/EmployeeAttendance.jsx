@@ -18,9 +18,9 @@ const parseShiftMins = (shift) => {
   if (shift?.start && shift?.end) {
     const [sh, sm] = shift.start.split(":").map(Number);
     const [eh, em] = shift.end.split(":").map(Number);
-    return { startMins: sh * 60 + sm, endMins: eh * 60 + em };
+    return { startMins: sh * 60 + sm, endMins: eh * 60 + em, known: true };
   }
-  return { startMins: DEFAULT_SHIFT_START, endMins: DEFAULT_SHIFT_END };
+  return { startMins: DEFAULT_SHIFT_START, endMins: DEFAULT_SHIFT_END, known: false };
 };
 
 const fmtMins = (mins) => {
@@ -537,7 +537,7 @@ export default function EmployeeAttendance() {
 
   const monthDetail = useMemo(() => {
     const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-    const { startMins, endMins } = parseShiftMins(employee?.shift);
+    const { startMins, endMins, known: shiftKnown } = parseShiftMins(employee?.shift);
     let presentCount = 0, lateCount = 0, absentCount = 0, leaveCount = 0, halfCount = 0;
     const filled = [];
 
@@ -582,7 +582,7 @@ export default function EmployeeAttendance() {
         }
 
         earlyOutMin = rec.early_out_minutes || 0;
-        if (earlyOutMin === 0 && lastOut) {
+        if (earlyOutMin === 0 && lastOut && shiftKnown) {
           const ist = new Date(new Date(lastOut).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
           earlyOutMin = Math.max(endMins - (ist.getHours() * 60 + ist.getMinutes()), 0);
         }

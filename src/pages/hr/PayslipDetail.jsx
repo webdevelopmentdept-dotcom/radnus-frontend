@@ -56,8 +56,10 @@ export default function PayslipDetail() {
   if (isLoading) return <div style={{ padding: 60, textAlign: "center", color: "#6b7280" }}>Loading...</div>;
   if (!p) return <div style={{ padding: 60, textAlign: "center", color: "#9ca3af" }}>Payslip not found.</div>;
 
-  const lopAmount = (p.absent_days || 0) * (p.per_day_rate || 0);
-  const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount;
+ 
+const lopAmount = (p.absent_days || 0) * (p.per_day_rate || 0);
+const halfDayAmount = (p.half_days || 0) * (p.per_day_rate || 0) * 0.5;
+const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount + halfDayAmount;
   const totalEarnings = p.earnings?.gross_earnings || 0;
 
   return (
@@ -107,7 +109,7 @@ export default function PayslipDetail() {
             </tr>
           </thead>
           <tbody>
-            {buildRows(p, lopAmount).map((row, i) => (
+{buildRows(p, lopAmount, halfDayAmount).map((row, i) => (
               <tr key={i}>
                 <td style={tdStyle}>{row.eLabel}</td>
                 <td style={{ ...tdStyle, textAlign: "right" }}>{row.eAmount}</td>
@@ -175,7 +177,7 @@ export default function PayslipDetail() {
 }
 
 // ── Build side-by-side earnings/deductions rows (pads shorter column with blanks) ──
-function buildRows(p, lopAmount) {
+function buildRows(p, lopAmount, halfDayAmount) {
   const earningsList = [
     { label: "Basic", amount: p.earnings?.basic },
     { label: "HRA", amount: p.earnings?.hra },
@@ -185,7 +187,9 @@ function buildRows(p, lopAmount) {
   if (p.earnings?.overtime_amount > 0) earningsList.push({ label: "Overtime", amount: p.earnings.overtime_amount });
 
   const deductionsList = [];
+  
   if (p.absent_days > 0) deductionsList.push({ label: `LOP (${p.absent_days} day${p.absent_days > 1 ? "s" : ""})`, amount: lopAmount });
+  if (p.half_days > 0) deductionsList.push({ label: `Half Day (${p.half_days} day${p.half_days > 1 ? "s" : ""})`, amount: halfDayAmount });
   if (p.deductions?.pf > 0) deductionsList.push({ label: "Provident Fund", amount: p.deductions.pf });
   if (p.deductions?.esi > 0) deductionsList.push({ label: "ESI", amount: p.deductions.esi });
   if (p.deductions?.tds > 0) deductionsList.push({ label: "TDS", amount: p.deductions.tds });
