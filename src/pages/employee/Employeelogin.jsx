@@ -125,6 +125,34 @@ export default function EmployeeLogin() {
     }
   };
 
+  // ── AUTOFILL FIX ───────────────────────────────────────────────────────────
+  // Browsers (Chrome/Edge/etc.) fill the email + password inputs directly in
+  // the DOM when autofilling saved credentials. react-hook-form uses
+  // *uncontrolled* inputs (via `ref`), so it only re-validates when it sees a
+  // real `input`/`change` event. Autofill does NOT reliably fire that event,
+  // so `form.formState.isValid` stays `false` and the Login/Register button
+  // stays disabled — even though the fields visually show the right values.
+  // That's why typing a character and deleting it "fixes" it: it fires a
+  // real input event and forces RHF to revalidate.
+  //
+  // Fix has two parts:
+  // 1) A CSS trick: Chrome/Safari/Edge apply a (harmless, invisible) animation
+  //    to autofilled inputs. We hook `onAnimationStart` to detect that exact
+  //    moment and force-revalidate just that field.
+  // 2) A safety-net timer shortly after mount that re-validates the whole
+  //    form once, to catch autofill that happens before/without the animation
+  //    trick (e.g. some browsers/autofill managers).
+  const handleAutofillDetected = (fieldName) => {
+    form.trigger(fieldName);
+  };
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      form.trigger();
+    }, 400);
+    return () => clearTimeout(t);
+  }, [isRegister]); // re-check whenever switching between Login/Register views
+
   // ── Helper: parse login error message ────────────────────────────────────────
 // ── Helper: parse login error message ────────────────────────────────────────
 const getLoginErrorMsg = (err, fallback = "Invalid email or password") => {
@@ -231,6 +259,17 @@ const getLoginErrorMsg = (err, fallback = "Invalid email or password") => {
 
   return (
     <Container className="py-5">
+      {/* Autofill-detection CSS trick: browsers add this (invisible) animation
+          to inputs the moment they get autofilled. We listen for it below via
+          onAnimationStart on the email/password fields. */}
+      <style>{`
+        @keyframes onAutoFillStart { from {} to {} }
+        input:-webkit-autofill {
+          animation-name: onAutoFillStart;
+          animation-duration: 0.001s;
+        }
+      `}</style>
+
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -303,6 +342,7 @@ const getLoginErrorMsg = (err, fallback = "Invalid email or password") => {
                           minLength: { value: 3, message: "Minimum 3 characters" },
                           pattern: { value: /^[A-Za-z\s]+$/, message: "Only alphabets allowed" },
                         })}
+                        onAnimationStart={() => handleAutofillDetected("name")}
                         placeholder="Full Name"
                       />
                       <p className="text-danger small mb-0">
@@ -318,6 +358,7 @@ const getLoginErrorMsg = (err, fallback = "Invalid email or password") => {
                         required: "Email is required",
                         pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Invalid email format" },
                       })}
+                      onAnimationStart={() => handleAutofillDetected("email")}
                       placeholder="Email"
                     />
                     <p className="text-danger small mb-0">
@@ -338,6 +379,7 @@ const getLoginErrorMsg = (err, fallback = "Invalid email or password") => {
                             message: "Must include uppercase & number",
                           },
                         })}
+                        onAnimationStart={() => handleAutofillDetected("password")}
                         placeholder="Password"
                       />
                       <span

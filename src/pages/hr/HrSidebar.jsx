@@ -573,6 +573,13 @@ export default function HrSidebar() {
                 <span className="hr-flow-label">5</span>
               </NavLink>
 
+              <NavLink to="/hr/dashboard/feedback"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={Task01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Employee Feedback
+              </NavLink>
+
               {/* TRAINING */}
               <div className="hr-section">Training</div>
 
@@ -708,6 +715,8 @@ export default function HrSidebar() {
                 <HugeiconsIcon icon={Task01Icon} size={18} color="currentColor" strokeWidth={1.8} />
                 Ticket Management
               </NavLink>
+
+
 
               {/* SETTINGS */}
               <div className="hr-section">Settings</div>

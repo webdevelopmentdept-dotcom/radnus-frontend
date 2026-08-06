@@ -62,6 +62,8 @@ import EmployeeAnnouncements from "./pages/employee/Employeeannouncements";
 import MyApplications from "./pages/employee/Myapplications";
 import MyPayslips from "./pages/employee/MyPayslips";
 import RaiseTicket from "./pages/employee/RaiseTicket";
+    import EmployeeFeedback from "./pages/employee/EmployeeFeedback";
+
 
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
@@ -118,6 +120,8 @@ import DepartmentScoreboard from "./pages/hr/DepartmentScoreboard";
 import PayrollDashboard from "./pages/hr/PayrollDashboard";
 import PayslipDetail from "./pages/hr/PayslipDetail";
 import HrTickets from "./pages/hr/HrTickets";
+import HrFeedback from "./pages/hr/HrFeedback";
+
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -244,6 +248,7 @@ function App() {
         <Route path="/employee/announcements" element={<EmployeeAnnouncements />} />
         <Route path="/employee/my-payslips" element={<MyPayslips />} />
         <Route path="/employee/raise-ticket" element={<RaiseTicket />} />
+          <Route path="/employee/feedback" element={<EmployeeFeedback />} />
 
 
         {/* HR Routes */}
@@ -331,6 +336,8 @@ function App() {
           <Route path="payroll/payslip/:id" element={<PayslipDetail />} />
 
           <Route path="tickets" element={<HrTickets />} />
+
+           <Route path="feedback" element={<HrFeedback />} />
 
         </Route>
 

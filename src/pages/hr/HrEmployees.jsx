@@ -5,6 +5,7 @@ export default function HrEmployees() {
   const [filter, setFilter] = useState("all");
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
@@ -157,16 +158,26 @@ export default function HrEmployees() {
   };
 
   // ── Filter ────────────────────────────────────────────────────
-  const filteredEmployees = employees.filter((emp) => {
-    if (filter === "all") return true;
-    if (filter === "active") return !emp.exitType;
-    if (filter === "relieved") return emp.exitType === "relieved";
-    if (filter === "fired") return emp.exitType === "fired";
-    if (filter === "access-pending")
-      return (emp.exitType === "relieved" || emp.exitType === "fired") &&
-        !emp.accessDeactivated;
-    return true;
-  });
+  const filteredEmployees = employees
+    .filter((emp) => {
+      if (filter === "all") return true;
+      if (filter === "active") return !emp.exitType;
+      if (filter === "relieved") return emp.exitType === "relieved";
+      if (filter === "fired") return emp.exitType === "fired";
+      if (filter === "access-pending")
+        return (emp.exitType === "relieved" || emp.exitType === "fired") &&
+          !emp.accessDeactivated;
+      return true;
+    })
+    .filter((emp) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        emp.name?.toLowerCase().includes(q) ||
+        emp.employeeId?.toLowerCase().includes(q) ||
+        emp.department?.toLowerCase().includes(q)
+      );
+    });
 
   const pendingAccessCount = employees.filter(
     (e) => (e.exitType === "relieved" || e.exitType === "fired") && !e.accessDeactivated
@@ -195,6 +206,19 @@ export default function HrEmployees() {
           </span>
         </div>
       )}
+
+      {/* Search Bar */}
+<div className="mb-3">
+  <input
+    type="text"
+    className="form-control"
+    placeholder="🔍 Search by Name, Emp ID or Department..."
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    style={{ maxWidth: "400px" }}
+  />
+</div>
+
 
       {/* Filter tabs */}
       <div className="d-flex gap-2 mb-3 flex-wrap">
