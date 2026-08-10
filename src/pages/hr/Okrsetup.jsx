@@ -1,12 +1,14 @@
 // pages/hr/dashboard/performance/OkrSetup.jsx
 // Fixes: correct API endpoint, weight field per KR, auto weight distribute
+// + Search bar (Objectives list)
+// + NEW: Searchable dropdowns for "Department" and "Link KPI Item" (type-to-search, grouped)
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
   Plus, Trash2, ChevronDown, ChevronUp,
   Target, Link2, AlertCircle,
-  Edit2, Save, X, RefreshCw, Layers
+  Edit2, Save, X, RefreshCw, Layers, Search
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -42,6 +44,7 @@ const STYLES = `
     .okrs-header-btn { width: 100%; justify-content: center; }
     .okrs-form-grid { grid-template-columns: 1fr !important; }
     .okrs-kr-grid { grid-template-columns: 1fr !important; }
+    .okrs-search-wrap { min-width: 100% !important; }
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -83,6 +86,34 @@ const STYLES = `
   .okrs-kr-row { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: #f8fafc; margin-bottom: 10px; }
   .okrs-kr-row:hover { border-color: #bfdbfe; }
   .okrs-inp:focus { border-color: #2563eb !important; }
+
+  .okrs-search-wrap { position: relative; flex: 2; min-width: 220px; }
+  .okrs-search-wrap input { padding-left: 34px !important; }
+  .okrs-search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; }
+  .okrs-search-clear {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: #f3f4f6; border: none; border-radius: 6px; width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; color: #6b7280;
+  }
+  .okrs-search-clear:hover { background: #e5e7eb; }
+  mark.okrs-hl { background: #fef08a; color: inherit; border-radius: 3px; padding: 0 1px; }
+
+  /* Searchable Select (Department / Link KPI Item) */
+  .okrs-ssel-trigger:hover { border-color: #93c5fd !important; }
+  .okrs-ssel-trigger.open { border-color: #2563eb !important; box-shadow: 0 0 0 3px #2563eb1a; }
+  .okrs-ssel-panel {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 60;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(15,23,42,.14); overflow: hidden;
+    animation: fadeIn .12s ease;
+  }
+  .okrs-ssel-search-box { position: relative; padding: 8px; border-bottom: 1px solid #f3f4f6; background: #fafbfc; }
+  .okrs-ssel-search-icon { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; }
+  .okrs-ssel-list { max-height: 230px; overflow-y: auto; padding: 6px; }
+  .okrs-ssel-group { padding: 8px 10px 4px; font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .5px; }
+  .okrs-ssel-opt { padding: 8px 10px; font-size: 13px; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .okrs-ssel-opt:hover { background: #f3f4f6; }
+  .okrs-ssel-empty { padding: 16px 12px; font-size: 12px; color: #9ca3af; text-align: center; }
 `;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -105,6 +136,150 @@ const distributeWeights = (krs) => {
 };
 
 const totalWeight = (krs) => krs.reduce((s, k) => s + (parseFloat(k.weight) || 0), 0);
+
+// Builds one flat lowercase haystack per objective so search checks everything at once
+const buildSearchHaystack = (obj) => {
+  const parts = [
+    obj.title, obj.description, obj.department, obj.quarter,
+    String(obj.year || ""), obj.status,
+    ...(obj.key_results || []).map(kr => `${kr.title || ""} ${kr.unit || ""}`),
+  ];
+  return parts.filter(Boolean).join(" ").toLowerCase();
+};
+
+const matchesSearch = (obj, query) => {
+  if (!query.trim()) return true;
+  const haystack = buildSearchHaystack(obj);
+  return query.trim().toLowerCase().split(/\s+/).every(word => haystack.includes(word));
+};
+
+// Highlights the matched query inside a piece of text (used for objective title)
+const highlightText = (text, query) => {
+  if (!query.trim() || !text) return text;
+  const words = query.trim().split(/\s+/).filter(Boolean).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if (!words.length) return text;
+  const re = new RegExp(`(${words.join("|")})`, "ig");
+  const parts = String(text).split(re);
+  return parts.map((part, i) =>
+    re.test(part) ? <mark key={i} className="okrs-hl">{part}</mark> : part
+  );
+};
+
+// ── Searchable Select (single combobox — type directly in the same box, supports grouped options) ──
+// options: [{ value, label, group? }]
+function SearchableSelect({ value, onChange, options, placeholder = "— Select —", allowClear = false, clearLabel = "— None —" }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const wrapRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const selected = options.find(o => String(o.value) === String(value));
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const openDropdown = () => {
+    if (open) return;
+    setOpen(true);
+    setQuery(""); // fresh so the full list shows; typing narrows it down
+    requestAnimationFrame(() => inputRef.current?.select());
+  };
+
+  const closeDropdown = () => {
+    setOpen(false);
+    setQuery("");
+    inputRef.current?.blur();
+  };
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? options.filter(o => o.label.toLowerCase().includes(q) || (o.group || "").toLowerCase().includes(q))
+    : options;
+
+  // group in original order
+  const groupOrder = [];
+  const groupMap = {};
+  filtered.forEach(o => {
+    const g = o.group || "";
+    if (!groupMap[g]) { groupMap[g] = []; groupOrder.push(g); }
+    groupMap[g].push(o);
+  });
+
+  const pick = (opt) => {
+    onChange(opt ? opt.value : "");
+    setOpen(false);
+    setQuery("");
+  };
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <div style={{ position: "relative" }}>
+        <Search size={13} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none" }} />
+        <input
+          ref={inputRef}
+          className="okrs-inp"
+          style={{
+            ...inputStyle, paddingLeft: 30, paddingRight: 30, cursor: "text",
+            borderColor: open ? "#2563eb" : "#d1d5db",
+            boxShadow: open ? "0 0 0 3px #2563eb1a" : "none",
+          }}
+          value={open ? query : (selected ? selected.label : "")}
+          placeholder={placeholder}
+          onFocus={openDropdown}
+          onClick={openDropdown}
+          onChange={e => { setQuery(e.target.value); if (!open) setOpen(true); }}
+          onKeyDown={e => { if (e.key === "Escape") closeDropdown(); }}
+        />
+        <ChevronDown size={14} color="#9ca3af"
+          style={{ position: "absolute", right: 11, top: "50%", pointerEvents: "none",
+            transform: `translateY(-50%) ${open ? "rotate(180deg)" : ""}`, transition: "transform .15s" }} />
+      </div>
+
+      {open && (
+        <div className="okrs-ssel-panel">
+          <div className="okrs-ssel-list">
+            {allowClear && (
+              <div className="okrs-ssel-opt" onClick={() => pick(null)} style={{ color: "#9ca3af", fontStyle: "italic" }}>
+                {clearLabel}
+              </div>
+            )}
+            {groupOrder.length === 0 && <div className="okrs-ssel-empty">No matches</div>}
+            {groupOrder.map(g => (
+              <div key={g || "_ungrouped"}>
+                {g && <div className="okrs-ssel-group">{g}</div>}
+                {groupMap[g].map(opt => {
+                  const isSelected = String(opt.value) === String(value);
+                  return (
+                    <div
+                      key={opt.value}
+                      className="okrs-ssel-opt"
+                      onClick={() => pick(opt)}
+                      style={{
+                        background: isSelected ? "#eff6ff" : "transparent",
+                        fontWeight: isSelected ? 700 : 500,
+                        color: isSelected ? "#2563eb" : "#1f2937",
+                      }}
+                    >
+                      {opt.label}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Toast ────────────────────────────────────────────────────────────────────
 function Toast({ toast }) {
@@ -150,6 +325,15 @@ function WeightBar({ krs }) {
 }
 
 function KrRow({ kr, idx, total, templates, onChange, onRemove }) {
+  // Flatten templates → grouped KPI options for the searchable select
+  const kpiOptions = templates.flatMap(tpl =>
+    (tpl.kpi_items || []).map(item => ({
+      value: item._id,
+      label: item.kpi_name,
+      group: `${tpl.template_name} (${tpl.department})`,
+    }))
+  );
+
   return (
     <div className="okrs-kr-row">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -197,26 +381,22 @@ function KrRow({ kr, idx, total, templates, onChange, onRemove }) {
             Link KPI Item
             <span style={{ color: "#9ca3af", fontWeight: 400 }}> (optional)</span>
           </label>
-          <select className="okrs-inp" style={selectStyle}
-            value={kr.linked_kpi_item_id} onChange={e => onChange(idx, "linked_kpi_item_id", e.target.value)}>
-            <option value="">— No KPI link —</option>
-            {templates.map(tpl => (
-              <optgroup key={tpl._id} label={`${tpl.template_name} (${tpl.department})`}>
-                {(tpl.kpi_items || []).map(item => (
-                  <option key={item._id} value={item._id}>
-                    {item.kpi_name}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+          {/* ✅ NOW SEARCHABLE — type to filter across all KPI templates/items */}
+          <SearchableSelect
+            value={kr.linked_kpi_item_id}
+            onChange={(val) => onChange(idx, "linked_kpi_item_id", val)}
+            options={kpiOptions}
+            placeholder="— No KPI link —"
+            allowClear
+            clearLabel="— No KPI link —"
+          />
         </div>
       </div>
     </div>
   );
 }
 
-function ObjCard({ obj, templates, onEdit, onDelete, saving }) {
+function ObjCard({ obj, templates, onEdit, onDelete, saving, searchQuery }) {
   const [open, setOpen] = useState(false);
   const krs = obj.key_results || [];
   const score = obj.objective_score || 0;
@@ -230,7 +410,9 @@ function ObjCard({ obj, templates, onEdit, onDelete, saving }) {
       <div style={{ background: "#1a1a2e", padding: "16px 20px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, color: "#fff", fontWeight: 800, fontSize: 15, wordBreak: "break-word" }}>{obj.title}</p>
+            <p style={{ margin: 0, color: "#fff", fontWeight: 800, fontSize: 15, wordBreak: "break-word" }}>
+              {highlightText(obj.title, searchQuery)}
+            </p>
             <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: 12 }}>
               {obj.department} · {obj.quarter} {obj.year}
               <span style={{ marginLeft: 8, background: obj.status === "active" ? "#16a34a22" : "#6b728022", color: obj.status === "active" ? "#86efac" : "#9ca3af", padding: "2px 8px", borderRadius: 20, fontSize: 10, fontWeight: 700 }}>
@@ -251,7 +433,7 @@ function ObjCard({ obj, templates, onEdit, onDelete, saving }) {
         <div style={{ marginTop: 10, background: "rgba(255,255,255,.1)", borderRadius: 99, height: 6, overflow: "hidden" }}>
           <div style={{ width: `${score}%`, height: "100%", background: color, borderRadius: 99 }} />
         </div>
-        {obj.description && <p style={{ margin: "8px 0 0", color: "#9ca3af", fontSize: 12, lineHeight: 1.5 }}>{obj.description}</p>}
+        {obj.description && <p style={{ margin: "8px 0 0", color: "#9ca3af", fontSize: 12, lineHeight: 1.5 }}>{highlightText(obj.description, searchQuery)}</p>}
       </div>
 
       <div style={{ padding: "14px 20px" }}>
@@ -273,7 +455,7 @@ function ObjCard({ obj, templates, onEdit, onDelete, saving }) {
           return (
             <div key={i} style={{ marginBottom: 8, padding: "10px 12px", background: "#f8fafc", borderRadius: 9, border: "1px solid #e5e7eb" }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 3 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#1f2937", flex: 1 }}>{kr.title}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#1f2937", flex: 1 }}>{highlightText(kr.title, searchQuery)}</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: c, flexShrink: 0 }}>
                   {kr.current_value ?? 0}/{kr.target} {kr.unit}
                 </span>
@@ -324,6 +506,7 @@ export default function OkrSetup() {
   const [form,         setForm]         = useState(blankOkr());
   const [filterDept,   setFilterDept]   = useState("All");
   const [filterQ,      setFilterQ]      = useState("All");
+  const [searchQuery,  setSearchQuery]  = useState("");
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -446,10 +629,12 @@ export default function OkrSetup() {
 
   const filtered = objectives.filter(o =>
     (filterDept === "All" || o.department === filterDept) &&
-    (filterQ    === "All" || o.quarter    === filterQ)
+    (filterQ    === "All" || o.quarter    === filterQ) &&
+    matchesSearch(o, searchQuery)
   );
 
   const wt = totalWeight(form.key_results);
+  const hasActiveFilters = filterDept !== "All" || filterQ !== "All" || searchQuery.trim() !== "";
 
   if (loading) return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
@@ -497,8 +682,8 @@ export default function OkrSetup() {
 
       {/* CREATE / EDIT FORM */}
       {showForm && (
-        <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", marginBottom: 24, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,.07)" }}>
-          <div style={{ background: "#1a1a2e", padding: "16px 22px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", marginBottom: 24, boxShadow: "0 4px 24px rgba(0,0,0,.07)" }}>
+          <div style={{ background: "#1a1a2e", padding: "16px 22px", borderRadius: "16px 16px 0 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Target size={18} color="#93c5fd" />
               <span style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>
@@ -528,12 +713,13 @@ export default function OkrSetup() {
             <div className="okrs-form-grid" style={{ display: "grid", gap: 14, marginBottom: 16 }}>
               <div>
                 <label style={labelStyle}>Department *</label>
-                {/* ✅ Sourced from Department Master — only active departments */}
-                <select className="okrs-inp" style={selectStyle}
-                  value={form.department} onChange={e => setField("department", e.target.value)}>
-                  <option value="">— Select Department —</option>
-                  {departments.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+                {/* ✅ NOW SEARCHABLE — Sourced from Department Master, only active departments */}
+                <SearchableSelect
+                  value={form.department}
+                  onChange={(val) => setField("department", val)}
+                  options={departments.map(d => ({ value: d, label: d }))}
+                  placeholder="— Select Department —"
+                />
                 {departments.length === 0 && (
                   <p style={{ margin: "4px 0 0", fontSize: 11, color: "#f59e0b" }}>
                     ⚠️ No active departments found. Add departments in Department Master first.
@@ -632,6 +818,27 @@ export default function OkrSetup() {
 
       {objectives.length > 0 && (
         <div style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", border: "1px solid #e5e7eb", marginBottom: 18, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+
+          <div className="okrs-search-wrap">
+            <label style={labelStyle}>Search</label>
+            <div style={{ position: "relative" }}>
+              <Search size={14} className="okrs-search-icon" />
+              <input
+                className="okrs-inp"
+                style={inputStyle}
+                type="text"
+                placeholder="Search objectives, KRs, department, quarter..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button className="okrs-search-clear" onClick={() => setSearchQuery("")} title="Clear search">
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+
           <div style={{ flex: 1, minWidth: 140 }}>
             <label style={labelStyle}>Department</label>
             <select style={selectStyle} value={filterDept} onChange={e => setFilterDept(e.target.value)}>
@@ -646,8 +853,8 @@ export default function OkrSetup() {
               {QUARTERS.map(q => <option key={q} value={q}>{q}</option>)}
             </select>
           </div>
-          {(filterDept !== "All" || filterQ !== "All") && (
-            <button className="okrs-btn-ghost" onClick={() => { setFilterDept("All"); setFilterQ("All"); }} style={{ alignSelf: "flex-end" }}>
+          {hasActiveFilters && (
+            <button className="okrs-btn-ghost" onClick={() => { setFilterDept("All"); setFilterQ("All"); setSearchQuery(""); }} style={{ alignSelf: "flex-end" }}>
               ✕ Clear ({filtered.length} showing)
             </button>
           )}
@@ -659,13 +866,16 @@ export default function OkrSetup() {
       ) : filtered.length === 0 ? (
         <div style={{ background: "#fff", borderRadius: 14, padding: "40px", textAlign: "center", border: "1px solid #e5e7eb" }}>
           <AlertCircle size={32} color="#d1d5db" style={{ display: "block", margin: "0 auto 10px" }} />
-          <p style={{ color: "#6b7280", fontWeight: 600 }}>No OKRs match these filters</p>
+          <p style={{ color: "#6b7280", fontWeight: 600 }}>
+            {searchQuery.trim() ? `No OKRs match "${searchQuery}"` : "No OKRs match these filters"}
+          </p>
         </div>
       ) : (
         <div style={{ display: "grid", gap: 16 }}>
           {filtered.map(obj => (
             <ObjCard key={obj._id} obj={obj} templates={templates}
-              onEdit={openEdit} onDelete={handleDelete} saving={saving} />
+              onEdit={openEdit} onDelete={handleDelete} saving={saving}
+              searchQuery={searchQuery} />
           ))}
         </div>
       )}

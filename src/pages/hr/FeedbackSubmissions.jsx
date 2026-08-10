@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { CheckCircle, Users, Star, ChevronDown, ChevronUp, Download, TrendingUp } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -35,6 +35,97 @@ const COMPETENCY_ICONS = {
   goalAchievement: "🎯", innovation: "💡", teamwork: "🤝",
 };
 
+/* ✅ NEW — Searchable Cycle Dropdown (status badge included) */
+function CycleSearchDropdown({ cycles, selectedCycle, onSelect }) {
+  const [open, setOpen]   = useState(false);
+  const [query, setQuery] = useState("");
+  const wrapRef           = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = cycles.filter(c =>
+    `${c.cycleName} ${c.period} ${c.status}`.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const displayText = selectedCycle
+    ? `${selectedCycle.cycleName} · ${selectedCycle.period} (${selectedCycle.status})`
+    : "";
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", padding: "10px 14px", border: "1.5px solid #e2e8f0", borderRadius: 8,
+          fontSize: 14, color: displayText ? "#0f172a" : "#94a3b8", background: "#fff",
+          cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center",
+          boxSizing: "border-box",
+        }}
+      >
+        <span>{displayText || "— Select a cycle —"}</span>
+        <span style={{ color: "#94a3b8", fontSize: 12, transform: open ? "rotate(180deg)" : "none", transition: "transform .15s" }}>▼</span>
+      </div>
+
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 50,
+          background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 10,
+          boxShadow: "0 8px 24px rgba(0,0,0,.12)", overflow: "hidden",
+        }}>
+          <div style={{ padding: 8, borderBottom: "1px solid #f1f5f9" }}>
+            <input
+              autoFocus
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="🔍 Search cycle..."
+              style={{
+                width: "100%", padding: "8px 10px", border: "1px solid #e2e8f0", borderRadius: 6,
+                fontSize: 13, outline: "none", boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          <div style={{ maxHeight: 220, overflowY: "auto" }}>
+            {filtered.length === 0 && (
+              <div style={{ padding: "14px 12px", fontSize: 13, color: "#94a3b8", textAlign: "center" }}>
+                No cycles found
+              </div>
+            )}
+            {filtered.map(c => (
+              <div
+                key={c._id}
+                onClick={() => { onSelect(c); setOpen(false); setQuery(""); }}
+                style={{
+                  padding: "10px 14px", fontSize: 14, cursor: "pointer",
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  background: selectedCycle?._id === c._id ? "#eff6ff" : "#fff",
+                  color: selectedCycle?._id === c._id ? "#2563eb" : "#0f172a",
+                  fontWeight: selectedCycle?._id === c._id ? 700 : 500,
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = selectedCycle?._id === c._id ? "#eff6ff" : "#f8fafc"}
+                onMouseLeave={e => e.currentTarget.style.background = selectedCycle?._id === c._id ? "#eff6ff" : "#fff"}
+              >
+                <span>{c.cycleName} · {c.period}</span>
+                <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>({c.status})</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function FeedbackSubmissions() {
   const [cycles, setCycles]           = useState([]);
   const [selectedCycle, setSelectedCycle] = useState(null);
@@ -62,7 +153,6 @@ export default function FeedbackSubmissions() {
   const fetchSummary = async (cycleId) => {
     setLoading(true);
     try {
-      // ✅ FIX: Only use summary API — it now includes submissions per employee
       const sRes = await axios.get(`${API_BASE}/api/feedback-submissions/summary/${cycleId}`);
       if (sRes.data.success) setSummary(sRes.data.data);
     } catch { showToast("Failed to load feedback data", "error"); }
@@ -75,14 +165,11 @@ export default function FeedbackSubmissions() {
     fetchSummary(cycle._id);
   };
 
-  // ✅ FIX: Use submissions from summary data directly — no separate /cycle API needed
   const getEmpSubs = (empId) => {
     const row = summary.find(s => String(s.employeeId) === String(empId));
     return row?.submissions || [];
   };
 
-  // ✅ Competency averages — still needs /cycle API or from summary
-  // We keep a separate submissions state for competency detail
   const [allSubmissions, setAllSubmissions] = useState([]);
 
   const fetchAllSubmissions = async (cycleId) => {
@@ -133,7 +220,6 @@ export default function FeedbackSubmissions() {
   const avgScore       = avgScoreData.length
     ? Math.round(avgScoreData.reduce((a,b)=>a+b.aggregatedScore,0)/avgScoreData.length) : 0;
 
-  // ✅ Total reviews count from summary
   const totalReviews = summary.reduce((acc, s) => acc + (s.receivedReviews || 0), 0);
 
   return (
@@ -173,19 +259,14 @@ export default function FeedbackSubmissions() {
         )}
       </div>
 
-      {/* Cycle Selector */}
+      {/* Cycle Selector — ✅ now searchable */}
       <div style={{ background:"#fff",borderRadius:14,padding:"16px 20px",border:"1.5px solid #e2e8f0",marginBottom:24 }}>
         <label style={{ display:"block",fontSize:11,fontWeight:700,color:"#94a3b8",marginBottom:8,textTransform:"uppercase",letterSpacing:"0.8px" }}>Select Feedback Cycle</label>
-        <select
-          value={selectedCycle?._id||""}
-          onChange={e=>{
-            const c=cycles.find(cy=>cy._id===e.target.value);
-            if(c) handleSelectCycleFull(c); // ✅ use full fetch
-          }}
-          style={{ width:"100%",padding:"10px 14px",border:"1.5px solid #e2e8f0",borderRadius:8,fontSize:14,color:"#0f172a",background:"#fff",outline:"none",cursor:"pointer" }}>
-          <option value="">— Select a cycle —</option>
-          {cycles.map(c=><option key={c._id} value={c._id}>{c.cycleName} · {c.period} ({c.status})</option>)}
-        </select>
+        <CycleSearchDropdown
+          cycles={cycles}
+          selectedCycle={selectedCycle}
+          onSelect={handleSelectCycleFull}
+        />
       </div>
 
       {/* Empty state */}
@@ -249,7 +330,6 @@ export default function FeedbackSubmissions() {
                     {summary.map((row,i)=>{
                       const ri         = getRatingInfo(row.aggregatedScore);
                       const compAvgs   = getCompAvgs(row.employeeId);
-                      // ✅ FIX: get submissions from summary row directly
                       const empSubs    = row.submissions || [];
                       const isExpanded = expandedRow === row.employeeId;
 
@@ -342,7 +422,6 @@ export default function FeedbackSubmissions() {
                               <td colSpan={7} style={{ padding:"0 16px 20px",background:"#f8fafc" }}>
                                 <div className="fb-expand" style={{ background:"#fff",borderRadius:14,border:"1.5px solid #e2e8f0",padding:24,marginTop:10 }}>
 
-                                  {/* Individual Reviewer Score Cards */}
                                   <p style={{ margin:"0 0 14px",fontWeight:700,fontSize:14,color:"#0f172a" }}>
                                     Individual Reviewer Scores
                                     <span style={{ marginLeft:8,fontSize:12,fontWeight:500,color:"#94a3b8" }}>(Manager 40% · Peers 25% · Subordinates 20% · Self 15%)</span>
@@ -377,7 +456,6 @@ export default function FeedbackSubmissions() {
                                     </div>
                                   )}
 
-                                  {/* Weighted Aggregate */}
                                   {row.aggregatedScore>0 && (
                                     <div style={{ background:getRatingInfo(row.aggregatedScore).bg,border:`1.5px solid ${getRatingInfo(row.aggregatedScore).color}30`,borderRadius:12,padding:"14px 18px",marginBottom:24,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
                                       <div>
@@ -391,7 +469,6 @@ export default function FeedbackSubmissions() {
                                     </div>
                                   )}
 
-                                  {/* Competency Breakdown */}
                                   {compAvgs && (
                                     <>
                                       <p style={{ margin:"0 0 14px",fontWeight:700,fontSize:14,color:"#0f172a" }}>Competency Breakdown (Averages across all reviewers)</p>
@@ -431,7 +508,7 @@ export default function FeedbackSubmissions() {
               <div className="fs-card-list">
                 {summary.map(row=>{
                   const ri      = getRatingInfo(row.aggregatedScore);
-                  const empSubs = row.submissions || []; // ✅ FIX
+                  const empSubs = row.submissions || [];
                   return (
                     <div key={row.employeeId} style={{ border:"1.5px solid #e2e8f0",borderRadius:14,padding:16,background:"#fff" }}>
                       <div style={{ display:"flex",justifyContent:"space-between",marginBottom:10 }}>

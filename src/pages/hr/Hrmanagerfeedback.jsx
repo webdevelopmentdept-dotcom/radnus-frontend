@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -34,6 +34,93 @@ function ScoreSlider({ competency, value, onChange }) {
   );
 }
 
+/* ✅ NEW — Searchable Cycle Dropdown */
+function CycleSearchDropdown({ cycles, selectedCycle, onSelect }) {
+  const [open, setOpen]     = useState(false);
+  const [query, setQuery]   = useState("");
+  const wrapRef             = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = cycles.filter(c =>
+    `${c.cycleName} ${c.period}`.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const displayText = selectedCycle ? `${selectedCycle.cycleName} — ${selectedCycle.period}` : "";
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 8,
+          fontSize: 14, color: displayText ? "#1a1a2e" : "#9ca3af", background: "#fff",
+          cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center",
+          boxSizing: "border-box",
+        }}
+      >
+        <span>{displayText || "-- Select Cycle --"}</span>
+        <span style={{ color: "#9ca3af", fontSize: 12, transform: open ? "rotate(180deg)" : "none", transition: "transform .15s" }}>▼</span>
+      </div>
+
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 50,
+          background: "#fff", border: "1px solid #d1d5db", borderRadius: 10,
+          boxShadow: "0 8px 24px rgba(0,0,0,.12)", overflow: "hidden",
+        }}>
+          <div style={{ padding: 8, borderBottom: "1px solid #f1f5f9" }}>
+            <input
+              autoFocus
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="🔍 Search cycle..."
+              style={{
+                width: "100%", padding: "8px 10px", border: "1px solid #e5e7eb", borderRadius: 6,
+                fontSize: 13, outline: "none", boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          <div style={{ maxHeight: 220, overflowY: "auto" }}>
+            {filtered.length === 0 && (
+              <div style={{ padding: "14px 12px", fontSize: 13, color: "#9ca3af", textAlign: "center" }}>
+                No cycles found
+              </div>
+            )}
+            {filtered.map(c => (
+              <div
+                key={c._id}
+                onClick={() => { onSelect(c); setOpen(false); setQuery(""); }}
+                style={{
+                  padding: "10px 14px", fontSize: 14, cursor: "pointer",
+                  background: selectedCycle?._id === c._id ? "#eff6ff" : "#fff",
+                  color: selectedCycle?._id === c._id ? "#2563eb" : "#1a1a2e",
+                  fontWeight: selectedCycle?._id === c._id ? 700 : 500,
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = selectedCycle?._id === c._id ? "#eff6ff" : "#f8fafc"}
+                onMouseLeave={e => e.currentTarget.style.background = selectedCycle?._id === c._id ? "#eff6ff" : "#fff"}
+              >
+                {c.cycleName} — {c.period}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function HrManagerFeedback() {
   const [cycles, setCycles]               = useState([]);
   const [selectedCycle, setSelectedCycle] = useState(null);
@@ -46,7 +133,7 @@ export default function HrManagerFeedback() {
   const [saving, setSaving]               = useState(false);
   const [loading, setLoading]             = useState(false);
   const [toast, setToast]                 = useState(null);
-  const [activeTab, setActiveTab]         = useState("pending"); // ✅ NEW — Tab state
+  const [activeTab, setActiveTab]         = useState("pending");
 
   useEffect(() => { fetchCycles(); }, []);
 
@@ -70,7 +157,7 @@ export default function HrManagerFeedback() {
   const handleSelectCycle = async (cycle) => {
     setSelectedCycle(cycle);
     setSelectedTask(null);
-    setActiveTab("pending"); // ✅ Cycle மாறும்போது tab reset
+    setActiveTab("pending");
     setLoading(true);
     try {
       const [nomRes, subRes] = await Promise.all([
@@ -148,7 +235,7 @@ export default function HrManagerFeedback() {
       );
 
       setSelectedTask(null);
-      setActiveTab("nominated"); // ✅ Submit பண்ணிட்டா Nominated tab-க்கு auto switch
+      setActiveTab("nominated");
     } catch (err) {
       showToast(err?.response?.data?.message || "Submission failed", "error");
     } finally {
@@ -163,7 +250,6 @@ export default function HrManagerFeedback() {
   const pendingList   = pendingTasks.filter(t => !t.alreadySubmitted);
   const submittedList = pendingTasks.filter(t =>  t.alreadySubmitted);
 
-  // ✅ Tab style helper
   const tabStyle = (tabName) => ({
     display: "flex",
     alignItems: "center",
@@ -198,24 +284,16 @@ export default function HrManagerFeedback() {
         </p>
       </div>
 
-      {/* Cycle Selector */}
+      {/* Cycle Selector — ✅ now searchable */}
       <div style={{ background: "#fff", borderRadius: 14, padding: 20, border: "1px solid #e5e7eb", marginBottom: 24 }}>
         <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 6 }}>
           Select Active Feedback Cycle
         </label>
-        <select
-          value={selectedCycle?._id || ""}
-          onChange={e => {
-            const c = cycles.find(cy => cy._id === e.target.value);
-            if (c) handleSelectCycle(c);
-          }}
-          style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14, color: "#1a1a2e", background: "#fff", outline: "none" }}
-        >
-          <option value="">-- Select Cycle --</option>
-          {cycles.map(c => (
-            <option key={c._id} value={c._id}>{c.cycleName} — {c.period}</option>
-          ))}
-        </select>
+        <CycleSearchDropdown
+          cycles={cycles}
+          selectedCycle={selectedCycle}
+          onSelect={handleSelectCycle}
+        />
       </div>
 
       {/* No cycle selected */}
@@ -301,7 +379,6 @@ export default function HrManagerFeedback() {
       {/* Task List with Tabs */}
       {selectedCycle && !loading && !selectedTask && pendingTasks.length > 0 && (
         <>
-          {/* Stats */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 24 }}>
             {[
               { label: "Total Employees", value: pendingTasks.length,  color: "#2563eb" },
@@ -315,7 +392,6 @@ export default function HrManagerFeedback() {
             ))}
           </div>
 
-          {/* ✅ Tab Bar — image 2 மாதிரி */}
           <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", overflow: "hidden" }}>
             <div style={{ display: "flex", gap: 6, padding: "10px 14px", borderBottom: "1px solid #f3f4f6", background: "#f9fafb" }}>
               <button style={tabStyle("pending")} onClick={() => setActiveTab("pending")}>
@@ -326,7 +402,6 @@ export default function HrManagerFeedback() {
               </button>
             </div>
 
-            {/* ✅ Pending Tab Content */}
             {activeTab === "pending" && (
               pendingList.length === 0
                 ? <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>
@@ -356,7 +431,6 @@ export default function HrManagerFeedback() {
                 ))
             )}
 
-            {/* ✅ Nominated Tab Content */}
             {activeTab === "nominated" && (
               submittedList.length === 0
                 ? <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>

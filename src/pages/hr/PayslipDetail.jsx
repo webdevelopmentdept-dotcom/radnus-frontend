@@ -59,6 +59,7 @@ export default function PayslipDetail() {
  
 const lopAmount = (p.absent_days || 0) * (p.per_day_rate || 0);
 const halfDayAmount = (p.half_days || 0) * (p.per_day_rate || 0) * 0.5;
+// deductions.total_deductions already includes any advance recovery amount
 const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount + halfDayAmount;
   const totalEarnings = p.earnings?.gross_earnings || 0;
 
@@ -190,10 +191,19 @@ function buildRows(p, lopAmount, halfDayAmount) {
   
   if (p.absent_days > 0) deductionsList.push({ label: `LOP (${p.absent_days} day${p.absent_days > 1 ? "s" : ""})`, amount: lopAmount });
   if (p.half_days > 0) deductionsList.push({ label: `Half Day (${p.half_days} day${p.half_days > 1 ? "s" : ""})`, amount: halfDayAmount });
+  (p.advance_recoveries || []).forEach((a) => {
+    deductionsList.push({ label: `Advance Recovery (${a.reason})`, amount: a.amount });
+  });
   if (p.deductions?.pf > 0) deductionsList.push({ label: "Provident Fund", amount: p.deductions.pf });
   if (p.deductions?.esi > 0) deductionsList.push({ label: "ESI", amount: p.deductions.esi });
   if (p.deductions?.tds > 0) deductionsList.push({ label: "TDS", amount: p.deductions.tds });
-  if (p.deductions?.professional_tax > 0) deductionsList.push({ label: "Professional Tax", amount: p.deductions.professional_tax });
+if (p.deductions?.professional_tax > 0) deductionsList.push({ label: "Professional Tax", amount: p.deductions.professional_tax });
+  if (p.other_deduction?.amount > 0) {
+    deductionsList.push({
+      label: `Other Deduction${p.other_deduction.reason ? ` (${p.other_deduction.reason})` : ""}`,
+      amount: p.other_deduction.amount,
+    });
+  }
   if (deductionsList.length === 0) deductionsList.push({ label: "No deductions applied", amount: 0 });
 
   const rowCount = Math.max(earningsList.length, deductionsList.length);

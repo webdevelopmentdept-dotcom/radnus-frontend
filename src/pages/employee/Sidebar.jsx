@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { href: "/employee/my-applications", icon: FileText, label: "My Applications" },
   { href: "/employee/my-salary", icon: Wallet, label: "My Salary" },
   { href: "/employee/my-payslips", icon: Wallet, label: "My Payslips" },
+   { href: "/employee/my-advance", icon: Wallet, label: "Salary Advance" },
   { href: "/employee/appraisal", icon: TrendingUp, label: "My Appraisals" },
   { href: "/employee/my-incentive", icon: Wallet, label: "My Incentive" },
   { href: "/employee/dashboard/impact-bonus", icon: Sparkles, label: "Impact Bonus" },

@@ -120,6 +120,23 @@ export const useMarkPayslipPending = () => {
   });
 };
 
+// ── HR: set/update "Other Deduction" (amount + reason) on one payslip ──
+export const useSetOtherDeduction = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, amount, reason, added_by }) => {
+      const res = await axios.put(`${API}/payslip/${id}/other-deduction`, { amount, reason, added_by });
+      return res.data;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["payroll-payslips"] });
+      qc.invalidateQueries({ queryKey: ["payroll-runs"] });
+      qc.invalidateQueries({ queryKey: ["payslip", vars.id] });
+    },
+  });
+};
+
+
 // ── Single payslip detail ───────────────────────────────────
 export const usePayslipDetail = (payslipId) => {
   return useQuery({

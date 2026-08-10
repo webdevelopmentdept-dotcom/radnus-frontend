@@ -96,12 +96,28 @@ export default function MyPayslips() {
     negative
   />
 )}
+{(p.advance_recoveries || []).map((a, i) => (
+  <DetailRow
+    key={a.advance_id || i}
+    label={`Advance Recovery — ${a.reason}`}
+    value={fmt(a.amount)}
+    negative
+  />
+))}
 {p.deductions?.pf > 0 && <DetailRow label="PF" value={fmt(p.deductions.pf)} negative />}
 {p.deductions?.esi > 0 && <DetailRow label="ESI" value={fmt(p.deductions.esi)} negative />}
 {p.deductions?.tds > 0 && <DetailRow label="TDS" value={fmt(p.deductions.tds)} negative />}
 {p.deductions?.professional_tax > 0 && (
   <DetailRow label="Professional Tax" value={fmt(p.deductions.professional_tax)} negative />
 )}
+{p.other_deduction?.amount > 0 && (
+  <DetailRow
+    label={`Other Deduction${p.other_deduction.reason ? ` — ${p.other_deduction.reason}` : ""}`}
+    value={fmt(p.other_deduction.amount)}
+    negative
+  />
+)}
+{/* deductions.total_deductions already includes advance recovery amounts */}
 <DetailRow
   label="Total Deductions"
   value={fmt(lopAmount + (p.deductions?.total_deductions || 0))}

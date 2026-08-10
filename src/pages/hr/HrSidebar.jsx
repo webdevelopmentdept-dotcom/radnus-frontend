@@ -383,6 +383,13 @@ export default function HrSidebar() {
                 Payroll
               </NavLink>
 
+                <NavLink to="/hr/dashboard/payroll/advances"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={MailSend01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Advance Requests
+              </NavLink>
+
               {/* PERFORMANCE — KPI */}
               <div className="hr-section">Performance — KPI</div>
 

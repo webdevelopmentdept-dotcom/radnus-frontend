@@ -62,8 +62,8 @@ import EmployeeAnnouncements from "./pages/employee/Employeeannouncements";
 import MyApplications from "./pages/employee/Myapplications";
 import MyPayslips from "./pages/employee/MyPayslips";
 import RaiseTicket from "./pages/employee/RaiseTicket";
-    import EmployeeFeedback from "./pages/employee/EmployeeFeedback";
-
+import EmployeeFeedback from "./pages/employee/EmployeeFeedback";
+import MyAdvances from "./pages/employee/MyAdvances";
 
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
@@ -121,6 +121,7 @@ import PayrollDashboard from "./pages/hr/PayrollDashboard";
 import PayslipDetail from "./pages/hr/PayslipDetail";
 import HrTickets from "./pages/hr/HrTickets";
 import HrFeedback from "./pages/hr/HrFeedback";
+import AdvanceRequests from "./pages/hr/AdvanceRequests";
 
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
@@ -248,7 +249,9 @@ function App() {
         <Route path="/employee/announcements" element={<EmployeeAnnouncements />} />
         <Route path="/employee/my-payslips" element={<MyPayslips />} />
         <Route path="/employee/raise-ticket" element={<RaiseTicket />} />
-          <Route path="/employee/feedback" element={<EmployeeFeedback />} />
+        <Route path="/employee/feedback" element={<EmployeeFeedback />} />
+        <Route path="/employee/my-advance" element={<MyAdvances />} />
+       
 
 
         {/* HR Routes */}
@@ -281,7 +284,6 @@ function App() {
 
           <Route path="masters/sop" element={<SOPManagement />} />
           <Route path="policies/quiz" element={<PolicyQuizManagementPage />} />
-
 
           <Route path="feedback/setup" element={<FeedbackCycleSetup />} />
           <Route path="feedback/nominations" element={<FeedbackNominations />} />
@@ -334,10 +336,13 @@ function App() {
 
           <Route path="payroll" element={<PayrollDashboard />} />
           <Route path="payroll/payslip/:id" element={<PayslipDetail />} />
+          <Route path="payroll/advances" element={<AdvanceRequests />} />
 
           <Route path="tickets" element={<HrTickets />} />
 
-           <Route path="feedback" element={<HrFeedback />} />
+           <Route path="feedback" element={<HrFeedback />} />  
+     
+
 
         </Route>
 

@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import {
   TrendingUp, Plus, Pencil, RefreshCw, Info,
   Star, Users, Award, BookOpen, RotateCcw,
-  ChevronRight, CheckCircle, XCircle, Target
+  ChevronRight, CheckCircle, XCircle, Target,
+  Search, ChevronDown, Check
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -58,6 +59,140 @@ function ToggleRow({ label, checked, onChange, disabled }) {
   );
 }
 
+// ── Searchable Employee Select ─────────────────────────────────
+function SearchableEmployeeSelect({ employees, value, onChange, placeholder = "-- Select Employee --", maxWidth = 380 }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [highlight, setHighlight] = useState(0);
+  const wrapRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const selectedEmp = employees.find(e => e._id === value);
+
+  const filtered = employees.filter(e => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      e.name?.toLowerCase().includes(q) ||
+      e.department?.toLowerCase().includes(q)
+    );
+  });
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      setHighlight(0);
+      setTimeout(() => inputRef.current?.focus(), 0);
+    }
+  }, [open, query]);
+
+  const selectEmp = (emp) => {
+    onChange(emp ? emp._id : "");
+    setOpen(false);
+    setQuery("");
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlight(h => Math.min(h + 1, filtered.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlight(h => Math.max(h - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (filtered[highlight]) selectEmp(filtered[highlight]);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+      setQuery("");
+    }
+  };
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative", maxWidth }}>
+      <button
+        type="button"
+        className="form-control form-control-sm d-flex justify-content-between align-items-center"
+        style={{ textAlign: "left", cursor: "pointer", background: "#fff" }}
+        onClick={() => setOpen(o => !o)}
+      >
+        <span style={{ color: selectedEmp ? "#111827" : "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {selectedEmp ? `${selectedEmp.name} — ${selectedEmp.department}` : placeholder}
+        </span>
+        <ChevronDown size={14} color="#6b7280" style={{ flexShrink: 0, marginLeft: 6 }} />
+      </button>
+
+      {open && (
+        <div
+          className="shadow-lg"
+          style={{
+            position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
+            background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8,
+            zIndex: 2000, maxHeight: 320, display: "flex", flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ padding: 8, borderBottom: "1px solid #f1f5f9" }}>
+            <div className="input-group input-group-sm">
+              <span className="input-group-text border-end-0 bg-white">
+                <Search size={12} color="#9ca3af" />
+              </span>
+              <input
+                ref={inputRef}
+                className="form-control border-start-0"
+                placeholder="Search by name or department..."
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
+          </div>
+          <div style={{ overflowY: "auto" }}>
+            <div
+              onMouseDown={() => selectEmp(null)}
+              style={{
+                padding: "8px 12px", fontSize: 13, cursor: "pointer",
+                background: "transparent",
+                color: "#6b7280",
+              }}
+            >
+              -- Select Employee --
+            </div>
+            {filtered.length === 0 ? (
+              <div style={{ padding: "10px 12px", fontSize: 12, color: "#9ca3af" }}>No employees found</div>
+            ) : filtered.map((e, i) => (
+              <div
+                key={e._id}
+                onMouseDown={() => selectEmp(e)}
+                onMouseEnter={() => setHighlight(i)}
+                style={{
+                  padding: "8px 12px", fontSize: 13, cursor: "pointer",
+                  background: highlight === i ? "#eff6ff" : (value === e._id ? "#f9fafb" : "transparent"),
+                  color: "#111827",
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                }}
+              >
+                <span>{e.name} <span style={{ color: "#9ca3af" }}>— {e.department}</span></span>
+                {value === e._id && <Check size={13} color="#10b981" />}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Enroll / Edit Form ─────────────────────────────────────────
 function TrackForm({ initial, employees, onSave, onCancel, isNew }) {
   const [employeeId, setEmployeeId] = useState(initial?.employeeId?._id || initial?.employeeId || "");
@@ -102,13 +237,12 @@ function TrackForm({ initial, employees, onSave, onCancel, isNew }) {
       {isNew && (
         <div style={{ marginBottom:20 }}>
           <label style={labelStyle}>Employee *</label>
-          <select className="form-select form-select-sm" value={employeeId}
-            onChange={e=>setEmployeeId(e.target.value)} style={{ maxWidth:380 }}>
-            <option value="">-- Select Employee --</option>
-            {employees.map(e=>(
-              <option key={e._id} value={e._id}>{e.name} — {e.department}</option>
-            ))}
-          </select>
+          <SearchableEmployeeSelect
+            employees={employees}
+            value={employeeId}
+            onChange={setEmployeeId}
+            maxWidth={380}
+          />
         </div>
       )}
 

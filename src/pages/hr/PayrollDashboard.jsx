@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   usePayrollRuns, usePayslipsByRun, useGeneratePayroll,
   useApprovePayroll, useRevertPayrollApproval, useMarkPayrollPaid, useDeletePayrollRun,
-  useMarkPayslipPaid, useMarkPayslipPending,
+  useMarkPayslipPaid, useMarkPayslipPending,  useSetOtherDeduction ,
 } from "../../hooks/usePayroll";
 
 const MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June",
@@ -36,6 +36,7 @@ export default function PayrollDashboard() {
   const [year, setYear]   = useState(today.getFullYear());
   const [selectedRun, setSelectedRun] = useState(null);
   const [toast, setToast] = useState(null);
+    const [deductionModal, setDeductionModal] = useState(null);
 
   const { data: runs = [], isLoading: runsLoading } = usePayrollRuns();
   const { data: payslips = [], isLoading: payslipsLoading } = usePayslipsByRun(selectedRun?._id);
@@ -47,6 +48,7 @@ export default function PayrollDashboard() {
   const deleteMutation   = useDeletePayrollRun();
   const markPayslipPaidMutation    = useMarkPayslipPaid();
   const markPayslipPendingMutation = useMarkPayslipPending();
+   const setOtherDeductionMutation  = useSetOtherDeduction();
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -109,6 +111,18 @@ export default function PayrollDashboard() {
       onError: (err) => showToast(err?.response?.data?.message || "Failed to revert", "error"),
     });
   };
+
+  const handleSaveDeduction = (amount, reason) => {
+    const hrName = localStorage.getItem("hrName") || "HR Admin";
+    setOtherDeductionMutation.mutate(
+      { id: deductionModal._id, amount, reason, added_by: hrName },
+      {
+        onSuccess: () => { showToast("Other deduction updated"); setDeductionModal(null); },
+        onError: (err) => showToast(err?.response?.data?.message || "Failed to update deduction", "error"),
+      }
+    );
+  };
+
 
   const handleDelete = (run) => {
     if (!window.confirm("Delete this draft payroll run?")) return;
@@ -236,10 +250,10 @@ export default function PayrollDashboard() {
             <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Loading...</div>
           ) : (
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 1050 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 1150 }}>
                 <thead>
                   <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e5e7eb" }}>
-                    {["Employee", "Dept", "Present", "LOP", "Payable Days", "Gross", "Deductions", "Net Pay", "Status", "Actions"].map((h) => (
+                    {["Employee", "Dept", "Present", "LOP", "Payable Days", "Gross", "Advance",  "Other Deduction", "Deductions", "Net Pay", "Status", "Actions"].map((h) => (
                       <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontWeight: 700, color: "#374151" }}>{h}</th>
                     ))}
                   </tr>
@@ -258,6 +272,25 @@ const totalDeductionsWithLop = lopAmount + halfDayAmount + (p.deductions?.total_
         <td style={{ padding: "12px 16px", color: p.lop_days > 0 ? "#ef4444" : "#9ca3af" }}>{p.lop_days}</td>
         <td style={{ padding: "12px 16px" }}>{p.payable_days}</td>
         <td style={{ padding: "12px 16px" }}>{fmt(p.gross_salary_monthly)}</td>
+      <td style={{ padding: "12px 16px", color: (p.deductions?.advance || 0) > 0 ? "#ef4444" : "#9ca3af", fontWeight: (p.deductions?.advance || 0) > 0 ? 700 : 400 }}>
+  {(p.deductions?.advance || 0) > 0 ? `- ${fmt(p.deductions.advance)}` : fmt(0)}
+</td>
+        <td style={{ padding: "12px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{
+              color: (p.other_deduction?.amount || 0) > 0 ? "#ef4444" : "#9ca3af",
+              fontWeight: (p.other_deduction?.amount || 0) > 0 ? 700 : 400,
+            }} title={p.other_deduction?.reason || ""}>
+              {(p.other_deduction?.amount || 0) > 0 ? `- ${fmt(p.other_deduction.amount)}` : fmt(0)}
+            </span>
+            {p.status === "draft" && (
+              <button onClick={() => setDeductionModal(p)}
+                style={{ ...btnStyle("#f3f4f6", "#374151"), padding: "3px 8px", fontSize: 11 }}>
+                {(p.other_deduction?.amount || 0) > 0 ? "Edit" : "Add"}
+              </button>
+            )}
+          </div>
+        </td>
         <td style={{ padding: "12px 16px" }}>{fmt(totalDeductionsWithLop)}</td>
         <td style={{ padding: "12px 16px", fontWeight: 700 }}>{fmt(p.net_pay)}</td>
         <td style={{ padding: "12px 16px" }}><StatusBadge status={p.status} /></td>
@@ -285,7 +318,64 @@ const totalDeductionsWithLop = lopAmount + halfDayAmount + (p.deductions?.total_
             </div>
           )}
         </div>
+   )}
+
+      {deductionModal && (
+        <OtherDeductionModal
+          payslip={deductionModal}
+          onClose={() => setDeductionModal(null)}
+          onSave={handleSaveDeduction}
+          saving={setOtherDeductionMutation.isPending}
+        />
       )}
+    </div>
+  );
+}
+
+function OtherDeductionModal({ payslip, onClose, onSave, saving }) {
+  const [amount, setAmount] = useState(payslip.other_deduction?.amount || "");
+  const [reason, setReason] = useState(payslip.other_deduction?.reason || "");
+  const [error, setError] = useState("");
+
+  const handleSubmit = () => {
+    const numAmount = Number(amount) || 0;
+    if (numAmount < 0) { setError("Amount cannot be negative"); return; }
+    if (numAmount > 0 && !reason.trim()) { setError("Please mention a reason for this deduction"); return; }
+    setError("");
+    onSave(numAmount, reason.trim());
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
+    }} onClick={onClose}>
+      <div style={{ background: "#fff", borderRadius: 14, padding: 24, width: 380, maxWidth: "90vw" }}
+        onClick={(e) => e.stopPropagation()}>
+        <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 800, color: "#111827" }}>Other Deduction</h3>
+        <p style={{ margin: "0 0 18px", fontSize: 13, color: "#6b7280" }}>{payslip.employee_name}</p>
+
+        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Amount (₹)</label>
+        <input type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)}
+          placeholder="0"
+          style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #d1d5db", fontSize: 13, marginBottom: 14, boxSizing: "border-box" }} />
+
+        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Reason</label>
+        <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3}
+          placeholder="e.g. Damage to company asset, uniform cost, etc."
+          style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #d1d5db", fontSize: 13, resize: "vertical", boxSizing: "border-box" }} />
+
+        {error && <p style={{ color: "#ef4444", fontSize: 12, margin: "8px 0 0" }}>{error}</p>}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>
+          <button onClick={onClose} disabled={saving}
+            style={{ ...btnStyle("#f3f4f6", "#374151"), padding: "8px 16px" }}>Cancel</button>
+          <button onClick={handleSubmit} disabled={saving}
+            style={{ ...btnStyle("#eff6ff", "#2563eb"), padding: "8px 16px", opacity: saving ? 0.6 : 1 }}>
+            {saving ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
