@@ -13,6 +13,7 @@ const todayStr = () => new Date().toISOString().split("T")[0];
 
 const DEFAULT_SHIFT_START = 10 * 60;
 const DEFAULT_SHIFT_END = 19 * 60;
+const GRACE_MINUTES = 5;
 
 const parseShiftMins = (shift) => {
   if (shift?.start && shift?.end) {
@@ -39,6 +40,14 @@ const STATUS_META = {
   holiday: { label: "Holiday", color: "#be185d", bg: "#fdf2f8", border: "#f9a8d4" },
   weekend: { label: "Weekend", color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb" },
   upcoming: { label: "Upcoming", color: "#9ca3af", bg: "#f9fafb", border: "#e5e7eb" },
+};
+
+const halfDayLabel = (rec) => {
+  if (rec?.status !== "half_day") return null;
+  const session = rec?.halfDaySession || rec?.half_day_session;
+  if (session === "morning") return "Half Day (Morning Leave)";
+  if (session === "afternoon") return "Half Day (Afternoon Leave)";
+  return "Half Day";
 };
 
 function LiveClock() {
@@ -550,7 +559,7 @@ export default function EmployeeAttendance() {
 
       let firstIn = null, lastOut = null, workHrs = "—";
       let breakOut = null, breakIn = null, breakLate = 0;
-      let lateMin = 0, earlyOutMin = 0, status = "absent", remark = "";
+      let lateMin = 0, earlyOutMin = 0, status = "absent", remark = "", halfDaySession = null;
 
       if (isWeekend) {
         status = "weekend";
@@ -563,6 +572,7 @@ export default function EmployeeAttendance() {
         breakIn = rec.breakIn || null;
         breakLate = rec.breakLate || rec.break_late || 0;
         remark = rec.remark || "";
+                halfDaySession = rec.half_day_session || rec.halfDaySession || null; 
 
         firstIn = rec.first_in || rec.checkIn || null;
         if (!firstIn && rec.punches?.length) {
@@ -578,7 +588,8 @@ export default function EmployeeAttendance() {
         lateMin = rec.late_minutes || 0;
         if (lateMin === 0 && firstIn) {
           const ist = new Date(new Date(firstIn).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-          lateMin = Math.max(ist.getHours() * 60 + ist.getMinutes() - startMins, 0);
+          const diff = Math.max(ist.getHours() * 60 + ist.getMinutes() - startMins, 0);
+          lateMin = diff > GRACE_MINUTES ? diff - GRACE_MINUTES : 0;
         }
 
         earlyOutMin = rec.early_out_minutes || 0;
@@ -606,10 +617,10 @@ export default function EmployeeAttendance() {
         absentCount++;
       }
 
-      filled.push({ date: dateStr, dayOfWeek: dow, status, firstIn, lastOut, workHrs, breakOut, breakIn, breakLate, lateMin, earlyOutMin, remark, isWeekend, isFuture });
+     filled.push({ date: dateStr, dayOfWeek: dow, status, halfDaySession, firstIn, lastOut, workHrs, breakOut, breakIn, breakLate, lateMin, earlyOutMin, remark, isWeekend, isFuture });
     }
 
-   const workingDays = filled.filter(r => !r.isWeekend).length;
+    const workingDays = filled.filter(r => !r.isWeekend).length;
 
     const countedPresent = presentCount + halfCount * 0.5;
     const pct = workingDays ? Math.round((countedPresent / workingDays) * 100) : 0;
@@ -650,23 +661,23 @@ export default function EmployeeAttendance() {
 
   const pctColor = monthDetail.pct >= 90 ? "#16a34a" : monthDetail.pct >= 75 ? "#b45309" : "#dc2626";
   const pctBg = monthDetail.pct >= 90 ? "#f0fdf4" : monthDetail.pct >= 75 ? "#fffbeb" : "#fef2f2";
- const pctBorder = monthDetail.pct >= 90 ? "#bbf7d0" : monthDetail.pct >= 75 ? "#fde68a" : "#fecaca";
+  const pctBorder = monthDetail.pct >= 90 ? "#bbf7d0" : monthDetail.pct >= 75 ? "#fde68a" : "#fecaca";
 
- const SUMMARY_CARDS = [
-  { label: "Present",   value: monthDetail.presentCount,        color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
-  { label: "Absent",    value: monthDetail.absentCount,         color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
-  { label: "Late",      value: monthDetail.lateCount,           color: "#b45309", bg: "#fffbeb", border: "#fde68a" },
-  { label: "On Leave",  value: monthDetail.leaveCount,          color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd" },
-  { label: "Half Day",  value: monthDetail.halfCount,           color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff" },
-  { label: "Work Days", value: monthDetail.workingDays,         color: "#374151", bg: "#f9fafb", border: "#e5e7eb" },
-  { label: "This Month",value: `${monthDetail.pct}%`,           color: pctColor,  bg: pctBg,      border: pctBorder },
-];
+  const SUMMARY_CARDS = [
+    { label: "Present", value: monthDetail.presentCount, color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
+    { label: "Absent", value: monthDetail.absentCount, color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
+    { label: "Late", value: monthDetail.lateCount, color: "#b45309", bg: "#fffbeb", border: "#fde68a" },
+    { label: "On Leave", value: monthDetail.leaveCount, color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd" },
+    { label: "Half Day", value: monthDetail.halfCount, color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff" },
+    { label: "Work Days", value: monthDetail.workingDays, color: "#374151", bg: "#f9fafb", border: "#e5e7eb" },
+    { label: "This Month", value: `${monthDetail.pct}%`, color: pctColor, bg: pctBg, border: pctBorder },
+  ];
 
   const TABS = [
-    { id: "today",    label: "Today" },
+    { id: "today", label: "Today" },
     { id: "calendar", label: "Calendar" },
-    { id: "history",  label: "History" },
-    { id: "leaves",   label: `Leaves${leaves.length ? ` (${leaves.length})` : ""}` },
+    { id: "history", label: "History" },
+    { id: "leaves", label: `Leaves${leaves.length ? ` (${leaves.length})` : ""}` },
   ];
 
   const primaryBtn = { padding: "12px 20px", borderRadius: 10, border: "none", background: "#111827", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" };
@@ -799,8 +810,8 @@ export default function EmployeeAttendance() {
                 {hasCheckedIn && (
                   <div className="time-stats">
                     {[
-                      { label: "In",    value: todayRecord?.checkIn ? fmt(todayRecord.checkIn) : "Auto" },
-                      { label: "Out",   value: fmt(todayRecord?.checkOut) },
+                      { label: "In", value: todayRecord?.checkIn ? fmt(todayRecord.checkIn) : "Auto" },
+                      { label: "Out", value: fmt(todayRecord?.checkOut) },
                       { label: "Hours", value: workHours },
                     ].map((s) => (
                       <div key={s.label} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 4px", textAlign: "center" }}>
@@ -865,17 +876,17 @@ export default function EmployeeAttendance() {
               <div className="detail-card">
                 <div style={{ padding: "12px 16px", borderBottom: "1px solid #f0f0f0", fontSize: 14, fontWeight: 700, color: "#111827" }}>Today's Details</div>
                 {[
-                  { label: "Date",       value: new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) },
-                  { label: "Status",     value: todayRecord?.status ? STATUS_META[todayRecord.status]?.label : "Not marked", isStatus: true, status: todayRecord?.status },
-                  { label: "Check In",   value: todayRecord?.checkIn ? fmt(todayRecord.checkIn) : autoMarked ? "Auto (no timestamp)" : "—" },
-                  { label: "Check Out",  value: fmt(todayRecord?.checkOut) },
-                  { label: "Break Start",value: fmt(todayRecord?.breakStart) },
-                  { label: "Break End",  value: fmt(todayRecord?.breakEnd) },
+                  { label: "Date", value: new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) },
+                 { label: "Status",     value: todayRecord?.status ? (halfDayLabel(todayRecord) || STATUS_META[todayRecord.status]?.label) : "Not marked", isStatus: true, status: todayRecord?.status },
+                  { label: "Check In", value: todayRecord?.checkIn ? fmt(todayRecord.checkIn) : autoMarked ? "Auto (no timestamp)" : "—" },
+                  { label: "Check Out", value: fmt(todayRecord?.checkOut) },
+                  { label: "Break Start", value: fmt(todayRecord?.breakStart) },
+                  { label: "Break End", value: fmt(todayRecord?.breakEnd) },
                   { label: "Break Dur.", value: todayRecord?.break_minutes ? `${todayRecord.break_minutes} min` : "—" },
                   { label: "Work Hours", value: workHours },
-                  { label: "Method",     value: methodLabel },
-                  { label: "Shift",      value: todayRecord?.shift || "General" },
-                  { label: "HR Remark",  value: todayRecord?.remark || "—" },
+                  { label: "Method", value: methodLabel },
+                  { label: "Shift", value: todayRecord?.shift || "General" },
+                  { label: "HR Remark", value: todayRecord?.remark || "—" },
                 ].map(({ label, value, isStatus, status }) => (
                   <div key={label} className="detail-row">
                     <span style={{ fontSize: 12, color: "#9ca3af", fontWeight: 500, flexShrink: 0 }}>{label}</span>
@@ -926,8 +937,8 @@ export default function EmployeeAttendance() {
                       {selectedDay ? new Date(selectedDay.date).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" }) : "Day Detail"}
                     </span>
                     {selectedDay && (() => {
-                      const m = STATUS_META[selectedDay.status] || STATUS_META.absent;
-                      return <span style={{ background: m.bg, color: m.color, padding: "3px 10px", borderRadius: 20, fontWeight: 700, fontSize: 11, border: `1px solid ${m.border}` }}>{m.label}</span>;
+                     const m = STATUS_META[selectedDay.status] || STATUS_META.absent;
+                      return <span style={{ background: m.bg, color: m.color, padding: "3px 10px", borderRadius: 20, fontWeight: 700, fontSize: 11, border: `1px solid ${m.border}` }}>{halfDayLabel(selectedDay) || m.label}</span>;
                     })()}
                   </div>
 
@@ -980,12 +991,12 @@ export default function EmployeeAttendance() {
             }, {});
 
             const FILTERS = [
-              { key: "all",      label: "All" },
-              { key: "present",  label: "Present" },
-              { key: "late",     label: "Late" },
+              { key: "all", label: "All" },
+              { key: "present", label: "Present" },
+              { key: "late", label: "Late" },
               { key: "half_day", label: "Half Day" },
-              { key: "leave",    label: "On Leave" },
-              { key: "absent",   label: "Absent" },
+              { key: "leave", label: "On Leave" },
+              { key: "absent", label: "Absent" },
             ];
 
             const rows = visibleRows
@@ -1086,7 +1097,7 @@ export default function EmployeeAttendance() {
                             <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>{new Date(r.date).toLocaleString("en-IN", { weekday: "long" })}</div>
                           </div>
                           <span style={{ background: "#fff", color: meta.color, padding: "3px 10px", borderRadius: 99, fontWeight: 700, fontSize: 11, border: `1px solid ${meta.border}` }}>
-                            {meta.label}
+                            {halfDayLabel(r) || meta.label}
                           </span>
                         </div>
 
@@ -1094,8 +1105,8 @@ export default function EmployeeAttendance() {
                           <>
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
                               {[
-                                { label: "In",    value: r.firstIn ? fmt(r.firstIn) : ["present","late"].includes(r.status) ? "Auto" : "—", color: "#15803d" },
-                                { label: "Out",   value: r.lastOut ? fmt(r.lastOut) : "—", color: "#dc2626" },
+                                { label: "In", value: r.firstIn ? fmt(r.firstIn) : ["present", "late"].includes(r.status) ? "Auto" : "—", color: "#15803d" },
+                                { label: "Out", value: r.lastOut ? fmt(r.lastOut) : "—", color: "#dc2626" },
                                 { label: "Hours", value: r.workHrs, color: "#111827" },
                               ].map((s) => (
                                 <div key={s.label} style={{ background: "#fff", border: "1px solid #f3f4f6", borderRadius: 8, padding: "8px 4px", textAlign: "center" }}>
@@ -1125,13 +1136,13 @@ export default function EmployeeAttendance() {
                     <thead>
                       <tr style={{ background: "#f9fafb" }}>
                         {[
-                          { key: "Date",        w: 120 },
-                          { key: "Day",         w: 56  },
-                          { key: "Status",      w: 100 },
-                          { key: "Check in",    w: 90  },
-                          { key: "Check out",   w: 90  },
-                          { key: "Work hours",  w: 100 },
-                          { key: "Notes",       w: 300 },
+                          { key: "Date", w: 120 },
+                          { key: "Day", w: 56 },
+                          { key: "Status", w: 100 },
+                          { key: "Check in", w: 90 },
+                          { key: "Check out", w: 90 },
+                          { key: "Work hours", w: 100 },
+                          { key: "Notes", w: 300 },
                         ].map((h) => (
                           <th key={h.key} style={{
                             width: h.w, fontSize: 10, color: "#9ca3af", fontWeight: 600,
@@ -1175,7 +1186,7 @@ export default function EmployeeAttendance() {
                             <td style={{ padding: "11px 16px", whiteSpace: "nowrap", background: rowBg }}>
                               {r.firstIn
                                 ? <span style={{ color: "#15803d", fontWeight: 600, fontFamily: "'DM Mono',monospace" }}>{fmt(r.firstIn)}</span>
-                                : ["present","late"].includes(r.status)
+                                : ["present", "late"].includes(r.status)
                                   ? <span style={{ color: "#818cf8", fontSize: 11, fontWeight: 500 }}>Auto</span>
                                   : <span style={{ color: "#d1d5db" }}>—</span>}
                             </td>

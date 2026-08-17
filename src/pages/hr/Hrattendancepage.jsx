@@ -33,6 +33,14 @@ export const STATUS_META = {
   weekend: { label: "Weekend", color: "#94a3b8", bg: "#f1f5f9", border: "#e2e8f0" },
 };
 
+export const statusLabel = (rec) => {
+  if (rec?.status !== "half_day") return null;
+  const session = rec?.half_day_session || rec?.halfDaySession;
+  if (session === "morning") return "Half Day (Morning Leave)";
+  if (session === "afternoon") return "Half Day (Afternoon Leave)";
+  return "Half Day";
+};
+
 // ═══════════════════════════════════════════
 //  PUNCH HELPERS (FIXED)
 // ═══════════════════════════════════════════
@@ -208,7 +216,7 @@ export const calcLateMinutes = (checkIn, shiftStartMins = DEFAULT_SHIFT_START) =
   if (total >= LUNCH_START_TOTAL && total <= LUNCH_END_TOTAL) return 0;
 
   const diff = Math.max(total - shiftStartMins, 0);
-  return diff > GRACE_MINUTES ? diff : 0;   // ← 5 mins grace-ku ulla late illa
+  return diff > GRACE_MINUTES ? diff - GRACE_MINUTES : 0;  // ← 5 mins grace-ku ulla late illa
 };
 
 export const calcEarlyOut = (checkOut, shiftEndMins = DEFAULT_SHIFT_END) => {
@@ -475,7 +483,7 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
             </button>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
-            <span style={{ ...S.pill(meta.color, meta.bg) }}>{meta.label}</span>
+           <span style={{ ...S.pill(meta.color, meta.bg) }}>{statusLabel(record) || meta.label}</span>
             <span style={{ color: "#6b7280", fontSize: 12 }}>{fmtD(date)}</span>
           </div>
         </div>
@@ -1184,7 +1192,7 @@ if (isMissingOut) flags.push({ label: "No Out", color: "#b91c1c", bg: "#fff1f2" 
                       <td style={{ ...S.tableCell, color: "#6b7280" }}>{r.employee?.department || "—"}</td>
 
                       <td style={S.tableCell}>
-                        <span style={S.pill(meta.color, meta.bg)}>{meta.label}</span>
+                       <span style={S.pill(meta.color, meta.bg)}>{statusLabel(r) || meta.label}</span>
                       </td>
 
                       <td style={{ ...S.tableCell, color: "#16a34a", fontWeight: 700, fontFamily: "monospace" }}>{fmt(r._firstIn)}</td>

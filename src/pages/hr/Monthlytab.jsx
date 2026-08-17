@@ -9,7 +9,7 @@ import {
 import {
   API_BASE, authHeader, pad, fmt, fmtD,
   STATUS_META, S, fmtMins,
-  StatStrip, parseShiftMins,
+  StatStrip, parseShiftMins, GRACE_MINUTES,
 } from "./Hrattendancepage";
 
 // ═══════════════════════════════════════════
@@ -60,6 +60,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
           let otMin = 0;
           let status = "absent";
           let remark = "";
+          let halfDaySession = null;
 
           if (isWeekend) {
             status = "weekend";
@@ -70,6 +71,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
             breakLate = rec.breakLate || 0;
             otMin = 0;
             remark = rec.remark || "";
+            halfDaySession = rec.half_day_session || rec.halfDaySession || null;
 
             // ✅ STEP 1: firstIn — DB field முதல்ல, இல்லன்னா punches-ல இருந்து எடு
             firstIn = rec.first_in || rec.checkIn || null;
@@ -89,20 +91,6 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
               lastOut = outs[0]?.time || null;
             }
 
-            // ✅ STEP 3: lateMin — DB value முதல்ல, இல்லன்னா firstIn-ல இருந்து IST-ல calculate பண்ணு
-            // lateMin = rec.late_minutes || 0;
-            // if (lateMin === 0 && firstIn) {
-            //   const shiftStr = rec.shift || "";
-            //   const shiftMatch = shiftStr.match(/(\d{1,2}):(\d{2})\s*[–\-]/);
-            //   const shiftStartMins = shiftMatch
-            //     ? parseInt(shiftMatch[1]) * 60 + parseInt(shiftMatch[2])
-            //     : 10 * 60; // default 10:00 AM
-            //   const graceEnd = shiftStartMins + 15; // 15 min grace
-            //   // ✅ IST timezone use பண்ணு (UTC இல்ல!)
-            //   const istDate = new Date(new Date(firstIn).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-            //   const firstInMins = istDate.getHours() * 60 + istDate.getMinutes();
-            //   lateMin = Math.max(firstInMins - graceEnd, 0);
-            // }
             otMin = 0; // OT feature removed
             remark = rec.remark || "";
 
@@ -115,9 +103,10 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
               const firstInMins = istDate.getHours() * 60 + istDate.getMinutes();
               // ← employee shift use பண்ணு (hardcoded இல்ல)
               const { startMins } = parseShiftMins(employee?.shift);
-              lateMin = Math.max(firstInMins - startMins, 0);
+              const diff = Math.max(firstInMins - startMins, 0);
+              lateMin = diff > GRACE_MINUTES ? diff - GRACE_MINUTES : 0;
             }
-             // earlyOutMin — DB value irundha eduthukko, illana lastOut-la irundhu IST-la calculate pannu
+            // earlyOutMin — DB value irundha eduthukko, illana lastOut-la irundhu IST-la calculate pannu
             earlyOutMin = rec.early_out_minutes || 0;
             if (earlyOutMin === 0 && lastOut) {
               const istDateOut = new Date(
@@ -161,6 +150,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
             date: dateStr,
             dayOfWeek,
             status,
+            halfDaySession,
             firstIn,
             lastOut,
             workHrs,
@@ -168,7 +158,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
             breakIn,
             breakLate,
             lateMin,
-              earlyOutMin, 
+            earlyOutMin,
             otMin,
             remark,
             isWeekend,
@@ -251,7 +241,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
                     <tr>
-                      {["Date", "Day", "Status", "Check In", "Check Out", "Work Hrs", "Break Out", "Break In", "Break Late", "Late", "Early Out" ].map(h => (
+                      {["Date", "Day", "Status", "Check In", "Check Out", "Work Hrs", "Break Out", "Break In", "Break Late", "Late", "Early Out"].map(h => (
                         <th key={h} style={S.tableHead}>{h}</th>
                       ))}
                     </tr>
@@ -260,6 +250,11 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
                     {records.map((row, idx) => {
                       const displayStatus = row.status === "late" ? "present" : row.status;
                       const st = statusStyle(displayStatus);
+                      const halfDayLabel = row.status === "half_day"
+                        ? (row.halfDaySession === "morning" ? "Half Day (Morning Leave)"
+                          : row.halfDaySession === "afternoon" ? "Half Day (Afternoon Leave)"
+                          : "Half Day")
+                        : null;
                       const isWkd = row.isWeekend;
                       return (
                         <tr key={idx}
@@ -279,7 +274,7 @@ function EmployeeMonthModal({ employee, year, month, onClose }) {
 
                           {/* Status */}
                           <td style={S.tableCell}>
-                            <span style={S.pill(st.color, st.bg)}>{st.label}</span>
+                            <span style={S.pill(st.color, st.bg)}>{halfDayLabel || st.label}</span>
                           </td>
 
                           {/* Check In */}

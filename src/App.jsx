@@ -64,6 +64,7 @@ import MyPayslips from "./pages/employee/MyPayslips";
 import RaiseTicket from "./pages/employee/RaiseTicket";
 import EmployeeFeedback from "./pages/employee/EmployeeFeedback";
 import MyAdvances from "./pages/employee/MyAdvances";
+import EmployeeProductManagement from "./pages/employee/EmployeeProductManagement";
 
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
@@ -122,6 +123,7 @@ import PayslipDetail from "./pages/hr/PayslipDetail";
 import HrTickets from "./pages/hr/HrTickets";
 import HrFeedback from "./pages/hr/HrFeedback";
 import AdvanceRequests from "./pages/hr/AdvanceRequests";
+import ProductManagement from "./pages/hr/Productmanagement";
 
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
@@ -251,6 +253,14 @@ function App() {
         <Route path="/employee/raise-ticket" element={<RaiseTicket />} />
         <Route path="/employee/feedback" element={<EmployeeFeedback />} />
         <Route path="/employee/my-advance" element={<MyAdvances />} />
+           <Route
+          path="/employee/products"
+          element={
+            <EmployeeProtectedRoute>
+              <EmployeeProductManagement />
+            </EmployeeProtectedRoute>
+          }
+        />
        
 
 
@@ -323,12 +333,13 @@ function App() {
           <Route path="alumni-network" element={<AlumniNetwork />} />
 
           <Route path="/hr/dashboard/training" element={<TrainingRoadmapHR />} />
+          <Route path="masters/products" element={<ProductManagement />} />
 
 
-          <Route path="performance/kpi-templates" element={<KpiTemplates />} />
+          {/* <Route path="performance/kpi-templates" element={<KpiTemplates />} />
           <Route path="performance/assign-kpi" element={<AssignKpi />} />
           <Route path="performance/reviews" element={<PerformanceReviews />} />
-          <Route path="performance/reports" element={<PerformanceReports />} />
+          <Route path="performance/reports" element={<PerformanceReports />} /> */}
 
           <Route path="policies" element={<PolicyManagement />} />
           <Route path="announcements" element={<HRAnnouncements />} />

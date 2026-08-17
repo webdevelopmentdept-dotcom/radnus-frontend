@@ -383,7 +383,7 @@ export default function HrSidebar() {
                 Payroll
               </NavLink>
 
-                <NavLink to="/hr/dashboard/payroll/advances"
+              <NavLink to="/hr/dashboard/payroll/advances"
                 className={({ isActive }) => isActive ? "active" : ""}
                 onClick={close}>
                 <HugeiconsIcon icon={MailSend01Icon} size={18} color="currentColor" strokeWidth={1.8} />
@@ -639,6 +639,13 @@ export default function HrSidebar() {
                 onClick={close}>
                 <HugeiconsIcon icon={TaskDone01Icon} size={18} color="currentColor" strokeWidth={1.8} />
                 SOP Management ✅
+              </NavLink>
+
+              <NavLink to="/hr/dashboard/masters/products"
+                className={({ isActive }) => isActive ? "active" : ""}
+                onClick={close}>
+                <HugeiconsIcon icon={TaskDone01Icon} size={18} color="currentColor" strokeWidth={1.8} />
+                Product Knowledge Portal
               </NavLink>
 
               {/* POLICIES */}

@@ -5,7 +5,7 @@ import {
   AlertTriangle, Plus, Pencil, X, Check, RefreshCw,
   ChevronRight, BarChart2, Layers, FileText, Search,
   Filter, Download, TrendingUp, Star, Zap, Info,
-  UserCheck, Calendar, GraduationCap, ClipboardList,
+  UserCheck, Calendar, GraduationCap, ClipboardList, Trash2,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -17,6 +17,10 @@ const STATUS_CONFIG = {
   completed:   { label: "Completed",   color: "#10b981", bg: "#ecfdf5" },
   overdue:     { label: "Overdue",     color: "#ef4444", bg: "#fef2f2" },
   waived:      { label: "Waived",      color: "#8b5cf6", bg: "#f5f3ff" },
+  pending_review:  { label: "Pending Review",  color: "#f59e0b", bg: "#fffbeb" }, // ✅ NEW — quiz submitted, awaiting HR to review & mark Completed
+  retrain:         { label: "Retrain Required", color: "#f97316", bg: "#fff7ed" }, // ✅ NEW — HR sent employee back to re-study + retake the test
+  needs_hr_review: { label: "Under HR Review", color: "#dc2626", bg: "#fef2f2" }, // legacy status, kept for old records
+  failed_retake:   { label: "Failed (old data)", color: "#dc2626", bg: "#fef2f2" }, // legacy status from the old multi-attempt system, kept so old records don't silently show "Pending"
 };
 
 const LEVEL_CONFIG = {
@@ -36,6 +40,7 @@ const TYPE_CONFIG = {
   culture:          { label: "Culture",           color: "#10b981", bg: "#ecfdf5" },
   refresher:        { label: "Refresher",         color: "#6b7280", bg: "#f3f4f6" },
   department:       { label: "Department",        color: "#ef4444", bg: "#fef2f2" },
+  equipment:        { label: "Equipment",         color: "#0ea5e9", bg: "#f0f9ff" },
 };
 
 const DEPARTMENTS = ["Sales & Distribution","Technical & Service","HR & Admin","Accounts & Finance","Marketing","Operations","all"];
@@ -47,16 +52,17 @@ const labelStyle = { fontSize:11, fontWeight:700, color:"#6b7280", textTransform
 // ─── Stat Card ────────────────────────────────────────────────
 function StatCard({ label, value, sub, color, bg, icon }) {
   return (
-    <div className="card border-0 shadow-sm" style={{ borderRadius:11 }}>
-      <div className="card-body py-3">
-        <div className="d-flex justify-content-between align-items-start">
-          <div>
-            <p className="mb-0 text-muted" style={{ fontSize:11, textTransform:"uppercase", fontWeight:700 }}>{label}</p>
-            <p className="mb-0 fw-bold" style={{ fontSize:22, color }}>{value}</p>
-            {sub && <p className="mb-0 text-muted" style={{ fontSize:11 }}>{sub}</p>}
-          </div>
-          <span style={{ width:36, height:36, borderRadius:9, background:bg, display:"flex", alignItems:"center", justifyContent:"center", color }}>{icon}</span>
+    <div className="card border-0 h-100" style={{ borderRadius: 14, border: "1px solid #f1f2f4", boxShadow: "0 1px 2px rgba(16,24,40,.04)" }}>
+      <div className="card-body" style={{ padding: "18px 18px" }}>
+        <div className="d-flex justify-content-between align-items-start mb-2">
+          <span style={{
+            width: 40, height: 40, borderRadius: 10, background: bg,
+            display: "flex", alignItems: "center", justifyContent: "center", color,
+          }}>{icon}</span>
         </div>
+        <p className="mb-1 fw-bold" style={{ fontSize: 24, color: "#111827", lineHeight: 1 }}>{value}</p>
+        <p className="mb-0" style={{ fontSize: 11.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</p>
+        {sub && <p className="mb-0 mt-1" style={{ fontSize: 11, color: "#9ca3af" }}>{sub}</p>}
       </div>
     </div>
   );
@@ -178,6 +184,7 @@ function UpdateRecordModal({ record, onClose, onSave }) {
     notes:               record.notes || "",
   });
   const [saving, setSaving] = useState(false);
+  const lastAttempt = record.quizAttempts?.[record.quizAttempts.length - 1]; // ✅ NEW — latest quiz submission, for HR context
 
   return (
     <div className="modal show d-block" style={{ background:"rgba(15,23,42,.45)", zIndex:1055 }}>
@@ -194,11 +201,32 @@ function UpdateRecordModal({ record, onClose, onSave }) {
             <button className="btn-close" onClick={onClose} />
           </div>
           <div className="modal-body d-flex flex-column gap-3">
+            {/* ✅ NEW — quiz result banner, shown when the employee has submitted the test */}
+            {lastAttempt && (
+              <div className="d-flex align-items-center gap-2" style={{
+                background: lastAttempt.passed ? "#ecfdf5" : "#fef2f2",
+                border: `1px solid ${lastAttempt.passed ? "#a7f3d0" : "#fecaca"}`,
+                borderRadius: 9, padding: "10px 14px",
+              }}>
+                {lastAttempt.passed ? <CheckCircle2 size={16} color="#10b981" /> : <AlertTriangle size={16} color="#ef4444" />}
+                <div>
+                  <p className="mb-0 fw-bold" style={{ fontSize:13, color: lastAttempt.passed ? "#065f46" : "#991b1b" }}>
+                    Quiz score: {lastAttempt.score}% — {lastAttempt.passed ? "Passed" : "Failed"} (70% required)
+                  </p>
+                  <p className="mb-0" style={{ fontSize:11, color:"#6b7280" }}>Review the result, then set status to Completed to approve certification.</p>
+                </div>
+              </div>
+            )}
             <div>
               <label style={labelStyle}>Status</label>
               <select className="form-select form-select-sm" value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))}>
                 {Object.entries(STATUS_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
               </select>
+              {form.status === "retrain" && (
+                <p className="mt-1 mb-0" style={{ fontSize:11, color:"#c2410c" }}>
+                  This resets their study checklist and clears the quiz attempt — they'll need to re-study every product and retake the test.
+                </p>
+              )}
             </div>
             <div>
               <label style={labelStyle}>Post-Training Assessment Score (%)</label>
@@ -236,6 +264,175 @@ function UpdateRecordModal({ record, onClose, onSave }) {
   );
 }
 
+// ─── Quiz Questions Manager Modal (HR) ─────────────────────────
+// HR picks a product, then adds/edits/deletes 4-option MCQ questions
+// for it. Combined at quiz time across every studied product.
+function QuizQuestionsManagerModal({ onClose, showMsg }) {
+  const [products, setProducts]   = useState([]);
+  const [productId, setProductId] = useState("");
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [loadingQs, setLoadingQs] = useState(false);
+  const [editingId, setEditingId] = useState(null); // null = not editing, "new" = adding
+  const [form, setForm] = useState({ questionText: "", options: ["", "", "", ""], correctOptionIndex: 0 });
+  const [saving, setSaving]   = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+
+  const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem("hrToken")}` });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/products`, { headers: authHeaders() });
+        const data = await res.json();
+        if (data.success) setProducts(data.data || []);
+      } catch (e) { /* silent */ }
+      finally { setLoading(false); }
+    })();
+  }, []);
+
+  const loadQuestions = useCallback(async (pid) => {
+    if (!pid) { setQuestions([]); return; }
+    setLoadingQs(true);
+    try {
+      const res = await axios.get(`${API_BASE}/api/training/quiz-questions`, { params: { productId: pid } });
+      setQuestions(res.data.data || []);
+    } catch (e) { showMsg("Failed to load questions", "error"); }
+    finally { setLoadingQs(false); }
+  }, [showMsg]);
+
+  useEffect(() => { loadQuestions(productId); setEditingId(null); }, [productId, loadQuestions]);
+
+  const resetForm = () => setForm({ questionText: "", options: ["", "", "", ""], correctOptionIndex: 0 });
+
+  const startAdd = () => { resetForm(); setEditingId("new"); };
+  const startEdit = (q) => {
+    setForm({ questionText: q.questionText, options: [...q.options], correctOptionIndex: q.correctOptionIndex });
+    setEditingId(q._id);
+  };
+
+  const handleSaveQuestion = async () => {
+    if (!form.questionText.trim()) return showMsg("Question text required", "error");
+    if (form.options.some(o => !o.trim())) return showMsg("All 4 options are required", "error");
+    setSaving(true);
+    try {
+      if (editingId === "new") {
+        await axios.post(`${API_BASE}/api/training/quiz-questions`, { productId, ...form });
+        showMsg("Question added!");
+      } else {
+        await axios.put(`${API_BASE}/api/training/quiz-questions/${editingId}`, form);
+        showMsg("Question updated!");
+      }
+      setEditingId(null);
+      resetForm();
+      loadQuestions(productId);
+    } catch (e) { showMsg(e?.response?.data?.message || "Save failed", "error"); }
+    finally { setSaving(false); }
+  };
+
+  const handleDeleteQuestion = async (q) => {
+    if (!window.confirm("Delete this question?")) return;
+    setDeletingId(q._id);
+    try {
+      await axios.delete(`${API_BASE}/api/training/quiz-questions/${q._id}`);
+      showMsg("Question deleted");
+      loadQuestions(productId);
+    } catch (e) { showMsg(e?.response?.data?.message || "Delete failed", "error"); }
+    finally { setDeletingId(null); }
+  };
+
+  return (
+    <div className="modal show d-block" style={{ background: "rgba(15,23,42,.45)", zIndex: 1060 }}>
+      <div className="modal-dialog modal-dialog-centered modal-lg">
+        <div className="modal-content border-0 shadow-lg" style={{ borderRadius: 14 }}>
+          <div className="modal-header border-bottom" style={{ background: "#f9fafb", borderRadius: "14px 14px 0 0" }}>
+            <div className="d-flex align-items-center gap-2">
+              <ClipboardList size={18} color="#8b5cf6" />
+              <p className="mb-0 fw-bold" style={{ fontSize: 14 }}>Manage Quiz Questions</p>
+            </div>
+            <button className="btn-close" onClick={onClose} />
+          </div>
+          <div className="modal-body">
+            <label style={labelStyle}>Select Product</label>
+            <select className="form-select form-select-sm mb-3" value={productId} onChange={e => setProductId(e.target.value)} disabled={loading}>
+              <option value="">-- Select a Product --</option>
+              {products.map(p => <option key={p._id} value={p._id}>{p.productName} ({p.productCode})</option>)}
+            </select>
+
+            {!productId && <p className="text-muted text-center py-4" style={{ fontSize: 13 }}>Select a product to view or add its quiz questions.</p>}
+
+            {productId && (
+              <>
+                {loadingQs ? (
+                  <div className="text-center py-3"><div className="spinner-border spinner-border-sm text-primary" /></div>
+                ) : (
+                  <div className="d-flex flex-column gap-2 mb-3">
+                    {questions.length === 0 && <p className="text-muted" style={{ fontSize: 12 }}>No questions yet for this product.</p>}
+                    {questions.map((q, i) => (
+                      <div key={q._id} className="border rounded p-2" style={{ borderRadius: 9, fontSize: 12 }}>
+                        <div className="d-flex justify-content-between align-items-start gap-2">
+                          <p className="mb-1 fw-semibold" style={{ fontSize: 13 }}>{i + 1}. {q.questionText}</p>
+                          <div className="d-flex gap-1 flex-shrink-0">
+                            <button className="btn btn-sm btn-outline-primary py-0 px-2" style={{ fontSize: 11 }} onClick={() => startEdit(q)}>
+                              <Pencil size={11} />
+                            </button>
+                            <button className="btn btn-sm btn-outline-danger py-0 px-2" style={{ fontSize: 11 }}
+                              onClick={() => handleDeleteQuestion(q)} disabled={deletingId === q._id}>
+                              {deletingId === q._id ? <span className="spinner-border spinner-border-sm" style={{ width: 11, height: 11 }} /> : <Trash2 size={11} />}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column gap-1 mt-1">
+                          {q.options.map((o, oi) => (
+                            <span key={oi} style={{ color: oi === q.correctOptionIndex ? "#10b981" : "#6b7280", fontWeight: oi === q.correctOptionIndex ? 700 : 400 }}>
+                              {oi === q.correctOptionIndex ? "✓ " : "· "}{o}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {editingId ? (
+                  <div className="border rounded p-3" style={{ borderRadius: 10, background: "#f9fafb" }}>
+                    <label style={labelStyle}>Question</label>
+                    <input className="form-control form-control-sm mb-2" value={form.questionText}
+                      onChange={e => setForm(f => ({ ...f, questionText: e.target.value }))} placeholder="e.g. What is the correct operating pressure?" />
+                    <label style={labelStyle}>Options (select the correct one)</label>
+                    {form.options.map((o, oi) => (
+                      <div key={oi} className="d-flex align-items-center gap-2 mb-2">
+                        <input type="radio" checked={form.correctOptionIndex === oi}
+                          onChange={() => setForm(f => ({ ...f, correctOptionIndex: oi }))} />
+                        <input className="form-control form-control-sm" value={o}
+                          onChange={e => setForm(f => ({ ...f, options: f.options.map((x, xi) => xi === oi ? e.target.value : x) }))}
+                          placeholder={`Option ${oi + 1}`} />
+                      </div>
+                    ))}
+                    <div className="d-flex gap-2 mt-2">
+                      <button className="btn btn-sm btn-light flex-fill" onClick={() => { setEditingId(null); resetForm(); }}>Cancel</button>
+                      <button className="btn btn-sm btn-primary fw-bold flex-fill" onClick={handleSaveQuestion} disabled={saving}>
+                        {saving ? "Saving..." : "Save Question"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" onClick={startAdd}>
+                    <Plus size={13} /> Add Question
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+          <div className="modal-footer">
+            <button className="btn btn-light" onClick={onClose}>Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main HR Component ────────────────────────────────────────
 export default function TrainingRoadmapHR() {
   const [programs, setPrograms]   = useState([]);
@@ -246,13 +443,16 @@ export default function TrainingRoadmapHR() {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
   const [toast, setToast]         = useState(null);
-  const [modal, setModal]         = useState(null); // "assign"|"update"
+  const [modal, setModal]         = useState(null); // "assign"|"update"|"quizQuestions"
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [activeTab, setActiveTab] = useState("roadmap"); // "roadmap"|"records"|"compliance"|"kpi"
   const [search, setSearch]       = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterDept, setFilterDept]     = useState("all");
   const [seeding, setSeeding]     = useState(false);
+  const [deletingId, setDeletingId] = useState(null); // ✅ NEW — tracks which record is being deleted, for per-row spinner/disable
+  const [deletingLogId, setDeletingLogId] = useState(null); // ✅ NEW — tracks which compliance log entry is being deleted
+  const [expandedEmp, setExpandedEmp] = useState(null); // ✅ NEW — which employee's compliance log group is expanded
 
   const showMsg = (msg, type="success") => {
     setToast({ msg, type });
@@ -262,6 +462,12 @@ export default function TrainingRoadmapHR() {
   const fetchAll = useCallback(async () => {
     setLoading(true); setError(null);
     try {
+      // ✅ NEW — silent self-heal, runs on every load/refresh: ensures
+      // every product is linked to the single shared "Equipment Training"
+      // program (merges any stray per-product programs, fixes dangling
+      // links). No button, no confirm — just keeps things consistent.
+      await axios.post(`${API_BASE}/api/training/consolidate-equipment`).catch(() => {});
+
       const params = {};
       if (filterStatus !== "all") params.status = filterStatus;
       if (filterDept   !== "all") params.department = filterDept;
@@ -285,13 +491,18 @@ export default function TrainingRoadmapHR() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const handleSeed = async () => {
+  // ✅ CHANGED — was handleSeed (inserted 15 default dummy programs).
+  // Now permanently wipes ALL training programs from the DB so the
+  // roadmap only ever shows programs HR actually creates. fetchAll()
+  // right after will silently re-heal the shared equipment program.
+  const handleClearAll = async () => {
+    if (!window.confirm("Delete ALL training programs permanently? This cannot be undone.")) return;
     setSeeding(true);
     try {
-      const res = await axios.post(`${API_BASE}/api/training/seed`);
+      const res = await axios.delete(`${API_BASE}/api/training/programs`);
       showMsg(res.data.message);
-      fetchAll();
-    } catch(e) { showMsg("Seed failed","error"); }
+      fetchAll(); // re-links every product to the shared equipment program automatically
+    } catch(e) { showMsg(e?.response?.data?.message || "Clear failed","error"); }
     setSeeding(false);
   };
 
@@ -319,6 +530,43 @@ export default function TrainingRoadmapHR() {
     } catch(e) { showMsg(e?.response?.data?.message||"Failed","error"); }
   };
 
+  // ✅ NEW — deletes a single training record (the row-level Delete button
+  // in the Records table). Confirms first, shows a per-row loading state,
+  // then refreshes the list + stats.
+  const handleDeleteRecord = async (record) => {
+    const name = record.employeeId?.name || "this employee";
+    const prog = record.programId?.title || "this program";
+    if (!window.confirm(`Delete the training record for "${name}" — ${prog}? This cannot be undone.`)) return;
+    setDeletingId(record._id);
+    try {
+      await axios.delete(`${API_BASE}/api/training/records/${record._id}`);
+      showMsg("Training record deleted.");
+      fetchAll();
+    } catch(e) {
+      showMsg(e?.response?.data?.message || "Delete failed", "error");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // ✅ NEW — deletes a single compliance-log entry (row-level Delete
+  // button on the Compliance Log tab). Independent of training records —
+  // only removes the log line itself.
+  const handleDeleteLog = async (log) => {
+    const name = log.employeeId?.name || "this entry";
+    if (!window.confirm(`Delete this compliance log entry for "${name}" — ${log.programTitle || "—"}? This cannot be undone.`)) return;
+    setDeletingLogId(log._id);
+    try {
+      await axios.delete(`${API_BASE}/api/training/compliance-log/${log._id}`);
+      showMsg("Compliance log entry deleted.");
+      fetchAll();
+    } catch(e) {
+      showMsg(e?.response?.data?.message || "Delete failed", "error");
+    } finally {
+      setDeletingLogId(null);
+    }
+  };
+
   // Filter records
   const filteredRecords = records.filter(r => {
     const matchSearch = !search.trim() ||
@@ -327,17 +575,6 @@ export default function TrainingRoadmapHR() {
     return matchSearch;
   });
 
-  // Group programs by level for roadmap view
-  const byLevel = LEVELS.filter(l=>l!=="all").reduce((acc, l) => {
-    acc[l] = programs.filter(p => p.level === l && p.type !== "department");
-    return acc;
-  }, {});
-
-  const byDept = DEPARTMENTS.filter(d=>d!=="all").reduce((acc, d) => {
-    acc[d] = programs.filter(p => p.department === d || p.type === "department" && p.title.includes(d));
-    return acc;
-  }, {});
-
   return (
     <div className="container-fluid py-4" style={{ maxWidth:1400 }}>
 
@@ -345,6 +582,7 @@ export default function TrainingRoadmapHR() {
 
       {modal === "assign" && <AssignModal programs={programs} employees={employees} onClose={()=>setModal(null)} onSave={handleAssign} />}
       {modal === "update" && selectedRecord && <UpdateRecordModal record={selectedRecord} onClose={()=>{setModal(null);setSelectedRecord(null);}} onSave={handleUpdate} />}
+      {modal === "quizQuestions" && <QuizQuestionsManagerModal onClose={()=>setModal(null)} showMsg={showMsg} />}
 
       {/* ── Header ── */}
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
@@ -358,13 +596,25 @@ export default function TrainingRoadmapHR() {
           </div>
         </div>
         <div className="d-flex gap-2 flex-wrap">
-          {programs.length === 0 && (
-            <button className="btn btn-sm btn-warning fw-bold" onClick={handleSeed} disabled={seeding}>
-              {seeding ? "Seeding..." : "⚡ Seed Default Programs"}
+          {/* ✅ CHANGED — was the "Seed Default Programs" button (shown when
+              programs.length === 0). Now a "Clear All Programs" button,
+              shown when there ARE programs, so HR can wipe seeded/old data. */}
+          {programs.length > 0 && (
+            <button className="btn btn-sm btn-outline-danger fw-bold" onClick={handleClearAll} disabled={seeding}>
+              {seeding ? "Clearing..." : "🗑 Clear All Programs"}
             </button>
           )}
+          {/* ✅ REMOVED — "Restore Equipment Programs" / "Merge Equipment
+              Programs" buttons. That work now happens silently inside
+              fetchAll() on every load/refresh — every product always ends
+              up linked to the one shared equipment program automatically,
+              no manual step needed. */}
           <button className="btn btn-sm btn-light d-flex align-items-center gap-1" onClick={fetchAll} disabled={loading}>
             <RefreshCw size={13} /> Refresh
+          </button>
+          {/* ✅ NEW — HR authors the MCQ question bank used by the employee quiz */}
+          <button className="btn btn-sm btn-outline-primary d-flex align-items-center gap-2 fw-bold" onClick={()=>setModal("quizQuestions")}>
+            <ClipboardList size={14} /> Manage Quiz Questions
           </button>
           <button className="btn btn-primary d-flex align-items-center gap-2 fw-bold" onClick={()=>setModal("assign")}>
             <Plus size={14} /> Assign Training
@@ -405,128 +655,107 @@ export default function TrainingRoadmapHR() {
       {/* ══ ROADMAP TAB ══════════════════════════════════════════ */}
       {activeTab === "roadmap" && (
         <div>
-          {/* Framework Banner */}
-          <div className="card border-0 shadow-sm mb-4" style={{ borderRadius:13, background:"linear-gradient(135deg,#eff6ff,#f5f3ff)" }}>
-            <div className="card-body p-4">
-              <p className="fw-bold mb-3" style={{ fontSize:14 }}>Framework: Learn → Apply → Lead</p>
-              <div className="row g-3">
-                {[
-                  { stage:"Learn", focus:"Foundation & Skill Learning", outcome:"Acquire job knowledge",        color:"#3b82f6", bg:"#eff6ff" },
-                  { stage:"Apply", focus:"Real-world Implementation",   outcome:"Demonstrate proficiency",      color:"#8b5cf6", bg:"#f5f3ff" },
-                  { stage:"Lead",  focus:"Coaching & Mentorship",       outcome:"Guide others, build leadership",color:"#10b981", bg:"#ecfdf5" },
-                ].map(s=>(
-                  <div key={s.stage} className="col-md-4">
-                    <div style={{ background:s.bg, borderRadius:10, padding:"12px 16px", border:`1px solid ${s.color}33` }}>
-                      <p className="mb-0 fw-bold" style={{ fontSize:15, color:s.color }}>{s.stage}</p>
-                      <p className="mb-0" style={{ fontSize:12 }}>{s.focus}</p>
-                      <p className="mb-0 text-muted" style={{ fontSize:11 }}>→ {s.outcome}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* L1-L6 Roadmap */}
-          <p className="fw-bold mb-3" style={{ fontSize:14 }}>Job-Role Based Mandatory Training Roadmap (L1–L6)</p>
-          <div className="row g-3 mb-4">
-            {Object.entries(byLevel).map(([level, progs])=>{
-              const cfg = LEVEL_CONFIG[level];
-              const roadmapProg = programs.find(p => p.level===level && p.type==="induction" || p.level===level && p.type==="job_role");
-              const displayProg = progs[0]; // primary program for this level
-              return (
-                <div key={level} className="col-md-6 col-lg-4">
-                  <div className="card border-0 shadow-sm h-100" style={{ borderRadius:13, borderLeft:`4px solid ${cfg.color}` }}>
-                    <div className="card-body">
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <span className="badge" style={{ background:cfg.color, fontSize:12 }}>{level}</span>
-                        {displayProg?.duration && <span className="badge bg-light text-dark" style={{ fontSize:11 }}>{displayProg.duration}</span>}
-                      </div>
-                      <p className="fw-bold mb-1" style={{ fontSize:13, color:cfg.color }}>{cfg.label}</p>
-                      {displayProg ? (
-                        <>
-                          <div className="mb-2">
-                            {displayProg.modules?.map((m,i)=>(
-                              <div key={i} className="d-flex align-items-start gap-1 mb-1">
-                                <Check size={11} color={cfg.color} style={{ flexShrink:0, marginTop:2 }} />
-                                <span style={{ fontSize:12 }}>{m}</span>
-                              </div>
-                            ))}
-                          </div>
-                          {displayProg.certification && (
-                            <div style={{ background:`${cfg.color}10`, borderRadius:7, padding:"6px 10px", marginBottom:8 }}>
-                              <p className="mb-0" style={{ fontSize:11, color:cfg.color }}><Award size={11}/> {displayProg.certification}</p>
-                            </div>
-                          )}
-                          {displayProg.conductedBy && (
-                            <p className="mb-0 text-muted" style={{ fontSize:11 }}>By: {displayProg.conductedBy}</p>
-                          )}
-                        </>
-                      ) : (
-                        <p className="text-muted" style={{ fontSize:12 }}>No programs configured for this level.</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Training Frequency Table */}
-          <p className="fw-bold mb-3" style={{ fontSize:14 }}>Training Frequency & Review</p>
-          <div className="card border-0 shadow-sm mb-4" style={{ borderRadius:12, overflow:"hidden" }}>
-            <div className="table-responsive">
-              <table className="table table-sm align-middle mb-0" style={{ fontSize:13 }}>
-                <thead className="table-light">
-                  <tr><th>Training Type</th><th>Frequency</th><th>Responsible</th></tr>
-                </thead>
-                <tbody>
-                  {[
-                    { type:"Induction Training",             freq:"On Joining",    resp:"HR & L&D" },
-                    { type:"Job Role Training",              freq:"Within 30 Days",resp:"Department Trainer" },
-                    { type:"Cross-Functional / Leadership",  freq:"Every 6 Months",resp:"L&D + HR" },
-                    { type:"Culture & Engagement Training",  freq:"Quarterly",     resp:"Culture Team" },
-                    { type:"Refresher Training",             freq:"Annual",        resp:"HR & L&D" },
-                  ].map((r,i)=>(
-                    <tr key={i}>
-                      <td className="fw-semibold">{r.type}</td>
-                      <td><span className="badge bg-light text-dark" style={{ fontSize:11 }}>{r.freq}</span></td>
-                      <td className="text-muted">{r.resp}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Department Mandatory */}
-          <p className="fw-bold mb-3" style={{ fontSize:14 }}>Department-Wise Mandatory Modules</p>
-          <div className="row g-3">
+          {/* Framework strip */}
+          <div className="d-flex flex-wrap gap-3 mb-4">
             {[
-              { dept:"Sales & Distribution", color:"#3b82f6", bg:"#eff6ff", modules:["Product Mastery","Negotiation Skills","Channel Management","CRM Usage","Customer Relationship Excellence"] },
-              { dept:"Technical & Service",  color:"#8b5cf6", bg:"#f5f3ff", modules:["Product Repair Standards","Troubleshooting","Tools & ESD Handling","Quality Audits","RCV Model"] },
-              { dept:"HR & Admin",           color:"#10b981", bg:"#ecfdf5", modules:["HR Policies","Recruitment SOPs","Payroll Management","Employee Engagement","HRMS System"] },
-              { dept:"Accounts & Finance",   color:"#f59e0b", bg:"#fffbeb", modules:["GST / Tally / Compliance","Expense Control","Profit Analysis","Cost Optimization","Audit Preparation"] },
-              { dept:"Marketing",            color:"#ef4444", bg:"#fef2f2", modules:["Digital Campaigns","Brand Guidelines","Market Analysis","Event Management","Customer Insights"] },
-              { dept:"Operations",           color:"#6b7280", bg:"#f3f4f6", modules:["Stock Management","Vendor Handling","Delivery Process","Process Optimization","MIS Reporting"] },
-            ].map((d,i)=>(
-              <div key={i} className="col-md-6 col-lg-4">
-                <div className="card border-0 shadow-sm h-100" style={{ borderRadius:12, borderTop:`3px solid ${d.color}` }}>
-                  <div className="card-body">
-                    <p className="fw-bold mb-2" style={{ fontSize:13, color:d.color }}>{d.dept}</p>
-                    <div className="d-flex flex-column gap-1">
-                      {d.modules.map((m,j)=>(
-                        <div key={j} className="d-flex align-items-center gap-2">
-                          <span style={{ width:6, height:6, borderRadius:"50%", background:d.color, flexShrink:0 }}/>
-                          <span style={{ fontSize:12 }}>{m}</span>
-                        </div>
-                      ))}
-                    </div>
+              { stage: "Learn", icon: <BookOpen size={16} />, focus: "Foundation & Skill Learning", outcome: "Acquire job knowledge",         color: "#3b82f6" },
+              { stage: "Apply", icon: <Target size={16} />,   focus: "Real-world Implementation",   outcome: "Demonstrate proficiency",       color: "#8b5cf6" },
+              { stage: "Lead",  icon: <TrendingUp size={16} />,focus: "Coaching & Mentorship",       outcome: "Guide others, build leadership", color: "#10b981" },
+            ].map((s, i) => (
+              <div key={s.stage} className="d-flex align-items-center flex-fill" style={{ minWidth: 220 }}>
+                <div className="d-flex align-items-center gap-3 flex-fill" style={{
+                  background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px",
+                }}>
+                  <div style={{
+                    width: 38, height: 38, borderRadius: 10, background: `${s.color}14`, color: s.color,
+                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  }}>
+                    {s.icon}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p className="mb-0 fw-bold" style={{ fontSize: 13, color: "#111827" }}>{s.stage}</p>
+                    <p className="mb-0 text-muted text-truncate" style={{ fontSize: 11 }}>{s.focus}</p>
                   </div>
                 </div>
+                {i < 2 && (
+                  <ChevronRight size={16} color="#d1d5db" className="d-none d-lg-block flex-shrink-0" style={{ margin: "0 -2px" }} />
+                )}
               </div>
             ))}
           </div>
+
+          {/* Active Training Programs — real data, no placeholder L1-L6 levels */}
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <p className="fw-bold mb-0" style={{ fontSize: 14 }}>Active Training Programs</p>
+            <span className="text-muted" style={{ fontSize: 12 }}>{programs.filter(p=>p.isActive!==false).length} program{programs.length===1?"":"s"}</span>
+          </div>
+
+          {programs.filter(p=>p.isActive!==false).length === 0 ? (
+            <div className="card border-0 shadow-sm text-center py-5" style={{ borderRadius: 13 }}>
+              <Layers size={36} className="text-muted mb-3 mx-auto" />
+              <p className="text-muted mb-3">No training programs yet.</p>
+              <button className="btn btn-primary btn-sm mx-auto" style={{ width: "fit-content" }} onClick={()=>setModal("assign")}>
+                <Plus size={13} /> Assign Training
+              </button>
+            </div>
+          ) : (
+            <div className="row g-3">
+              {programs.filter(p=>p.isActive!==false).map(p => {
+                const typ = TYPE_CONFIG[p.type] || TYPE_CONFIG.job_role;
+                const progRecords = records.filter(r => r.programId?._id === p._id);
+                const assignedCount = progRecords.length;
+                const completedCount = progRecords.filter(r => r.status === "completed").length;
+                const completionPct = assignedCount ? Math.round((completedCount / assignedCount) * 100) : 0;
+                return (
+                  <div key={p._id} className="col-md-6 col-lg-4">
+                    <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 13, borderTop: `3px solid ${typ.color}` }}>
+                      <div className="card-body d-flex flex-column">
+                        <div className="d-flex align-items-start justify-content-between gap-2 mb-2">
+                          <p className="fw-bold mb-0" style={{ fontSize: 14, color: "#111827", lineHeight: 1.3 }}>{p.title}</p>
+                          <span className="badge flex-shrink-0" style={{ background: typ.bg, color: typ.color, fontSize: 10, fontWeight: 700 }}>{typ.label}</span>
+                        </div>
+
+                        {p.modules?.length > 0 && (
+                          <div className="mb-2">
+                            {p.modules.slice(0, 4).map((m, i) => (
+                              <div key={i} className="d-flex align-items-start gap-1 mb-1">
+                                <Check size={11} color={typ.color} style={{ flexShrink: 0, marginTop: 2 }} />
+                                <span style={{ fontSize: 12, color: "#374151" }}>{m}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="d-flex flex-wrap gap-2 mb-3" style={{ fontSize: 11, color: "#6b7280" }}>
+                          {p.duration && <span className="d-flex align-items-center gap-1"><Clock size={11} />{p.duration}</span>}
+                          {p.conductedBy && <span className="d-flex align-items-center gap-1"><UserCheck size={11} />{p.conductedBy}</span>}
+                          {p.frequency && p.frequency !== "once" && <span className="d-flex align-items-center gap-1"><RefreshCw size={11} />{p.frequency.replace("_"," ")}</span>}
+                        </div>
+
+                        {p.certification && (
+                          <div className="d-flex align-items-center gap-2 mb-3" style={{ background: `${typ.color}0d`, borderRadius: 8, padding: "7px 10px" }}>
+                            <Award size={13} color={typ.color} style={{ flexShrink: 0 }} />
+                            <span style={{ fontSize: 11, color: typ.color, fontWeight: 600 }}>{p.certification}</span>
+                          </div>
+                        )}
+
+                        {/* Live stats */}
+                        <div className="mt-auto pt-2" style={{ borderTop: "1px solid #f3f4f6" }}>
+                          <div className="d-flex justify-content-between align-items-center mb-1">
+                            <span style={{ fontSize: 11, color: "#6b7280" }}>{assignedCount} assigned · {completedCount} completed</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: completionPct >= 80 ? "#10b981" : "#3b82f6" }}>{completionPct}%</span>
+                          </div>
+                          <div style={{ height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${completionPct}%`, background: completionPct >= 80 ? "#10b981" : "#3b82f6", transition: "width .3s" }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -583,6 +812,7 @@ export default function TrainingRoadmapHR() {
                       const typ = TYPE_CONFIG[r.programId?.type] || TYPE_CONFIG.job_role;
                       const lvl = LEVEL_CONFIG[r.programId?.level];
                       const isOverdue = r.dueDate && new Date(r.dueDate) < new Date() && r.status !== "completed";
+                      const isDeleting = deletingId === r._id; // ✅ NEW
                       return (
                         <tr key={r._id}>
                           <td>
@@ -631,10 +861,26 @@ export default function TrainingRoadmapHR() {
                             ) : "—"}
                           </td>
                           <td>
-                            <button className="btn btn-sm btn-outline-primary py-0 px-2" style={{ fontSize:11 }}
-                              onClick={()=>{ setSelectedRecord(r); setModal("update"); }}>
-                              Update
-                            </button>
+                            {/* ✅ CHANGED — Action cell now has Update + Delete side by side */}
+                            <div className="d-flex gap-1">
+                              <button className="btn btn-sm btn-outline-primary py-0 px-2" style={{ fontSize:11 }}
+                                onClick={()=>{ setSelectedRecord(r); setModal("update"); }}
+                                disabled={isDeleting}>
+                                Update
+                              </button>
+                              {/* ✅ NEW — Delete button, confirms then calls DELETE /api/training/records/:id */}
+                              <button className="btn btn-sm btn-outline-danger py-0 px-2 d-flex align-items-center gap-1" style={{ fontSize:11 }}
+                                onClick={()=>handleDeleteRecord(r)}
+                                disabled={isDeleting}
+                                title="Delete this training record">
+                                {isDeleting ? (
+                                  <span className="spinner-border spinner-border-sm" style={{ width:11, height:11 }} />
+                                ) : (
+                                  <Trash2 size={11} />
+                                )}
+                                Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -663,36 +909,128 @@ export default function TrainingRoadmapHR() {
           {compLog.length === 0 ? (
             <div className="text-center py-5"><FileText size={36} className="text-muted mb-3"/><p className="text-muted">No compliance logs yet.</p></div>
           ) : (
-            <div className="card border-0 shadow-sm" style={{ borderRadius:12, overflow:"hidden" }}>
-              <div className="table-responsive">
-                <table className="table table-sm align-middle mb-0" style={{ fontSize:13 }}>
-                  <thead className="table-light">
-                    <tr><th>Date</th><th>Employee</th><th>Program</th><th>Action</th><th>Note</th><th>By</th></tr>
-                  </thead>
-                  <tbody>
-                    {compLog.map((l,i)=>{
-                      const actionColor = {
-                        assigned:"#3b82f6", started:"#f59e0b", completed:"#10b981",
-                        overdue:"#ef4444", score_updated:"#8b5cf6", cert_issued:"#10b981", waived:"#6b7280"
-                      }[l.action] || "#6b7280";
-                      return (
-                        <tr key={i}>
-                          <td className="text-muted" style={{ fontSize:11 }}>{new Date(l.date).toLocaleDateString("en-IN")}</td>
-                          <td>
-                            <p className="mb-0 fw-semibold" style={{ fontSize:12 }}>{l.employeeId?.name}</p>
-                            <p className="mb-0 text-muted" style={{ fontSize:11 }}>{l.employeeId?.department}</p>
-                          </td>
-                          <td className="text-muted" style={{ fontSize:12 }}>{l.programTitle || "—"}</td>
-                          <td><span className="badge" style={{ background:`${actionColor}20`, color:actionColor, fontSize:11 }}>{l.action?.replace("_"," ")}</span></td>
-                          <td className="text-muted" style={{ fontSize:11 }}>{l.note || "—"}</td>
-                          <td className="text-muted" style={{ fontSize:11 }}>{l.addedBy}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            // ✅ CHANGED — one row per employee (was one row per log entry).
+            // compLog is already sorted newest-first by the backend, so the
+            // first log encountered per employee while grouping is their latest.
+            (() => {
+              const groups = [];
+              const byEmp = new Map();
+              compLog.forEach(l => {
+                const key = l.employeeId?._id || "unknown";
+                if (!byEmp.has(key)) {
+                  const g = { employee: l.employeeId, logs: [] };
+                  byEmp.set(key, g);
+                  groups.push(g);
+                }
+                byEmp.get(key).logs.push(l);
+              });
+
+              return (
+                <div className="card border-0 shadow-sm" style={{ borderRadius:12, overflow:"hidden" }}>
+                  <div className="table-responsive">
+                    <table className="table table-sm align-middle mb-0" style={{ fontSize:13 }}>
+                      <thead className="table-light">
+                        <tr><th></th><th>Employee</th><th>Program</th><th>Status</th><th>Latest Update</th><th>Last Activity</th><th></th></tr>
+                      </thead>
+                      <tbody>
+                        {groups.map((g) => {
+                          const empId = g.employee?._id;
+                          const isOpen = expandedEmp === empId;
+                          const latest = g.logs[0];
+                          // Live status comes from the actual training record when we can find
+                          // one for this employee — falls back to the latest log's action.
+                          const liveRecord = records.find(r => r.employeeId?._id === empId);
+                          const st = liveRecord ? (STATUS_CONFIG[liveRecord.status] || STATUS_CONFIG.pending) : null;
+                          return (
+                            <React.Fragment key={empId}>
+                              <tr style={{ cursor:"pointer" }} onClick={()=>setExpandedEmp(isOpen ? null : empId)}>
+                                <td style={{ width:24 }}>
+                                  <ChevronRight size={14} color="#9ca3af" style={{ transform: isOpen ? "rotate(90deg)" : "none", transition:"transform .15s" }} />
+                                </td>
+                                <td>
+                                  <p className="mb-0 fw-semibold" style={{ fontSize:13 }}>{g.employee?.name || "—"}</p>
+                                  <p className="mb-0 text-muted" style={{ fontSize:11 }}>{g.employee?.department}</p>
+                                </td>
+                                <td className="text-muted" style={{ fontSize:12 }}>{latest?.programTitle || "—"}</td>
+                                <td>
+                                  {st ? (
+                                    <span className="badge" style={{ background:st.bg, color:st.color, border:`1px solid ${st.color}33`, fontSize:11 }}>{st.label}</span>
+                                  ) : (
+                                    <span className="badge bg-light text-dark" style={{ fontSize:11 }}>{latest?.action?.replace("_"," ")}</span>
+                                  )}
+                                </td>
+                                <td className="text-muted" style={{ fontSize:11 }}>{latest?.note || "—"}</td>
+                                <td className="text-muted" style={{ fontSize:11 }}>{new Date(latest?.date).toLocaleDateString("en-IN")}</td>
+                                <td>
+                                  {/* ✅ NEW — click to open the same status dropdown used in Records tab.
+                                      This is how HR reviews a submitted quiz and marks it Completed. */}
+                                  {liveRecord && (
+                                    <button
+                                      className="btn btn-sm btn-outline-primary py-0 px-2"
+                                      style={{ fontSize:11 }}
+                                      onClick={(e) => { e.stopPropagation(); setSelectedRecord(liveRecord); setModal("update"); }}
+                                    >
+                                      Review
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                              {isOpen && (
+                                <tr>
+                                  <td></td>
+                                  <td colSpan={6} style={{ background:"#f9fafb", padding:0 }}>
+                                    <table className="table table-sm mb-0" style={{ fontSize:12 }}>
+                                      <thead>
+                                        <tr className="text-muted">
+                                          <th style={{ fontWeight:600 }}>Date</th>
+                                          <th style={{ fontWeight:600 }}>Action</th>
+                                          <th style={{ fontWeight:600 }}>Note</th>
+                                          <th style={{ fontWeight:600 }}>By</th>
+                                          <th></th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {g.logs.map((l) => {
+                                          const actionColor = {
+                                            assigned:"#3b82f6", started:"#f59e0b", completed:"#10b981",
+                                            overdue:"#ef4444", score_updated:"#8b5cf6", cert_issued:"#10b981", waived:"#6b7280", needs_hr_review:"#dc2626"
+                                          }[l.action] || "#6b7280";
+                                          return (
+                                            <tr key={l._id}>
+                                              <td className="text-muted" style={{ fontSize:11 }}>{new Date(l.date).toLocaleDateString("en-IN")}</td>
+                                              <td><span className="badge" style={{ background:`${actionColor}20`, color:actionColor, fontSize:11 }}>{l.action?.replace("_"," ")}</span></td>
+                                              <td className="text-muted" style={{ fontSize:11 }}>{l.note || "—"}</td>
+                                              <td className="text-muted" style={{ fontSize:11 }}>{l.addedBy}</td>
+                                              <td>
+                                                <button className="btn btn-sm btn-outline-danger py-0 px-2 d-flex align-items-center gap-1" style={{ fontSize:11 }}
+                                                  onClick={()=>handleDeleteLog(l)}
+                                                  disabled={deletingLogId === l._id}
+                                                  title="Delete this log entry">
+                                                  {deletingLogId === l._id ? (
+                                                    <span className="spinner-border spinner-border-sm" style={{ width:11, height:11 }} />
+                                                  ) : (
+                                                    <Trash2 size={11} />
+                                                  )}
+                                                  Delete
+                                                </button>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()
           )}
         </div>
       )}

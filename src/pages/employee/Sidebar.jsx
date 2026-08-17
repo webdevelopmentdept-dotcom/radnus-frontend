@@ -4,7 +4,8 @@ import {
   FileText, Building2, LayoutDashboard, User,
   LogOut, TrendingUp, ClipboardList, Wallet,
   Bell, Settings, CalendarCheck, X,
-  ChevronRight, Sun, Moon, Sparkles, MessageCircle, Lock, LifeBuoy , MessageSquarePlus
+  ChevronRight, Sun, Moon, Sparkles, MessageCircle, Lock, LifeBuoy , MessageSquarePlus,
+  Package
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -62,6 +63,19 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
   const [dark, setDark] = useState(() => {
     return localStorage.getItem("esb-theme") !== "light";
   });
+
+  // ✅ NEW — Product Management only shows for the one employee HR assigned
+  // it to (Employee.canManageProducts, returned by GET /api/employee/me/:id).
+  // Inserted before "Notifications"/"Settings" so it stays with the other
+  // work items rather than tacked on at the very end.
+  const navItems = employee?.canManageProducts
+    ? [
+        ...NAV_ITEMS.slice(0, -2),
+        { href: "/employee/products", icon: Package, label: "Product Management" },
+        ...NAV_ITEMS.slice(-2),
+      ]
+    : NAV_ITEMS;
+
 
   useEffect(() => {
     localStorage.setItem("esb-theme", dark ? "dark" : "light");
@@ -632,7 +646,7 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
 
         {/* Nav — scrollable zone */}
         <nav className="esb-nav">
-          {NAV_ITEMS.map(({ href, icon: Icon, label, badge }) => {
+          {navItems.map(({ href, icon: Icon, label, badge }) => {
             const isActive = active === href;
 
             // ✅ NEW — locked check: not approved AND path not in allowed list
