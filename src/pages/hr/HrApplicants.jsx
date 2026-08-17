@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ApplicantProfileDrawer from "./Applicantprofiledrawer";
+import AddWalkinModal from "./AddWalkinModal";
 
 const STATUS_OPTIONS = ["New", "Shortlisted", "Interview", "Hired", "Rejected"];
 
@@ -65,11 +66,15 @@ export default function HrApplicants() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [tooltip, setTooltip] = useState({ visible: false, text: "", x: 0, y: 0 });
 
-  // ── NEW: Public / Internal tab split ──
-  const [activeTab, setActiveTab] = useState("public"); // "public" | "internal"
+  // ── NEW: Public / Internal / Walk-in tab split ──
+  const [activeTab, setActiveTab] = useState("public"); // "public" | "internal" | "walkin"
+
+  // ── NEW: Walk-in applicants (separate collection) ──
+  const [walkinApplicants, setWalkinApplicants] = useState([]);
+  const [showAddWalkin, setShowAddWalkin] = useState(false);
 
   // Rejection modal state
-  const [rejectModal, setRejectModal] = useState({ open: false, applicantId: null, applicantName: "" });
+  const [rejectModal, setRejectModal] = useState({ open: false, applicantId: null, applicantName: "", kind: "regular" });
   const [rejectReason, setRejectReason] = useState("");
   const [rejectCustom, setRejectCustom] = useState("");
   const [rejectSubmitting, setRejectSubmitting] = useState(false);
@@ -77,12 +82,64 @@ export default function HrApplicants() {
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-  useEffect(() => { loadApplicants(); }, []);
+  useEffect(() => { loadApplicants(); loadWalkinApplicants(); }, []);
 
   const loadApplicants = async () => {
     const res = await fetch(`${API_BASE}/api/hr/applications`);
     const data = await res.json();
     setApplicants(data.applications || []);
+  };
+
+  // ── NEW: fetch walk-in applicants ──
+  const loadWalkinApplicants = async () => {
+    const res = await fetch(`${API_BASE}/api/hr/walkin`);
+    const data = await res.json();
+    setWalkinApplicants(data.applicants || []);
+  };
+
+  // ── NEW: status update for a walk-in applicant ──
+  const saveWalkinStatus = async (id, newStatus, rejectionReason) => {
+    setUpdatingId(id);
+    try {
+      const body = { status: newStatus };
+      if (rejectionReason) body.rejectionReason = rejectionReason;
+
+      const res = await fetch(`${API_BASE}/api/hr/walkin/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        alert(`Status update failed (HTTP ${res.status}).`);
+        setUpdatingId(null);
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        setWalkinApplicants((prev) =>
+          prev.map((a) =>
+            a._id === id
+              ? { ...a, status: newStatus, ...(rejectionReason ? { rejectionReason } : {}) }
+              : a
+          )
+        );
+      } else {
+        alert(data.msg || "Status update failed.");
+      }
+    } catch (err) {
+      alert("Status update failed: " + err.message);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // ── NEW: delete a walk-in applicant ──
+  const handleWalkinDelete = async (id) => {
+    if (!window.confirm("Delete this walk-in applicant?")) return;
+    await fetch(`${API_BASE}/api/hr/walkin/${id}`, { method: "DELETE" });
+    setWalkinApplicants((prev) => prev.filter((a) => a._id !== id));
   };
 
   // ── UPDATED: internal applications இப்போ proper ah remove ஆகும் ──
@@ -117,14 +174,18 @@ export default function HrApplicants() {
     setApplicants(applicants.filter((a) => a._id !== id));
   };
 
-  const handleStatusChange = async (id, newStatus, applicantName) => {
+  const handleStatusChange = async (id, newStatus, applicantName, kind = "regular") => {
     if (newStatus === "Rejected") {
       setRejectReason("");
       setRejectCustom("");
-      setRejectModal({ open: true, applicantId: id, applicantName });
+      setRejectModal({ open: true, applicantId: id, applicantName, kind });
       return;
     }
-    await saveStatus(id, newStatus, null);
+    if (kind === "walkin") {
+      await saveWalkinStatus(id, newStatus, null);
+    } else {
+      await saveStatus(id, newStatus, null);
+    }
   };
 
   // ── UPDATED: internal status update தனியா handle பண்றோம் ──
@@ -215,13 +276,17 @@ export default function HrApplicants() {
     const finalReason = rejectReason === "Other" ? rejectCustom.trim() : rejectReason;
     if (!finalReason) return;
     setRejectSubmitting(true);
-    await saveStatus(rejectModal.applicantId, "Rejected", finalReason);
+    if (rejectModal.kind === "walkin") {
+      await saveWalkinStatus(rejectModal.applicantId, "Rejected", finalReason);
+    } else {
+      await saveStatus(rejectModal.applicantId, "Rejected", finalReason);
+    }
     setRejectSubmitting(false);
-    setRejectModal({ open: false, applicantId: null, applicantName: "" });
+    setRejectModal({ open: false, applicantId: null, applicantName: "", kind: "regular" });
   };
 
   const handleRejectCancel = () => {
-    setRejectModal({ open: false, applicantId: null, applicantName: "" });
+    setRejectModal({ open: false, applicantId: null, applicantName: "", kind: "regular" });
     setRejectReason("");
     setRejectCustom("");
   };
@@ -251,17 +316,23 @@ export default function HrApplicants() {
     setTooltip({ visible: false, text: "", x: 0, y: 0 });
   };
 
-  // ── NEW: counts for the two tabs ──
+  // ── NEW: counts for the three tabs ──
   const publicCount = applicants.filter((a) => !a.isInternal).length;
   const internalCount = applicants.filter((a) => a.isInternal).length;
+  const walkinCount = walkinApplicants.length;
 
   // ── NEW: restrict everything below to the active tab ──
-  const tabApplicants = applicants.filter((a) =>
-    activeTab === "public" ? !a.isInternal : a.isInternal
-  );
+  const tabApplicants =
+    activeTab === "walkin"
+      ? walkinApplicants
+      : applicants.filter((a) => (activeTab === "public" ? !a.isInternal : a.isInternal));
 
   const filtered = tabApplicants.filter((a) => {
-    const matchSearch = (a.name + a.email + a.jobTitle).toLowerCase().includes(search.toLowerCase());
+    const haystack =
+      activeTab === "walkin"
+        ? `${a.name} ${a.mobile} ${a.designation}`
+        : `${a.name}${a.email}${a.jobTitle}`;
+    const matchSearch = haystack.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "" || a.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -487,22 +558,41 @@ export default function HrApplicants() {
           <span className="ha-total-badge">{filtered.length} of {tabApplicants.length}</span>
         </div>
 
-        {/* ── NEW: Public / Internal tabs ── */}
-        <div className="ha-tabs">
-          <button
-            className={`ha-tab-btn${activeTab === "public" ? " active" : ""}`}
-            onClick={() => setActiveTab("public")}
-          >
-            🌐 Public Applicants
-            <span className="ha-tab-count">{publicCount}</span>
-          </button>
-          <button
-            className={`ha-tab-btn${activeTab === "internal" ? " active" : ""}`}
-            onClick={() => setActiveTab("internal")}
-          >
-            🔒 Internal Applicants
-            <span className="ha-tab-count">{internalCount}</span>
-          </button>
+        {/* ── NEW: Public / Internal / Walk-in tabs ── */}
+        <div className="ha-tabs" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex" }}>
+            <button
+              className={`ha-tab-btn${activeTab === "public" ? " active" : ""}`}
+              onClick={() => setActiveTab("public")}
+            >
+              🌐 Public Applicants
+              <span className="ha-tab-count">{publicCount}</span>
+            </button>
+            <button
+              className={`ha-tab-btn${activeTab === "internal" ? " active" : ""}`}
+              onClick={() => setActiveTab("internal")}
+            >
+              🔒 Internal Applicants
+              <span className="ha-tab-count">{internalCount}</span>
+            </button>
+            <button
+              className={`ha-tab-btn${activeTab === "walkin" ? " active" : ""}`}
+              onClick={() => setActiveTab("walkin")}
+            >
+              🚶 Walk-in Applicants
+              <span className="ha-tab-count">{walkinCount}</span>
+            </button>
+          </div>
+
+          {activeTab === "walkin" && (
+            <button
+              className="ha-reject-confirm-btn"
+              style={{ marginRight: 4 }}
+              onClick={() => setShowAddWalkin(true)}
+            >
+              + Add Walk-in Applicant
+            </button>
+          )}
         </div>
 
         {/* Status Summary */}
@@ -682,7 +772,7 @@ export default function HrApplicants() {
                   })}
                 </tbody>
               </table>
-            ) : (
+            ) : activeTab === "internal" ? (
               /* ── NEW: Internal Applicants table — simplified columns ── */
               <table className="ha-table">
                 <thead>
@@ -793,10 +883,103 @@ export default function HrApplicants() {
                   ))}
                 </tbody>
               </table>
+            ) : (
+              /* ── NEW: Walk-in Applicants table ── */
+              <table className="ha-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Candidate</th>
+                    <th>Department</th>
+                    <th>Designation</th>
+                    <th>Mobile</th>
+                    <th>Emergency Contact</th>
+                    <th>Location</th>
+                    <th>Source</th>
+                    <th>Requisition Date</th>
+                    <th>Interview Date</th>
+                    <th>Received By</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                    <th className="center">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan="14">
+                        <div className="ha-empty">
+                          <div className="ha-empty-text">No walk-in applicants found</div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filtered.map((a, i) => (
+                    <tr key={a._id}>
+                      <td><span className="ha-num">{i + 1}</span></td>
+                      <td><div className="ha-candidate-name">{a.name}</div></td>
+                      <td>{a.department || <span className="ha-na">—</span>}</td>
+                      <td>{a.designation || <span className="ha-na">—</span>}</td>
+                      <td>{a.mobile}</td>
+                      <td>{a.emergencyContact || <span className="ha-na">—</span>}</td>
+                      <td>{a.location || <span className="ha-na">—</span>}</td>
+                      <td><span className="ha-job-chip">{a.source}</span></td>
+                      <td>
+                        <span className="ha-date">
+                          {a.requisitionDate
+                            ? new Date(a.requisitionDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                            : "—"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="ha-date">
+                          {a.interviewDate
+                            ? new Date(a.interviewDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                            : "—"}
+                        </span>
+                      </td>
+                      <td>{a.receivedBy || <span className="ha-na">—</span>}</td>
+                      <td>
+                        <div>
+                          <select
+                            className="ha-status-select"
+                            value={a.status}
+                            onChange={(e) => handleStatusChange(a._id, e.target.value, a.name, "walkin")}
+                            disabled={updatingId === a._id}
+                            style={statusStyle(a.status)}
+                          >
+                            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                          {a.status === "Rejected" && a.rejectionReason && (
+                            <div className="ha-reject-reason-tag" title={a.rejectionReason}>
+                              <span>↳ {a.rejectionReason}</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td>{a.remarks || <span className="ha-na">—</span>}</td>
+                      <td className="center">
+                        <button className="ha-delete-btn" onClick={() => handleWalkinDelete(a._id)}>
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </div>
       </div>
+
+      {/* ✅ NEW — Add Walk-in Applicant Modal */}
+      {showAddWalkin && (
+        <AddWalkinModal
+          apiBase={API_BASE}
+          onClose={() => setShowAddWalkin(false)}
+          onSaved={(newApplicant) => setWalkinApplicants((prev) => [newApplicant, ...prev])}
+        />
+      )}
+
       {/* ✅ NEW — Applicant Profile Drawer */}
       {profileDrawer.open && (
         <ApplicantProfileDrawer
