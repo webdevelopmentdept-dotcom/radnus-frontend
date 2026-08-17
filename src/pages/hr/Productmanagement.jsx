@@ -135,7 +135,7 @@ export default function ProductManagement() {
   /* ------------------------ PRODUCT ACCESS (assign to one employee) ------------------------ */
   const loadAllEmployees = async () => {
     try {
-      const res = await fetch(`${API}/api/employee/employees?status=approved`, { headers: authHeaders() });
+      const res = await fetch(`${API}/api/employee/employees?status=approved,active`, { headers: authHeaders() });
       const data = await res.json();
       // employeeAuth.js /employees route returns { total, data } (no `success` flag)
       setAllEmployees(data.data || []);
