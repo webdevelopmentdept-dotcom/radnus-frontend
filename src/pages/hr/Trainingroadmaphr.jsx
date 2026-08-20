@@ -77,6 +77,7 @@ function AssignModal({ programs, employees, onClose, onSave }) {
   const [dueDate, setDueDate]   = useState("");
   const [notes, setNotes]       = useState("");
   const [saving, setSaving]     = useState(false);
+const [modal, setModal] = useState(null); // "assign"|"update"|"quizQuestions"|"createProgram"
 
   const handle = async () => {
     if (!programId) return alert("Select a program");
@@ -184,6 +185,7 @@ function UpdateRecordModal({ record, onClose, onSave }) {
     notes:               record.notes || "",
   });
   const [saving, setSaving] = useState(false);
+  const [showAnswers, setShowAnswers] = useState(false); // ✅ NEW — collapsed by default
   const lastAttempt = record.quizAttempts?.[record.quizAttempts.length - 1]; // ✅ NEW — latest quiz submission, for HR context
 
   return (
@@ -215,6 +217,59 @@ function UpdateRecordModal({ record, onClose, onSave }) {
                   </p>
                   <p className="mb-0" style={{ fontSize:11, color:"#6b7280" }}>Review the result, then set status to Completed to approve certification.</p>
                 </div>
+              </div>
+            )}
+
+            {/* ✅ NEW — question-by-question breakdown of what the employee
+                actually answered, so HR isn't just reviewing a bare score. */}
+            {lastAttempt && (
+              <div>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+                  style={{ fontSize: 12 }}
+                  onClick={() => setShowAnswers(v => !v)}
+                >
+                  {showAnswers ? "Hide" : "Show"} what they answered ({lastAttempt.answers?.length || 0} questions)
+                </button>
+                {showAnswers && (
+                  <div className="d-flex flex-column gap-2 mt-2">
+                    {(lastAttempt.answers || []).map((a, i) => {
+                      const q = a.questionId; // populated: { questionText, options, correctOptionIndex }
+                      if (!q || typeof q === "string") {
+                        return (
+                          <div key={i} className="border rounded p-2" style={{ borderRadius: 8, fontSize: 12, color: "#9ca3af" }}>
+                            Question {i + 1}: original question was deleted since this attempt.
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={i} className="border rounded p-2" style={{ borderRadius: 8, fontSize: 12, borderColor: a.correct ? "#a7f3d0" : "#fecaca", background: a.correct ? "#f0fdf9" : "#fef7f7" }}>
+                          <p className="mb-1 fw-semibold" style={{ fontSize: 12.5 }}>
+                            {i + 1}. {q.questionText} {a.correct ? <span style={{ color: "#10b981" }}>✓</span> : <span style={{ color: "#ef4444" }}>✗</span>}
+                          </p>
+                          <div className="d-flex flex-column gap-1">
+                            {(q.options || []).map((opt, oi) => {
+                              const isEmployeePick = oi === a.selectedOptionIndex;
+                              const isCorrectOpt   = oi === q.correctOptionIndex;
+                              return (
+                                <span key={oi} style={{
+                                  fontSize: 11.5,
+                                  color: isCorrectOpt ? "#10b981" : isEmployeePick ? "#ef4444" : "#6b7280",
+                                  fontWeight: (isEmployeePick || isCorrectOpt) ? 700 : 400,
+                                }}>
+                                  {isEmployeePick ? "→ " : "  "}{opt}
+                                  {isCorrectOpt ? "  (correct answer)" : ""}
+                                  {isEmployeePick && !isCorrectOpt ? "  (their answer)" : ""}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
             <div>
@@ -265,11 +320,16 @@ function UpdateRecordModal({ record, onClose, onSave }) {
 }
 
 // ─── Quiz Questions Manager Modal (HR) ─────────────────────────
-// HR picks a product, then adds/edits/deletes 4-option MCQ questions
-// for it. Combined at quiz time across every studied product.
+// HR picks a product OR a non-equipment program, then adds/edits/
+// deletes 4-option MCQ questions for it. Equipment quizzes are pooled
+// across every studied product; program quizzes belong to that one
+// program directly (e.g. "Excel training").
 function QuizQuestionsManagerModal({ onClose, showMsg }) {
+  const [mode, setMode]           = useState("product"); // "product" | "program"
   const [products, setProducts]   = useState([]);
+  const [programs, setPrograms]   = useState([]);
   const [productId, setProductId] = useState("");
+  const [programId, setProgramId] = useState("");
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [loadingQs, setLoadingQs] = useState(false);
@@ -278,30 +338,48 @@ function QuizQuestionsManagerModal({ onClose, showMsg }) {
   const [saving, setSaving]   = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
+  const selectedId = mode === "product" ? productId : programId;
+
   const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem("hrToken")}` });
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/products`, { headers: authHeaders() });
-        const data = await res.json();
-        if (data.success) setProducts(data.data || []);
+        const [prodRes, progRes] = await Promise.all([
+          fetch(`${API_BASE}/api/products`, { headers: authHeaders() }),
+          axios.get(`${API_BASE}/api/training/programs`),
+        ]);
+        const prodData = await prodRes.json();
+        if (prodData.success) setProducts(prodData.data || []);
+        // Only non-equipment programs get their own quiz here — equipment
+        // programs are quizzed per-product via the "Product" tab above.
+        setPrograms((progRes.data.data || []).filter(p => p.type !== "equipment"));
       } catch (e) { /* silent */ }
       finally { setLoading(false); }
     })();
   }, []);
 
-  const loadQuestions = useCallback(async (pid) => {
-    if (!pid) { setQuestions([]); return; }
+  const loadQuestions = useCallback(async (id, currentMode) => {
+    if (!id) { setQuestions([]); return; }
     setLoadingQs(true);
     try {
-      const res = await axios.get(`${API_BASE}/api/training/quiz-questions`, { params: { productId: pid } });
+      const params = currentMode === "product" ? { productId: id } : { programId: id };
+      const res = await axios.get(`${API_BASE}/api/training/quiz-questions`, { params });
       setQuestions(res.data.data || []);
     } catch (e) { showMsg("Failed to load questions", "error"); }
     finally { setLoadingQs(false); }
   }, [showMsg]);
 
-  useEffect(() => { loadQuestions(productId); setEditingId(null); }, [productId, loadQuestions]);
+  useEffect(() => { loadQuestions(selectedId, mode); setEditingId(null); }, [selectedId, mode, loadQuestions]);
+
+  // Switching tabs clears the other tab's selection so we don't
+  // accidentally send both productId and programId together.
+  const switchMode = (m) => {
+    setMode(m);
+    setProductId("");
+    setProgramId("");
+    setQuestions([]);
+  };
 
   const resetForm = () => setForm({ questionText: "", options: ["", "", "", ""], correctOptionIndex: 0 });
 
@@ -317,7 +395,8 @@ function QuizQuestionsManagerModal({ onClose, showMsg }) {
     setSaving(true);
     try {
       if (editingId === "new") {
-        await axios.post(`${API_BASE}/api/training/quiz-questions`, { productId, ...form });
+        const linkField = mode === "product" ? { productId: selectedId } : { programId: selectedId };
+        await axios.post(`${API_BASE}/api/training/quiz-questions`, { ...linkField, ...form });
         showMsg("Question added!");
       } else {
         await axios.put(`${API_BASE}/api/training/quiz-questions/${editingId}`, form);
@@ -325,7 +404,7 @@ function QuizQuestionsManagerModal({ onClose, showMsg }) {
       }
       setEditingId(null);
       resetForm();
-      loadQuestions(productId);
+      loadQuestions(selectedId, mode);
     } catch (e) { showMsg(e?.response?.data?.message || "Save failed", "error"); }
     finally { setSaving(false); }
   };
@@ -336,7 +415,7 @@ function QuizQuestionsManagerModal({ onClose, showMsg }) {
     try {
       await axios.delete(`${API_BASE}/api/training/quiz-questions/${q._id}`);
       showMsg("Question deleted");
-      loadQuestions(productId);
+      loadQuestions(selectedId, mode);
     } catch (e) { showMsg(e?.response?.data?.message || "Delete failed", "error"); }
     finally { setDeletingId(null); }
   };
@@ -353,21 +432,49 @@ function QuizQuestionsManagerModal({ onClose, showMsg }) {
             <button className="btn-close" onClick={onClose} />
           </div>
           <div className="modal-body">
-            <label style={labelStyle}>Select Product</label>
-            <select className="form-select form-select-sm mb-3" value={productId} onChange={e => setProductId(e.target.value)} disabled={loading}>
-              <option value="">-- Select a Product --</option>
-              {products.map(p => <option key={p._id} value={p._id}>{p.productName} ({p.productCode})</option>)}
-            </select>
+            {/* ✅ NEW — Product / Program tab toggle */}
+            <div className="d-flex gap-2 mb-3">
+              <button
+                className={`btn btn-sm flex-fill ${mode === "product" ? "btn-primary fw-bold" : "btn-outline-secondary"}`}
+                onClick={() => switchMode("product")}
+              >
+                Equipment Product
+              </button>
+              <button
+                className={`btn btn-sm flex-fill ${mode === "program" ? "btn-primary fw-bold" : "btn-outline-secondary"}`}
+                onClick={() => switchMode("program")}
+              >
+                Training Program
+              </button>
+            </div>
 
-            {!productId && <p className="text-muted text-center py-4" style={{ fontSize: 13 }}>Select a product to view or add its quiz questions.</p>}
+            {mode === "product" ? (
+              <>
+                <label style={labelStyle}>Select Product</label>
+                <select className="form-select form-select-sm mb-3" value={productId} onChange={e => setProductId(e.target.value)} disabled={loading}>
+                  <option value="">-- Select a Product --</option>
+                  {products.map(p => <option key={p._id} value={p._id}>{p.productName} ({p.productCode})</option>)}
+                </select>
+              </>
+            ) : (
+              <>
+                <label style={labelStyle}>Select Training Program</label>
+                <select className="form-select form-select-sm mb-3" value={programId} onChange={e => setProgramId(e.target.value)} disabled={loading}>
+                  <option value="">-- Select a Program --</option>
+                  {programs.map(p => <option key={p._id} value={p._id}>{p.title}</option>)}
+                </select>
+              </>
+            )}
 
-            {productId && (
+            {!selectedId && <p className="text-muted text-center py-4" style={{ fontSize: 13 }}>Select {mode === "product" ? "a product" : "a program"} to view or add its quiz questions.</p>}
+
+            {selectedId && (
               <>
                 {loadingQs ? (
                   <div className="text-center py-3"><div className="spinner-border spinner-border-sm text-primary" /></div>
                 ) : (
                   <div className="d-flex flex-column gap-2 mb-3">
-                    {questions.length === 0 && <p className="text-muted" style={{ fontSize: 12 }}>No questions yet for this product.</p>}
+                    {questions.length === 0 && <p className="text-muted" style={{ fontSize: 12 }}>No questions yet for this {mode === "product" ? "product" : "program"}.</p>}
                     {questions.map((q, i) => (
                       <div key={q._id} className="border rounded p-2" style={{ borderRadius: 9, fontSize: 12 }}>
                         <div className="d-flex justify-content-between align-items-start gap-2">
@@ -426,6 +533,285 @@ function QuizQuestionsManagerModal({ onClose, showMsg }) {
           </div>
           <div className="modal-footer">
             <button className="btn btn-light" onClick={onClose}>Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Create Training Program Modal ────────────────────────────
+function CreateProgramModal({ onClose, onSave }) {
+  const [title, setTitle]             = useState("");
+  const [duration, setDuration]        = useState("");
+  const [conductedBy, setConductedBy]  = useState("");
+  const [modulesText, setModulesText]  = useState("");
+  const [videoMode, setVideoMode]      = useState("youtube");
+  const [youtubeUrl, setYoutubeUrl]    = useState("");
+  const [videoFile, setVideoFile]      = useState(null);
+  const [pdfFile, setPdfFile]          = useState(null); // ✅ NEW — optional PDF training material
+  const [saving, setSaving]            = useState(false);
+  const [error, setError]              = useState("");
+
+  // ── Certification (optional toggle) ──
+  const [hasCertification, setHasCertification] = useState(false);
+  const [certification, setCertification]       = useState("");
+
+  // ── Department: searchable dropdown ──
+  const [departments, setDepartments] = useState([]);
+  const [deptLoading, setDeptLoading] = useState(true);
+  const [department, setDepartment]   = useState("all");
+  const [deptQuery, setDeptQuery]     = useState("All Departments");
+  const [deptOpen, setDeptOpen]       = useState(false);
+
+  useEffect(() => {
+    const fetchDepts = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/departments`);
+        const data = await res.json();
+        const all = data.data || data || [];
+        setDepartments(all.filter(d => d.status === "active"));
+      } catch { setDepartments([]); }
+      finally { setDeptLoading(false); }
+    };
+    fetchDepts();
+  }, []);
+
+  const deptOptions = ["All Departments", ...departments.map(d => d.name)];
+
+  const filteredDeptOptions = deptOptions.filter(d =>
+    d.toLowerCase().includes(deptQuery.toLowerCase())
+  );
+
+  const pickDept = (d) => {
+    setDepartment(d === "All Departments" ? "all" : d);
+    setDeptQuery(d);
+    setDeptOpen(false);
+  };
+
+  const handleSubmit = async () => {
+    if (!title.trim()) return setError("Title is required");
+    setError("");
+    setSaving(true);
+
+    const fd = new FormData();
+    fd.append("title", title.trim());
+    fd.append("department", department);
+    fd.append("duration", duration);
+    fd.append("certification", hasCertification ? certification.trim() : "");
+    fd.append("conductedBy", conductedBy);
+
+    const modules = modulesText.split(",").map(m => m.trim()).filter(Boolean);
+    fd.append("modules", JSON.stringify(modules));
+
+    if (videoMode === "youtube" && youtubeUrl.trim()) {
+      fd.append("videoUrl", youtubeUrl.trim());
+    } else if (videoMode === "upload" && videoFile) {
+      fd.append("video", videoFile);
+    }
+    if (pdfFile) fd.append("pdf", pdfFile); // ✅ NEW
+
+    try {
+      await onSave(fd);
+    } catch (e) {
+      setError(e?.response?.data?.message || "Failed to create program");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal show d-block" style={{ background: "rgba(15,23,42,.45)", zIndex: 1050 }}>
+      <div className="modal-dialog modal-dialog-centered modal-lg">
+        <div className="modal-content border-0 shadow-lg" style={{ borderRadius: 14 }}>
+          <div className="modal-header border-bottom" style={{ background: "#f9fafb", borderRadius: "14px 14px 0 0" }}>
+            <div className="d-flex align-items-center gap-2">
+              <Plus size={18} color="#10b981" />
+              <p className="mb-0 fw-bold" style={{ fontSize: 14 }}>Create Training Program</p>
+            </div>
+            <button className="btn-close" onClick={onClose} />
+          </div>
+
+          <div className="modal-body">
+            {error && <div className="alert alert-danger py-2" style={{ fontSize: 12 }}>{error}</div>}
+
+            <div className="row g-3">
+              <div className="col-12">
+                <label style={labelStyle}>Title *</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="e.g. Excel Training"
+                />
+              </div>
+
+              {/* ── Searchable Department Dropdown ── */}
+              <div className="col-12" style={{ position: "relative" }}>
+                <label style={labelStyle}>Department</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={deptQuery}
+                  onChange={e => { setDeptQuery(e.target.value); setDeptOpen(true); }}
+                  onFocus={() => { setDeptQuery(""); setDeptOpen(true); }}
+                  onBlur={() => setTimeout(() => {
+                    setDeptOpen(false);
+                    if (!deptQuery) setDeptQuery(department === "all" ? "All Departments" : department);
+                  }, 150)}
+                  placeholder={deptLoading ? "Loading departments..." : (department === "all" ? "All Departments" : department)}
+                />
+                {deptOpen && (
+                  <div
+                    style={{
+                      position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20,
+                      background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8,
+                      marginTop: 4, maxHeight: 220, overflowY: "auto",
+                      boxShadow: "0 6px 16px rgba(16,24,40,.12)",
+                    }}
+                  >
+                    {filteredDeptOptions.length === 0 && (
+                      <div style={{ padding: "8px 12px", fontSize: 12.5, color: "#9ca3af" }}>No matches</div>
+                    )}
+                    {filteredDeptOptions.map(d => (
+                      <div
+                        key={d}
+                        onMouseDown={() => pickDept(d)}
+                        style={{
+                          padding: "8px 12px", fontSize: 13, cursor: "pointer",
+                          background: department === (d === "All Departments" ? "all" : d) ? "#f3f4f6" : "#fff",
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
+                        onMouseLeave={e => e.currentTarget.style.background =
+                          department === (d === "All Departments" ? "all" : d) ? "#f3f4f6" : "#fff"}
+                      >
+                        {d}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="col-md-6">
+                <label style={labelStyle}>Duration</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={duration}
+                  onChange={e => setDuration(e.target.value)}
+                  placeholder="e.g. 7 Days"
+                />
+              </div>
+
+              {/* ── Certification (optional toggle) ── */}
+              <div className="col-md-6">
+                <label style={labelStyle}>Certification</label>
+                <div className="form-check form-switch d-flex align-items-center gap-2 mb-2" style={{ background: "#f9fafb", borderRadius: 8, padding: "8px 12px", border: "1px solid #e5e7eb" }}>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    checked={hasCertification}
+                    onChange={e => { setHasCertification(e.target.checked); if (!e.target.checked) setCertification(""); }}
+                    style={{ width: 34, height: 18 }}
+                  />
+                  <label className="form-check-label" style={{ fontSize: 12.5, fontWeight: 600 }}>
+                    This training has a certification
+                  </label>
+                </div>
+                {hasCertification && (
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={certification}
+                    onChange={e => setCertification(e.target.value)}
+                    placeholder="e.g. Excel Proficiency Certificate"
+                  />
+                )}
+              </div>
+
+              <div className="col-12">
+                <label style={labelStyle}>Conducted By</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={conductedBy}
+                  onChange={e => setConductedBy(e.target.value)}
+                  placeholder="e.g. HR & L&D"
+                />
+              </div>
+
+              <div className="col-12">
+                <label style={labelStyle}>Modules / Topics (comma separated)</label>
+                <textarea
+                  className="form-control form-control-sm"
+                  rows="2"
+                  value={modulesText}
+                  onChange={e => setModulesText(e.target.value)}
+                  placeholder="e.g. VLOOKUP, Pivot Table, Formulas, Charts"
+                />
+              </div>
+
+              {/* ── Video source ── */}
+              <div className="col-12">
+                <label style={labelStyle}>Training Video</label>
+                <div className="d-flex gap-2 mb-2">
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${videoMode === "youtube" ? "btn-primary" : "btn-light"}`}
+                    style={{ fontSize: 12 }}
+                    onClick={() => setVideoMode("youtube")}
+                  >
+                    YouTube Link
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${videoMode === "upload" ? "btn-primary" : "btn-light"}`}
+                    style={{ fontSize: 12 }}
+                    onClick={() => setVideoMode("upload")}
+                  >
+                    Upload Video File
+                  </button>
+                </div>
+
+                {videoMode === "youtube" ? (
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={youtubeUrl}
+                    onChange={e => setYoutubeUrl(e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                  />
+                ) : (
+                  <input
+                    type="file"
+                    accept="video/*"
+                    className="form-control form-control-sm"
+                    onChange={e => setVideoFile(e.target.files[0] || null)}
+                  />
+                )}
+              </div>
+
+              {/* ── ✅ NEW — PDF training material (optional, independent of video) ── */}
+              <div className="col-12">
+                <label style={labelStyle}>Training PDF (optional)</label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  className="form-control form-control-sm"
+                  onChange={e => setPdfFile(e.target.files[0] || null)}
+                />
+                {pdfFile && <p className="text-muted mb-0 mt-1" style={{ fontSize: 11 }}>{pdfFile.name}</p>}
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-footer border-top">
+            <button className="btn btn-sm btn-light" onClick={onClose}>Cancel</button>
+            <button className="btn btn-sm btn-success fw-bold" onClick={handleSubmit} disabled={saving}>
+              {saving ? "Creating..." : "Create Program"}
+            </button>
           </div>
         </div>
       </div>
@@ -583,7 +969,7 @@ export default function TrainingRoadmapHR() {
       {modal === "assign" && <AssignModal programs={programs} employees={employees} onClose={()=>setModal(null)} onSave={handleAssign} />}
       {modal === "update" && selectedRecord && <UpdateRecordModal record={selectedRecord} onClose={()=>{setModal(null);setSelectedRecord(null);}} onSave={handleUpdate} />}
       {modal === "quizQuestions" && <QuizQuestionsManagerModal onClose={()=>setModal(null)} showMsg={showMsg} />}
-
+      {modal === "createProgram" && <CreateProgramModal onClose={()=>setModal(null)} onSave={async(fd)=>{ await axios.post(`${API_BASE}/api/training/programs`, fd, {headers:{'Content-Type':'multipart/form-data'}}); setModal(null); fetchAll(); showMsg("Training program created!"); }} />} 
       {/* ── Header ── */}
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div className="d-flex align-items-center gap-3">
@@ -609,9 +995,9 @@ export default function TrainingRoadmapHR() {
               fetchAll() on every load/refresh — every product always ends
               up linked to the one shared equipment program automatically,
               no manual step needed. */}
-          <button className="btn btn-sm btn-light d-flex align-items-center gap-1" onClick={fetchAll} disabled={loading}>
+          {/* <button className="btn btn-sm btn-light d-flex align-items-center gap-1" onClick={fetchAll} disabled={loading}>
             <RefreshCw size={13} /> Refresh
-          </button>
+          </button> */}
           {/* ✅ NEW — HR authors the MCQ question bank used by the employee quiz */}
           <button className="btn btn-sm btn-outline-primary d-flex align-items-center gap-2 fw-bold" onClick={()=>setModal("quizQuestions")}>
             <ClipboardList size={14} /> Manage Quiz Questions
@@ -619,6 +1005,9 @@ export default function TrainingRoadmapHR() {
           <button className="btn btn-primary d-flex align-items-center gap-2 fw-bold" onClick={()=>setModal("assign")}>
             <Plus size={14} /> Assign Training
           </button>
+          <button className="btn btn-sm btn-outline-success d-flex align-items-center gap-2 fw-bold" onClick={()=>setModal("createProgram")}>
+  <Plus size={14} /> Create Training
+</button>
         </div>
       </div>
 
@@ -639,7 +1028,7 @@ export default function TrainingRoadmapHR() {
         {[
           { key:"roadmap",    label:"Training Roadmap",       icon:<Layers size={13}/> },
           { key:"records",    label:`Records (${records.length})`, icon:<ClipboardList size={13}/> },
-          { key:"compliance", label:"Compliance Log",         icon:<FileText size={13}/> },
+          { key:"compliance", label:`Compliance Log (${new Set(compLog.map(l => l.employeeId?._id || "unknown")).size})`, icon:<FileText size={13}/> },
           { key:"kpi",        label:"KPI Dashboard",          icon:<BarChart2 size={13}/> },
         ].map(tab=>(
           <button key={tab.key} onClick={()=>setActiveTab(tab.key)}
@@ -836,10 +1225,15 @@ export default function TrainingRoadmapHR() {
                               <span className="badge" style={{ background:typ.bg, color:typ.color, fontSize:10 }}>{typ.label}</span>
                             </div>
                           </td>
-                          <td>
+                                                  <td>
                             <span className="badge" style={{ background:st.bg, color:st.color, border:`1px solid ${st.color}33`, fontSize:11 }}>
                               {isOverdue && r.status!=="completed" ? "Overdue" : st.label}
                             </span>
+                            {r.submittedForReview && r.status !== "completed" && (
+                              <span className="badge" style={{ background:"#fffbeb", color:"#92400e", border:"1px solid #fde68a", fontSize:10, marginTop:4, display:"block" }}>
+                                Submitted by employee
+                              </span>
+                            )}
                           </td>
                           <td>
                             {r.assessmentScore !== null && r.assessmentScore !== undefined ? (

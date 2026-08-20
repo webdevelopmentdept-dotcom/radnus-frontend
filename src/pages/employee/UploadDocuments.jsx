@@ -48,8 +48,10 @@ const COMPANY_DOCS = [
 const IDENTITY_OPTIONS = [
   { id: "ration",    label: "Ration Card",      desc: "Upload Front & Back" },
   { id: "gasbook",   label: "Gas Book",         desc: "Upload Gas Book"     },
-  { id: "refnumber", label: "Reference Number", desc: "Enter 2 Reference Numbers" },
 ];
+
+const REFERENCE_NOTE =
+  "We will call your provided references (friends, family, or relatives) to verify and confirm your details.";
 
 // ─── STYLES ──────────────────────────────────────────────────────────────────
 const styles = {
@@ -514,6 +516,396 @@ const styles = {
   }),
 };
 
+// ─── TOP-LEVEL COMPONENTS ─────────────────────────────────────────────────
+// NOTE: these are declared OUTSIDE UploadDocuments() on purpose. Declaring
+// them inside the component body would recreate a brand-new function on
+// every render, which makes React unmount/remount the DOM under them and
+// lose input focus after every keystroke (the "only one character types
+// then I have to click again" bug). Keeping them at module scope and
+// passing state in via props keeps their identity stable across renders.
+
+// ── Section Header ────────────────────────────────────────────────────────
+const SectionHeader = ({ icon, title, subtitle, color = "#2f54eb" }) => (
+  <div style={styles.sectionHeader}>
+    <div style={{ ...styles.sectionIcon, background: `${color}15`, color }}>
+      {icon}
+    </div>
+    <div>
+      <p style={styles.sectionTitle}>{title}</p>
+      {subtitle && <p style={styles.sectionSub}>{subtitle}</p>}
+    </div>
+  </div>
+);
+
+// ── Yes/No Question ───────────────────────────────────────────────────────
+const YesNoQuestion = ({ question, value, onChange }) => (
+  <div style={styles.yesNoCard}>
+    <p style={styles.yesNoQuestion}>{question}</p>
+    <div style={{ display: "flex", gap: 10 }}>
+      {["Yes", "No"].map(opt => (
+        <button key={opt} style={styles.yesNoBtn(value === (opt === "Yes"))} onClick={() => onChange(opt === "Yes")}>
+          {opt}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+// ── Doc Card ──────────────────────────────────────────────────────────────
+const DocCard = ({
+  docId, label, category, icon, required = false, index = 0,
+  statuses, files, dragActive, setDragActive, handleFileChange, openPreview, removeFile, handleUpload,
+}) => {
+  const status = statuses[docId];
+  const file   = files[docId];
+  const isSuccess = status === "success";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      className="col-12 col-md-6"
+    >
+      <div
+        style={{ ...styles.card, ...(isSuccess ? styles.cardSuccess : {}), cursor: "default" }}
+        onDragOver={e => { e.preventDefault(); setDragActive(docId); }}
+        onDragLeave={() => setDragActive(null)}
+        onDrop={e => { e.preventDefault(); setDragActive(null); handleFileChange(docId, e.dataTransfer.files?.[0]); }}
+      >
+        {/* Card Top */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 7,
+              background: isSuccess ? "#d9f7be" : "#f0f5ff",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: isSuccess ? "#389e0d" : "#2f54eb", flexShrink: 0,
+            }}>
+              {icon || <FileText size={16} />}
+            </div>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                <span style={styles.cardLabel}>{label}</span>
+                <span style={styles.badge(required)}>{required ? "Required" : "Optional"}</span>
+              </div>
+              {category && <div style={styles.categoryLabel}>{category}</div>}
+            </div>
+          </div>
+          {isSuccess && <CheckCircle2 size={16} color="#52c41a" />}
+          {status === "error" && <AlertCircle size={16} color="#ff4d4f" />}
+        </div>
+
+        {/* Card Body */}
+        {isSuccess ? (
+          <div style={styles.successRow}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#389e0d" }}>Uploaded</span>
+            <button style={styles.btnOutline} onClick={() => openPreview(docId)}>View</button>
+          </div>
+        ) : !file ? (
+          <div
+            style={styles.dropZone(dragActive === docId)}
+            onClick={() => document.getElementById(`fi-${docId}`)?.click()}
+          >
+            <Upload size={18} color="#8c8c8c" />
+            <p style={styles.dropZoneText}>Click to upload or drag and drop</p>
+            <input
+              id={`fi-${docId}`} type="file" style={{ display: "none" }}
+              accept="image/*,.doc,.docx"
+              onChange={e => handleFileChange(docId, e.target.files?.[0])}
+            />
+          </div>
+        ) : (
+          <>
+            <div style={styles.fileRow}>
+              <span style={styles.fileName}>{file.name}</span>
+              <button style={styles.btnRemove} onClick={() => removeFile(docId)}><X size={13} /></button>
+            </div>
+            <button style={styles.btnPrimary} onClick={() => handleUpload(docId)} disabled={status === "uploading"}>
+              {status === "uploading"
+                ? <><span className="spinner-border spinner-border-sm" style={{ width: 13, height: 13 }} /> Uploading...</>
+                : "Upload"
+              }
+            </button>
+          </>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
+// ── Ration Card Block ─────────────────────────────────────────────────────
+const RationCardBlock = ({ statuses, files, dragActive, setDragActive, handleFileChange, openPreview, removeFile, handleUpload }) => (
+  <div className="row g-3 mt-1">
+    {RATION_CARD_SIDES.map((side) => {
+      const status = statuses[side.id];
+      const file   = files[side.id];
+      return (
+        <div key={side.id} className="col-12 col-md-6">
+          <div
+            style={styles.rationSide(status, dragActive === side.id)}
+            onDragOver={e => { e.preventDefault(); setDragActive(side.id); }}
+            onDragLeave={() => setDragActive(null)}
+            onDrop={e => { e.preventDefault(); setDragActive(null); handleFileChange(side.id, e.dataTransfer.files?.[0]); }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#1a1a2e" }}>{side.label}</span>
+              {status === "success" && <CheckCircle2 size={14} color="#52c41a" />}
+              {status === "error"   && <AlertCircle  size={14} color="#ff4d4f" />}
+            </div>
+            {status === "success" ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#389e0d" }}>Uploaded</span>
+                <button style={styles.btnOutline} onClick={() => openPreview(side.id)}>View</button>
+              </div>
+            ) : !file ? (
+              <div
+                style={{ textAlign: "center", cursor: "pointer", padding: "12px 0" }}
+                onClick={() => document.getElementById(`fi-${side.id}`)?.click()}
+              >
+                <Upload size={16} color="#8c8c8c" />
+                <p style={{ ...styles.dropZoneText, margin: "4px 0 0" }}>Click or drag & drop</p>
+                <input
+                  id={`fi-${side.id}`} type="file" style={{ display: "none" }}
+                  accept="image/*"
+                  onChange={e => handleFileChange(side.id, e.target.files?.[0])}
+                />
+              </div>
+            ) : (
+              <>
+                <div style={{ ...styles.fileRow, marginBottom: 8 }}>
+                  <span style={styles.fileName}>{file.name}</span>
+                  <button style={styles.btnRemove} onClick={() => removeFile(side.id)}><X size={12} /></button>
+                </div>
+                <button style={styles.btnPrimary} onClick={() => handleUpload(side.id)} disabled={status === "uploading"}>
+                  {status === "uploading"
+                    ? <><span className="spinner-border spinner-border-sm" style={{ width: 13, height: 13 }} /> Uploading...</>
+                    : "Upload"
+                  }
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+);
+
+// ── Text Field Card ───────────────────────────────────────────────────────
+const TextFieldCard = ({ fieldId, label, placeholder, required, index, statuses, textFields, setTextFields, handleSaveText }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 12 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: index * 0.05 }}
+    className="col-12 col-md-6"
+  >
+    <div style={{ ...styles.card, ...(statuses[fieldId] === "success" ? styles.cardSuccess : {}) }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <div style={{
+          width: 30, height: 30, borderRadius: 6,
+          background: statuses[fieldId] === "success" ? "#d9f7be" : "#f0f5ff",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: statuses[fieldId] === "success" ? "#389e0d" : "#2f54eb",
+        }}>
+          <FileText size={14} />
+        </div>
+        <div>
+          <span style={styles.cardLabel}>{label}</span>
+          {!required && <span style={{ ...styles.badge(false), marginLeft: 6 }}>Optional</span>}
+        </div>
+      </div>
+      {statuses[fieldId] === "success" ? (
+        <div style={styles.successRow}>
+          <span style={{ fontSize: 12, color: "#389e0d", fontWeight: 600 }}>Saved: {textFields[fieldId]}</span>
+          <CheckCircle2 size={14} color="#52c41a" />
+        </div>
+      ) : (
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            type="text"
+            style={styles.input}
+            placeholder={placeholder}
+            value={textFields[fieldId] || ""}
+            onChange={e => setTextFields(p => ({ ...p, [fieldId]: e.target.value }))}
+          />
+          <button
+            style={{ ...styles.btnPrimary, width: "auto", padding: "6px 14px", opacity: textFields[fieldId]?.trim() ? 1 : 0.5 }}
+            disabled={!textFields[fieldId]?.trim()}
+            onClick={() => handleSaveText(fieldId)}
+          >
+            Save
+          </button>
+        </div>
+      )}
+    </div>
+  </motion.div>
+);
+
+// ── Identity Proof Section ────────────────────────────────────────────────
+const IdentityProofSection = ({
+  identityChoice, setIdentityChoice, statuses, showRefNote, setShowRefNote,
+  textFields, setTextFields, handleSaveText, refNumbersDone, docCardProps,
+}) => (
+  <div style={styles.section}>
+    <SectionHeader
+      icon={<ShieldCheck size={16} />}
+      title="Identity Proof"
+      subtitle="Select one option — Ration Card or Gas Book (mandatory). Reference Numbers are always required."
+      color="#cf1322"
+    />
+    <div style={styles.divider} />
+
+    <div className="row g-3 mb-4">
+      {IDENTITY_OPTIONS.map(opt => (
+        <div key={opt.id} className="col-12 col-md-4">
+          <div style={styles.identityOption(identityChoice === opt.id)} onClick={() => setIdentityChoice(opt.id)}>
+            <p style={styles.identityOptionLabel(identityChoice === opt.id)}>{opt.label}</p>
+            <p style={{ ...styles.identityOptionDesc(identityChoice === opt.id), margin: 0 }}>{opt.desc}</p>
+            {identityChoice === opt.id && (
+              <div style={{ marginTop: 8 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: "rgba(255,255,255,0.2)", padding: "2px 10px", borderRadius: 4 }}>
+                  Selected
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <AnimatePresence mode="wait">
+      {identityChoice === "ration" && (
+        <motion.div key="ration" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+          <div style={{
+            ...styles.card,
+            ...(RATION_CARD_SIDES.every(s => statuses[s.id] === "success") ? styles.cardSuccess : { border: "1px solid #91caff", background: "#e6f4ff" })
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <span style={styles.cardLabel}>Ration Card</span>
+              <span style={styles.badge(true)}>Required</span>
+              {RATION_CARD_SIDES.every(s => statuses[s.id] === "success") && (
+                <CheckCircle2 size={14} color="#52c41a" style={{ marginLeft: "auto" }} />
+              )}
+            </div>
+            <p style={{ fontSize: 11, color: "#6c757d", margin: "0 0 10px" }}>Upload both Front and Back sides</p>
+            <RationCardBlock {...docCardProps} />
+          </div>
+        </motion.div>
+      )}
+
+      {identityChoice === "gasbook" && (
+        <motion.div key="gasbook" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+          <div className="row g-3">
+            <DocCard docId="Gas Book" label="Gas Book" category="Identity" icon={<FileText size={16} />} required={true} index={0} {...docCardProps} />
+          </div>
+        </motion.div>
+      )}
+
+    </AnimatePresence>
+
+    {!identityChoice && (
+      <div style={styles.alertWarning}>
+        Please select one identity proof option above to continue.
+      </div>
+    )}
+
+    {/* Reference Numbers — always mandatory, independent of Ration/Gas Book choice */}
+    <div style={{ ...styles.card, border: "1px solid #d3adf7", background: "#f9f0ff", marginTop: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <span style={styles.cardLabel}>Reference Numbers</span>
+        <span style={styles.badge(true)}>Required</span>
+        <button
+          type="button"
+          onClick={() => setShowRefNote(p => !p)}
+          title="Why do we need this?"
+          style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            width: 20, height: 20, borderRadius: "50%", border: "1px solid #9254de",
+            background: "#fff", color: "#722ed1", cursor: "pointer", padding: 0,
+          }}
+        >
+          <HelpCircle size={13} />
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {showRefNote && (
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{ fontSize: 12, color: "#531dab", background: "#efdbff", borderRadius: 6, padding: "8px 10px", margin: "0 0 10px" }}
+          >
+            {REFERENCE_NOTE}
+          </motion.p>
+        )}
+      </AnimatePresence>
+
+      <div className="row g-3">
+        {[1, 2].map(n => {
+          const fieldId = `Reference Number ${n}`;
+          const val = textFields[fieldId] || "";
+          const isValid = /^\d{10}$/.test(val);
+          const showError = val.length > 0 && !isValid;
+          return (
+            <motion.div key={fieldId} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: n * 0.05 }} className="col-12 col-md-6">
+              <div style={{ ...styles.card, ...(statuses[fieldId] === "success" ? styles.cardSuccess : {}) }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                  <span style={styles.cardLabel}>Reference Number {n}</span>
+                  <span style={styles.badge(true)}>Required</span>
+                </div>
+                {statuses[fieldId] === "success" ? (
+                  <div style={styles.successRow}>
+                    <span style={{ fontSize: 12, color: "#389e0d", fontWeight: 600 }}>Saved: {textFields[fieldId]}</span>
+                    <CheckCircle2 size={14} color="#52c41a" />
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={10}
+                        style={styles.input}
+                        placeholder={`Enter 10-digit Reference Number ${n}`}
+                        value={val}
+                        onChange={e => {
+                          const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          setTextFields(p => ({ ...p, [fieldId]: digitsOnly }));
+                        }}
+                      />
+                      <button
+                        style={{ ...styles.btnPrimary, width: "auto", padding: "6px 14px", opacity: isValid ? 1 : 0.5 }}
+                        disabled={!isValid}
+                        onClick={() => handleSaveText(fieldId)}
+                      >
+                        Save
+                      </button>
+                    </div>
+                    {showError && (
+                      <p style={{ fontSize: 11, color: "#cf1322", margin: "6px 0 0" }}>
+                        Enter a valid 10-digit number ({val.length}/10)
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+
+    {!refNumbersDone && (
+      <div style={{ ...styles.alertWarning, marginTop: 12 }}>
+        Please enter and save both Reference Numbers to continue.
+      </div>
+    )}
+  </div>
+);
+
 export default function UploadDocuments() {
   const [files,        setFiles]        = useState({});
   const [previews,     setPreviews]     = useState({});
@@ -527,6 +919,7 @@ export default function UploadDocuments() {
   const [hasExperience, setHasExperience] = useState(null);
   const [identityChoice, setIdentityChoice] = useState(null);
   const [companies, setCompanies] = useState([{ id: Date.now(), name: "" }]);
+  const [showRefNote, setShowRefNote] = useState(false);
 
   useEffect(() => {
     const employeeId = localStorage.getItem("employeeId");
@@ -614,13 +1007,16 @@ export default function UploadDocuments() {
     setPreviewModal({ name: docId, url, type });
   };
 
-  const identityProofDone = (() => {
+  const refNumbersDone = statuses["Reference Number 1"] === "success" && statuses["Reference Number 2"] === "success";
+
+  const identityChoiceDone = (() => {
     if (!identityChoice) return false;
-    if (identityChoice === "ration")    return RATION_CARD_SIDES.every(s => statuses[s.id] === "success");
-    if (identityChoice === "gasbook")   return statuses["Gas Book"] === "success";
-    if (identityChoice === "refnumber") return statuses["Reference Number 1"] === "success" && statuses["Reference Number 2"] === "success";
+    if (identityChoice === "ration")  return RATION_CARD_SIDES.every(s => statuses[s.id] === "success");
+    if (identityChoice === "gasbook") return statuses["Gas Book"] === "success";
     return false;
   })();
+
+  const identityProofDone = identityChoiceDone && refNumbersDone;
 
   const mandatoryAllDone = MANDATORY_DOCS.filter(d => d.required === true).every(d => statuses[d.id] === "success");
   const ugAllDone        = hasUG === false || (hasUG === true && UG_DOCS.filter(d => d.required).every(d => statuses[d.id] === "success") && statuses["CGPA"] === "success");
@@ -638,335 +1034,9 @@ export default function UploadDocuments() {
     }
   };
 
-  // ── Doc Card ──────────────────────────────────────────────────────────────
-  const DocCard = ({ docId, label, category, icon, required = false, index = 0 }) => {
-    const status = statuses[docId];
-    const file   = files[docId];
-    const isSuccess = status === "success";
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.04 }}
-        className="col-12 col-md-6"
-      >
-        <div
-          style={{ ...styles.card, ...(isSuccess ? styles.cardSuccess : {}), cursor: "default" }}
-          onDragOver={e => { e.preventDefault(); setDragActive(docId); }}
-          onDragLeave={() => setDragActive(null)}
-          onDrop={e => { e.preventDefault(); setDragActive(null); handleFileChange(docId, e.dataTransfer.files?.[0]); }}
-        >
-          {/* Card Top */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 7,
-                background: isSuccess ? "#d9f7be" : "#f0f5ff",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: isSuccess ? "#389e0d" : "#2f54eb", flexShrink: 0,
-              }}>
-                {icon || <FileText size={16} />}
-              </div>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                  <span style={styles.cardLabel}>{label}</span>
-                  <span style={styles.badge(required)}>{required ? "Required" : "Optional"}</span>
-                </div>
-                {category && <div style={styles.categoryLabel}>{category}</div>}
-              </div>
-            </div>
-            {isSuccess && <CheckCircle2 size={16} color="#52c41a" />}
-            {status === "error" && <AlertCircle size={16} color="#ff4d4f" />}
-          </div>
-
-          {/* Card Body */}
-          {isSuccess ? (
-            <div style={styles.successRow}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#389e0d" }}>Uploaded</span>
-              <button style={styles.btnOutline} onClick={() => openPreview(docId)}>View</button>
-            </div>
-          ) : !file ? (
-            <div
-              style={styles.dropZone(dragActive === docId)}
-              onClick={() => document.getElementById(`fi-${docId}`)?.click()}
-            >
-              <Upload size={18} color="#8c8c8c" />
-              <p style={styles.dropZoneText}>Click to upload or drag and drop</p>
-              <input
-                id={`fi-${docId}`} type="file" style={{ display: "none" }}
-                accept="image/*,.doc,.docx"
-                onChange={e => handleFileChange(docId, e.target.files?.[0])}
-              />
-            </div>
-          ) : (
-            <>
-              <div style={styles.fileRow}>
-                <span style={styles.fileName}>{file.name}</span>
-                <button style={styles.btnRemove} onClick={() => removeFile(docId)}><X size={13} /></button>
-              </div>
-              <button style={styles.btnPrimary} onClick={() => handleUpload(docId)} disabled={status === "uploading"}>
-                {status === "uploading"
-                  ? <><span className="spinner-border spinner-border-sm" style={{ width: 13, height: 13 }} /> Uploading...</>
-                  : "Upload"
-                }
-              </button>
-            </>
-          )}
-        </div>
-      </motion.div>
-    );
-  };
-
-  // ── Ration Card Block ─────────────────────────────────────────────────────
-  const RationCardBlock = () => (
-    <div className="row g-3 mt-1">
-      {RATION_CARD_SIDES.map((side) => {
-        const status = statuses[side.id];
-        const file   = files[side.id];
-        return (
-          <div key={side.id} className="col-12 col-md-6">
-            <div
-              style={styles.rationSide(status, dragActive === side.id)}
-              onDragOver={e => { e.preventDefault(); setDragActive(side.id); }}
-              onDragLeave={() => setDragActive(null)}
-              onDrop={e => { e.preventDefault(); setDragActive(null); handleFileChange(side.id, e.dataTransfer.files?.[0]); }}
-            >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#1a1a2e" }}>{side.label}</span>
-                {status === "success" && <CheckCircle2 size={14} color="#52c41a" />}
-                {status === "error"   && <AlertCircle  size={14} color="#ff4d4f" />}
-              </div>
-              {status === "success" ? (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#389e0d" }}>Uploaded</span>
-                  <button style={styles.btnOutline} onClick={() => openPreview(side.id)}>View</button>
-                </div>
-              ) : !file ? (
-                <div
-                  style={{ textAlign: "center", cursor: "pointer", padding: "12px 0" }}
-                  onClick={() => document.getElementById(`fi-${side.id}`)?.click()}
-                >
-                  <Upload size={16} color="#8c8c8c" />
-                  <p style={{ ...styles.dropZoneText, margin: "4px 0 0" }}>Click or drag & drop</p>
-                  <input
-                    id={`fi-${side.id}`} type="file" style={{ display: "none" }}
-                    accept="image/*"
-                    onChange={e => handleFileChange(side.id, e.target.files?.[0])}
-                  />
-                </div>
-              ) : (
-                <>
-                  <div style={{ ...styles.fileRow, marginBottom: 8 }}>
-                    <span style={styles.fileName}>{file.name}</span>
-                    <button style={styles.btnRemove} onClick={() => removeFile(side.id)}><X size={12} /></button>
-                  </div>
-                  <button style={styles.btnPrimary} onClick={() => handleUpload(side.id)} disabled={status === "uploading"}>
-                    {status === "uploading"
-                      ? <><span className="spinner-border spinner-border-sm" style={{ width: 13, height: 13 }} /> Uploading...</>
-                      : "Upload"
-                    }
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  // ── Yes/No Question ───────────────────────────────────────────────────────
-  const YesNoQuestion = ({ question, value, onChange }) => (
-    <div style={styles.yesNoCard}>
-      <p style={styles.yesNoQuestion}>{question}</p>
-      <div style={{ display: "flex", gap: 10 }}>
-        {["Yes", "No"].map(opt => (
-          <button key={opt} style={styles.yesNoBtn(value === (opt === "Yes"))} onClick={() => onChange(opt === "Yes")}>
-            {opt}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
-  // ── Section Header ────────────────────────────────────────────────────────
-  const SectionHeader = ({ icon, title, subtitle, color = "#2f54eb" }) => (
-    <div style={styles.sectionHeader}>
-      <div style={{ ...styles.sectionIcon, background: `${color}15`, color }}>
-        {icon}
-      </div>
-      <div>
-        <p style={styles.sectionTitle}>{title}</p>
-        {subtitle && <p style={styles.sectionSub}>{subtitle}</p>}
-      </div>
-    </div>
-  );
-
-  // ── Text Field Card ───────────────────────────────────────────────────────
-  const TextFieldCard = ({ fieldId, label, placeholder, required, index }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="col-12 col-md-6"
-    >
-      <div style={{ ...styles.card, ...(statuses[fieldId] === "success" ? styles.cardSuccess : {}) }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-          <div style={{
-            width: 30, height: 30, borderRadius: 6,
-            background: statuses[fieldId] === "success" ? "#d9f7be" : "#f0f5ff",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: statuses[fieldId] === "success" ? "#389e0d" : "#2f54eb",
-          }}>
-            <FileText size={14} />
-          </div>
-          <div>
-            <span style={styles.cardLabel}>{label}</span>
-            {!required && <span style={{ ...styles.badge(false), marginLeft: 6 }}>Optional</span>}
-          </div>
-        </div>
-        {statuses[fieldId] === "success" ? (
-          <div style={styles.successRow}>
-            <span style={{ fontSize: 12, color: "#389e0d", fontWeight: 600 }}>Saved: {textFields[fieldId]}</span>
-            <CheckCircle2 size={14} color="#52c41a" />
-          </div>
-        ) : (
-          <div style={{ display: "flex", gap: 8 }}>
-            <input
-              type="text"
-              style={styles.input}
-              placeholder={placeholder}
-              value={textFields[fieldId] || ""}
-              onChange={e => setTextFields(p => ({ ...p, [fieldId]: e.target.value }))}
-            />
-            <button
-              style={{ ...styles.btnPrimary, width: "auto", padding: "6px 14px", opacity: textFields[fieldId]?.trim() ? 1 : 0.5 }}
-              disabled={!textFields[fieldId]?.trim()}
-              onClick={() => handleSaveText(fieldId)}
-            >
-              Save
-            </button>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
-
-  // ── Identity Proof Section ────────────────────────────────────────────────
-  const IdentityProofSection = () => (
-    <div style={styles.section}>
-      <SectionHeader
-        icon={<ShieldCheck size={16} />}
-        title="Identity Proof"
-        subtitle="Select one option — Ration Card, Gas Book, or Reference Numbers (mandatory)"
-        color="#cf1322"
-      />
-      <div style={styles.divider} />
-
-      <div className="row g-3 mb-4">
-        {IDENTITY_OPTIONS.map(opt => (
-          <div key={opt.id} className="col-12 col-md-4">
-            <div style={styles.identityOption(identityChoice === opt.id)} onClick={() => setIdentityChoice(opt.id)}>
-              <p style={styles.identityOptionLabel(identityChoice === opt.id)}>{opt.label}</p>
-              <p style={{ ...styles.identityOptionDesc(identityChoice === opt.id), margin: 0 }}>{opt.desc}</p>
-              {identityChoice === opt.id && (
-                <div style={{ marginTop: 8 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: "rgba(255,255,255,0.2)", padding: "2px 10px", borderRadius: 4 }}>
-                    Selected
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <AnimatePresence mode="wait">
-        {identityChoice === "ration" && (
-          <motion.div key="ration" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <div style={{
-              ...styles.card,
-              ...(RATION_CARD_SIDES.every(s => statuses[s.id] === "success") ? styles.cardSuccess : { border: "1px solid #91caff", background: "#e6f4ff" })
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                <span style={styles.cardLabel}>Ration Card</span>
-                <span style={styles.badge(true)}>Required</span>
-                {RATION_CARD_SIDES.every(s => statuses[s.id] === "success") && (
-                  <CheckCircle2 size={14} color="#52c41a" style={{ marginLeft: "auto" }} />
-                )}
-              </div>
-              <p style={{ fontSize: 11, color: "#6c757d", margin: "0 0 10px" }}>Upload both Front and Back sides</p>
-              <RationCardBlock />
-            </div>
-          </motion.div>
-        )}
-
-        {identityChoice === "gasbook" && (
-          <motion.div key="gasbook" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <div className="row g-3">
-              <DocCard docId="Gas Book" label="Gas Book" category="Identity" icon={<FileText size={16} />} required={true} index={0} />
-            </div>
-          </motion.div>
-        )}
-
-        {identityChoice === "refnumber" && (
-          <motion.div key="refnumber" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <div style={{ ...styles.card, border: "1px solid #d3adf7", background: "#f9f0ff" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                <span style={styles.cardLabel}>Reference Numbers</span>
-                <span style={styles.badge(true)}>Required</span>
-              </div>
-              <div className="row g-3">
-                {[1, 2].map(n => {
-                  const fieldId = `Reference Number ${n}`;
-                  return (
-                    <motion.div key={fieldId} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: n * 0.05 }} className="col-12 col-md-6">
-                      <div style={{ ...styles.card, ...(statuses[fieldId] === "success" ? styles.cardSuccess : {}) }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                          <span style={styles.cardLabel}>Reference Number {n}</span>
-                          <span style={styles.badge(true)}>Required</span>
-                        </div>
-                        {statuses[fieldId] === "success" ? (
-                          <div style={styles.successRow}>
-                            <span style={{ fontSize: 12, color: "#389e0d", fontWeight: 600 }}>Saved: {textFields[fieldId]}</span>
-                            <CheckCircle2 size={14} color="#52c41a" />
-                          </div>
-                        ) : (
-                          <div style={{ display: "flex", gap: 8 }}>
-                            <input
-                              type="text"
-                              style={styles.input}
-                              placeholder={`Enter Reference Number ${n}`}
-                              value={textFields[fieldId] || ""}
-                              onChange={e => setTextFields(p => ({ ...p, [fieldId]: e.target.value }))}
-                            />
-                            <button
-                              style={{ ...styles.btnPrimary, width: "auto", padding: "6px 14px", opacity: textFields[fieldId]?.trim() ? 1 : 0.5 }}
-                              disabled={!textFields[fieldId]?.trim()}
-                              onClick={() => handleSaveText(fieldId)}
-                            >
-                              Save
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {!identityChoice && (
-        <div style={styles.alertWarning}>
-          Please select one identity proof option above to continue.
-        </div>
-      )}
-    </div>
-  );
+  // Prop bundles passed to the top-level components (see note above styles).
+  const docCardProps = { statuses, files, dragActive, setDragActive, handleFileChange, openPreview, removeFile, handleUpload };
+  const textFieldProps = { statuses, textFields, setTextFields, handleSaveText };
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -1014,13 +1084,24 @@ export default function UploadDocuments() {
           <div style={styles.divider} />
           <div className="row g-3">
             {MANDATORY_DOCS.map((doc, i) => (
-              <DocCard key={doc.id} docId={doc.id} label={doc.label} category={doc.category} icon={doc.icon} required={doc.required} index={i} />
+              <DocCard key={doc.id} docId={doc.id} label={doc.label} category={doc.category} icon={doc.icon} required={doc.required} index={i} {...docCardProps} />
             ))}
           </div>
         </div>
 
         {/* Section 2 — Identity Proof */}
-        <IdentityProofSection />
+        <IdentityProofSection
+          identityChoice={identityChoice}
+          setIdentityChoice={setIdentityChoice}
+          statuses={statuses}
+          showRefNote={showRefNote}
+          setShowRefNote={setShowRefNote}
+          textFields={textFields}
+          setTextFields={setTextFields}
+          handleSaveText={handleSaveText}
+          refNumbersDone={refNumbersDone}
+          docCardProps={docCardProps}
+        />
 
         {/* Section 3 — PF & ESI */}
         <div style={styles.section}>
@@ -1035,10 +1116,11 @@ export default function UploadDocuments() {
                 placeholder={field.placeholder}
                 required={field.required}
                 index={i}
+                {...textFieldProps}
               />
             ))}
             {OPTIONAL_FILE_DOCS.map((doc, i) => (
-              <DocCard key={doc.id} docId={doc.id} label={doc.label} category={doc.category} icon={doc.icon} required={false} index={i} />
+              <DocCard key={doc.id} docId={doc.id} label={doc.label} category={doc.category} icon={doc.icon} required={false} index={i} {...docCardProps} />
             ))}
           </div>
         </div>
@@ -1054,7 +1136,7 @@ export default function UploadDocuments() {
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
                 <div className="row g-3">
                   {UG_DOCS.map((doc, i) => (
-                    <DocCard key={doc.id} docId={doc.id} label={doc.label} category="Education" icon={<GraduationCap size={16} />} required={doc.required} index={i} />
+                    <DocCard key={doc.id} docId={doc.id} label={doc.label} category="Education" icon={<GraduationCap size={16} />} required={doc.required} index={i} {...docCardProps} />
                   ))}
 
                   {/* CGPA */}
@@ -1098,7 +1180,7 @@ export default function UploadDocuments() {
                     <div style={styles.pgBlock}>
                       <p style={styles.pgBlockLabel}>PG (Post Graduate) — <span style={{ fontWeight: 400, color: "#8c8c8c" }}>Optional</span></p>
                       <div className="row g-3">
-                        <DocCard docId="PG Consolidated" label="PG Consolidated Marksheet" category="Education" icon={<GraduationCap size={16} />} required={false} index={0} />
+                        <DocCard docId="PG Consolidated" label="PG Consolidated Marksheet" category="Education" icon={<GraduationCap size={16} />} required={false} index={0} {...docCardProps} />
                         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="col-12 col-md-6">
                           <div style={{ ...styles.card, ...(statuses["PG CGPA"] === "success" ? styles.cardSuccess : {}) }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
@@ -1183,7 +1265,7 @@ export default function UploadDocuments() {
                     <div className="row g-3">
                       {COMPANY_DOCS.map((cd, di) => {
                         const docId = `${cd.id}_${company.id}`;
-                        return <DocCard key={docId} docId={docId} label={cd.label} category={company.name || `Company ${ci + 1}`} icon={<Briefcase size={16} />} required={true} index={di} />;
+                        return <DocCard key={docId} docId={docId} label={cd.label} category={company.name || `Company ${ci + 1}`} icon={<Briefcase size={16} />} required={true} index={di} {...docCardProps} />;
                       })}
                     </div>
                   </div>
@@ -1210,15 +1292,16 @@ export default function UploadDocuments() {
           <div style={styles.divider} />
           <div className="row g-3">
             {[1, 2].map((n, i) => (
-              <DocCard key={`Reference ${n}`} docId={`Reference ${n}`} label={`Reference Letter ${n}`} category="Reference" icon={<FileText size={16} />} required={false} index={i} />
+              <DocCard key={`Reference ${n}`} docId={`Reference ${n}`} label={`Reference Letter ${n}`} category="Reference" icon={<FileText size={16} />} required={false} index={i} {...docCardProps} />
             ))}
           </div>
         </div>
 
         {/* Submit */}
         <div style={styles.submitSection}>
-          {!identityChoice && <p style={{ ...styles.alertDanger, display: "inline-block", marginBottom: 10 }}>Please select an identity proof option to continue.</p>}
-          {identityChoice && !identityProofDone && <p style={{ ...styles.alertWarning, display: "inline-block", marginBottom: 10 }}>Please complete your selected identity proof.</p>}
+          {!identityChoice && <p style={{ ...styles.alertDanger, display: "inline-block", marginBottom: 10 }}>Please select Ration Card or Gas Book to continue.</p>}
+          {identityChoice && !identityChoiceDone && <p style={{ ...styles.alertWarning, display: "inline-block", marginBottom: 10 }}>Please complete your selected identity proof (Ration Card / Gas Book).</p>}
+          {!refNumbersDone && <p style={{ ...styles.alertWarning, display: "inline-block", marginBottom: 10 }}>Please enter and save both Reference Numbers.</p>}
           {hasUG === null && <p style={{ ...styles.alertWarning, display: "inline-block", marginBottom: 10 }}>Please answer the UG degree question.</p>}
           {hasExperience === null && <p style={{ ...styles.alertWarning, display: "inline-block", marginBottom: 10 }}>Please answer the work experience question.</p>}
           {!mandatoryAllDone && <p style={{ ...styles.alertDanger, display: "inline-block", marginBottom: 10 }}>Please upload all mandatory documents first.</p>}

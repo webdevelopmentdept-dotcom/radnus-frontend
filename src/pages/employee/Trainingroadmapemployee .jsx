@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import EmployeeLayout from "./EmployeeLayout";
 import {
@@ -9,6 +9,34 @@ import {
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+// ✅ NEW — pulls the 11-char YouTube video ID out of any common URL shape
+// (watch?v=, youtu.be/, already-an-embed URL). Returns null if it can't
+// find one, so callers can fall back to a plain non-interactive iframe.
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+// ✅ NEW — loads the YouTube IFrame Player API script exactly once per
+// page, even if several modals mount/unmount and all want it.
+let ytApiPromise = null;
+function loadYouTubeApi() {
+  if (window.YT && window.YT.Player) return Promise.resolve(window.YT);
+  if (ytApiPromise) return ytApiPromise;
+  ytApiPromise = new Promise((resolve) => {
+    const prevCallback = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      prevCallback?.();
+      resolve(window.YT);
+    };
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+  });
+  return ytApiPromise;
+}
 
 // ─── Global Styles ─────────────────────────────────────────────
 // Design tokens live as CSS custom properties on .tr-page so every
@@ -145,7 +173,7 @@ function getEmployeeId() {
 }
 
 // ─── Training Card ──────────────────────────────────────────────
-function TrainingCard({ record, onStart, onViewDetails }) {
+function TrainingCard({ record, onStart, onViewDetails, onSubmit }) {
   const st  = STATUS_CONFIG[record.status] || STATUS_CONFIG.pending;
   const typ = TYPE_CONFIG[record.programId?.type] || TYPE_CONFIG.job_role;
   const isOverdue = record.dueDate && new Date(record.dueDate) < new Date() && record.status !== "completed";
@@ -218,18 +246,26 @@ function TrainingCard({ record, onStart, onViewDetails }) {
             style={{ padding: "6px 14px", border: "1.5px solid var(--brand)", borderRadius: "var(--radius-sm)", background: "#fff", color: "var(--brand)", fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>
             View Details
           </button>
-          {record.status === "pending" && (
-            <button className="tr-btn" onClick={() => onStart(record._id)}
-              style={{ padding: "6px 14px", border: "none", borderRadius: "var(--radius-sm)", background: "var(--brand)", color: "#fff", fontSize: 11.5, fontWeight: 600, cursor: "pointer" }}>
-              Start Training
-            </button>
-          )}
-          {record.status === "in_progress" && (
-            <span style={{ background: "var(--brand)", color: "#fff", borderRadius: 20, padding: "4px 11px", fontSize: 11, fontWeight: 700 }}>In Progress</span>
-          )}
-          {record.status === "completed" && (
-            <CheckCircle2 size={17} color="var(--success)" />
-          )}
+                 {record.status === "pending" && (
+          <button onClick={() => onStart(record._id)}
+            style={{ padding: "5px 12px", border: "none", borderRadius: 7, background: "#3b82f6", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+            Start Training
+          </button>
+        )}
+        {record.status === "in_progress" && !record.submittedForReview && (
+          <button onClick={() => onSubmit(record._id)}
+            style={{ padding: "5px 12px", border: "none", borderRadius: 7, background: "#10b981", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+            Submit for Review
+          </button>
+        )}
+        {record.status === "in_progress" && record.submittedForReview && (
+          <span style={{ background: "#fffbeb", color: "#92400e", border: "1px solid #fde68a", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
+            Submitted — Awaiting HR
+          </span>
+        )}
+        {record.status === "completed" && (
+          <CheckCircle2 size={16} color="#10b981" />
+        )}
         </div>
       </div>
 
@@ -259,6 +295,8 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
   const [error, setError]       = useState(null);
   const [openProductId, setOpenProductId] = useState(null);
   const [marking, setMarking]   = useState(null); // productId currently being marked
+  const [completing, setCompleting] = useState(false); // ✅ NEW — "Mark as Completed" in-flight state
+  const [hasProgramQuiz, setHasProgramQuiz] = useState(null); // ✅ NEW — null=checking, true/false once known
 
   const prog = record.programId;
   const isEquipment = prog?.type === "equipment";
@@ -272,6 +310,22 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
       } catch (e) {
         setError(e?.response?.data?.message || "Failed to load course content");
       } finally { setLoading(false); }
+    })();
+  }, [isEquipment, prog?._id]);
+
+  // ✅ NEW — non-equipment programs: check whether HR has authored a
+  // program-level quiz. If yes, employee takes that test instead of the
+  // plain "Mark as Completed" button; if no quiz exists yet, fall back
+  // to "Mark as Completed" so employees aren't blocked.
+  useEffect(() => {
+    if (isEquipment || !prog?._id) return;
+    (async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/training/quiz-questions`, { params: { programId: prog._id } });
+        setHasProgramQuiz((res.data.data || []).length > 0);
+      } catch (e) {
+        setHasProgramQuiz(false);
+      }
     })();
   }, [isEquipment, prog?._id]);
 
@@ -296,6 +350,97 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
     }
   };
 
+  // ✅ NEW — fires when the program-level <video> finishes playing to the
+  // end. This is the only reliable "they actually watched it" signal for
+  // a plain HTML5 video, so we only mark it watched on onEnded (not on
+  // pause/click) to stop people just opening the modal and skipping it.
+  const handleVideoEnded = async () => {
+    if (record.videoWatched) return; // already marked, avoid duplicate calls
+    try {
+      const res = await axios.put(`${API_BASE}/api/training/my/${record._id}/video-watched`);
+      setRecord(prev => ({ ...prev, ...res.data.data }));
+      onRefresh?.();
+    } catch (e) {
+      // silent — employee can rewatch to the end to retry
+    }
+  };
+
+  // ✅ NEW — YouTube videos are rendered via an <iframe>, which has no
+  // native "onEnded" event. The YouTube IFrame Player API is the only
+  // way to reliably detect that the video actually finished playing, so
+  // we mount a real YT.Player against the div below and listen for the
+  // ENDED (state 0) event.
+  const ytContainerRef = useRef(null);
+  const ytPlayerRef    = useRef(null);
+  const videoWatchedRef = useRef(record.videoWatched);
+  videoWatchedRef.current = record.videoWatched;
+  const youtubeId = prog?.videoSource === "youtube" ? extractYouTubeId(prog.videoUrl) : null;
+
+  useEffect(() => {
+    if (!youtubeId || !ytContainerRef.current) return;
+    let cancelled = false;
+
+    loadYouTubeApi().then((YT) => {
+      if (cancelled || !ytContainerRef.current) return;
+      ytPlayerRef.current = new YT.Player(ytContainerRef.current, {
+        videoId: youtubeId,
+        events: {
+          onStateChange: (e) => {
+            if (e.data === YT.PlayerState.ENDED && !videoWatchedRef.current) {
+              handleVideoEnded();
+            }
+          },
+        },
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      ytPlayerRef.current?.destroy?.();
+      ytPlayerRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [youtubeId]);
+
+  // ✅ NEW — "Mark as Completed" for non-equipment programs (no quiz, so
+  // this is the employee's only completion action). Sends it to
+  // pending_review — HR still has to confirm it before it's truly
+  // completed, same review step the quiz path already uses.
+  const handleMarkComplete = async () => {
+    setCompleting(true);
+    try {
+      const res = await axios.put(`${API_BASE}/api/training/my/${record._id}/complete`);
+      setRecord(prev => ({ ...prev, ...res.data.data }));
+      onRefresh?.();
+    } catch (e) {
+      alert(e?.response?.data?.message || "Could not submit — please try again.");
+    } finally {
+      setCompleting(false);
+    }
+  };
+
+  // ✅ NEW — PDF completion tracking. There's no cross-browser reliable
+  // "finished reading" event for an embedded PDF, so: (1) the iframe's
+  // onLoad flips pdfOpened once they've actually opened the document,
+  // then (2) they must explicitly click "Mark as Read" — the button
+  // stays disabled until step 1 has happened, so it can't be faked by
+  // never opening the file.
+  const [pdfOpened, setPdfOpened] = useState(false);
+  const [markingPdf, setMarkingPdf] = useState(false);
+  const handleMarkPdfRead = async () => {
+    if (record.pdfRead) return;
+    setMarkingPdf(true);
+    try {
+      const res = await axios.put(`${API_BASE}/api/training/my/${record._id}/pdf-read`);
+      setRecord(prev => ({ ...prev, ...res.data.data }));
+      onRefresh?.();
+    } catch (e) {
+      alert(e?.response?.data?.message || "Could not save — please try again.");
+    } finally {
+      setMarkingPdf(false);
+    }
+  };
+
   return (
     <div className="tr-modal-sheet" style={{ position: "fixed", inset: 0, background: "rgba(16,24,40,.55)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div style={{ background: "var(--surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-lg)", maxWidth: 640, width: "100%", maxHeight: "85vh", overflowY: "auto", padding: 24 }} onClick={e => e.stopPropagation()}>
@@ -308,15 +453,82 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
         </div>
 
         {/* Non-equipment programs: nothing extra to fetch, just show what's already known */}
-        {!isEquipment && (
+        {!isEquipment && (() => {
+          // ✅ NEW — true only once every attached material (video, PDF)
+          // has been consumed. Both gates apply if both exist.
+          const materialsReady = (!prog?.videoUrl || record.videoWatched) && (!prog?.pdfUrl || record.pdfRead);
+          return (
           <div style={{ marginTop: 16 }}>
             <p style={{ fontSize: 13, color: "var(--body)", marginBottom: 8, fontWeight: 600 }}>Modules covered:</p>
             <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "var(--body)" }}>
               {prog?.modules?.map((m, i) => <li key={i} style={{ marginBottom: 5 }}>{m}</li>)}
             </ul>
             {prog?.conductedBy && <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 12 }}>Conducted by: {prog.conductedBy}</p>}
+
+            {/* ✅ NEW — completion panel for non-equipment programs. If HR
+                has authored a program quiz, this unlocks "Take Test"
+                (same flow as equipment); otherwise falls back to a plain
+                "Mark as Completed" submit so employees aren't blocked
+                while HR hasn't written questions yet. */}
+            <div style={{ marginTop: 16, padding: "13px 15px", borderRadius: "var(--radius-md)", background: record.status === "completed" ? "var(--success-tint)" : record.status === "pending_review" ? "var(--warning-tint)" : "var(--bg-soft)", border: `1px solid ${record.status === "completed" ? "#b7ecd6" : record.status === "pending_review" ? "#fde3ad" : "var(--line)"}` }}>
+              {record.status === "completed" ? (
+                <p style={{ margin: 0, fontSize: 12.5, color: "var(--success)", fontWeight: 600 }}>
+                  ✅ HR has reviewed and confirmed this training as completed
+                  {record.assessmentScore !== null && record.assessmentScore !== undefined ? ` (score: ${record.assessmentScore}%)` : ""}.
+                </p>
+              ) : record.status === "pending_review" ? (
+                <p style={{ margin: 0, fontSize: 12.5, color: "var(--warning)", fontWeight: 600 }}>
+                  📩 {alreadyAttempted ? `Test submitted — score ${record.assessmentScore}%.` : "Submitted —"} waiting for HR to review and confirm.
+                </p>
+              ) : hasProgramQuiz ? (
+                <>
+                  <p style={{ margin: "0 0 9px", fontSize: 12.5, color: materialsReady ? "var(--brand)" : "var(--muted)" }}>
+                    {materialsReady
+                      ? "You get one attempt — answer carefully before submitting."
+                      : "Finish the video/PDF above to unlock the test."}
+                  </p>
+                  <button
+                    className="tr-btn"
+                    onClick={() => { onOpenQuiz?.(record); onClose(); }}
+                    disabled={!materialsReady}
+                    style={{
+                      padding: "9px 16px", border: "none", borderRadius: "var(--radius-sm)", fontSize: 12.5, fontWeight: 700,
+                      background: materialsReady ? "var(--brand)" : "var(--line)",
+                      color: materialsReady ? "#fff" : "var(--muted-2)",
+                      cursor: materialsReady ? "pointer" : "not-allowed", width: "100%",
+                    }}
+                  >
+                    Take Test
+                  </button>
+                </>
+              ) : hasProgramQuiz === null ? (
+                <p style={{ margin: 0, fontSize: 12, color: "var(--muted-2)" }}>Checking…</p>
+              ) : (
+                <>
+                  <p style={{ margin: "0 0 9px", fontSize: 12.5, color: materialsReady ? "var(--brand)" : "var(--muted)" }}>
+                    {materialsReady
+                      ? "Once you've gone through the material, submit it for HR review."
+                      : "Finish the video/PDF above to unlock this."}
+                  </p>
+                  <button
+                    className="tr-btn"
+                    onClick={handleMarkComplete}
+                    disabled={completing || !materialsReady}
+                    style={{
+                      padding: "9px 16px", border: "none", borderRadius: "var(--radius-sm)", fontSize: 12.5, fontWeight: 700,
+                      background: materialsReady ? "var(--brand)" : "var(--line)",
+                      color: materialsReady ? "#fff" : "var(--muted-2)",
+                      cursor: materialsReady ? "pointer" : "not-allowed", width: "100%",
+                    }}
+                  >
+                    {completing ? "Submitting…" : "Mark as Completed"}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Equipment program: list every linked product's actual content */}
         {isEquipment && (
@@ -487,6 +699,86 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
             )}
           </div>
         )}
+
+        {prog?.videoUrl && (
+  <div style={{ marginTop: 14 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+      <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>Training Video:</p>
+      {record.videoWatched && (
+        <span style={{ display: "flex", alignItems: "center", gap: 4, background: "var(--success-tint)", color: "var(--success)", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
+          <CheckCircle2 size={11} /> Watched
+        </span>
+      )}
+    </div>
+    {prog.videoSource === "youtube" ? (
+      youtubeId ? (
+        // Real YT.Player mounts into this div (see the useEffect above)
+        // so we can detect the ENDED state — a plain <iframe src=...>
+        // has no such event.
+        <div style={{ width: "100%", aspectRatio: "16/9", borderRadius: 8, overflow: "hidden" }}>
+          <div ref={ytContainerRef} style={{ width: "100%", height: "100%" }} />
+        </div>
+      ) : (
+        <iframe width="100%" height="220" src={prog.videoUrl.replace("watch?v=","embed/")} frameBorder="0" allowFullScreen style={{ borderRadius: 8 }} />
+      )
+    ) : (
+      <video
+        src={prog.videoUrl}
+        controls
+        onEnded={handleVideoEnded}
+        style={{ width: "100%", borderRadius: 8 }}
+      />
+    )}
+    {!record.videoWatched && (
+      <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--muted-2)" }}>
+        Watch the video till the end to mark it as completed.
+      </p>
+    )}
+  </div>
+)}
+
+        {/* ✅ NEW — PDF training material, independent of the video above.
+            Embedded via the browser's native PDF viewer inside an
+            <iframe>. "Mark as Read" only unlocks after onLoad fires at
+            least once (i.e. they've actually opened the document). */}
+        {prog?.pdfUrl && (
+          <div style={{ marginTop: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>Training Document{prog.pdfName ? `: ${prog.pdfName}` : ""}</p>
+              {record.pdfRead && (
+                <span style={{ display: "flex", alignItems: "center", gap: 4, background: "var(--success-tint)", color: "var(--success)", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
+                  <CheckCircle2 size={11} /> Read
+                </span>
+              )}
+            </div>
+            <iframe
+              src={prog.pdfUrl}
+              title="Training PDF"
+              onLoad={() => setPdfOpened(true)}
+              style={{ width: "100%", height: 380, border: "1px solid var(--line)", borderRadius: 8 }}
+            />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 10 }}>
+              <p style={{ margin: 0, fontSize: 11, color: "var(--muted-2)" }}>
+                {record.pdfRead ? "Marked as read." : pdfOpened ? "Read through it, then confirm below." : "Open the document above first."}
+              </p>
+              {!record.pdfRead && (
+                <button
+                  className="tr-btn"
+                  onClick={handleMarkPdfRead}
+                  disabled={!pdfOpened || markingPdf}
+                  style={{
+                    padding: "7px 14px", border: "none", borderRadius: "var(--radius-sm)", fontSize: 12, fontWeight: 700, flexShrink: 0,
+                    background: pdfOpened ? "var(--brand)" : "var(--line)", color: pdfOpened ? "#fff" : "var(--muted-2)",
+                    cursor: pdfOpened ? "pointer" : "not-allowed",
+                  }}
+                >
+                  {markingPdf ? "Saving…" : "Mark as Read"}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
@@ -646,10 +938,18 @@ export default function TrainingRoadmapEmployee() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleStart = async (recordId) => {
+   const handleStart = async (recordId) => {
     try {
       await axios.put(`${API_BASE}/api/training/my/${recordId}/start`);
       showMsg("Training started! Good luck 🚀");
+      fetchData();
+    } catch (e) { showMsg(e?.response?.data?.message || "Failed", "error"); }
+  };
+
+  const handleSubmitForReview = async (recordId) => {
+    try {
+      await axios.put(`${API_BASE}/api/training/my/${recordId}/submit`);
+      showMsg("Submitted to HR for confirmation ✅");
       fetchData();
     } catch (e) { showMsg(e?.response?.data?.message || "Failed", "error"); }
   };
@@ -796,7 +1096,7 @@ export default function TrainingRoadmapEmployee() {
             </div>
           ) : (
             <div className="tr-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
-              {records.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onViewDetails={setDetailsRecord} />)}
+                           {records.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} />)}
             </div>
           )
         )}
@@ -810,7 +1110,7 @@ export default function TrainingRoadmapEmployee() {
             </div>
           ) : (
             <div className="tr-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
-              {pending.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onViewDetails={setDetailsRecord} />)}
+                            {pending.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} />)}
             </div>
           )
         )}
@@ -824,7 +1124,7 @@ export default function TrainingRoadmapEmployee() {
             </div>
           ) : (
             <div className="tr-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
-              {inProgress.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onViewDetails={setDetailsRecord} />)}
+                            {inProgress.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} />)}
             </div>
           )
         )}
@@ -852,7 +1152,7 @@ export default function TrainingRoadmapEmployee() {
                 </div>
               )}
               <div className="tr-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
-                {completed.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onViewDetails={setDetailsRecord} />)}
+                               {completed.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} />)}
               </div>
             </div>
           )
@@ -941,26 +1241,29 @@ export default function TrainingRoadmapEmployee() {
           </div>
         )}
 
+        {/* ✅ FIX — both modals moved INSIDE .tr-page (were rendered after
+            its closing </div> before, so they never inherited the
+            --surface/--ink/etc. CSS variables defined on .tr-page. That
+            made the modal background transparent and let the page behind
+            it bleed through / overlap with the modal's own text. */}
+        {detailsRecord && (
+          <TrainingDetailsModal
+            record={detailsRecord}
+            onClose={() => { setDetailsRecord(null); fetchData(); }}
+            onRefresh={fetchData}
+            onOpenQuiz={(record) => setQuizRecord(record)}
+          />
+        )}
+
+        {quizRecord && (
+          <QuizModal
+            record={quizRecord}
+            onClose={() => { setQuizRecord(null); fetchData(); }}
+            onRefresh={fetchData}
+          />
+        )}
+
       </div>
-
-      {/* ✅ NEW — course-content modal, opened via "View Details" on a card */}
-      {detailsRecord && (
-        <TrainingDetailsModal
-          record={detailsRecord}
-          onClose={() => { setDetailsRecord(null); fetchData(); }}
-          onRefresh={fetchData}
-          onOpenQuiz={(record) => setQuizRecord(record)}
-        />
-      )}
-
-      {/* ✅ NEW — quiz-taking modal, opened via "Take Test" in details modal */}
-      {quizRecord && (
-        <QuizModal
-          record={quizRecord}
-          onClose={() => { setQuizRecord(null); fetchData(); }}
-          onRefresh={fetchData}
-        />
-      )}
     </EmployeeLayout>
   );
 }

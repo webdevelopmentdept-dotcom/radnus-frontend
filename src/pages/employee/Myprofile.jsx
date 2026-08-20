@@ -44,6 +44,17 @@ const [selectedDeptDesignations, setSelectedDeptDesignations] = useState([]);
      fetchDepartments();
   }, []);
 
+  // Keep the designation options in sync with the selected department,
+  // no matter which finishes loading first (employee data vs department list).
+  useEffect(() => {
+    if (!personalForm.department || departments.length === 0) {
+      setSelectedDeptDesignations([]);
+      return;
+    }
+    const currentDept = departments.find(d => d.name === personalForm.department);
+    setSelectedDeptDesignations(currentDept?.designations || []);
+  }, [personalForm.department, departments]);
+
   const fetchAll = async () => {
     try {
       const empRes = await axios.get(`${API_BASE}/api/employee/me/${empId}`);
@@ -75,11 +86,6 @@ const [selectedDeptDesignations, setSelectedDeptDesignations] = useState([]);
         department: mergedEmp.department || "",
         designation: mergedEmp.designation || "",
       });
-
-      const currentDept = departments.find(d => d.name === mergedEmp.department);
-if (currentDept) {
-  setSelectedDeptDesignations(currentDept.designations || []);
-}
 
       try {
         const actRes = await axios.get(`${API_BASE}/api/hr/activation/${empId}`);
@@ -117,12 +123,6 @@ if (currentDept) {
     const res = await axios.get(`${API_BASE}/api/departments/active`);
     const depts = res.data.data || [];
     setDepartments(depts);
-    
-    // Current employee's department-அ select பண்ணி designations set பண்ணு
-    const currentDept = depts.find(d => d.name === employee?.department);
-    if (currentDept) {
-      setSelectedDeptDesignations(currentDept.designations || []);
-    }
   } catch (err) {
     console.log("Failed to load departments", err);
   }
@@ -232,8 +232,8 @@ if (currentDept) {
       label: "Employee ID",
       value: resolvedEmpCode || emp.employee_code || "—",
     },
-    { icon: <Briefcase size={14} />, label: "Designation", value: emp.designation || employee?.designation || "—" },
-    { icon: <Building size={14} />, label: "Department", value: emp.department || employee?.department || "—" },
+    { icon: <Briefcase size={14} />, label: "Designation", value: employee?.designation || emp.designation || "—" },
+    { icon: <Building size={14} />, label: "Department", value: employee?.department || emp.department || "—" },
     { icon: <Award size={14} />, label: "Grade Level", value: <GradeBadge />, isJSX: true },
     { icon: <Briefcase size={14} />, label: "Employment Type", value: emp.employment_type || "—" },
     { icon: <MapPin size={14} />, label: "Work Location", value: emp.work_location || "—" },
@@ -400,8 +400,8 @@ if (currentDept) {
 
           <div className="mp-hero-info">
             <p className="mp-hero-name">{employee?.name}</p>
-            <p className="mp-hero-meta"><Briefcase size={12} />{emp.designation || employee?.designation || "—"}</p>
-            <p className="mp-hero-meta"><Building size={12} />{emp.department || employee?.department || "—"}</p>
+            <p className="mp-hero-meta"><Briefcase size={12} />{employee?.designation || emp.designation || "—"}</p>
+            <p className="mp-hero-meta"><Building size={12} />{employee?.department || emp.department || "—"}</p>
 
             <div className="mp-hero-chips">
               {resolvedEmpCode && (
