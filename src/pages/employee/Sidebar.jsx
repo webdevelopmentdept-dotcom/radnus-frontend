@@ -68,7 +68,7 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
   // it to (Employee.canManageProducts, returned by GET /api/employee/me/:id).
   // Inserted before "Notifications"/"Settings" so it stays with the other
   // work items rather than tacked on at the very end.
-  const navItems = employee?.canManageProducts
+  let navItems = employee?.canManageProducts
     ? [
         ...NAV_ITEMS.slice(0, -2),
         { href: "/employee/products", icon: Package, label: "Product Management" },
@@ -76,6 +76,17 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
       ]
     : NAV_ITEMS;
 
+  // ✅ RESTORED — this block was accidentally deleted while fixing the
+  // "Assignment to constant variable" crash. Loan Process only shows for
+  // BDE telecallers HR flagged (Employee.canManageLoanProcess, same source
+  // as employee prop above, from GET /api/employee/me/:id).
+  if (employee?.canManageLoanProcess) {
+    navItems = [
+      ...navItems.slice(0, -2),
+      { href: "/employee/loan-process", icon: ClipboardList, label: "Loan Process" },
+      ...navItems.slice(-2),
+    ];
+  }
 
   useEffect(() => {
     localStorage.setItem("esb-theme", dark ? "dark" : "light");

@@ -60,6 +60,16 @@ export default function AdminSidebar() {
         { name: "Manage Courses", path: "/admin/courses", icon: "bi-journal-bookmark-fill" },
       ],
     },
+
+    {
+  module: "BDE",
+  items: [
+    { name: "Loan Process", path: "/admin/loan-process", icon: "bi-cash-coin" },
+         { name: "Loan Process Access", path: "/admin/loan-process/access", icon: "bi-person-check-fill" },
+
+  ],
+},
+
     {
       module: "Settings",
       items: [

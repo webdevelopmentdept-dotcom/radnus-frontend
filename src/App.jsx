@@ -65,6 +65,7 @@ import RaiseTicket from "./pages/employee/RaiseTicket";
 import EmployeeFeedback from "./pages/employee/EmployeeFeedback";
 import MyAdvances from "./pages/employee/MyAdvances";
 import EmployeeProductManagement from "./pages/employee/EmployeeProductManagement";
+import LoanProcess from "./pages/employee/LoanProcess";
 
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
@@ -137,6 +138,8 @@ import AdminUpdates from "./pages/admin/AdminUpdates";
 import CourseManagement from "./pages/admin/CourseManagement";
 import ShopOwnerList from "./components/admin/Shopownerlist";
 import TechnicianList from "./components/admin/Technicianlist";
+import AdminLoanProcess from "./components/admin/AdminLoanProcess";
+import AdminLoanAccess from "./components/admin/Adminloanaccess";
 /* Channel */
 import ChannelDashboard from "./pages/Channel/ChannelDashboard";
 import DashboardOverview from "./pages/Channel/DashboardOverview";
@@ -253,15 +256,12 @@ function App() {
         <Route path="/employee/raise-ticket" element={<RaiseTicket />} />
         <Route path="/employee/feedback" element={<EmployeeFeedback />} />
         <Route path="/employee/my-advance" element={<MyAdvances />} />
-           <Route
-          path="/employee/products"
-          element={
-            <EmployeeProtectedRoute>
-              <EmployeeProductManagement />
-            </EmployeeProtectedRoute>
+           <Route path="/employee/products" element={ <EmployeeProtectedRoute> <EmployeeProductManagement />  </EmployeeProtectedRoute>
           }
         />
-       
+       <Route path="/employee/loan-process" element={ <EmployeeProtectedRoute>  <LoanProcess /> </EmployeeProtectedRoute>
+  }
+/>
 
 
         {/* HR Routes */}
@@ -362,6 +362,8 @@ function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="loan-process" element={<AdminLoanProcess />} />
+<Route path="loan-process/access" element={<AdminLoanAccess />} />
           <Route path="applicants" element={<ApplicantList />} />
           <Route path="partners" element={<PartnerList />} />
           <Route path="leads" element={<LeadList />} />
