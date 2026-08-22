@@ -210,6 +210,7 @@ export default function AdminLoanProcess() {
                 <div className="alp-section-title">Customer Details</div>
                 <div className="alp-info-grid">
                   <div className="alp-info-item"><b>Business Type</b>{c.businessType || "—"}</div>
+                  <div className="alp-info-item"><b>Scheme</b>{c.scheme || "—"}</div>
                   <div className="alp-info-item"><b>Loan Value</b>{c.loanValue ? `₹${c.loanValue}` : "—"}</div>
                   <div className="alp-info-item"><b>Bank Name</b>{c.bankName || "—"}</div>
                   <div className="alp-info-item"><b>IFSC Code</b>{c.ifscCode || "—"}</div>
