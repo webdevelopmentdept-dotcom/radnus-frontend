@@ -209,9 +209,12 @@ export default function AdminLoanProcess() {
               <div className="alp-detail">
                 <div className="alp-section-title">Customer Details</div>
                 <div className="alp-info-grid">
+                  <div className="alp-info-item"><b>Date</b>{c.loanDate ? new Date(c.loanDate).toLocaleDateString() : "—"}</div>
                   <div className="alp-info-item"><b>Business Type</b>{c.businessType || "—"}</div>
                   <div className="alp-info-item"><b>Scheme</b>{c.scheme || "—"}</div>
                   <div className="alp-info-item"><b>Loan Value</b>{c.loanValue ? `₹${c.loanValue}` : "—"}</div>
+                  <div className="alp-info-item"><b>Contact No</b>{c.contactNo || "—"}</div>
+
                   <div className="alp-info-item"><b>Bank Name</b>{c.bankName || "—"}</div>
                   <div className="alp-info-item"><b>IFSC Code</b>{c.ifscCode || "—"}</div>
                   <div className="alp-info-item"><b>Communication Address</b>{c.communicationAddress || "—"}</div>

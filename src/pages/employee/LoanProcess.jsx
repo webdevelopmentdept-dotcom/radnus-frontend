@@ -12,8 +12,8 @@ const DOC_FIELDS = [
     { key: "pancard", label: "Pancard" },
     { key: "rationCard", label: "Ration Card" },
     { key: "bankPassbook", label: "Bank Pass Book" },
-    { key: "gasBill", label: "Gas Bill" },
-    { key: "ebBill", label: "EB Bill" },
+    { key: "gasBill", label: "Gas Bill", optional: true },
+    { key: "ebBill", label: "EB Bill", optional: true }
 ];
 
 const CHECKLIST_STAGES = [
@@ -35,8 +35,12 @@ const SCHEME_OPTIONS = [
     { value: "AABCS", label: "AABCS - Annal Ambedkar Business Champions Scheme" },
 ];
 
+const todayStr = () => new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+
+
 const BLANK_FORM = {
     customerName: "",
+    loanDate: todayStr(),
     communicationAddress: "",
     unitAddress: "",
     businessType: "",
@@ -154,7 +158,7 @@ export default function LoanProcess() {
     };
 
     const resetForm = () => {
-        setForm(BLANK_FORM);
+        setForm({ ...BLANK_FORM, loanDate: todayStr() });
         setFiles({});
         setFieldErrors({});
         setDocErrors({});
@@ -212,6 +216,10 @@ export default function LoanProcess() {
             fErrs.scheme = "Scheme is required.";
         }
 
+        if (!form.loanDate) {
+            fErrs.loanDate = "Date is required.";
+        }
+
         if (!String(form.loanValue).trim()) {
             fErrs.loanValue = "Loan Value is required.";
         } else if (Number(form.loanValue) <= 0 || Number.isNaN(Number(form.loanValue))) {
@@ -238,11 +246,11 @@ export default function LoanProcess() {
 
         // ---- Govt Documents: every document upload mandatory ----
         DOC_FIELDS.forEach((doc) => {
+            if (doc.optional) return;
             if (!files[doc.key]) {
                 dErrs[doc.key] = `${doc.label} is required.`;
             }
         });
-
         return { fErrs, dErrs };
     };
 
@@ -345,6 +353,7 @@ export default function LoanProcess() {
         setEditingId(customer._id);
         setEditForm({
             customerName: customer.customerName || "",
+            loanDate: customer.loanDate ? new Date(customer.loanDate).toISOString().slice(0, 10) : todayStr(),
             communicationAddress: customer.communicationAddress || "",
             unitAddress: customer.unitAddress || "",
             businessType: customer.businessType || "",
@@ -416,6 +425,8 @@ export default function LoanProcess() {
 
         if (!editForm.scheme.trim()) fErrs.scheme = "Scheme is required.";
 
+        if (!editForm.loanDate) fErrs.loanDate = "Date is required.";
+
         if (!String(editForm.loanValue).trim()) {
             fErrs.loanValue = "Loan Value is required.";
         } else if (Number(editForm.loanValue) <= 0 || Number.isNaN(Number(editForm.loanValue))) {
@@ -434,7 +445,9 @@ export default function LoanProcess() {
         if (!editForm.unitAddress.trim()) fErrs.unitAddress = "Unit Address is required.";
 
         // A document is "missing" only if there's no existing uploaded doc AND no new file chosen now
+        // (skip this check entirely for docs marked optional, e.g. Gas Bill, EB Bill)
         DOC_FIELDS.forEach((doc) => {
+            if (doc.optional) return;
             const alreadyUploaded = !!customer?.documents?.[doc.key]?.url;
             if (!alreadyUploaded && !editFiles[doc.key]) {
                 dErrs[doc.key] = `${doc.label} is required.`;
@@ -636,6 +649,37 @@ export default function LoanProcess() {
           .lp-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
           .lp-badge.done { background: var(--lp-accent-soft); color: var(--lp-accent); }
           .lp-badge.progress { background: var(--lp-primary-soft); color: var(--lp-primary); }
+
+          /* ══════════════ MOBILE RESPONSIVE FIXES ══════════════ */
+          @media (max-width: 576px) {
+            .lp-root.container-fluid { padding-left: 12px !important; padding-right: 12px !important; padding-top: 16px !important; padding-bottom: 16px !important; }
+            .lp-root h4 { font-size: 18px; }
+            .lp-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 4px; margin-bottom: 18px; scrollbar-width: none; }
+            .lp-tabs::-webkit-scrollbar { display: none; }
+            .lp-tab-btn { padding: 10px 12px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
+            .lp-card { padding: 14px; margin-bottom: 14px; border-radius: var(--lp-radius-md); }
+            .lp-grid { grid-template-columns: 1fr; gap: 12px; }
+            .lp-field input, .lp-field select { font-size: 16px; padding: 10px; }
+            .lp-doc-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .lp-view-doc-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .lp-view-grid { grid-template-columns: 1fr; gap: 10px 0; }
+            .lp-view-item[style*="span 2"], .lp-field[style*="span 2"] { grid-column: span 1 !important; }
+            .lp-cust-head { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
+            .lp-cust-head > div:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+            .lp-cust-head > div:first-child > div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .lp-progress-bar { width: 70px; }
+            .lp-checklist-body { padding: 12px 14px; }
+            .lp-row-actions { flex-wrap: wrap; }
+            .lp-btn-sm { padding: 6px 10px; font-size: 11px; }
+            .lp-btn-primary { width: 100%; padding: 12px 20px; }
+            .lp-doc-icon-row { flex-wrap: wrap; }
+          }
+
+          @media (max-width: 380px) {
+            .lp-doc-grid { grid-template-columns: 1fr; }
+            .lp-view-doc-grid { grid-template-columns: 1fr; }
+            .lp-tab-btn { padding: 9px 10px; font-size: 12px; }
+          }
         `}</style>
 
                 <h4 style={{ fontWeight: 700, marginBottom: 4 }}>Loan Process</h4>
@@ -679,6 +723,18 @@ export default function LoanProcess() {
                                         className={fieldErrors.customerName ? "lp-input-invalid" : ""}
                                     />
                                     {fieldErrors.customerName && <div className="lp-field-error">{fieldErrors.customerName}</div>}
+                                </div>
+                                <div className="lp-field">
+                                    <label>Date *</label>
+                                    <input
+                                        name="loanDate"
+                                        type="date"
+                                        value={form.loanDate}
+                                        onChange={handleChange}
+                                        required
+                                        className={fieldErrors.loanDate ? "lp-input-invalid" : ""}
+                                    />
+                                    {fieldErrors.loanDate && <div className="lp-field-error">{fieldErrors.loanDate}</div>}
                                 </div>
                                 <div className="lp-field">
                                     <label>Contact No *</label>
@@ -807,7 +863,9 @@ export default function LoanProcess() {
                                             className={`lp-doc-box ${files[doc.key] ? "filled" : ""} ${docErrors[doc.key] ? "invalid" : ""
                                                 }`}
                                         >
-                                            <div className="lp-doc-label">{doc.label} *</div>
+                                            <div className="lp-doc-label">
+                                                {doc.label} {doc.optional ? <span style={{ fontWeight: 400, color: "var(--lp-text-muted)" }}>(optional)</span> : "*"}
+                                            </div>
                                             <div className="lp-doc-status">
                                                 {files[doc.key] ? `✅ ${files[doc.key].name}` : "Click to upload"}
                                             </div>
@@ -885,6 +943,14 @@ export default function LoanProcess() {
                                                 <div className="lp-view-item">
                                                     <div className="lp-view-label">Mail ID</div>
                                                     <div className="lp-view-value">{c.mailId || "—"}</div>
+                                                </div>
+                                                <div className="lp-view-item">
+  <div className="lp-view-label">Contact No</div>
+  <div className="lp-view-value">{c.contactNo || "—"}</div>
+</div>
+                                                <div className="lp-view-item">
+                                                    <div className="lp-view-label">Date</div>
+                                                    <div className="lp-view-value">{c.loanDate ? new Date(c.loanDate).toLocaleDateString() : "—"}</div>
                                                 </div>
                                                 <div className="lp-view-item">
                                                     <div className="lp-view-label">Scheme</div>
@@ -971,6 +1037,19 @@ export default function LoanProcess() {
                                                     )}
                                                 </div>
                                                 <div className="lp-field">
+                                                    <label>Date *</label>
+                                                    <input
+                                                        name="loanDate"
+                                                        type="date"
+                                                        value={editForm.loanDate}
+                                                        onChange={handleEditChange}
+                                                        className={editFieldErrors.loanDate ? "lp-input-invalid" : ""}
+                                                    />
+                                                    {editFieldErrors.loanDate && (
+                                                        <div className="lp-field-error">{editFieldErrors.loanDate}</div>
+                                                    )}
+                                                </div>
+                                                <div className="lp-field">
                                                     <label>Contact No *</label>
                                                     <input
                                                         name="contactNo"
@@ -1007,6 +1086,26 @@ export default function LoanProcess() {
                                                         <div className="lp-field-error">{editFieldErrors.businessType}</div>
                                                     )}
                                                 </div>
+
+                                                  <div className="lp-field">
+                          <label>Scheme *</label>
+                          <select
+                            name="scheme"
+                            value={editForm.scheme}
+                            onChange={handleEditChange}
+                            className={editFieldErrors.scheme ? "lp-input-invalid" : ""}
+                          >
+                            <option value="">Select Scheme</option>
+                            {SCHEME_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                          {editFieldErrors.scheme && (
+                            <div className="lp-field-error">{editFieldErrors.scheme}</div>
+                          )}
+                        </div>
                                                 <div className="lp-field">
                                                     <label>Loan Value *</label>
                                                     <input
@@ -1089,7 +1188,9 @@ export default function LoanProcess() {
                                                                 className={`lp-doc-box ${uploaded || newFile ? "filled" : ""} ${editDocErrors[doc.key] ? "invalid" : ""
                                                                     }`}
                                                             >
-                                                                <div className="lp-doc-label">{doc.label} *</div>
+                                                                <div className="lp-doc-label">
+                                                                    {doc.label} {doc.optional ? <span style={{ fontWeight: 400, color: "var(--lp-text-muted)" }}>(optional)</span> : "*"}
+                                                                </div>
                                                                 <div className="lp-doc-status">
                                                                     {newFile
                                                                         ? `✅ New: ${newFile.name}`
