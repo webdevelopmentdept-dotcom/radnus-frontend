@@ -78,7 +78,11 @@ function AssignModal({ programs, employees, onClose, onSave }) {
   const [dueDate, setDueDate]   = useState("");
   const [notes, setNotes]       = useState("");
   const [saving, setSaving]     = useState(false);
-const [modal, setModal] = useState(null); // "assign"|"update"|"quizQuestions"|"createProgram"
+  const [deptFilter, setDeptFilter] = useState("all");
+const [modal, setModal] = useState(null);
+
+  const employeeDepts = [...new Set(employees.map(e => e.department).filter(Boolean))].sort();
+  const filteredEmployees = deptFilter === "all" ? employees : employees.filter(e => e.department === deptFilter);
 
   const handle = async () => {
     if (!programId) return alert("Select a program");
@@ -94,6 +98,8 @@ const [modal, setModal] = useState(null); // "assign"|"update"|"quizQuestions"|"
   };
 
   const toggleEmp = (id) => setEmpIds(prev => prev.includes(id) ? prev.filter(e=>e!==id) : [...prev, id]);
+  const selectAllFiltered = () => setEmpIds(prev => [...new Set([...prev, ...filteredEmployees.map(e=>e._id)])]);
+  const clearAllFiltered   = () => setEmpIds(prev => prev.filter(id => !filteredEmployees.some(e=>e._id===id)));
 
   return (
     <div className="modal show d-block" style={{ background:"rgba(15,23,42,.45)", zIndex:1050 }}>
@@ -132,19 +138,38 @@ const [modal, setModal] = useState(null); // "assign"|"update"|"quizQuestions"|"
                 <input type="date" className="form-control form-control-sm" value={dueDate} onChange={e=>setDueDate(e.target.value)} />
               </div>
 
-              {mode === "single" ? (
+               {mode === "single" ? (
                 <div className="col-12">
                   <label style={labelStyle}>Employee *</label>
+                  <select className="form-select form-select-sm mb-2" value={deptFilter} onChange={e=>setDeptFilter(e.target.value)}>
+                    <option value="all">All Departments</option>
+                    {employeeDepts.map(d=><option key={d} value={d}>{d}</option>)}
+                  </select>
                   <select className="form-select form-select-sm" value={employeeId} onChange={e=>setEmpId(e.target.value)}>
                     <option value="">-- Select Employee --</option>
-                    {employees.map(e=><option key={e._id} value={e._id}>{e.name} — {e.department}</option>)}
+                    {filteredEmployees.map(e=><option key={e._id} value={e._id}>{e.name} — {e.department}</option>)}
                   </select>
                 </div>
               ) : (
                 <div className="col-12">
                   <label style={labelStyle}>Select Employees ({employeeIds.length} selected)</label>
+                  <div className="d-flex gap-2 mb-2 align-items-center flex-wrap">
+                    <select className="form-select form-select-sm" style={{ maxWidth:220 }} value={deptFilter} onChange={e=>setDeptFilter(e.target.value)}>
+                      <option value="all">All Departments</option>
+                      {employeeDepts.map(d=><option key={d} value={d}>{d}</option>)}
+                    </select>
+                    <button type="button" className="btn btn-sm btn-outline-primary" style={{ fontSize:11 }} onClick={selectAllFiltered}>
+                      Select All {deptFilter !== "all" ? `(${deptFilter})` : ""}
+                    </button>
+                    <button type="button" className="btn btn-sm btn-outline-secondary" style={{ fontSize:11 }} onClick={clearAllFiltered}>
+                      Clear {deptFilter !== "all" ? `(${deptFilter})` : "All"}
+                    </button>
+                  </div>
                   <div style={{ maxHeight:200, overflowY:"auto", border:"1px solid #e5e7eb", borderRadius:8, padding:"8px" }}>
-                    {employees.map(e=>(
+                    {filteredEmployees.length === 0 && (
+                      <p className="text-muted mb-0" style={{ fontSize:12.5 }}>No employees in this department.</p>
+                    )}
+                    {filteredEmployees.map(e=>(
                       <div key={e._id} className="form-check">
                         <input className="form-check-input" type="checkbox"
                           checked={employeeIds.includes(e._id)}
@@ -547,32 +572,32 @@ function QuizQuestionsManagerModal({ onClose, showMsg }) {
 }
 
 // ─── Create Training Program Modal ────────────────────────────
-function CreateProgramModal({ onClose, onSave }) {
-  const [title, setTitle]             = useState("");
-  const [duration, setDuration]        = useState("");
-  const [conductedBy, setConductedBy]  = useState("");
-  const [modulesText, setModulesText]  = useState("");
-  const [videoMode, setVideoMode]      = useState("youtube");
-  const [youtubeUrl, setYoutubeUrl]    = useState("");
+function CreateProgramModal({ onClose, onSave, editingProgram }) {
+  const isEditing = !!editingProgram;
+  const [title, setTitle]             = useState(editingProgram?.title || "");
+  const [duration, setDuration]        = useState(editingProgram?.duration || "");
+  const [conductedBy, setConductedBy]  = useState(editingProgram?.conductedBy || "");
+  const [modulesText, setModulesText]  = useState((editingProgram?.modules || []).join(", "));
+  const [videoMode, setVideoMode]      = useState(editingProgram?.videoSource === "upload" ? "upload" : "youtube");
+  const [youtubeUrl, setYoutubeUrl]    = useState(editingProgram?.videoSource === "youtube" ? (editingProgram?.videoUrl || "") : "");
   const [videoFile, setVideoFile]      = useState(null);
-  const [pdfFile, setPdfFile]          = useState(null); // ✅ NEW — optional PDF training material
+  const [pdfFile, setPdfFile]          = useState(null);
   const [saving, setSaving]            = useState(false);
   const [error, setError]              = useState("");
 
-   const [deliveryMode, setDeliveryMode] = useState("online");
-  const [sessionDate, setSessionDate]   = useState("");
-  const [sessionTime, setSessionTime]   = useState("");
-  const [venue, setVenue]               = useState("");
+   const [deliveryMode, setDeliveryMode] = useState(editingProgram?.deliveryMode || "online");
+  const [sessionDate, setSessionDate]   = useState(editingProgram?.sessionDate ? new Date(editingProgram.sessionDate).toISOString().slice(0,10) : "");
+  const [sessionTime, setSessionTime]   = useState(editingProgram?.sessionTime || "");
+  const [venue, setVenue]               = useState(editingProgram?.venue || "");
 
-  // ── Certification (optional toggle) ──
-  const [hasCertification, setHasCertification] = useState(false);
-  const [certification, setCertification]       = useState("");
+  const [hasCertification, setHasCertification] = useState(!!editingProgram?.certification);
+  const [certification, setCertification]       = useState(editingProgram?.certification || "");
 
   // ── Department: searchable dropdown ──
-  const [departments, setDepartments] = useState([]);
+   const [departments, setDepartments] = useState([]);
   const [deptLoading, setDeptLoading] = useState(true);
-  const [department, setDepartment]   = useState("all");
-  const [deptQuery, setDeptQuery]     = useState("All Departments");
+  const [department, setDepartment]   = useState(editingProgram?.department || "all");
+  const [deptQuery, setDeptQuery]     = useState(editingProgram?.department && editingProgram.department !== "all" ? editingProgram.department : "All Departments");
   const [deptOpen, setDeptOpen]       = useState(false);
 
   useEffect(() => {
@@ -630,10 +655,10 @@ function CreateProgramModal({ onClose, onSave }) {
       if (pdfFile) fd.append("pdf", pdfFile);
     }
 
-    try {
+      try {
       await onSave(fd);
     } catch (e) {
-      setError(e?.response?.data?.message || "Failed to create program");
+      setError(e?.response?.data?.message || `Failed to ${isEditing ? "update" : "create"} program`);
     } finally {
       setSaving(false);
     }
@@ -645,8 +670,8 @@ function CreateProgramModal({ onClose, onSave }) {
         <div className="modal-content border-0 shadow-lg" style={{ borderRadius: 14 }}>
           <div className="modal-header border-bottom" style={{ background: "#f9fafb", borderRadius: "14px 14px 0 0" }}>
             <div className="d-flex align-items-center gap-2">
-              <Plus size={18} color="#10b981" />
-              <p className="mb-0 fw-bold" style={{ fontSize: 14 }}>Create Training Program</p>
+              {isEditing ? <Pencil size={16} color="#3b82f6" /> : <Plus size={18} color="#10b981" />}
+              <p className="mb-0 fw-bold" style={{ fontSize: 14 }}>{isEditing ? "Edit Training Program" : "Create Training Program"}</p>
             </div>
             <button className="btn-close" onClick={onClose} />
           </div>
@@ -807,6 +832,9 @@ function CreateProgramModal({ onClose, onSave }) {
                     <label style={labelStyle}>Training PDF (optional)</label>
                     <input type="file" accept="application/pdf" className="form-control form-control-sm" onChange={e => setPdfFile(e.target.files[0] || null)} />
                     {pdfFile && <p className="text-muted mb-0 mt-1" style={{ fontSize: 11 }}>{pdfFile.name}</p>}
+                    {!pdfFile && isEditing && editingProgram?.pdfName && (
+                      <p className="text-muted mb-0 mt-1" style={{ fontSize: 11 }}>Current file: {editingProgram.pdfName} (choose a new one to replace it)</p>
+                    )}
                   </div>
                 </>
               )}
@@ -839,7 +867,7 @@ function CreateProgramModal({ onClose, onSave }) {
           <div className="modal-footer border-top">
             <button className="btn btn-sm btn-light" onClick={onClose}>Cancel</button>
             <button className="btn btn-sm btn-success fw-bold" onClick={handleSubmit} disabled={saving}>
-              {saving ? "Creating..." : "Create Program"}
+              {saving ? (isEditing ? "Saving..." : "Creating...") : (isEditing ? "Save Changes" : "Create Program")}
             </button>
           </div>
         </div>
@@ -868,7 +896,11 @@ export default function TrainingRoadmapHR() {
   const [deletingId, setDeletingId] = useState(null); // ✅ NEW — tracks which record is being deleted, for per-row spinner/disable
   const [deletingLogId, setDeletingLogId] = useState(null); // ✅ NEW — tracks which compliance log entry is being deleted
   const [expandedEmp, setExpandedEmp] = useState(null); // ✅ NEW — which employee's compliance log group is expanded
-
+ const [editingProgram, setEditingProgram] = useState(null);
+  const [deletingProgramId, setDeletingProgramId] = useState(null);
+  const [unassigningId, setUnassigningId] = useState(null);
+  const [unassignInfo, setUnassignInfo] = useState(null);
+  
   const showMsg = (msg, type="success") => {
     setToast({ msg, type });
     setTimeout(()=>setToast(null), 3000);
@@ -998,7 +1030,63 @@ const handleMarkAllComplete = async (program) => {
     }
   };
 
+
+    // ✅ NEW — "Unassign" — removes this training assignment from the
+  // employee (no confirm popup, quick action) and keeps enough info
+  // around for a few seconds so HR can "Undo" and re-assign it if it
+  // was a mistake. Undo re-creates the assignment fresh (pending),
+  // it does not restore any progress/quiz history the old record had.
+  const handleUnassign = async (record) => {
+    if (unassignInfo?.timer) clearTimeout(unassignInfo.timer);
+    const empName   = record.employeeId?.name || "this employee";
+    const progTitle = record.programId?.title || "this program";
+    setUnassigningId(record._id);
+    try {
+      await axios.delete(`${API_BASE}/api/training/records/${record._id}`);
+      fetchAll();
+      const timer = setTimeout(() => setUnassignInfo(null), 7000);
+      setUnassignInfo({
+        employeeId: record.employeeId?._id || record.employeeId,
+        programId:  record.programId?._id || record.programId,
+        dueDate:    record.dueDate,
+        notes:      record.notes,
+        empName, progTitle, timer,
+      });
+    } catch(e) {
+      showMsg(e?.response?.data?.message || "Unassign failed", "error");
+    } finally {
+      setUnassigningId(null);
+    }
+  };
+
+  const handleUndoUnassign = async () => {
+    if (!unassignInfo) return;
+    clearTimeout(unassignInfo.timer);
+    const { employeeId, programId, dueDate, notes, empName, progTitle } = unassignInfo;
+    setUnassignInfo(null);
+    try {
+      await axios.post(`${API_BASE}/api/training/assign`, { employeeId, programId, dueDate, notes });
+      showMsg(`"${progTitle}" re-assigned to ${empName}.`);
+      fetchAll();
+    } catch(e) {
+      showMsg(e?.response?.data?.message || "Undo failed — please re-assign manually", "error");
+    }
+  };
+
   // Filter records
+  const handleDeleteProgram = async (program) => {
+    if (!window.confirm(`Delete the training program "${program.title}"? Employees already assigned to it will keep their existing records, but it will disappear from this list and can no longer be assigned to anyone new.`)) return;
+    setDeletingProgramId(program._id);
+    try {
+      await axios.delete(`${API_BASE}/api/training/programs/${program._id}`);
+      showMsg("Training program deleted.");
+      fetchAll();
+    } catch(e) {
+      showMsg(e?.response?.data?.message || "Delete failed", "error");
+    } finally {
+      setDeletingProgramId(null);
+    }
+  };
   const filteredRecords = records.filter(r => {
     const matchSearch = !search.trim() ||
       r.employeeId?.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -1009,12 +1097,37 @@ const handleMarkAllComplete = async (program) => {
   return (
     <div className="container-fluid py-4" style={{ maxWidth:1400 }}>
 
-      {toast && <div className={`alert alert-${toast.type==="error"?"danger":"success"} position-fixed top-0 end-0 m-3`} style={{ zIndex:9999, fontSize:13 }}>{toast.msg}</div>}
+        {toast && <div className={`alert alert-${toast.type==="error"?"danger":"success"} position-fixed top-0 end-0 m-3`} style={{ zIndex:9999, fontSize:13 }}>{toast.msg}</div>}
+
+      {/* ✅ NEW — Undo toast after "Unassign". Auto-dismisses after 7s. */}
+      {unassignInfo && (
+        <div className="alert alert-warning position-fixed top-0 end-0 m-3 d-flex align-items-center gap-3 shadow-sm" style={{ zIndex:9999, fontSize:13 }}>
+          <span>Unassigned "{unassignInfo.progTitle}" from {unassignInfo.empName}.</span>
+          <button className="btn btn-sm btn-dark fw-bold" onClick={handleUndoUnassign}>Undo</button>
+        </div>
+      )}
 
       {modal === "assign" && <AssignModal programs={programs} employees={employees} onClose={()=>setModal(null)} onSave={handleAssign} />}
       {modal === "update" && selectedRecord && <UpdateRecordModal record={selectedRecord} onClose={()=>{setModal(null);setSelectedRecord(null);}} onSave={handleUpdate} />}
       {modal === "quizQuestions" && <QuizQuestionsManagerModal onClose={()=>setModal(null)} showMsg={showMsg} />}
-      {modal === "createProgram" && <CreateProgramModal onClose={()=>setModal(null)} onSave={async(fd)=>{ await axios.post(`${API_BASE}/api/training/programs`, fd, {headers:{'Content-Type':'multipart/form-data'}}); setModal(null); fetchAll(); showMsg("Training program created!"); }} />} 
+      {modal === "createProgram" && (
+        <CreateProgramModal
+          editingProgram={editingProgram}
+          onClose={()=>{ setModal(null); setEditingProgram(null); }}
+          onSave={async(fd)=>{
+            if (editingProgram) {
+              await axios.put(`${API_BASE}/api/training/programs/${editingProgram._id}`, fd, {headers:{'Content-Type':'multipart/form-data'}});
+              showMsg("Training program updated!");
+            } else {
+              await axios.post(`${API_BASE}/api/training/programs`, fd, {headers:{'Content-Type':'multipart/form-data'}});
+              showMsg("Training program created!");
+            }
+            setModal(null);
+            setEditingProgram(null);
+            fetchAll();
+          }}
+        />
+      )}
       {/* ── Header ── */}
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div className="d-flex align-items-center gap-3">
@@ -1050,7 +1163,7 @@ const handleMarkAllComplete = async (program) => {
           <button className="btn btn-primary d-flex align-items-center gap-2 fw-bold" onClick={()=>setModal("assign")}>
             <Plus size={14} /> Assign Training
           </button>
-          <button className="btn btn-sm btn-outline-success d-flex align-items-center gap-2 fw-bold" onClick={()=>setModal("createProgram")}>
+          <button className="btn btn-sm btn-outline-success d-flex align-items-center gap-2 fw-bold" onClick={()=>{ setEditingProgram(null); setModal("createProgram"); }}>
   <Plus size={14} /> Create Training
 </button>
         </div>
@@ -1146,7 +1259,40 @@ const handleMarkAllComplete = async (program) => {
                       <div className="card-body d-flex flex-column">
                         <div className="d-flex align-items-start justify-content-between gap-2 mb-2">
                           <p className="fw-bold mb-0" style={{ fontSize: 14, color: "#111827", lineHeight: 1.3 }}>{p.title}</p>
-                          <span className="badge flex-shrink-0" style={{ background: typ.bg, color: typ.color, fontSize: 10, fontWeight: 700 }}>{typ.label}</span>
+                          <div className="d-flex align-items-center gap-1 flex-shrink-0">
+                            <span className="badge" style={{ background: typ.bg, color: typ.color, fontSize: 10, fontWeight: 700 }}>{typ.label}</span>
+                            <button
+                              className="btn btn-sm p-1 d-flex align-items-center justify-content-center"
+                              title="Edit program"
+                              style={{ width: 22, height: 22, border: "1px solid #e5e7eb", borderRadius: 6, background: "#fff" }}
+                              onClick={() => { setEditingProgram(p); setModal("createProgram"); }}
+                            >
+                              <Pencil size={11} color="#6b7280" />
+                            </button>
+                            <button
+                              className="btn btn-sm p-1 d-flex align-items-center justify-content-center"
+                              title="Delete program"
+                              disabled={deletingProgramId === p._id}
+                              style={{ width: 22, height: 22, border: "1px solid #fecaca", borderRadius: 6, background: "#fff" }}
+                              onClick={() => handleDeleteProgram(p)}
+                            >
+                              {deletingProgramId === p._id
+                                ? <span className="spinner-border spinner-border-sm" style={{ width: 10, height: 10 }} />
+                                : <Trash2 size={11} color="#ef4444" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* ✅ NEW — Offline / Online delivery mode tag */}
+                        <div className="mb-2">
+                          <span className="badge" style={{
+                            background: p.deliveryMode === "offline" ? "#fff7ed" : "#eff6ff",
+                            color: p.deliveryMode === "offline" ? "#f97316" : "#3b82f6",
+                            border: `1px solid ${p.deliveryMode === "offline" ? "#fed7aa" : "#bfdbfe"}`,
+                            fontSize: 10, fontWeight: 700, padding: "3px 9px",
+                          }}>
+                            {p.deliveryMode === "offline" ? "📍 Offline" : "💻 Online"}
+                          </span>
                         </div>
 
                         {p.modules?.length > 0 && (
@@ -1322,12 +1468,25 @@ const handleMarkAllComplete = async (program) => {
                             ) : "—"}
                           </td>
                           <td>
-                            {/* ✅ CHANGED — Action cell now has Update + Delete side by side */}
+                            {/* ✅ CHANGED — Action cell now has Update + Unassign + Delete side by side */}
                             <div className="d-flex gap-1">
                               <button className="btn btn-sm btn-outline-primary py-0 px-2" style={{ fontSize:11 }}
                                 onClick={()=>{ setSelectedRecord(r); setModal("update"); }}
                                 disabled={isDeleting}>
                                 Update
+                              </button>
+                              {/* ✅ NEW — Unassign: removes the assignment (no confirm), with a
+                                  few-seconds "Undo" toast in case it was a mistake */}
+                              <button className="btn btn-sm btn-outline-warning py-0 px-2 d-flex align-items-center gap-1" style={{ fontSize:11 }}
+                                onClick={()=>handleUnassign(r)}
+                                disabled={isDeleting || unassigningId === r._id}
+                                title="Unassign this training from the employee">
+                                {unassigningId === r._id ? (
+                                  <span className="spinner-border spinner-border-sm" style={{ width:11, height:11 }} />
+                                ) : (
+                                  <X size={11} />
+                                )}
+                                Unassign
                               </button>
                               {/* ✅ NEW — Delete button, confirms then calls DELETE /api/training/records/:id */}
                               <button className="btn btn-sm btn-outline-danger py-0 px-2 d-flex align-items-center gap-1" style={{ fontSize:11 }}

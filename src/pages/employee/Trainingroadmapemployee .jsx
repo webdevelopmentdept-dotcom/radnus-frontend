@@ -1142,7 +1142,7 @@ export default function TrainingRoadmapEmployee() {
             </div>
           ) : (
             <div className="tr-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
-                           {records.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} />)}
+                                       {records.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} onViewDetails={setDetailsRecord} />)}
             </div>
           )
         )}
@@ -1170,7 +1170,7 @@ export default function TrainingRoadmapEmployee() {
             </div>
           ) : (
             <div className="tr-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
-                            {inProgress.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} />)}
+                                        {inProgress.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} onViewDetails={setDetailsRecord} />)}
             </div>
           )
         )}
@@ -1198,7 +1198,7 @@ export default function TrainingRoadmapEmployee() {
                 </div>
               )}
               <div className="tr-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
-                               {completed.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} />)}
+                                             {completed.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} onViewDetails={setDetailsRecord} />)}
               </div>
             </div>
           )
