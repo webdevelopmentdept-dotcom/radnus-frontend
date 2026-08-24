@@ -152,6 +152,7 @@ const STATUS_CONFIG = {
   retrain:         { label: "Retrain Required",  color: "var(--orange)",  bg: "var(--orange-tint)" }, // ✅ NEW — HR asked for a re-study + retake
   needs_hr_review: { label: "Needs HR Review",   color: "var(--danger)",  bg: "var(--danger-tint)" }, // legacy status, kept for old records
   failed_retake:   { label: "Failed (old data)", color: "var(--danger)",  bg: "var(--danger-tint)" }, // legacy status from the old multi-attempt system
+ absent:          { label: "Absent / Not Attended", color: "var(--danger)", bg: "var(--bg-soft)" },
 };
 
 const TYPE_CONFIG = {
@@ -176,8 +177,14 @@ function getEmployeeId() {
 function TrainingCard({ record, onStart, onViewDetails, onSubmit }) {
   const st  = STATUS_CONFIG[record.status] || STATUS_CONFIG.pending;
   const typ = TYPE_CONFIG[record.programId?.type] || TYPE_CONFIG.job_role;
-  const isOverdue = record.dueDate && new Date(record.dueDate) < new Date() && record.status !== "completed";
   const prog = record.programId;
+  const isOffline = prog?.deliveryMode === "offline";
+  const displayDate = isOffline && prog?.sessionDate ? prog.sessionDate : record.dueDate;
+  const isOverdue = displayDate && (() => {
+  const end = new Date(displayDate);
+  end.setHours(23, 59, 59, 999);
+  return end < new Date();
+})() && record.status !== "completed";
 
   return (
     <div className="tr-card tr-training-card" style={{
@@ -227,11 +234,15 @@ function TrainingCard({ record, onStart, onViewDetails, onSubmit }) {
 
       {/* Footer */}
       <div className="tr-card-footer" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, flexWrap: "wrap", gap: 8 }}>
-        <div style={{ fontSize: 11.5, color: "var(--muted)", display: "flex", gap: 12, flexWrap: "wrap" }}>
-          {record.dueDate && (
+               <div style={{ fontSize: 11.5, color: "var(--muted)", display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {displayDate && (
             <span style={{ color: isOverdue ? "var(--danger)" : "inherit", display: "flex", alignItems: "center", gap: 4, fontWeight: isOverdue ? 600 : 400 }}>
-              <Calendar size={12} /> Due: {new Date(record.dueDate).toLocaleDateString("en-IN")}
+              <Calendar size={12} /> {isOffline ? "Session" : "Due"}: {new Date(displayDate).toLocaleDateString("en-IN")}
+              {isOffline && prog?.sessionTime ? `, ${prog.sessionTime}` : ""}
             </span>
+          )}
+          {isOffline && prog?.venue && (
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>📍 {prog.venue}</span>
           )}
           {record.assessmentScore !== null && record.assessmentScore !== undefined && (
             <span style={{ color: record.assessmentScore >= 80 ? "var(--success)" : "var(--danger)", fontWeight: 600 }}>
@@ -246,21 +257,26 @@ function TrainingCard({ record, onStart, onViewDetails, onSubmit }) {
             style={{ padding: "6px 14px", border: "1.5px solid var(--brand)", borderRadius: "var(--radius-sm)", background: "#fff", color: "var(--brand)", fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>
             View Details
           </button>
-                 {record.status === "pending" && (
+                                  {!isOffline && record.status === "pending" && (
           <button onClick={() => onStart(record._id)}
             style={{ padding: "5px 12px", border: "none", borderRadius: 7, background: "#3b82f6", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
             Start Training
           </button>
         )}
-        {record.status === "in_progress" && !record.submittedForReview && (
+        {!isOffline && record.status === "in_progress" && !record.submittedForReview && (
           <button onClick={() => onSubmit(record._id)}
             style={{ padding: "5px 12px", border: "none", borderRadius: 7, background: "#10b981", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
             Submit for Review
           </button>
         )}
-        {record.status === "in_progress" && record.submittedForReview && (
+        {!isOffline && record.status === "in_progress" && record.submittedForReview && (
           <span style={{ background: "#fffbeb", color: "#92400e", border: "1px solid #fde68a", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
             Submitted — Awaiting HR
+          </span>
+        )}
+        {isOffline && record.status !== "completed" && (
+          <span style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
+            Attend session — HR marks attendance
           </span>
         )}
         {record.status === "completed" && (
@@ -300,6 +316,7 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
 
   const prog = record.programId;
   const isEquipment = prog?.type === "equipment";
+  const isOffline = prog?.deliveryMode === "offline";
 
   useEffect(() => {
     if (!isEquipment || !prog?._id) { setLoading(false); return; }
@@ -470,6 +487,28 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
                 (same flow as equipment); otherwise falls back to a plain
                 "Mark as Completed" submit so employees aren't blocked
                 while HR hasn't written questions yet. */}
+            
+                     {isOffline ? (
+              <div style={{ marginTop: 16, padding: "13px 15px", borderRadius: "var(--radius-md)", background: record.status === "completed" ? "var(--success-tint)" : "var(--bg-soft)", border: `1px solid ${record.status === "completed" ? "#b7ecd6" : "var(--line)"}` }}>
+                {record.status === "completed" ? (
+                  <p style={{ margin: 0, fontSize: 12.5, color: "var(--success)", fontWeight: 600 }}>
+                    ✅ HR has marked your attendance — this training is completed.
+                  </p>
+                ) : (
+                  <>
+                                        <p style={{ margin: 0, fontSize: 12.5, color: "var(--body)", fontWeight: 600 }}>
+                      📍 In-person session
+                      {prog?.sessionDate ? ` on ${new Date(prog.sessionDate).toLocaleDateString("en-IN")}` : ""}
+                      {prog?.sessionTime ? `, ${prog.sessionTime}` : ""}
+                      {prog?.venue ? ` at ${prog.venue}` : ""}
+                    </p>
+                    <p style={{ margin: "6px 0 0", fontSize: 11.5, color: "var(--muted-2)" }}>
+                      Attend the session — HR will mark your training as completed afterward. No action needed here.
+                    </p>
+                  </>
+                )}
+              </div>
+            ) : (
             <div style={{ marginTop: 16, padding: "13px 15px", borderRadius: "var(--radius-md)", background: record.status === "completed" ? "var(--success-tint)" : record.status === "pending_review" ? "var(--warning-tint)" : "var(--bg-soft)", border: `1px solid ${record.status === "completed" ? "#b7ecd6" : record.status === "pending_review" ? "#fde3ad" : "var(--line)"}` }}>
               {record.status === "completed" ? (
                 <p style={{ margin: 0, fontSize: 12.5, color: "var(--success)", fontWeight: 600 }}>
@@ -524,8 +563,9 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
                     {completing ? "Submitting…" : "Mark as Completed"}
                   </button>
                 </>
-              )}
+               )}
             </div>
+            )}
           </div>
           );
         })()}
@@ -700,7 +740,7 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
           </div>
         )}
 
-        {prog?.videoUrl && (
+                {!isOffline && prog?.videoUrl && (
   <div style={{ marginTop: 14 }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
       <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>Training Video:</p>
@@ -741,7 +781,7 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
             Embedded via the browser's native PDF viewer inside an
             <iframe>. "Mark as Read" only unlocks after onLoad fires at
             least once (i.e. they've actually opened the document). */}
-        {prog?.pdfUrl && (
+                {!isOffline && prog?.pdfUrl && (
           <div style={{ marginTop: 14 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
               <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>Training Document{prog.pdfName ? `: ${prog.pdfName}` : ""}</p>
@@ -985,7 +1025,13 @@ export default function TrainingRoadmapEmployee() {
   const pending    = records.filter(r => r.status === "pending");
   const inProgress = records.filter(r => r.status === "in_progress");
   const completed  = records.filter(r => r.status === "completed");
-  const overdue    = records.filter(r => r.dueDate && new Date(r.dueDate) < new Date() && r.status !== "completed");
+    const overdue    = records.filter(r => {
+    const d = r.programId?.deliveryMode === "offline" && r.programId?.sessionDate ? r.programId.sessionDate : r.dueDate;
+    if (!d || r.status === "completed") return false;
+    const end = new Date(d);
+    end.setHours(23, 59, 59, 999);
+    return end < new Date();
+  });
   const completionRate = stats?.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
   return (

@@ -21,6 +21,7 @@ const STATUS_CONFIG = {
   retrain:         { label: "Retrain Required", color: "#f97316", bg: "#fff7ed" }, // ✅ NEW — HR sent employee back to re-study + retake the test
   needs_hr_review: { label: "Under HR Review", color: "#dc2626", bg: "#fef2f2" }, // legacy status, kept for old records
   failed_retake:   { label: "Failed (old data)", color: "#dc2626", bg: "#fef2f2" }, // legacy status from the old multi-attempt system, kept so old records don't silently show "Pending"
+absent:          { label: "Absent / Not Attended", color: "#9f1239", bg: "#f3f4f6" },
 };
 
 const LEVEL_CONFIG = {
@@ -277,9 +278,14 @@ function UpdateRecordModal({ record, onClose, onSave }) {
               <select className="form-select form-select-sm" value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))}>
                 {Object.entries(STATUS_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
               </select>
-              {form.status === "retrain" && (
+               {form.status === "retrain" && (
                 <p className="mt-1 mb-0" style={{ fontSize:11, color:"#c2410c" }}>
                   This resets their study checklist and clears the quiz attempt — they'll need to re-study every product and retake the test.
+                </p>
+              )}
+              {form.status === "absent" && (
+                <p className="mt-1 mb-0" style={{ fontSize:11, color:"#9f1239" }}>
+                  Marks this person as not attended for the offline session. They'll be notified and can be re-assigned or rescheduled.
                 </p>
               )}
             </div>
@@ -553,6 +559,11 @@ function CreateProgramModal({ onClose, onSave }) {
   const [saving, setSaving]            = useState(false);
   const [error, setError]              = useState("");
 
+   const [deliveryMode, setDeliveryMode] = useState("online");
+  const [sessionDate, setSessionDate]   = useState("");
+  const [sessionTime, setSessionTime]   = useState("");
+  const [venue, setVenue]               = useState("");
+
   // ── Certification (optional toggle) ──
   const [hasCertification, setHasCertification] = useState(false);
   const [certification, setCertification]       = useState("");
@@ -601,15 +612,23 @@ function CreateProgramModal({ onClose, onSave }) {
     fd.append("certification", hasCertification ? certification.trim() : "");
     fd.append("conductedBy", conductedBy);
 
-    const modules = modulesText.split(",").map(m => m.trim()).filter(Boolean);
+        const modules = modulesText.split(",").map(m => m.trim()).filter(Boolean);
     fd.append("modules", JSON.stringify(modules));
 
-    if (videoMode === "youtube" && youtubeUrl.trim()) {
-      fd.append("videoUrl", youtubeUrl.trim());
-    } else if (videoMode === "upload" && videoFile) {
-      fd.append("video", videoFile);
+    fd.append("deliveryMode", deliveryMode);
+
+    if (deliveryMode === "offline") {
+      if (sessionDate) fd.append("sessionDate", sessionDate);
+      fd.append("sessionTime", sessionTime.trim());
+      fd.append("venue", venue.trim());
+    } else {
+      if (videoMode === "youtube" && youtubeUrl.trim()) {
+        fd.append("videoUrl", youtubeUrl.trim());
+      } else if (videoMode === "upload" && videoFile) {
+        fd.append("video", videoFile);
+      }
+      if (pdfFile) fd.append("pdf", pdfFile);
     }
-    if (pdfFile) fd.append("pdf", pdfFile); // ✅ NEW
 
     try {
       await onSave(fd);
@@ -645,6 +664,18 @@ function CreateProgramModal({ onClose, onSave }) {
                   onChange={e => setTitle(e.target.value)}
                   placeholder="e.g. Excel Training"
                 />
+              </div>
+
+                <div className="col-12">
+                <label style={labelStyle}>Delivery Mode</label>
+                <div className="d-flex gap-2">
+                  <button type="button" className={`btn btn-sm ${deliveryMode === "online" ? "btn-primary" : "btn-light"}`} style={{ fontSize: 12 }} onClick={() => setDeliveryMode("online")}>
+                    Online (Video / PDF)
+                  </button>
+                  <button type="button" className={`btn btn-sm ${deliveryMode === "offline" ? "btn-primary" : "btn-light"}`} style={{ fontSize: 12 }} onClick={() => setDeliveryMode("offline")}>
+                    Offline (In-Person Session)
+                  </button>
+                </div>
               </div>
 
               {/* ── Searchable Department Dropdown ── */}
@@ -753,57 +784,55 @@ function CreateProgramModal({ onClose, onSave }) {
                 />
               </div>
 
-              {/* ── Video source ── */}
-              <div className="col-12">
-                <label style={labelStyle}>Training Video</label>
-                <div className="d-flex gap-2 mb-2">
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${videoMode === "youtube" ? "btn-primary" : "btn-light"}`}
-                    style={{ fontSize: 12 }}
-                    onClick={() => setVideoMode("youtube")}
-                  >
-                    YouTube Link
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${videoMode === "upload" ? "btn-primary" : "btn-light"}`}
-                    style={{ fontSize: 12 }}
-                    onClick={() => setVideoMode("upload")}
-                  >
-                    Upload Video File
-                  </button>
-                </div>
+                           {deliveryMode === "online" && (
+                <>
+                  <div className="col-12">
+                    <label style={labelStyle}>Training Video</label>
+                    <div className="d-flex gap-2 mb-2">
+                      <button type="button" className={`btn btn-sm ${videoMode === "youtube" ? "btn-primary" : "btn-light"}`} style={{ fontSize: 12 }} onClick={() => setVideoMode("youtube")}>
+                        YouTube Link
+                      </button>
+                      <button type="button" className={`btn btn-sm ${videoMode === "upload" ? "btn-primary" : "btn-light"}`} style={{ fontSize: 12 }} onClick={() => setVideoMode("upload")}>
+                        Upload Video File
+                      </button>
+                    </div>
+                    {videoMode === "youtube" ? (
+                      <input type="text" className="form-control form-control-sm" value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." />
+                    ) : (
+                      <input type="file" accept="video/*" className="form-control form-control-sm" onChange={e => setVideoFile(e.target.files[0] || null)} />
+                    )}
+                  </div>
 
-                {videoMode === "youtube" ? (
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    value={youtubeUrl}
-                    onChange={e => setYoutubeUrl(e.target.value)}
-                    placeholder="https://www.youtube.com/watch?v=..."
-                  />
-                ) : (
-                  <input
-                    type="file"
-                    accept="video/*"
-                    className="form-control form-control-sm"
-                    onChange={e => setVideoFile(e.target.files[0] || null)}
-                  />
-                )}
-              </div>
+                  <div className="col-12">
+                    <label style={labelStyle}>Training PDF (optional)</label>
+                    <input type="file" accept="application/pdf" className="form-control form-control-sm" onChange={e => setPdfFile(e.target.files[0] || null)} />
+                    {pdfFile && <p className="text-muted mb-0 mt-1" style={{ fontSize: 11 }}>{pdfFile.name}</p>}
+                  </div>
+                </>
+              )}
 
-              {/* ── ✅ NEW — PDF training material (optional, independent of video) ── */}
-              <div className="col-12">
-                <label style={labelStyle}>Training PDF (optional)</label>
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  className="form-control form-control-sm"
-                  onChange={e => setPdfFile(e.target.files[0] || null)}
-                />
-                {pdfFile && <p className="text-muted mb-0 mt-1" style={{ fontSize: 11 }}>{pdfFile.name}</p>}
-              </div>
+              {deliveryMode === "offline" && (
+                <>
+                  <div className="col-md-6">
+                    <label style={labelStyle}>Session Date</label>
+                    <input type="date" className="form-control form-control-sm" value={sessionDate} onChange={e => setSessionDate(e.target.value)} />
+                  </div>
+                  <div className="col-md-6">
+  <label style={labelStyle}>Session Time</label>
+  <input type="text" className="form-control form-control-sm" value={sessionTime}
+    onChange={e => setSessionTime(e.target.value)} placeholder="e.g. 10:00 AM - 1:00 PM" />
+</div>
+                  <div className="col-md-6">
+                    <label style={labelStyle}>Venue</label>
+                    <input type="text" className="form-control form-control-sm" value={venue} onChange={e => setVenue(e.target.value)} placeholder="e.g. HO Training Hall, 2nd Floor" />
+                  </div>
+                  <div className="col-12">
+                    <p className="mb-0" style={{ fontSize: 11.5, color: "#9ca3af" }}>
+                      No video/PDF needed for offline sessions. After the session is conducted, come back and mark attendance via the "Update" button in the Records tab.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -905,6 +934,22 @@ export default function TrainingRoadmapHR() {
       fetchAll();
     } catch(e) { showMsg(e?.response?.data?.message||"Failed","error"); }
   };
+
+  // ✅ NEW — "Finish Training" bulk action. Program-ku assign panna
+// (completed/waived illatha) ella employees-um "completed" ah maarum.
+const [finishingProgId, setFinishingProgId] = useState(null);
+const handleMarkAllComplete = async (program) => {
+  const progRecords = records.filter(r => r.programId?._id === program._id && !["completed","waived"].includes(r.status));
+  if (!progRecords.length) { showMsg("Everyone assigned to this program is already completed.", "error"); return; }
+  if (!window.confirm(`Mark all ${progRecords.length} assigned employee${progRecords.length>1?"s":""} as completed for "${program.title}"?\n\nIf anyone was actually absent, you can fix their record individually afterwards from the Records tab.`)) return;
+  setFinishingProgId(program._id);
+  try {
+    const res = await axios.put(`${API_BASE}/api/training/programs/${program._id}/mark-all-complete`);
+    showMsg(res.data.message || "Marked complete!");
+    fetchAll();
+  } catch(e) { showMsg(e?.response?.data?.message || "Failed", "error"); }
+  finally { setFinishingProgId(null); }
+};
 
   const handleUpdate = async (id, data) => {
     try {
@@ -1117,7 +1162,13 @@ export default function TrainingRoadmapHR() {
 
                         <div className="d-flex flex-wrap gap-2 mb-3" style={{ fontSize: 11, color: "#6b7280" }}>
                           {p.duration && <span className="d-flex align-items-center gap-1"><Clock size={11} />{p.duration}</span>}
-                          {p.conductedBy && <span className="d-flex align-items-center gap-1"><UserCheck size={11} />{p.conductedBy}</span>}
+                                                    {p.conductedBy && <span className="d-flex align-items-center gap-1"><UserCheck size={11} />{p.conductedBy}</span>}
+                          {p.deliveryMode === "offline" && (
+                            <span className="d-flex align-items-center gap-1" style={{ color:"#f97316", fontWeight:600 }}>
+                              <Calendar size={11} />
+                              {p.sessionDate ? new Date(p.sessionDate).toLocaleDateString("en-IN") : "Offline"}{p.sessionTime ? `, ${p.sessionTime}` : ""}{p.venue ? ` · ${p.venue}` : ""}
+                            </span>
+                          )}
                           {p.frequency && p.frequency !== "once" && <span className="d-flex align-items-center gap-1"><RefreshCw size={11} />{p.frequency.replace("_"," ")}</span>}
                         </div>
 
@@ -1134,10 +1185,22 @@ export default function TrainingRoadmapHR() {
                             <span style={{ fontSize: 11, color: "#6b7280" }}>{assignedCount} assigned · {completedCount} completed</span>
                             <span style={{ fontSize: 11, fontWeight: 700, color: completionPct >= 80 ? "#10b981" : "#3b82f6" }}>{completionPct}%</span>
                           </div>
-                          <div style={{ height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden" }}>
+                     <div style={{ height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden" }}>
                             <div style={{ height: "100%", width: `${completionPct}%`, background: completionPct >= 80 ? "#10b981" : "#3b82f6", transition: "width .3s" }} />
                           </div>
                         </div>
+
+                        {p.deliveryMode === "offline" && assignedCount > completedCount && (
+                          <button
+                            className="btn btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-1"
+                            style={{ background: "#ecfdf5", color: "#10b981", border: "1px solid #a7f3d0", fontSize: 12, fontWeight: 700, borderRadius: 8 }}
+                            disabled={finishingProgId === p._id}
+                            onClick={() => handleMarkAllComplete(p)}
+                          >
+                            {finishingProgId === p._id ? <span className="spinner-border spinner-border-sm" style={{ width:12, height:12 }} /> : <CheckCircle2 size={12} />}
+                            {finishingProgId === p._id ? "Finishing…" : "Finish Training — Mark All Complete"}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1200,7 +1263,11 @@ export default function TrainingRoadmapHR() {
                       const st  = STATUS_CONFIG[r.status] || STATUS_CONFIG.pending;
                       const typ = TYPE_CONFIG[r.programId?.type] || TYPE_CONFIG.job_role;
                       const lvl = LEVEL_CONFIG[r.programId?.level];
-                      const isOverdue = r.dueDate && new Date(r.dueDate) < new Date() && r.status !== "completed";
+                    const isOverdue = r.dueDate && (() => {
+  const end = new Date(r.dueDate);
+  end.setHours(23, 59, 59, 999);
+  return end < new Date();
+})() && r.status !== "completed";
                       const isDeleting = deletingId === r._id; // ✅ NEW
                       return (
                         <tr key={r._id}>
