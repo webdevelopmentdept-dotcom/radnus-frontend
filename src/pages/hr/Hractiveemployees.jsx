@@ -10,28 +10,28 @@ const TEXT_DOCS = ["CGPA", "PF Number", "ESI Number", "PG CGPA", "Reference Numb
 
 // ✅ All doc types the employee upload page saves
 const ALL_EMPLOYEE_DOC_TYPES = [
-  { type: "Aadhaar",            required: true,  category: "Identity & Professional" },
-  { type: "PAN",                required: true,  category: "Identity & Professional" },
-  { type: "Passport Photo",     required: true,  category: "Identity & Professional" },
-  { type: "Ration Card Front",  required: false, category: "Identity Proof" },
-  { type: "Ration Card Back",   required: false, category: "Identity Proof" },
-  { type: "Gas Book",           required: false, category: "Identity Proof" },
+  { type: "Aadhaar", required: true, category: "Identity & Professional" },
+  { type: "PAN", required: true, category: "Identity & Professional" },
+  { type: "Passport Photo", required: true, category: "Identity & Professional" },
+  { type: "Ration Card Front", required: false, category: "Identity Proof" },
+  { type: "Ration Card Back", required: false, category: "Identity Proof" },
+  { type: "Gas Book", required: false, category: "Identity Proof" },
   { type: "Reference Number 1", required: false, category: "Identity Proof" },
   { type: "Reference Number 2", required: false, category: "Identity Proof" },
-  { type: "Resume",             required: true,  category: "Identity & Professional" },
-  { type: "Bank Passbook",      required: true,  category: "Bank" },
-  { type: "Cancelled Cheque",   required: false, category: "Bank" },
-  { type: "Bank Statement",     required: false, category: "Bank" },
-  { type: "10th Marksheet",     required: true,  category: "Education" },
-  { type: "12th Marksheet",     required: true,  category: "Education" },
-  { type: "UG Consolidated",    required: false, category: "Education" },
-  { type: "CGPA",               required: false, category: "Education" },
-  { type: "PG Consolidated",    required: false, category: "Education" },
-  { type: "PG CGPA",            required: false, category: "Education" },
-  { type: "PF Number",          required: false, category: "PF & ESI" },
-  { type: "ESI Number",         required: false, category: "PF & ESI" },
-  { type: "Reference 1",        required: false, category: "References" },
-  { type: "Reference 2",        required: false, category: "References" },
+  { type: "Resume", required: true, category: "Identity & Professional" },
+  { type: "Bank Passbook", required: true, category: "Bank" },
+  { type: "Cancelled Cheque", required: false, category: "Bank" },
+  { type: "Bank Statement", required: false, category: "Bank" },
+  { type: "10th Marksheet", required: true, category: "Education" },
+  { type: "12th Marksheet", required: true, category: "Education" },
+  { type: "UG Consolidated", required: false, category: "Education" },
+  { type: "CGPA", required: false, category: "Education" },
+  { type: "PG Consolidated", required: false, category: "Education" },
+  { type: "PG CGPA", required: false, category: "Education" },
+  { type: "PF Number", required: false, category: "PF & ESI" },
+  { type: "ESI Number", required: false, category: "PF & ESI" },
+  { type: "Reference 1", required: false, category: "References" },
+  { type: "Reference 2", required: false, category: "References" },
 ];
 
 const HR_DOC_TYPES = [
@@ -46,96 +46,96 @@ const HR_DOC_TYPES = [
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const TrashIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6"/>
-    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-    <path d="M10 11v6M14 11v6"/>
-    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <path d="M10 11v6M14 11v6" />
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
   </svg>
 );
 const SearchIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)" }}>
-    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}>
+    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
 );
 const UsersIcon = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-    <circle cx="9" cy="7" r="4"/>
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
   </svg>
 );
 const AlertIcon = () => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
   </svg>
 );
 const EyeIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-    <circle cx="12" cy="12" r="3"/>
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
   </svg>
 );
 const DownloadIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-    <polyline points="7 10 12 15 17 10"/>
-    <line x1="12" y1="15" x2="12" y2="3"/>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
   </svg>
 );
 const UploadIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="16 16 12 12 8 16"/>
-    <line x1="12" y1="12" x2="12" y2="21"/>
-    <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+    <polyline points="16 16 12 12 8 16" />
+    <line x1="12" y1="12" x2="12" y2="21" />
+    <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
   </svg>
 );
 const ExternalLinkIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-    <polyline points="15 3 21 3 21 9"/>
-    <line x1="10" y1="14" x2="21" y2="3"/>
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    <polyline points="15 3 21 3 21 9" />
+    <line x1="10" y1="14" x2="21" y2="3" />
   </svg>
 );
 const RefreshIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 4 23 10 17 10"/>
-    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+    <polyline points="23 4 23 10 17 10" />
+    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
   </svg>
 );
 const CloseIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 const FileIcon = () => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-    <polyline points="14 2 14 8 20 8"/>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
   </svg>
 );
 const ShieldIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
 const UserIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-    <circle cx="12" cy="7" r="4"/>
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
   </svg>
 );
 const EditIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
 );
 const SaveIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-    <polyline points="17 21 17 13 7 13 7 21"/>
-    <polyline points="7 3 7 8 15 8"/>
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+    <polyline points="17 21 17 13 7 13 7 21" />
+    <polyline points="7 3 7 8 15 8" />
   </svg>
 );
 
@@ -147,7 +147,14 @@ const getFileLabel = (url) => {
   return "Document";
 };
 const isImage = (url) => /\.(jpg|jpeg|png|gif|webp)/i.test(url || "");
-const isPDF   = (url) => /\.pdf/i.test(url || "") || (url || "").toLowerCase().includes("pdf");
+const isPDF = (url) => /\.pdf/i.test(url || "") || (url || "").toLowerCase().includes("pdf");
+
+const getLastMonthPeriod = () => {
+  const d = new Date();
+  d.setDate(1); // month length edge-case (31→30 etc.) tholaikaama irukka
+  d.setMonth(d.getMonth() - 1);
+  return d.toLocaleString("en-US", { month: "long", year: "numeric" }); // "August 2026"
+};
 
 const downloadFile = async (url, filename) => {
   try {
@@ -168,20 +175,20 @@ const downloadFile = async (url, filename) => {
 
 // ─── Preview Modal ────────────────────────────────────────────────────────────
 const PreviewModal = ({ url, name, onClose }) => (
-  <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-    <div onClick={e => e.stopPropagation()} style={{ position:"relative", maxWidth:860, width:"100%", maxHeight:"90vh" }}>
-      <button onClick={onClose} style={{ position:"absolute", top:-40, right:0, background:"rgba(255,255,255,0.15)", border:"none", borderRadius:8, padding:"6px 10px", cursor:"pointer", color:"#fff", display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:600 }}>
+  <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+    <div onClick={e => e.stopPropagation()} style={{ position: "relative", maxWidth: 860, width: "100%", maxHeight: "90vh" }}>
+      <button onClick={onClose} style={{ position: "absolute", top: -40, right: 0, background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8, padding: "6px 10px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600 }}>
         <CloseIcon /> Close
       </button>
       {isImage(url) ? (
-        <img src={url} alt={name} style={{ width:"100%", maxHeight:"85vh", objectFit:"contain", borderRadius:12 }} />
+        <img src={url} alt={name} style={{ width: "100%", maxHeight: "85vh", objectFit: "contain", borderRadius: 12 }} />
       ) : isPDF(url) ? (
-        <iframe src={url} title={name} style={{ width:"100%", height:"85vh", borderRadius:12, border:"none" }} />
+        <iframe src={url} title={name} style={{ width: "100%", height: "85vh", borderRadius: 12, border: "none" }} />
       ) : (
-        <div style={{ background:"#fff", borderRadius:12, padding:40, textAlign:"center" }}>
-          <div style={{ marginBottom:16 }}><FileIcon /></div>
-          <p style={{ fontSize:14, color:"#374151", marginBottom:16 }}>Preview not available for this file type.</p>
-          <a href={url} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:6, background:"#2563eb", color:"#fff", padding:"9px 18px", borderRadius:8, fontSize:13, fontWeight:600, textDecoration:"none" }}>
+        <div style={{ background: "#fff", borderRadius: 12, padding: 40, textAlign: "center" }}>
+          <div style={{ marginBottom: 16 }}><FileIcon /></div>
+          <p style={{ fontSize: 14, color: "#374151", marginBottom: 16 }}>Preview not available for this file type.</p>
+          <a href={url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#2563eb", color: "#fff", padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
             <ExternalLinkIcon /> Open in New Tab
           </a>
         </div>
@@ -193,19 +200,19 @@ const PreviewModal = ({ url, name, onClose }) => (
 // ─── Doc Row Card ─────────────────────────────────────────────────────────────
 const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, employeeId, onRefresh, isHrDoc }) => {
   const fileRef = useRef(null);
-  const [uploading,   setUploading]   = useState(false);
-  const [deleting,    setDeleting]    = useState(false);
-  const [preview,     setPreview]     = useState(null);
-  const [confirmDel,  setConfirmDel]  = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [confirmDel, setConfirmDel] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [fileUrl,     setFileUrl]     = useState(initialFileUrl); // ✅ FIX 1: local state
+  const [fileUrl, setFileUrl] = useState(initialFileUrl); // ✅ FIX 1: local state
 
   // ✅ FIX 2: parent refresh ஆனா புதுசா வந்த URL sync ஆகும்
   useEffect(() => {
     setFileUrl(initialFileUrl);
   }, [initialFileUrl]);
 
-  const hasFile   = !!fileUrl;
+  const hasFile = !!fileUrl;
   const isTextDoc = TEXT_DOCS.includes(docType);
 
   const handleReplace = async (file) => {
@@ -215,13 +222,13 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
       const formData = new FormData();
       formData.append("file", file);
       formData.append("employeeId", employeeId);
-       formData.append("docType", docType);  
+      formData.append("docType", docType);
       formData.append("isHrUpload", isHrDoc ? "true" : "false");
       let res;
       if (isHrDoc) {
-        res = await fetch(`${API_BASE}/api/hr/activation/upload-doc`, { method:"POST", body:formData });
+        res = await fetch(`${API_BASE}/api/hr/activation/upload-doc`, { method: "POST", body: formData });
       } else {
-        res = await fetch(`${API_BASE}/api/employee/upload-doc`, { method:"POST", body:formData });
+        res = await fetch(`${API_BASE}/api/employee/upload-doc`, { method: "POST", body: formData });
       }
       const data = await res.json();
       // ✅ FIX 3: backend response-ல் new URL வந்தா உடனே update பண்ணு
@@ -239,9 +246,9 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
     setDeleting(true);
     try {
       await fetch(`${API_BASE}/api/employee/delete-doc`, {
-        method:"DELETE",
-        headers:{ "Content-Type":"application/json" },
-        body:JSON.stringify({ employeeId, docType }),
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employeeId, docType }),
       });
       onRefresh();
     } catch (err) {
@@ -253,39 +260,39 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
   };
 
   const handleDownload = async () => {
-  if (!fileUrl) return;
-  setDownloading(true);
-  try {
-    let url = fileUrl;
-    if (docId) {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/api/employee/view-doc/${docId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.url) url = data.url;
+    if (!fileUrl) return;
+    setDownloading(true);
+    try {
+      let url = fileUrl;
+      if (docId) {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE}/api/employee/view-doc/${docId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.url) url = data.url;
+      }
+      await downloadFile(url, label || docType);
+    } finally {
+      setDownloading(false);
     }
-    await downloadFile(url, label || docType);
-  } finally {
-    setDownloading(false);
-  }
-};
+  };
 
   return (
     <>
       {preview && !isTextDoc && <PreviewModal url={preview} name={label || docType} onClose={() => setPreview(null)} />}
 
       {confirmDel && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:1500, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-          <div style={{ background:"#fff", borderRadius:14, padding:"24px 20px", maxWidth:340, width:"100%", boxShadow:"0 20px 60px rgba(0,0,0,0.2)" }}>
-            <div style={{ display:"flex", justifyContent:"center", marginBottom:12 }}><AlertIcon /></div>
-            <h4 style={{ textAlign:"center", fontWeight:800, color:"#1a1a2e", margin:"0 0 8px", fontSize:15 }}>Delete Document?</h4>
-            <p style={{ textAlign:"center", color:"#6b7280", fontSize:13, margin:"0 0 20px" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1500, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 14, padding: "24px 20px", maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><AlertIcon /></div>
+            <h4 style={{ textAlign: "center", fontWeight: 800, color: "#1a1a2e", margin: "0 0 8px", fontSize: 15 }}>Delete Document?</h4>
+            <p style={{ textAlign: "center", color: "#6b7280", fontSize: 13, margin: "0 0 20px" }}>
               This will permanently remove <strong>{label || docType}</strong>.
             </p>
-            <div style={{ display:"flex", gap:10 }}>
-              <button onClick={() => setConfirmDel(false)} style={{ flex:1, padding:"10px 0", border:"1px solid #e5e7eb", borderRadius:8, background:"#fff", color:"#374151", fontWeight:600, fontSize:13, cursor:"pointer" }}>Cancel</button>
-              <button onClick={handleDelete} disabled={deleting} style={{ flex:1, padding:"10px 0", border:"none", borderRadius:8, background:deleting?"#fca5a5":"#dc2626", color:"#fff", fontWeight:700, fontSize:13, cursor:deleting?"not-allowed":"pointer" }}>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setConfirmDel(false)} style={{ flex: 1, padding: "10px 0", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Cancel</button>
+              <button onClick={handleDelete} disabled={deleting} style={{ flex: 1, padding: "10px 0", border: "none", borderRadius: 8, background: deleting ? "#fca5a5" : "#dc2626", color: "#fff", fontWeight: 700, fontSize: 13, cursor: deleting ? "not-allowed" : "pointer" }}>
                 {deleting ? "Deleting..." : "Yes, Delete"}
               </button>
             </div>
@@ -293,87 +300,87 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
         </div>
       )}
 
-      <input type="file" ref={fileRef} accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" style={{ display:"none" }} onChange={e => handleReplace(e.target.files[0])} />
+      <input type="file" ref={fileRef} accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" style={{ display: "none" }} onChange={e => handleReplace(e.target.files[0])} />
 
       <div style={{
-        display:"flex", alignItems:"center", gap:12,
-        padding:"12px 14px",
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "12px 14px",
         background: hasFile ? "#f0fdf4" : "#fafafa",
-        border:`1.5px solid ${hasFile ? "#86efac" : "#e5e7eb"}`,
-        borderRadius:10, transition:"all 0.15s",
+        border: `1.5px solid ${hasFile ? "#86efac" : "#e5e7eb"}`,
+        borderRadius: 10, transition: "all 0.15s",
       }}>
-        <div style={{ width:36, height:36, borderRadius:8, flexShrink:0, background:hasFile?"#dcfce7":"#eff6ff", display:"flex", alignItems:"center", justifyContent:"center" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={hasFile?"#16a34a":"#2563eb"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
+        <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, background: hasFile ? "#dcfce7" : "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={hasFile ? "#16a34a" : "#2563eb"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
           </svg>
         </div>
 
-        <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
-            <span style={{ fontSize:12, fontWeight:700, color:"#1a1a2e" }}>{label || docType}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e" }}>{label || docType}</span>
             {required !== undefined && (
-              <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:99, background:required?"#fee2e2":"#f3f4f6", color:required?"#dc2626":"#6b7280" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 99, background: required ? "#fee2e2" : "#f3f4f6", color: required ? "#dc2626" : "#6b7280" }}>
                 {required ? "Required" : "Optional"}
               </span>
             )}
-            {isHrDoc && <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:99, background:"#eff6ff", color:"#2563eb" }}>HR</span>}
+            {isHrDoc && <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 99, background: "#eff6ff", color: "#2563eb" }}>HR</span>}
           </div>
 
           {isTextDoc && hasFile ? (
-            <div style={{ marginTop:4, display:"flex", alignItems:"center", gap:6 }}>
-              <span style={{ background:"#f0fdf4", border:"1px solid #86efac", borderRadius:6, padding:"2px 10px", fontSize:13, fontWeight:700, color:"#15803d" }}>{fileUrl}</span>
-              <span style={{ fontSize:11, color:"#16a34a" }}>✓ Saved</span>
+            <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: "2px 10px", fontSize: 13, fontWeight: 700, color: "#15803d" }}>{fileUrl}</span>
+              <span style={{ fontSize: 11, color: "#16a34a" }}>✓ Saved</span>
             </div>
           ) : (
-            <div style={{ fontSize:11, color:hasFile?"#16a34a":"#9ca3af", marginTop:2, display:"flex", alignItems:"center", gap:4 }}>
+            <div style={{ fontSize: 11, color: hasFile ? "#16a34a" : "#9ca3af", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
               {hasFile ? (
-                <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Uploaded · {getFileLabel(fileUrl)}</>
+                <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg> Uploaded · {getFileLabel(fileUrl)}</>
               ) : "Not uploaded yet"}
             </div>
           )}
         </div>
 
-        <div style={{ display:"flex", gap:5, flexShrink:0, flexWrap:"wrap" }}>
+        <div style={{ display: "flex", gap: 5, flexShrink: 0, flexWrap: "wrap" }}>
           {hasFile ? (
             <>
               {!isTextDoc && (
                 <button onClick={async () => {
-  if (!docId) { setPreview(fileUrl); return; } // fallback old docs
-  const newTab = window.open('', '_blank');
-  newTab.document.write('<p style="font-family:sans-serif;padding:20px;">Loading...</p>');
-  const token = localStorage.getItem("token");
-  const res = await fetch(`${API_BASE}/api/employee/view-doc/${docId}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  const data = await res.json();
-  if (data.url) newTab.location.href = data.url;
-}} title="Preview" style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 9px", border:"1px solid #e5e7eb", borderRadius:7, background:"#fff", color:"#374151", fontSize:11, fontWeight:600, cursor:"pointer" }}>
+                  if (!docId) { setPreview(fileUrl); return; } // fallback old docs
+                  const newTab = window.open('', '_blank');
+                  newTab.document.write('<p style="font-family:sans-serif;padding:20px;">Loading...</p>');
+                  const token = localStorage.getItem("token");
+                  const res = await fetch(`${API_BASE}/api/employee/view-doc/${docId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+                  const data = await res.json();
+                  if (data.url) newTab.location.href = data.url;
+                }} title="Preview" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "1px solid #e5e7eb", borderRadius: 7, background: "#fff", color: "#374151", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                   <EyeIcon /> View
                 </button>
               )}
               {!isTextDoc && (
-                <button onClick={handleDownload} disabled={downloading} title="Download" style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 9px", border:"none", borderRadius:7, background:"#2563eb", color:"#fff", fontSize:11, fontWeight:600, cursor:"pointer" }}>
+                <button onClick={handleDownload} disabled={downloading} title="Download" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "none", borderRadius: 7, background: "#2563eb", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                   <DownloadIcon /> {downloading ? "..." : "Download"}
                 </button>
               )}
               {isHrDoc && !isTextDoc && (
-                <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Replace" style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 9px", border:"1px solid #d97706", borderRadius:7, background:"#fffbeb", color:"#d97706", fontSize:11, fontWeight:600, cursor:"pointer" }}>
+                <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Replace" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "1px solid #d97706", borderRadius: 7, background: "#fffbeb", color: "#d97706", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                   <RefreshIcon /> {uploading ? "..." : "Replace"}
                 </button>
               )}
               {!isHrDoc && !isTextDoc && (
-                <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Replace" style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 9px", border:"1px solid #d97706", borderRadius:7, background:"#fffbeb", color:"#d97706", fontSize:11, fontWeight:600, cursor:"pointer" }}>
+                <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Replace" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "1px solid #d97706", borderRadius: 7, background: "#fffbeb", color: "#d97706", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                   <RefreshIcon /> {uploading ? "..." : "Replace"}
                 </button>
               )}
-              <button onClick={() => setConfirmDel(true)} title="Delete" style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 9px", border:"1px solid #fecaca", borderRadius:7, background:"#fef2f2", color:"#dc2626", fontSize:11, fontWeight:600, cursor:"pointer" }}>
+              <button onClick={() => setConfirmDel(true)} title="Delete" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "1px solid #fecaca", borderRadius: 7, background: "#fef2f2", color: "#dc2626", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                 <TrashIcon />
               </button>
             </>
           ) : (
             !isTextDoc && (
-              <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{ display:"flex", alignItems:"center", gap:4, padding:"5px 9px", border:"none", borderRadius:7, background:"#2563eb", color:"#fff", fontSize:11, fontWeight:600, cursor:"pointer" }}>
+              <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "none", borderRadius: 7, background: "#2563eb", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                 <UploadIcon /> {uploading ? "Uploading..." : "Upload"}
               </button>
             )
@@ -386,21 +393,21 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
 
 
 // ─── Edit Info Tab — shared styles & field components (module-level, NOT re-created on every render) ──
-const editInfoInputStyle  = { width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:8, fontSize:13, outline:"none", background:"#fff", boxSizing:"border-box", color:"#1a1a2e", transition:"border-color 0.15s" };
-const editInfoSelectStyle = { ...editInfoInputStyle, cursor:"pointer", appearance:"auto" };
-const editInfoLabelStyle  = { fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4, display:"block" };
+const editInfoInputStyle = { width: "100%", padding: "9px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, outline: "none", background: "#fff", boxSizing: "border-box", color: "#1a1a2e", transition: "border-color 0.15s" };
+const editInfoSelectStyle = { ...editInfoInputStyle, cursor: "pointer", appearance: "auto" };
+const editInfoLabelStyle = { fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4, display: "block" };
 
 const editInfoSectionTitle = (title) => (
-  <p style={{ margin:"0 0 10px", fontSize:12, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", paddingBottom:6, borderBottom:"1.5px solid #f0f0f0" }}>{title}</p>
+  <p style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", paddingBottom: 6, borderBottom: "1.5px solid #f0f0f0" }}>{title}</p>
 );
 
-const EditInfoField = ({ label, value, onChange, type="text", placeholder="" }) => (
+const EditInfoField = ({ label, value, onChange, type = "text", placeholder = "" }) => (
   <div>
     <label style={editInfoLabelStyle}>{label}</label>
     <input type={type} value={value} placeholder={placeholder}
       onChange={e => onChange(e.target.value)}
-      onFocus={e => e.target.style.borderColor="#2563eb"}
-      onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+      onFocus={e => e.target.style.borderColor = "#2563eb"}
+      onBlur={e => e.target.style.borderColor = "#e5e7eb"}
       style={editInfoInputStyle} />
   </div>
 );
@@ -408,13 +415,13 @@ const EditInfoField = ({ label, value, onChange, type="text", placeholder="" }) 
 const EditInfoAmountField = ({ label, value, onChange }) => (
   <div>
     <label style={editInfoLabelStyle}>{label}</label>
-    <div style={{ position:"relative" }}>
-      <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"#9ca3af", fontWeight:600 }}>₹</span>
+    <div style={{ position: "relative" }}>
+      <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#9ca3af", fontWeight: 600 }}>₹</span>
       <input type="number" value={value} placeholder="0"
         onChange={e => onChange(e.target.value)}
-        onFocus={e => e.target.style.borderColor="#2563eb"}
-        onBlur={e  => e.target.style.borderColor="#e5e7eb"}
-        style={{ ...editInfoInputStyle, paddingLeft:24 }} />
+        onFocus={e => e.target.style.borderColor = "#2563eb"}
+        onBlur={e => e.target.style.borderColor = "#e5e7eb"}
+        style={{ ...editInfoInputStyle, paddingLeft: 24 }} />
     </div>
   </div>
 );
@@ -424,48 +431,48 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
   const emp = activation?.employment || {};
 
   const [form, setForm] = useState({
-    name:            employee.name            || "",
-    email:           employee.email           || "",
-    mobile:          employee.mobile          || "",
-    employeeId:      employee.employeeId      || "",
-    department:      employee.department      || emp.department    || "",
-    designation:     employee.designation     || emp.designation   || "",
-    employment_type: emp.employment_type      || employee.employment_type || "Full-time",
+    name: employee.name || "",
+    email: employee.email || "",
+    mobile: employee.mobile || "",
+    employeeId: employee.employeeId || "",
+    department: employee.department || emp.department || "",
+    designation: employee.designation || emp.designation || "",
+    employment_type: emp.employment_type || employee.employment_type || "Full-time",
     date_of_joining: emp.date_of_joining
       ? new Date(emp.date_of_joining).toISOString().split("T")[0]
       : employee.date_of_joining
         ? new Date(employee.date_of_joining).toISOString().split("T")[0]
         : "",
-    essl_id:         employee.essl_id         || emp.essl_id || "",
-    ctc:                  activation?.salary?.ctc                  || "",
-    basic:                activation?.salary?.basic                || "",
-    hra:                  activation?.salary?.hra                  || "",
-    special_allowance:    activation?.salary?.special_allowance    || "",
+    essl_id: employee.essl_id || emp.essl_id || "",
+    ctc: activation?.salary?.ctc || "",
+    basic: activation?.salary?.basic || "",
+    hra: activation?.salary?.hra || "",
+    special_allowance: activation?.salary?.special_allowance || "",
     conveyance_allowance: activation?.salary?.conveyance_allowance || "",
-    gross_salary:         activation?.salary?.gross_salary         || "",
-    net_salary:           activation?.salary?.net_salary           || "",
-    professional_tax:     activation?.salary?.professional_tax     || "",
-    pf_applicable:        activation?.salary?.pf_applicable        || false,
-    esi_applicable:       activation?.salary?.esi_applicable       || false,
-    tds_applicable:       activation?.salary?.tds_applicable       || false,
+    gross_salary: activation?.salary?.gross_salary || "",
+    net_salary: activation?.salary?.net_salary || "",
+    professional_tax: activation?.salary?.professional_tax || "",
+    pf_applicable: activation?.salary?.pf_applicable || false,
+    esi_applicable: activation?.salary?.esi_applicable || false,
+    tds_applicable: activation?.salary?.tds_applicable || false,
   });
 
-  const [saving,  setSaving]  = useState(false);
-  const [toast,   setToast]   = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
   const [changed, setChanged] = useState(false);
 
-  const [departments,   setDepartments]   = useState([]);
-  const [designations,  setDesignations]  = useState([]);
-  const [loadingDepts,  setLoadingDepts]  = useState(true);
+  const [departments, setDepartments] = useState([]);
+  const [designations, setDesignations] = useState([]);
+  const [loadingDepts, setLoadingDepts] = useState(true);
 
   useEffect(() => {
     if (activation?.employment) {
       const actEmp = activation.employment;
       setForm(prev => ({
         ...prev,
-        employment_type: actEmp.employment_type  || prev.employment_type,
-        department:      actEmp.department       || prev.department,
-        designation:     actEmp.designation      || prev.designation,
+        employment_type: actEmp.employment_type || prev.employment_type,
+        department: actEmp.department || prev.department,
+        designation: actEmp.designation || prev.designation,
         date_of_joining: actEmp.date_of_joining
           ? new Date(actEmp.date_of_joining).toISOString().split("T")[0]
           : prev.date_of_joining,
@@ -476,17 +483,17 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
       const s = activation.salary;
       setForm(prev => ({
         ...prev,
-        ctc:                  s.ctc                  ?? prev.ctc,
-        basic:                s.basic                ?? prev.basic,
-        hra:                  s.hra                  ?? prev.hra,
-        special_allowance:    s.special_allowance    ?? prev.special_allowance,
+        ctc: s.ctc ?? prev.ctc,
+        basic: s.basic ?? prev.basic,
+        hra: s.hra ?? prev.hra,
+        special_allowance: s.special_allowance ?? prev.special_allowance,
         conveyance_allowance: s.conveyance_allowance ?? prev.conveyance_allowance,
-        gross_salary:         s.gross_salary         ?? prev.gross_salary,
-        net_salary:           s.net_salary           ?? prev.net_salary,
-        professional_tax:     s.professional_tax     ?? prev.professional_tax,
-        pf_applicable:        s.pf_applicable        ?? prev.pf_applicable,
-        esi_applicable:       s.esi_applicable       ?? prev.esi_applicable,
-        tds_applicable:       s.tds_applicable       ?? prev.tds_applicable,
+        gross_salary: s.gross_salary ?? prev.gross_salary,
+        net_salary: s.net_salary ?? prev.net_salary,
+        professional_tax: s.professional_tax ?? prev.professional_tax,
+        pf_applicable: s.pf_applicable ?? prev.pf_applicable,
+        esi_applicable: s.esi_applicable ?? prev.esi_applicable,
+        tds_applicable: s.tds_applicable ?? prev.tds_applicable,
       }));
     }
   }, [activation]);
@@ -499,7 +506,7 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
         const list = data?.data || data || [];
         setDepartments(list);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoadingDepts(false));
   }, []);
 
@@ -531,42 +538,42 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
     setChanged(true);
   };
 
- const gross      = ["basic","hra","special_allowance","conveyance_allowance"].reduce((s,k) => s + (parseFloat(form[k])||0), 0);
-  const deductions = ["professional_tax"].reduce((s,k) => s + (parseFloat(form[k])||0), 0);
-  const net        = gross - deductions;
+  const gross = ["basic", "hra", "special_allowance", "conveyance_allowance"].reduce((s, k) => s + (parseFloat(form[k]) || 0), 0);
+  const deductions = ["professional_tax"].reduce((s, k) => s + (parseFloat(form[k]) || 0), 0);
+  const net = gross - deductions;
 
   // ✅ Preview boxes la, typed Gross/Net Salary field value ah priority kudu; illana auto-sum fallback
   const grossDisplay = parseFloat(form.gross_salary) || gross;
-  const netDisplay   = parseFloat(form.net_salary)   || (grossDisplay - deductions);
+  const netDisplay = parseFloat(form.net_salary) || (grossDisplay - deductions);
 
   const handleSave = async () => {
     setSaving(true);
     try {
       const payload = {
-        name:            form.name,
-        email:           form.email,
-        mobile:          form.mobile,
-        employeeId:      form.employeeId,
-        department:      form.department,
-        designation:     form.designation,
+        name: form.name,
+        email: form.email,
+        mobile: form.mobile,
+        employeeId: form.employeeId,
+        department: form.department,
+        designation: form.designation,
         employment_type: form.employment_type,
         date_of_joining: form.date_of_joining,
-        essl_id:         form.essl_id,
+        essl_id: form.essl_id,
         salary: {
-          ctc:                  parseFloat(form.ctc)                  || 0,
-          basic:                parseFloat(form.basic)                || 0,
-          hra:                  parseFloat(form.hra)                  || 0,
-          special_allowance:    parseFloat(form.special_allowance)    || 0,
+          ctc: parseFloat(form.ctc) || 0,
+          basic: parseFloat(form.basic) || 0,
+          hra: parseFloat(form.hra) || 0,
+          special_allowance: parseFloat(form.special_allowance) || 0,
           conveyance_allowance: parseFloat(form.conveyance_allowance) || 0,
-          gross_salary:         parseFloat(form.gross_salary)         || gross,
-          net_salary:           parseFloat(form.net_salary)           || net,
-          professional_tax:     parseFloat(form.professional_tax)     || 0,
-          pf_applicable:        form.pf_applicable  || false,
-          esi_applicable:       form.esi_applicable || false,
-          tds_applicable:       form.tds_applicable || false,
+          gross_salary: parseFloat(form.gross_salary) || gross,
+          net_salary: parseFloat(form.net_salary) || net,
+          professional_tax: parseFloat(form.professional_tax) || 0,
+          pf_applicable: form.pf_applicable || false,
+          esi_applicable: form.esi_applicable || false,
+          tds_applicable: form.tds_applicable || false,
         },
       };
-      const res  = await fetch(`${API_BASE}/api/hr/activation/update/${employee._id}`, {
+      const res = await fetch(`${API_BASE}/api/hr/activation/update/${employee._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -602,20 +609,20 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
   };
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20, paddingBottom:8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 8 }}>
       {toast && (
-        <div style={{ background:toast.type==="error"?"#fef2f2":"#f0fdf4", border:`1px solid ${toast.type==="error"?"#fecaca":"#86efac"}`, color:toast.type==="error"?"#dc2626":"#16a34a", padding:"10px 14px", borderRadius:8, fontSize:13, fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
-          {toast.type==="error"?"✕":"✓"} {toast.msg}
+        <div style={{ background: toast.type === "error" ? "#fef2f2" : "#f0fdf4", border: `1px solid ${toast.type === "error" ? "#fecaca" : "#86efac"}`, color: toast.type === "error" ? "#dc2626" : "#16a34a", padding: "10px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+          {toast.type === "error" ? "✕" : "✓"} {toast.msg}
         </div>
       )}
 
       {/* Basic Info */}
       <div>
         {editInfoSectionTitle("Basic Information")}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:12 }}>
-          <EditInfoField label="Full Name"   value={form.name}       onChange={v => handleChange("name", v)}       placeholder="Employee name" />
-          <EditInfoField label="Email"       value={form.email}      onChange={v => handleChange("email", v)}      type="email" placeholder="email@company.com" />
-          <EditInfoField label="Mobile"      value={form.mobile}     onChange={v => handleChange("mobile", v)}     type="tel"   placeholder="+91 XXXXX XXXXX" />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+          <EditInfoField label="Full Name" value={form.name} onChange={v => handleChange("name", v)} placeholder="Employee name" />
+          <EditInfoField label="Email" value={form.email} onChange={v => handleChange("email", v)} type="email" placeholder="email@company.com" />
+          <EditInfoField label="Mobile" value={form.mobile} onChange={v => handleChange("mobile", v)} type="tel" placeholder="+91 XXXXX XXXXX" />
           <EditInfoField label="Employee ID" value={form.employeeId} onChange={v => handleChange("employeeId", v)} placeholder="EMP001" />
         </div>
       </div>
@@ -623,18 +630,18 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
       {/* Employment Details */}
       <div>
         {editInfoSectionTitle("Employment Details")}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
 
           <div>
             <label style={editInfoLabelStyle}>
               Department
-              {loadingDepts && <span style={{ marginLeft:5, fontSize:10, color:"#9ca3af" }}>(loading…)</span>}
+              {loadingDepts && <span style={{ marginLeft: 5, fontSize: 10, color: "#9ca3af" }}>(loading…)</span>}
             </label>
             <select
               value={form.department}
               onChange={e => handleChange("department", e.target.value)}
-              onFocus={e => e.target.style.borderColor="#2563eb"}
-              onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+              onFocus={e => e.target.style.borderColor = "#2563eb"}
+              onBlur={e => e.target.style.borderColor = "#e5e7eb"}
               style={editInfoSelectStyle}
             >
               <option value="">Select Department</option>
@@ -649,8 +656,8 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
             <select
               value={form.designation}
               onChange={e => handleChange("designation", e.target.value)}
-              onFocus={e => e.target.style.borderColor="#2563eb"}
-              onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+              onFocus={e => e.target.style.borderColor = "#2563eb"}
+              onBlur={e => e.target.style.borderColor = "#e5e7eb"}
               style={editInfoSelectStyle}
               disabled={!form.department || loadingDepts}
             >
@@ -666,7 +673,7 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
               ))}
             </select>
             {!form.department && (
-              <p style={{ margin:"4px 0 0", fontSize:10, color:"#9ca3af" }}>
+              <p style={{ margin: "4px 0 0", fontSize: 10, color: "#9ca3af" }}>
                 Choose a department to see designations
               </p>
             )}
@@ -677,8 +684,8 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
             <select
               value={form.employment_type}
               onChange={e => handleChange("employment_type", e.target.value)}
-              onFocus={e => e.target.style.borderColor="#2563eb"}
-              onBlur={e  => e.target.style.borderColor="#e5e7eb"}
+              onFocus={e => e.target.style.borderColor = "#2563eb"}
+              onBlur={e => e.target.style.borderColor = "#e5e7eb"}
               style={editInfoSelectStyle}
             >
               {EMP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -694,9 +701,9 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
               value={form.essl_id}
               placeholder="MB20 User ID (e.g. 142)"
               onChange={e => handleChange("essl_id", e.target.value)}
-              onFocus={e => e.target.style.borderColor="#2563eb"}
-              onBlur={e  => e.target.style.borderColor="#e5e7eb"}
-              style={{ ...editInfoInputStyle, fontFamily:"monospace" }}
+              onFocus={e => e.target.style.borderColor = "#2563eb"}
+              onBlur={e => e.target.style.borderColor = "#e5e7eb"}
+              style={{ ...editInfoInputStyle, fontFamily: "monospace" }}
             />
           </div>
         </div>
@@ -705,39 +712,39 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
       {/* Salary */}
       <div>
         {editInfoSectionTitle("Salary Structure")}
-        <p style={{ margin:"0 0 10px", fontSize:12, color:"#6b7280" }}>Earnings</p>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:10, marginBottom:14 }}>
-          <EditInfoAmountField label="CTC (Annual)"          value={form.ctc}                  onChange={v => handleChange("ctc", v)} />
-          <EditInfoAmountField label="Basic"                 value={form.basic}                onChange={v => handleChange("basic", v)} />
-          <EditInfoAmountField label="HRA"                   value={form.hra}                  onChange={v => handleChange("hra", v)} />
-          <EditInfoAmountField label="Special Allowance"     value={form.special_allowance}    onChange={v => handleChange("special_allowance", v)} />
-          <EditInfoAmountField label="Conveyance Allowance"  value={form.conveyance_allowance} onChange={v => handleChange("conveyance_allowance", v)} />
-          <EditInfoAmountField label="Gross Salary"          value={form.gross_salary}         onChange={v => handleChange("gross_salary", v)} />
-          <EditInfoAmountField label="Net Salary"            value={form.net_salary}           onChange={v => handleChange("net_salary", v)} />
+        <p style={{ margin: "0 0 10px", fontSize: 12, color: "#6b7280" }}>Earnings</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 14 }}>
+          <EditInfoAmountField label="CTC (Annual)" value={form.ctc} onChange={v => handleChange("ctc", v)} />
+          <EditInfoAmountField label="Basic" value={form.basic} onChange={v => handleChange("basic", v)} />
+          <EditInfoAmountField label="HRA" value={form.hra} onChange={v => handleChange("hra", v)} />
+          <EditInfoAmountField label="Special Allowance" value={form.special_allowance} onChange={v => handleChange("special_allowance", v)} />
+          <EditInfoAmountField label="Conveyance Allowance" value={form.conveyance_allowance} onChange={v => handleChange("conveyance_allowance", v)} />
+          <EditInfoAmountField label="Gross Salary" value={form.gross_salary} onChange={v => handleChange("gross_salary", v)} />
+          <EditInfoAmountField label="Net Salary" value={form.net_salary} onChange={v => handleChange("net_salary", v)} />
         </div>
-        <p style={{ margin:"0 0 10px", fontSize:12, color:"#6b7280" }}>Deductions</p>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:10, marginBottom:14 }}>
+        <p style={{ margin: "0 0 10px", fontSize: 12, color: "#6b7280" }}>Deductions</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 14 }}>
           <EditInfoAmountField label="Professional Tax" value={form.professional_tax} onChange={v => handleChange("professional_tax", v)} />
         </div>
-        <div style={{ display:"flex", gap:10, flexWrap:"wrap", background:"#f8fafc", border:"1px solid #e5e7eb", borderRadius:10, padding:"12px 16px" }}>
-            {[
-            { label:"Gross Salary",     value:grossDisplay, color:"#16a34a", bg:"#f0fdf4", border:"#86efac" },
-            { label:"Total Deductions", value:deductions,   color:"#dc2626", bg:"#fef2f2", border:"#fecaca" },
-            { label:"Net Salary",       value:netDisplay,   color:"#2563eb", bg:"#eff6ff", border:"#bfdbfe" },
-          ].map((s,i) => (
-            <div key={i} style={{ flex:1, minWidth:120, textAlign:"center", background:s.bg, border:`1px solid ${s.border}`, borderRadius:8, padding:"8px 12px" }}>
-              <p style={{ margin:0, fontSize:10, fontWeight:700, color:s.color, textTransform:"uppercase", letterSpacing:"0.05em" }}>{s.label}</p>
-              <p style={{ margin:"2px 0 0", fontSize:16, fontWeight:800, color:s.color }}>₹{s.value.toLocaleString("en-IN")}</p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 16px" }}>
+          {[
+            { label: "Gross Salary", value: grossDisplay, color: "#16a34a", bg: "#f0fdf4", border: "#86efac" },
+            { label: "Total Deductions", value: deductions, color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
+            { label: "Net Salary", value: netDisplay, color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
+          ].map((s, i) => (
+            <div key={i} style={{ flex: 1, minWidth: 120, textAlign: "center", background: s.bg, border: `1px solid ${s.border}`, borderRadius: 8, padding: "8px 12px" }}>
+              <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: s.color, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</p>
+              <p style={{ margin: "2px 0 0", fontSize: 16, fontWeight: 800, color: s.color }}>₹{s.value.toLocaleString("en-IN")}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ display:"flex", justifyContent:"flex-end", paddingTop:4 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: 4 }}>
         <button
           onClick={handleSave}
           disabled={saving || !changed}
-          style={{ display:"flex", alignItems:"center", gap:7, padding:"10px 22px", border:"none", borderRadius:9, background:saving||!changed?"#9ca3af":"#2563eb", color:"#fff", fontWeight:700, fontSize:14, cursor:saving||!changed?"not-allowed":"pointer", boxShadow:saving||!changed?"none":"0 4px 12px rgba(37,99,235,0.35)", transition:"all 0.2s" }}
+          style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 22px", border: "none", borderRadius: 9, background: saving || !changed ? "#9ca3af" : "#2563eb", color: "#fff", fontWeight: 700, fontSize: 14, cursor: saving || !changed ? "not-allowed" : "pointer", boxShadow: saving || !changed ? "none" : "0 4px 12px rgba(37,99,235,0.35)", transition: "all 0.2s" }}
         >
           <SaveIcon />
           {saving ? "Saving..." : "Save Changes"}
@@ -749,12 +756,12 @@ const EditInfoTab = ({ employee, activation, onSaveSuccess }) => {
 
 // ─── Employee Documents Modal ─────────────────────────────────────────────────
 const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
-  const [allDocs,    setAllDocs]    = useState([]);
-  const [hrDocs,     setHrDocs]     = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [activeTab,  setActiveTab]  = useState("personal");
+  const [allDocs, setAllDocs] = useState([]);
+  const [hrDocs, setHrDocs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("personal");
   const [activation, setActivation] = useState(null);
-  const [empData,    setEmpData]    = useState(employee);
+  const [empData, setEmpData] = useState(employee);
 
   const fetchDocs = async () => {
     setLoading(true);
@@ -792,11 +799,11 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
         .then(data => {
           if (data?.success && data.data) setActivation(data.data);
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   };
 
-  const getDoc   = (type) => allDocs.find(d => d.docType?.trim().toLowerCase() === type?.trim().toLowerCase()) || null;
+  const getDoc = (type) => allDocs.find(d => d.docType?.trim().toLowerCase() === type?.trim().toLowerCase()) || null;
   const getHrDoc = (type) => hrDocs.find(d => d.docType === type) || null;
 
   const experienceDocs = allDocs.filter(d =>
@@ -804,41 +811,41 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
   );
 
   const personalUploaded = ALL_EMPLOYEE_DOC_TYPES.filter(d => getDoc(d.type)).length + experienceDocs.length;
-  const hrUploaded       = HR_DOC_TYPES.filter(t => getHrDoc(t)).length;
+  const hrUploaded = HR_DOC_TYPES.filter(t => getHrDoc(t)).length;
 
-  const emp     = activation?.employment || {};
+  const emp = activation?.employment || {};
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN") : "—";
 
-  const isActive    = empData?.status === "active" || empData?.status === "approved";
-  const isRejected  = empData?.status === "rejected";
+  const isActive = empData?.status === "active" || empData?.status === "approved";
+  const isRejected = empData?.status === "rejected";
   const statusLabel = isActive ? "Active" : isRejected ? "Rejected" : empData?.status || "Pending";
   const statusColor = isActive ? "#16a34a" : isRejected ? "#dc2626" : "#d97706";
-  const statusBg    = isActive ? "#f0fdf4" : isRejected ? "#fef2f2" : "#fffbeb";
-  const statusBorder= isActive ? "#bbf7d0" : isRejected ? "#fecaca" : "#fde68a";
+  const statusBg = isActive ? "#f0fdf4" : isRejected ? "#fef2f2" : "#fffbeb";
+  const statusBorder = isActive ? "#bbf7d0" : isRejected ? "#fecaca" : "#fde68a";
 
   const docCategories = [...new Set(ALL_EMPLOYEE_DOC_TYPES.map(d => d.category))];
 
   const tabs = [
-    { key:"personal", label:"Personal Docs", icon:<UserIcon />,   count:`${personalUploaded}/${ALL_EMPLOYEE_DOC_TYPES.length + experienceDocs.length}` },
-    { key:"hr",       label:"HR Docs",        icon:<ShieldIcon />, count:`${hrUploaded}/${HR_DOC_TYPES.length}` },
-    { key:"edit",     label:"Edit Info",       icon:<EditIcon />,   count:null },
+    { key: "personal", label: "Personal Docs", icon: <UserIcon />, count: `${personalUploaded}/${ALL_EMPLOYEE_DOC_TYPES.length + experienceDocs.length}` },
+    { key: "hr", label: "HR Docs", icon: <ShieldIcon />, count: `${hrUploaded}/${HR_DOC_TYPES.length}` },
+    { key: "edit", label: "Edit Info", icon: <EditIcon />, count: null },
   ];
 
   return (
-    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background:"#fff", borderRadius:18, width:"100%", maxWidth:780, maxHeight:"92vh", display:"flex", flexDirection:"column", boxShadow:"0 24px 80px rgba(0,0,0,0.25)" }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 780, maxHeight: "92vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.25)" }}>
 
         {/* Header */}
-        <div style={{ padding:"18px 22px", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <div style={{ width:42, height:42, borderRadius:"50%", background:"linear-gradient(135deg,#2563eb,#1d4ed8)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:800, fontSize:16, flexShrink:0 }}>
+        <div style={{ padding: "18px 22px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#2563eb,#1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 16, flexShrink: 0 }}>
               {empData.name?.charAt(0)?.toUpperCase()}
             </div>
             <div>
-              <h3 style={{ margin:0, fontSize:16, fontWeight:800, color:"#1a1a2e" }}>{empData.name}</h3>
-              <p style={{ margin:0, fontSize:12, color:"#6b7280" }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#1a1a2e" }}>{empData.name}</h3>
+              <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>
                 {empData.employeeId && (
-                  <span style={{ background:"#eff6ff", color:"#2563eb", padding:"1px 7px", borderRadius:5, fontFamily:"monospace", fontWeight:700, fontSize:11, marginRight:6 }}>
+                  <span style={{ background: "#eff6ff", color: "#2563eb", padding: "1px 7px", borderRadius: 5, fontFamily: "monospace", fontWeight: 700, fontSize: 11, marginRight: 6 }}>
                     {empData.employeeId}
                   </span>
                 )}
@@ -846,66 +853,66 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
               </p>
             </div>
           </div>
-          <button onClick={onClose} style={{ background:"#f3f4f6", border:"none", borderRadius:8, padding:"8px", cursor:"pointer", display:"flex" }}><CloseIcon /></button>
+          <button onClick={onClose} style={{ background: "#f3f4f6", border: "none", borderRadius: 8, padding: "8px", cursor: "pointer", display: "flex" }}><CloseIcon /></button>
         </div>
 
         {/* Details Strip */}
-        <div style={{ padding:"14px 22px", borderBottom:"1px solid #e5e7eb", background:"#f8fafc", flexShrink:0 }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-            <p style={{ margin:0, fontSize:12, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Employee Details</p>
-            <span style={{ display:"inline-flex", alignItems:"center", gap:5, background:statusBg, color:statusColor, border:`1px solid ${statusBorder}`, borderRadius:99, padding:"4px 12px", fontSize:11, fontWeight:700 }}>
-              <span style={{ width:6, height:6, borderRadius:"50%", background:statusColor, display:"inline-block" }} />
+        <div style={{ padding: "14px 22px", borderBottom: "1px solid #e5e7eb", background: "#f8fafc", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>Employee Details</p>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: statusBg, color: statusColor, border: `1px solid ${statusBorder}`, borderRadius: 99, padding: "4px 12px", fontSize: 11, fontWeight: 700 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: statusColor, display: "inline-block" }} />
               {statusLabel}
             </span>
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:"8px 20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "8px 20px" }}>
             {[
-              { label:"Name",            value:empData.name },
-              { label:"Department",      value:empData.department || emp.department },
-              { label:"Email",           value:empData.email },
-              { label:"Mobile",          value:empData.mobile },
-              { label:"Date of Joining", value:fmtDate(emp.date_of_joining || empData.date_of_joining) },
-            ].map((item,i) => (
-              <div key={i} style={{ display:"flex", flexDirection:"column", gap:2 }}>
-                <span style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.04em" }}>{item.label}</span>
-                <span style={{ fontSize:13, fontWeight:600, color:"#1a1a2e", wordBreak:"break-all" }}>{item.value || "—"}</span>
+              { label: "Name", value: empData.name },
+              { label: "Department", value: empData.department || emp.department },
+              { label: "Email", value: empData.email },
+              { label: "Mobile", value: empData.mobile },
+              { label: "Date of Joining", value: fmtDate(emp.date_of_joining || empData.date_of_joining) },
+            ].map((item, i) => (
+              <div key={i} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>{item.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e", wordBreak: "break-all" }}>{item.value || "—"}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Tabs */}
-        <div style={{ display:"flex", gap:0, borderBottom:"2px solid #e5e7eb", padding:"0 22px", flexShrink:0, overflowX:"auto" }}>
+        <div style={{ display: "flex", gap: 0, borderBottom: "2px solid #e5e7eb", padding: "0 22px", flexShrink: 0, overflowX: "auto" }}>
           {tabs.map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display:"flex", alignItems:"center", gap:6, border:"none", background:"none", padding:"12px 14px", fontWeight:700, fontSize:13, cursor:"pointer", marginBottom:-2, borderBottom:activeTab===tab.key?"3px solid #2563eb":"3px solid transparent", color:activeTab===tab.key?"#2563eb":"#6b7280", whiteSpace:"nowrap", flexShrink:0 }}>
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: "flex", alignItems: "center", gap: 6, border: "none", background: "none", padding: "12px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer", marginBottom: -2, borderBottom: activeTab === tab.key ? "3px solid #2563eb" : "3px solid transparent", color: activeTab === tab.key ? "#2563eb" : "#6b7280", whiteSpace: "nowrap", flexShrink: 0 }}>
               {tab.icon} {tab.label}
               {tab.count !== null && (
-                <span style={{ background:activeTab===tab.key?"#2563eb":"#e5e7eb", color:activeTab===tab.key?"#fff":"#374151", borderRadius:99, padding:"2px 7px", fontSize:11, fontWeight:700 }}>{tab.count}</span>
+                <span style={{ background: activeTab === tab.key ? "#2563eb" : "#e5e7eb", color: activeTab === tab.key ? "#fff" : "#374151", borderRadius: 99, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{tab.count}</span>
               )}
             </button>
           ))}
         </div>
 
         {/* Body */}
-        <div style={{ overflowY:"auto", padding:"18px 22px", flex:1 }}>
+        <div style={{ overflowY: "auto", padding: "18px 22px", flex: 1 }}>
           {loading ? (
-            <div style={{ textAlign:"center", padding:"40px 0" }}>
-              <div style={{ width:30, height:30, border:"3px solid #e5e7eb", borderTopColor:"#2563eb", borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 10px" }} />
-              <p style={{ color:"#9ca3af", fontSize:13 }}>Loading documents...</p>
+            <div style={{ textAlign: "center", padding: "40px 0" }}>
+              <div style={{ width: 30, height: 30, border: "3px solid #e5e7eb", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 10px" }} />
+              <p style={{ color: "#9ca3af", fontSize: 13 }}>Loading documents...</p>
             </div>
           ) : (
             <>
               {/* ── Personal Docs Tab ── */}
               {activeTab === "personal" && (
-                <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-                  <div style={{ background:"#f3f4f6", borderRadius:8, padding:"10px 14px", display:"flex", alignItems:"center", gap:12 }}>
-                    <div style={{ flex:1 }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                        <span style={{ fontSize:11, fontWeight:700, color:"#6b7280" }}>Upload Progress</span>
-                        <span style={{ fontSize:11, fontWeight:700, color:"#2563eb" }}>{personalUploaded}/{ALL_EMPLOYEE_DOC_TYPES.length + experienceDocs.length}</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div style={{ background: "#f3f4f6", borderRadius: 8, padding: "10px 14px", display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280" }}>Upload Progress</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "#2563eb" }}>{personalUploaded}/{ALL_EMPLOYEE_DOC_TYPES.length + experienceDocs.length}</span>
                       </div>
-                      <div style={{ background:"#e5e7eb", borderRadius:99, height:6, overflow:"hidden" }}>
-                        <div style={{ background:"#2563eb", height:"100%", borderRadius:99, width:`${Math.round((personalUploaded/(ALL_EMPLOYEE_DOC_TYPES.length + experienceDocs.length||1))*100)}%`, transition:"width 0.4s" }} />
+                      <div style={{ background: "#e5e7eb", borderRadius: 99, height: 6, overflow: "hidden" }}>
+                        <div style={{ background: "#2563eb", height: "100%", borderRadius: 99, width: `${Math.round((personalUploaded / (ALL_EMPLOYEE_DOC_TYPES.length + experienceDocs.length || 1)) * 100)}%`, transition: "width 0.4s" }} />
                       </div>
                     </div>
                   </div>
@@ -915,13 +922,13 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
                     const catUploaded = catDocs.filter(d => getDoc(d.type)).length;
                     return (
                       <div key={cat}>
-                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
-                          <p style={{ margin:0, fontSize:12, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>{cat}</p>
-                          <span style={{ fontSize:11, color:catUploaded===catDocs.length?"#16a34a":"#9ca3af", fontWeight:600 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                          <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>{cat}</p>
+                          <span style={{ fontSize: 11, color: catUploaded === catDocs.length ? "#16a34a" : "#9ca3af", fontWeight: 600 }}>
                             {catUploaded}/{catDocs.length} uploaded
                           </span>
                         </div>
-                        <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                           {catDocs.map(doc => {
                             const uploaded = getDoc(doc.type);
                             return (
@@ -945,8 +952,8 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
 
                   {experienceDocs.length > 0 && (
                     <div>
-                      <p style={{ margin:"0 0 8px", fontSize:12, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Work Experience</p>
-                      <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                      <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>Work Experience</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                         {experienceDocs.map(doc => (
                           <DocRow
                             key={doc.docType}
@@ -975,8 +982,8 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
                     if (!extraDocs.length) return null;
                     return (
                       <div>
-                        <p style={{ margin:"0 0 8px", fontSize:12, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Other Documents</p>
-                        <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                        <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>Other Documents</p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                           {extraDocs.map(doc => (
                             <DocRow
                               key={doc.docType}
@@ -998,8 +1005,8 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
 
               {/* ── HR Docs Tab ── */}
               {activeTab === "hr" && (
-                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                  <p style={{ margin:"0 0 10px", fontSize:12, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>HR Issued Documents</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <p style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>HR Issued Documents</p>
                   {HR_DOC_TYPES.map(type => {
                     const doc = getHrDoc(type);
                     return (
@@ -1035,16 +1042,259 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
   );
 };
 
+// ─── Read-only detail row ───────────────────────────────────────────────────────
+const DetailField = ({ label, value }) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+    <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</span>
+    <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e", wordBreak: "break-word" }}>{value || value === 0 ? value : "—"}</span>
+  </div>
+);
+
+// ─── Complete / Incomplete badge ────────────────────────────────────────────────
+const DocStatusBadge = ({ uploaded, total }) => {
+  const complete = total > 0 && uploaded >= total;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap",
+      background: complete ? "#f0fdf4" : "#fef2f2",
+      color: complete ? "#16a34a" : "#dc2626",
+      border: `1px solid ${complete ? "#bbf7d0" : "#fecaca"}`,
+      borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700,
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: complete ? "#16a34a" : "#dc2626", display: "inline-block" }} />
+      {complete ? "Complete" : "Incomplete"} · {uploaded}/{total}
+    </span>
+  );
+};
+
+// ─── Required-docs helper (used for the table quick-glance badge too) ─────────
+const REQUIRED_PERSONAL_DOCS = ALL_EMPLOYEE_DOC_TYPES.filter(d => d.required);
+const getPersonalDocsStatus = (emp) => {
+  const docs = emp.documents || [];
+  const has = (type) => docs.some(d => d.docType?.trim().toLowerCase() === type.trim().toLowerCase());
+  const uploaded = REQUIRED_PERSONAL_DOCS.filter(d => has(d.type)).length;
+  return { uploaded, total: REQUIRED_PERSONAL_DOCS.length };
+};
+
+// ─── Employee Details Slide Panel (READ-ONLY) ──────────────────────────────────
+const EmployeeDetailsPanel = ({ employee, onClose, onViewDocs }) => {
+  const [allDocs, setAllDocs] = useState(employee.documents || []);
+  const [hrDocs, setHrDocs] = useState([]);
+  const [activation, setActivation] = useState(null);
+  const [esslId, setEsslId] = useState(employee.essl_id ?? "");
+    const [lastMonthPerf, setLastMonthPerf] = useState(null); // { score, rating, period } | { score: null, period }
+
+  const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([
+      fetch(`${API_BASE}/api/employee/me/${employee._id}`).then(r => r.json()).catch(() => ({})),
+      fetch(`${API_BASE}/api/hr/activation/docs/${employee._id}`).then(r => r.json()).catch(() => ({})),
+      fetch(`${API_BASE}/api/hr/activation/${employee._id}`).then(r => r.json()).catch(() => null),
+      fetch(`${API_BASE}/api/performance-reviews/${employee._id}`).then(r => r.json()).catch(() => null), // ✅ NEW
+    ]).then(([empRes, hrRes, actRes, perfRes]) => {
+      if (cancelled) return;
+      setAllDocs(empRes.documents || employee.documents || []);
+      setHrDocs(hrRes.success ? (hrRes.data || []) : []);
+      if (actRes?.success && actRes.data) setActivation(actRes.data);
+      if (empRes.essl_id !== undefined) setEsslId(empRes.essl_id);   // ✅ NEW LINE
+
+      // ✅ NEW: kadantha maasam oda performance review match pannu
+      const lastMonthLabel = getLastMonthPeriod();
+      const reviews = perfRes?.success ? (perfRes.data || []) : [];
+      const match = reviews.find(r => r.period === lastMonthLabel);
+      setLastMonthPerf(
+        match
+          ? { score: match.final_score, rating: match.rating, period: match.period }
+          : { score: null, rating: null, period: lastMonthLabel }
+      );
+
+    }).catch(() => { }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [employee._id]);
+
+  const getDoc = (type) => allDocs.find(d => d.docType?.trim().toLowerCase() === type?.trim().toLowerCase()) || null;
+  const getHrDoc = (type) => hrDocs.find(d => d.docType === type) || null;
+
+  const personalReqUploaded = REQUIRED_PERSONAL_DOCS.filter(d => getDoc(d.type)).length;
+  const hrUploaded = HR_DOC_TYPES.filter(t => getHrDoc(t)).length;
+
+  const emp = activation?.employment || {};
+  const sal = activation?.salary || {};
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN") : "—";
+  const fmtMoney = (v) => (v || v === 0) ? `₹${Number(v).toLocaleString("en-IN")}` : "—";
+
+  const isActive = employee?.status === "active" || employee?.status === "approved";
+  const isRejected = employee?.status === "rejected";
+  const statusLabel = isActive ? "Active" : isRejected ? "Rejected" : employee?.status || "Pending";
+  const statusColor = isActive ? "#16a34a" : isRejected ? "#dc2626" : "#d97706";
+  const statusBg = isActive ? "#f0fdf4" : isRejected ? "#fef2f2" : "#fffbeb";
+  const statusBorder = isActive ? "#bbf7d0" : isRejected ? "#fecaca" : "#fde68a";
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1100, display: "flex", justifyContent: "flex-end" }}>
+      <style>{`@keyframes slideInPanel { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: "100%", maxWidth: 440, height: "100%", background: "#fff",
+        boxShadow: "-8px 0 40px rgba(0,0,0,0.2)", display: "flex", flexDirection: "column",
+        animation: "slideInPanel 0.25s ease-out",
+      }}>
+        {/* Header */}
+        <div style={{ padding: "18px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg,#2563eb,#1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 17, flexShrink: 0 }}>
+              {employee.name?.charAt(0)?.toUpperCase() || "?"}
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#1a1a2e" }}>{employee.name}</h3>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: statusBg, color: statusColor, border: `1px solid ${statusBorder}`, borderRadius: 99, padding: "2px 9px", fontSize: 11, fontWeight: 700, marginTop: 3 }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: statusColor, display: "inline-block" }} />
+                {statusLabel}
+              </span>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: "#f3f4f6", border: "none", borderRadius: 8, padding: "8px", cursor: "pointer", display: "flex" }}><CloseIcon /></button>
+        </div>
+
+        {/* Read-only notice */}
+        {/* <div style={{ padding:"9px 20px", background:"#eff6ff", borderBottom:"1px solid #dbeafe", flexShrink:0, display:"flex", alignItems:"center", gap:6 }}>
+          <EyeIcon />
+          <span style={{ fontSize:11.5, fontWeight:600, color:"#2563eb" }}>Read-only view · use "Open Documents &amp; Edit" below to make changes</span>
+        </div> */}
+
+        {/* Body */}
+        <div style={{ overflowY: "auto", padding: "18px 20px", flex: 1 }}>
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "40px 0" }}>
+              <div style={{ width: 28, height: 28, border: "3px solid #e5e7eb", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 10px" }} />
+              <p style={{ color: "#9ca3af", fontSize: 13 }}>Loading details...</p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+              {/* Basic Info */}
+              <div>
+                {editInfoSectionTitle("Basic Information")}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px 16px" }}>
+                  <DetailField label="Full Name" value={employee.name} />
+                  <DetailField label="Employee ID" value={employee.employeeId} />
+                  <DetailField label="Email" value={employee.email} />
+                  <DetailField label="Mobile" value={employee.mobile} />
+                </div>
+              </div>
+
+              {/* Employment */}
+              <div>
+                {editInfoSectionTitle("Employment Details")}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px 16px" }}>
+                  <DetailField label="Department" value={employee.department || emp.department} />
+                  <DetailField label="Designation" value={employee.designation || emp.designation} />
+                  <DetailField label="Employment Type" value={emp.employment_type} />
+                  <DetailField label="Date of Joining" value={fmtDate(emp.date_of_joining || employee.date_of_joining)} />
+                  <DetailField label="eSSL Device ID" value={esslId} />
+                </div>
+              </div>
+
+               {/* Performance */}
+              <div>
+                {editInfoSectionTitle("Performance")}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 14px" }}>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: "#1a1a2e" }}>
+                      {lastMonthPerf?.period || "—"} Performance
+                    </p>
+                    <p style={{ margin: "2px 0 0", fontSize: 11, color: "#9ca3af" }}>
+                      {lastMonthPerf?.score !== null && lastMonthPerf?.score !== undefined
+                        ? (lastMonthPerf.rating || "Reviewed")
+                        : "No review submitted for this month"}
+                    </p>
+                  </div>
+                  {lastMonthPerf?.score !== null && lastMonthPerf?.score !== undefined ? (
+                    <span style={{
+                      fontSize: 18, fontWeight: 800,
+                      color: lastMonthPerf.score >= 75 ? "#16a34a" : lastMonthPerf.score >= 60 ? "#d97706" : "#dc2626",
+                    }}>
+                      {lastMonthPerf.score}%
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af" }}>—</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Salary */}
+              <div>
+                {editInfoSectionTitle("Salary Structure")}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px 16px" }}>
+                  <DetailField label="CTC (Annual)" value={fmtMoney(sal.ctc)} />
+                  <DetailField label="Basic" value={fmtMoney(sal.basic)} />
+                  <DetailField label="HRA" value={fmtMoney(sal.hra)} />
+                  <DetailField label="Special Allowance" value={fmtMoney(sal.special_allowance)} />
+                  <DetailField label="Conveyance" value={fmtMoney(sal.conveyance_allowance)} />
+                  <DetailField label="Gross Salary" value={fmtMoney(sal.gross_salary)} />
+                  <DetailField label="Net Salary" value={fmtMoney(sal.net_salary)} />
+                  <DetailField label="Professional Tax" value={fmtMoney(sal.professional_tax)} />
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                  {[
+                    { label: "PF", on: sal.pf_applicable },
+                    { label: "ESI", on: sal.esi_applicable },
+                    { label: "TDS", on: sal.tds_applicable },
+                  ].map(x => (
+                    <span key={x.label} style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: x.on ? "#f0fdf4" : "#f3f4f6", color: x.on ? "#16a34a" : "#9ca3af", border: `1px solid ${x.on ? "#bbf7d0" : "#e5e7eb"}` }}>
+                      {x.label} {x.on ? "Applicable" : "Not Applicable"}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Documents Status */}
+              <div>
+                {editInfoSectionTitle("Documents Status")}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 14px" }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: "#1a1a2e" }}>Personal Documents</p>
+                      <p style={{ margin: "2px 0 0", fontSize: 11, color: "#9ca3af" }}>Required docs uploaded by employee</p>
+                    </div>
+                    <DocStatusBadge uploaded={personalReqUploaded} total={REQUIRED_PERSONAL_DOCS.length} />
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 14px" }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: "#1a1a2e" }}>HR Issued Documents</p>
+                      <p style={{ margin: "2px 0 0", fontSize: 11, color: "#9ca3af" }}>Offer letter, contract, etc. issued by HR</p>
+                    </div>
+                    <DocStatusBadge uploaded={hrUploaded} total={HR_DOC_TYPES.length} />
+                  </div>
+                </div>
+                <button
+                  onClick={() => onViewDocs(employee)}
+                  style={{ marginTop: 12, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "#2563eb", color: "#fff", border: "none", borderRadius: 9, padding: "10px 0", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                >
+                  <EyeIcon /> Open Documents &amp; Edit
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function HrActiveEmployees() {
-  const [employees,  setEmployees]  = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [search,     setSearch]     = useState("");
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("All");
-  const [toast,      setToast]      = useState(null);
-  const [confirmId,  setConfirmId]  = useState(null);
-  const [deleting,   setDeleting]   = useState(false);
-  const [docsModal,  setDocsModal]  = useState(null);
+  const [toast, setToast] = useState(null);
+  const [confirmId, setConfirmId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [docsModal, setDocsModal] = useState(null);
+  const [detailsEmp, setDetailsEmp] = useState(null);
 
   useEffect(() => { fetchActive(); }, []);
 
@@ -1069,7 +1319,7 @@ export default function HrActiveEmployees() {
     if (!confirmId) return;
     setDeleting(true);
     try {
-      const res = await fetch(`${API_BASE}/api/employee/employees/${confirmId}`, { method:"DELETE" });
+      const res = await fetch(`${API_BASE}/api/employee/employees/${confirmId}`, { method: "DELETE" });
       if (res.ok) {
         setEmployees(prev => prev.filter(emp => emp._id !== confirmId));
         showToast("Employee removed successfully");
@@ -1093,14 +1343,14 @@ export default function HrActiveEmployees() {
   };
 
   const departments = ["All", ...Array.from(new Set(employees.map(e => e.department).filter(Boolean)))];
-  const filtered    = employees.filter(emp => {
+  const filtered = employees.filter(emp => {
     const matchSearch = !search || emp.name?.toLowerCase().includes(search.toLowerCase()) || emp.email?.toLowerCase().includes(search.toLowerCase()) || emp.employeeId?.toLowerCase().includes(search.toLowerCase());
-    const matchDept   = deptFilter === "All" || emp.department === deptFilter;
+    const matchDept = deptFilter === "All" || emp.department === deptFilter;
     return matchSearch && matchDept;
   });
 
   return (
-    <div style={{ fontFamily:"'Segoe UI', sans-serif", padding:"20px 16px", background:"#f4f6fb", minHeight:"100vh", boxSizing:"border-box" }}>
+    <div style={{ fontFamily: "'Segoe UI', sans-serif", padding: "20px 16px", background: "#f4f6fb", minHeight: "100vh", boxSizing: "border-box" }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (min-width: 640px) {
@@ -1118,18 +1368,18 @@ export default function HrActiveEmployees() {
       `}</style>
 
       {toast && (
-        <div style={{ position:"fixed", top:16, right:16, left:16, zIndex:9999, background:toast.type==="error"?"#dc2626":"#16a34a", color:"#fff", padding:"12px 16px", borderRadius:10, fontWeight:600, fontSize:13, textAlign:"center", boxShadow:"0 4px 16px rgba(0,0,0,0.15)" }}>{toast.msg}</div>
+        <div style={{ position: "fixed", top: 16, right: 16, left: 16, zIndex: 9999, background: toast.type === "error" ? "#dc2626" : "#16a34a", color: "#fff", padding: "12px 16px", borderRadius: 10, fontWeight: 600, fontSize: 13, textAlign: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>{toast.msg}</div>
       )}
 
       {confirmId && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:"0 16px" }}>
-          <div style={{ background:"#fff", borderRadius:14, padding:"24px 20px", maxWidth:360, width:"100%", boxShadow:"0 20px 60px rgba(0,0,0,0.2)" }}>
-            <div style={{ display:"flex", justifyContent:"center", marginBottom:12 }}><AlertIcon /></div>
-            <h4 style={{ textAlign:"center", fontWeight:800, color:"#1a1a2e", margin:"0 0 8px", fontSize:16 }}>Remove Employee?</h4>
-            <p style={{ textAlign:"center", color:"#6b7280", fontSize:13, margin:"0 0 20px" }}>This will permanently delete the employee record.</p>
-            <div style={{ display:"flex", gap:10 }}>
-              <button onClick={() => setConfirmId(null)} style={{ flex:1, padding:"10px 0", border:"1px solid #e5e7eb", borderRadius:8, background:"#fff", color:"#374151", fontWeight:600, fontSize:13, cursor:"pointer" }}>Cancel</button>
-              <button onClick={handleDelete} disabled={deleting} style={{ flex:1, padding:"10px 0", border:"none", borderRadius:8, background:deleting?"#fca5a5":"#dc2626", color:"#fff", fontWeight:700, fontSize:13, cursor:deleting?"not-allowed":"pointer" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px" }}>
+          <div style={{ background: "#fff", borderRadius: 14, padding: "24px 20px", maxWidth: 360, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><AlertIcon /></div>
+            <h4 style={{ textAlign: "center", fontWeight: 800, color: "#1a1a2e", margin: "0 0 8px", fontSize: 16 }}>Remove Employee?</h4>
+            <p style={{ textAlign: "center", color: "#6b7280", fontSize: 13, margin: "0 0 20px" }}>This will permanently delete the employee record.</p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setConfirmId(null)} style={{ flex: 1, padding: "10px 0", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Cancel</button>
+              <button onClick={handleDelete} disabled={deleting} style={{ flex: 1, padding: "10px 0", border: "none", borderRadius: 8, background: deleting ? "#fca5a5" : "#dc2626", color: "#fff", fontWeight: 700, fontSize: 13, cursor: deleting ? "not-allowed" : "pointer" }}>
                 {deleting ? "Removing..." : "Yes, Remove"}
               </button>
             </div>
@@ -1145,123 +1395,144 @@ export default function HrActiveEmployees() {
         />
       )}
 
-      <div className="header-row" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20, flexWrap:"wrap", gap:12 }}>
+      {detailsEmp && (
+        <EmployeeDetailsPanel
+          employee={detailsEmp}
+          onClose={() => setDetailsEmp(null)}
+          onViewDocs={(emp) => { setDetailsEmp(null); setDocsModal(emp); }}
+        />
+      )}
+
+      <div className="header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h2 style={{ margin:0, fontSize:20, fontWeight:800, color:"#1a1a2e" }}>Active Employees</h2>
-          <p style={{ margin:"4px 0 0", color:"#6b7280", fontSize:13 }}>
+          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: "#1a1a2e" }}>Active Employees</h2>
+          <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 13 }}>
             {loading ? "Loading..." : `${filtered.length} of ${employees.length} active employee${employees.length !== 1 ? "s" : ""}`}
           </p>
         </div>
         {!loading && (
-          <div className="stats-row" style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+          <div className="stats-row" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {[
-              { label:"Total Active", value:employees.length,       color:"#16a34a", bg:"#f0fdf4" },
-              { label:"Departments",  value:departments.length - 1, color:"#2563eb", bg:"#eff6ff" },
-            ].map((s,i) => (
-              <div key={i} style={{ background:s.bg, borderRadius:10, padding:"8px 14px", textAlign:"center", minWidth:80 }}>
-                <p style={{ margin:0, fontSize:18, fontWeight:800, color:s.color }}>{s.value}</p>
-                <p style={{ margin:0, fontSize:11, color:s.color, fontWeight:600 }}>{s.label}</p>
+              { label: "Total Active", value: employees.length, color: "#16a34a", bg: "#f0fdf4" },
+              { label: "Departments", value: departments.length - 1, color: "#2563eb", bg: "#eff6ff" },
+            ].map((s, i) => (
+              <div key={i} style={{ background: s.bg, borderRadius: 10, padding: "8px 14px", textAlign: "center", minWidth: 80 }}>
+                <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: s.color }}>{s.value}</p>
+                <p style={{ margin: 0, fontSize: 11, color: s.color, fontWeight: 600 }}>{s.label}</p>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      <div className="search-row" style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap" }}>
-        <div style={{ flex:1, minWidth:200, position:"relative" }}>
+      <div className="search-row" style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
           <SearchIcon />
           <input type="text" placeholder="Search by name, email or ID..." value={search} onChange={e => setSearch(e.target.value)}
-            style={{ width:"100%", padding:"10px 12px 10px 32px", border:"1px solid #e5e7eb", borderRadius:8, fontSize:13, outline:"none", background:"#fff", boxSizing:"border-box" }} />
+            style={{ width: "100%", padding: "10px 12px 10px 32px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, outline: "none", background: "#fff", boxSizing: "border-box" }} />
         </div>
-        <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} style={{ padding:"10px 12px", border:"1px solid #e5e7eb", borderRadius:8, fontSize:13, outline:"none", background:"#fff", cursor:"pointer", minWidth:130 }}>
+        <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} style={{ padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, outline: "none", background: "#fff", cursor: "pointer", minWidth: 130 }}>
           {departments.map(d => <option key={d}>{d}</option>)}
         </select>
       </div>
 
       {loading ? (
-        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", textAlign:"center", padding:"48px 0" }}>
-          <div style={{ width:34, height:34, border:"4px solid #e5e7eb", borderTopColor:"#2563eb", borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 12px" }} />
-          <p style={{ color:"#6b7280", fontSize:13 }}>Loading employees...</p>
+        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", textAlign: "center", padding: "48px 0" }}>
+          <div style={{ width: 34, height: 34, border: "4px solid #e5e7eb", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+          <p style={{ color: "#6b7280", fontSize: 13 }}>Loading employees...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", textAlign:"center", padding:"48px 0" }}>
-          <div style={{ display:"flex", justifyContent:"center", marginBottom:10 }}><UsersIcon /></div>
-          <p style={{ color:"#6b7280", fontSize:14 }}>{search || deptFilter !== "All" ? "No employees match your filter" : "No active employees yet"}</p>
+        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", textAlign: "center", padding: "48px 0" }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><UsersIcon /></div>
+          <p style={{ color: "#6b7280", fontSize: 14 }}>{search || deptFilter !== "All" ? "No employees match your filter" : "No active employees yet"}</p>
         </div>
       ) : (
         <>
-          <div className="emp-table" style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", width:"100%" }}>
-            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+          <div className="emp-table" style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", overflow: "hidden", width: "100%" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
-                <tr style={{ background:"#f8fafc" }}>
-                  {["#","Emp ID","Name","Email","Department","Documents","Action"].map(h => (
-                    <th key={h} style={{ padding:"12px 16px", textAlign:"left", fontWeight:700, color:"#374151", borderBottom:"2px solid #e5e7eb", whiteSpace:"nowrap" }}>{h}</th>
+                <tr style={{ background: "#f8fafc" }}>
+                  {["#", "Emp ID", "Name", "Email", "Department", "Documents", "Action"].map(h => (
+                    <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontWeight: 700, color: "#374151", borderBottom: "2px solid #e5e7eb", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((emp, i) => (
-                  <tr key={emp._id} style={{ borderBottom:"1px solid #f3f4f6", background:i%2===0?"#fff":"#fafafa" }}>
-                    <td style={{ padding:"12px 16px", color:"#9ca3af", fontSize:12, fontWeight:700 }}>{String(i+1).padStart(2,"0")}</td>
-                    <td style={{ padding:"12px 16px" }}>
-                      <span style={{ background:"#eff6ff", color:"#2563eb", padding:"3px 8px", borderRadius:6, fontSize:11, fontWeight:700, fontFamily:"monospace" }}>{emp.employeeId || "—"}</span>
-                    </td>
-                    <td style={{ padding:"12px 16px" }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <div style={{ width:34, height:34, borderRadius:"50%", background:"#f0fdf4", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, color:"#16a34a", fontSize:13, flexShrink:0 }}>
-                          {emp.name?.charAt(0)?.toUpperCase() || "?"}
+                {filtered.map((emp, i) => {
+                  const docStatus = getPersonalDocsStatus(emp);
+                  return (
+                    <tr
+                      key={emp._id}
+                      onClick={() => setDetailsEmp(emp)}
+                      style={{ borderBottom: "1px solid #f3f4f6", background: i % 2 === 0 ? "#fff" : "#fafafa", cursor: "pointer" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#eff6ff"}
+                      onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? "#fff" : "#fafafa"}
+                    >
+                      <td style={{ padding: "12px 16px", color: "#9ca3af", fontSize: 12, fontWeight: 700 }}>{String(i + 1).padStart(2, "0")}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <span style={{ background: "#eff6ff", color: "#2563eb", padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, fontFamily: "monospace" }}>{emp.employeeId || "—"}</span>
+                      </td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#16a34a", fontSize: 13, flexShrink: 0 }}>
+                            {emp.name?.charAt(0)?.toUpperCase() || "?"}
+                          </div>
+                          <p style={{ margin: 0, fontWeight: 600, color: "#1a1a2e", fontSize: 13 }}>{emp.name}</p>
                         </div>
-                        <p style={{ margin:0, fontWeight:600, color:"#1a1a2e", fontSize:13 }}>{emp.name}</p>
-                      </div>
-                    </td>
-                    <td style={{ padding:"12px 16px", color:"#6b7280", fontSize:12 }}>{emp.email}</td>
-                    <td style={{ padding:"12px 16px" }}>
-                      {emp.department ? (
-                        <span style={{ background:"#f3f4f6", color:"#374151", padding:"4px 8px", borderRadius:6, fontSize:11, fontWeight:600 }}>{emp.department}</span>
-                      ) : "—"}
-                    </td>
-                    <td style={{ padding:"12px 16px" }}>
-                      <button onClick={() => setDocsModal(emp)} style={{ display:"flex", alignItems:"center", gap:6, background:"#eff6ff", color:"#2563eb", border:"1px solid #bfdbfe", borderRadius:7, padding:"7px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                      </td>
+                      <td style={{ padding: "12px 16px", color: "#6b7280", fontSize: 12 }}>{emp.email}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        {emp.department ? (
+                          <span style={{ background: "#f3f4f6", color: "#374151", padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600 }}>{emp.department}</span>
+                        ) : "—"}
+                      </td>
+                                          <td style={{ padding:"12px 16px" }}>
+                      <button onClick={(e) => { e.stopPropagation(); setDocsModal(emp); }} style={{ display:"flex", alignItems:"center", gap:6, background:"#eff6ff", color:"#2563eb", border:"1px solid #bfdbfe", borderRadius:7, padding:"7px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
                         <EyeIcon /> View Docs
                       </button>
                     </td>
-                    <td style={{ padding:"12px 16px" }}>
-                      <button onClick={() => setConfirmId(emp._id)} style={{ display:"flex", alignItems:"center", gap:6, background:"#fef2f2", color:"#dc2626", border:"1px solid #fecaca", borderRadius:7, padding:"7px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
-                        <TrashIcon /> Remove
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      <td style={{ padding: "12px 16px" }}>
+                        <button onClick={(e) => { e.stopPropagation(); setConfirmId(emp._id); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 7, padding: "7px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                          <TrashIcon /> Remove
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           <div className="emp-cards">
-            {filtered.map((emp) => (
-              <div key={emp._id} style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:"14px" }}>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                    <div style={{ width:38, height:38, borderRadius:"50%", background:"#f0fdf4", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, color:"#16a34a", fontSize:15, flexShrink:0 }}>
-                      {emp.name?.charAt(0)?.toUpperCase() || "?"}
+            {filtered.map((emp) => {
+              const docStatus = getPersonalDocsStatus(emp);
+              return (
+                <div key={emp._id} onClick={() => setDetailsEmp(emp)} style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: "14px", cursor: "pointer" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#16a34a", fontSize: 15, flexShrink: 0 }}>
+                        {emp.name?.charAt(0)?.toUpperCase() || "?"}
+                      </div>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 700, color: "#1a1a2e", fontSize: 14 }}>{emp.name}</p>
+                        <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>{emp.email}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p style={{ margin:0, fontWeight:700, color:"#1a1a2e", fontSize:14 }}>{emp.name}</p>
-                      <p style={{ margin:0, fontSize:11, color:"#9ca3af" }}>{emp.email}</p>
-                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); setConfirmId(emp._id); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 7, padding: "8px", cursor: "pointer" }}>
+                      <TrashIcon />
+                    </button>
                   </div>
-                  <button onClick={() => setConfirmId(emp._id)} style={{ display:"flex", alignItems:"center", justifyContent:"center", background:"#fef2f2", color:"#dc2626", border:"1px solid #fecaca", borderRadius:7, padding:"8px", cursor:"pointer" }}>
-                    <TrashIcon />
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                    <span style={{ background: "#eff6ff", color: "#2563eb", padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, fontFamily: "monospace" }}>{emp.employeeId || "—"}</span>
+                    {emp.department && <span style={{ background: "#f3f4f6", color: "#374151", padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600 }}>{emp.department}</span>}
+                    <DocStatusBadge uploaded={docStatus.uploaded} total={docStatus.total} />
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); setDocsModal(emp); }} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", borderRadius: 8, padding: "9px 0", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                    <EyeIcon /> View Documents
                   </button>
                 </div>
-                <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:10 }}>
-                  <span style={{ background:"#eff6ff", color:"#2563eb", padding:"3px 8px", borderRadius:6, fontSize:11, fontWeight:700, fontFamily:"monospace" }}>{emp.employeeId || "—"}</span>
-                  {emp.department && <span style={{ background:"#f3f4f6", color:"#374151", padding:"3px 8px", borderRadius:6, fontSize:11, fontWeight:600 }}>{emp.department}</span>}
-                </div>
-                <button onClick={() => setDocsModal(emp)} style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:6, background:"#eff6ff", color:"#2563eb", border:"1px solid #bfdbfe", borderRadius:8, padding:"9px 0", fontSize:13, fontWeight:700, cursor:"pointer" }}>
-                  <EyeIcon /> View Documents
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}
