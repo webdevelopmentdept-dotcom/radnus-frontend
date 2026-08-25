@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef  } from "react";
 import { Eye, Download } from "lucide-react";
 import EmployeeLayout from "./EmployeeLayout";
 
@@ -28,6 +28,8 @@ const CHECKLIST_STAGES = [
     { key: "courier", label: "Courier" },
     { key: "completed", label: "Completed" },
 ];
+
+const DATE_ENABLED_STAGES = ["documentPayment", "courier"]; // date field intha rendu stages ku mattum
 
 const SCHEME_OPTIONS = [
     { value: "PMEGP", label: "PMEGP - Prime Minister's Employment Generation Programme" },
@@ -71,6 +73,8 @@ export default function LoanProcess() {
     const [loadingList, setLoadingList] = useState(false);
     const [expandedId, setExpandedId] = useState(null);
     const [reasonDraft, setReasonDraft] = useState({}); // { [customerId]: text }
+    const [remarkDraft, setRemarkDraft] = useState({}); // { [customerId]: { [stageKey]: text } }
+    const remarkInputRefs = useRef({}); // { "customerId-stageKey": <input> } 
 
     /* ------------------------ TAB 2 — CUSTOMER DATA (view/edit/delete) --- */
     const [expandedDataId, setExpandedDataId] = useState(null);
@@ -330,7 +334,7 @@ export default function LoanProcess() {
         }
     };
 
-    const saveReason = async (customerId) => {
+        const saveReason = async (customerId) => {
         const current = customers.find((c) => c._id === customerId);
         const reasonForPending = reasonDraft[customerId] ?? current?.reasonForPending ?? "";
         try {
@@ -344,6 +348,73 @@ export default function LoanProcess() {
             });
         } catch (err) {
             console.error("REASON SAVE ERROR", err);
+        }
+    };
+
+    const saveRemark = async (customerId, field) => {
+        const current = customers.find((c) => c._id === customerId);
+        const remark = remarkDraft[customerId]?.[field] ?? current?.checklistRemarks?.[field] ?? "";
+        const currentValue = !!current?.checklist?.[field];
+        try {
+            const res = await fetch(`${API}/api/loan-process/${customerId}/checklist`, {
+                method: "PATCH",
+                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                body: JSON.stringify({ field, value: currentValue, remark }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setCustomers((prev) => prev.map((c) => (c._id === customerId ? data.customer : c)));
+            }
+        } catch (err) {
+            console.error("REMARK SAVE ERROR", err);
+        }
+    };
+
+     const clearRemark = async (customerId, field) => {
+        const key = `${customerId}-${field}`;
+        if (remarkInputRefs.current[key]) remarkInputRefs.current[key].value = "";
+
+        setRemarkDraft((prev) => ({
+            ...prev,
+            [customerId]: { ...(prev[customerId] || {}), [field]: "" },
+        }));
+
+        const current = customers.find((c) => c._id === customerId);
+        const currentValue = !!current?.checklist?.[field];
+        try {
+            const res = await fetch(`${API}/api/loan-process/${customerId}/checklist`, {
+                method: "PATCH",
+                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                body: JSON.stringify({ field, value: currentValue, remark: "" }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setCustomers((prev) => prev.map((c) => (c._id === customerId ? data.customer : c)));
+            } else {
+                console.error("REMARK CLEAR FAILED:", res.status, data.message);
+            }
+        } catch (err) {
+            console.error("REMARK CLEAR ERROR", err);
+        }
+    };
+
+        const saveDate = async (customerId, field, dateValue) => {
+        const current = customers.find((c) => c._id === customerId);
+        const currentValue = !!current?.checklist?.[field];
+        try {
+            const res = await fetch(`${API}/api/loan-process/${customerId}/checklist`, {
+                method: "PATCH",
+                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                body: JSON.stringify({ field, value: currentValue, date: dateValue }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setCustomers((prev) => prev.map((c) => (c._id === customerId ? data.customer : c)));
+            } else {
+                console.error("DATE SAVE FAILED:", res.status, data.message);
+            }
+        } catch (err) {
+            console.error("DATE SAVE ERROR", err);
         }
     };
 
@@ -1276,16 +1347,66 @@ export default function LoanProcess() {
 
                                     {isOpen && (
                                         <div className="lp-checklist-body">
-                                            {CHECKLIST_STAGES.map((stage) => (
-                                                <label className="lp-stage-row" key={stage.key}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={!!c.checklist?.[stage.key]}
-                                                        onChange={() => toggleStage(c._id, stage.key, c.checklist?.[stage.key])}
-                                                    />
-                                                    {stage.label}
-                                                </label>
+                                                                                        {CHECKLIST_STAGES.map((stage) => (
+                                                <div className="lp-stage-row" key={stage.key} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                                                    <label style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 180 }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={!!c.checklist?.[stage.key]}
+                                                            onChange={() => toggleStage(c._id, stage.key, c.checklist?.[stage.key])}
+                                                        />
+                                                        {stage.label}
+                                                    </label>
+                                                                                                        <div style={{ position: "relative", flex: "1 1 200px", display: "flex", alignItems: "center" }}>
+                                                        <input
+                                                            ref={(el) => { remarkInputRefs.current[`${c._id}-${stage.key}`] = el; }}
+                                                            type="text"
+                                                            placeholder="Remark (optional)"
+                                                            defaultValue={c.checklistRemarks?.[stage.key] || ""}
+                                                            onChange={(e) =>
+                                                                setRemarkDraft((prev) => ({
+                                                                    ...prev,
+                                                                    [c._id]: { ...(prev[c._id] || {}), [stage.key]: e.target.value },
+                                                                }))
+                                                            }
+                                                            onBlur={() => saveRemark(c._id, stage.key)}
+                                                            style={{
+                                                                width: "100%", padding: "4px 26px 4px 10px", border: "1px solid var(--lp-border)",
+                                                                borderRadius: 6, fontSize: 12, background: "var(--lp-surface)",
+                                                            }}
+                                                        />
+                                                        {(remarkDraft[c._id]?.[stage.key] ?? c.checklistRemarks?.[stage.key]) && (
+                                                            <button
+                                                                type="button"
+                                                                title="Clear remark"
+                                                                onMouseDown={(e) => e.preventDefault()}
+                                                                onClick={() => clearRemark(c._id, stage.key)}
+                                                                style={{
+                                                                    position: "absolute", right: 6, background: "transparent", border: "none",
+                                                                    cursor: "pointer", color: "var(--lp-text-muted)", fontSize: 14, lineHeight: 1,
+                                                                    padding: 2,
+                                                                }}
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                                                                    
+                                                    {DATE_ENABLED_STAGES.includes(stage.key) && (
+                                                        <input
+                                                            type="date"
+                                                            value={c.checklistDates?.[stage.key] ? c.checklistDates[stage.key].slice(0, 10) : ""}
+                                                            onChange={(e) => saveDate(c._id, stage.key, e.target.value)}
+                                                            style={{
+                                                                padding: "4px 8px", border: "1px solid var(--lp-border)",
+                                                                borderRadius: 6, fontSize: 12, background: "var(--lp-surface)",
+                                                            }}
+                                                        />
+                                                    )}
+                                                </div>
                                             ))}
+
+                                            
 
                                             <div style={{ marginTop: 12 }}>
                                                 <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>
