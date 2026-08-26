@@ -11,7 +11,7 @@ const TEXT_DOCS = [
   "Reference Number 2",
 ];
 
-export default function HrPending() {
+export default function AdminPendingApprovals() {
   const [employees, setEmployees] = useState([]);
   const [selected, setSelected] = useState(null);
   const [remark, setRemark] = useState("");
@@ -31,7 +31,7 @@ export default function HrPending() {
 
   // 🔥 FETCH DATA
   useEffect(() => {
-    fetch(`${API_BASE}/api/hr/pending`)
+    fetch(`${API_BASE}/api/admin/pending`)
       .then(res => res.json())
       .then(data => setEmployees(data))
       .catch(err => console.log(err));
@@ -62,14 +62,14 @@ export default function HrPending() {
     setPreviewDocType(docType);
   };
 
-  // ✅ APPROVE
+  // ✅ APPROVE (final — admin level)
   const handleApprove = async (id) => {
-    await fetch(`${API_BASE}/api/hr/approve/${id}`, {
+    await fetch(`${API_BASE}/api/admin/approve/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ remarks: remark })
     });
-    alert("Sent for Admin Approval ✅");
+    alert("Approved ✅");
     setSelected(null);
     setRemark("");
     setEmployees(prev => prev.filter(emp => emp._id !== id));
@@ -81,7 +81,7 @@ export default function HrPending() {
       alert("Please enter remark ❗");
       return;
     }
-    await fetch(`${API_BASE}/api/hr/reject/${id}`, {
+    await fetch(`${API_BASE}/api/admin/reject/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ remarks: remark })
@@ -195,7 +195,7 @@ export default function HrPending() {
 
   return (
     <div className="container-fluid p-3">
-      <h4 className="fw-bold mb-4">Pending Approvals</h4>
+      <h4 className="fw-bold mb-4" style={{ color: "#212529" }}>Pending Approvals (Admin)</h4>
 
       {/* ===== TABLE ===== */}
       <div className="card shadow-sm">
@@ -218,10 +218,8 @@ export default function HrPending() {
                   <td>{emp.name}</td>
                   <td>{emp.department}</td>
                   <td>{emp.email}</td>
-                                    <td>
-                    {emp.status === "admin_pending" ? (
-                      <span className="badge bg-info text-dark">⏳ Waiting for Admin Approval</span>
-                    ) : emp.reuploaded ? (
+                  <td>
+                    {emp.reuploaded ? (
                       <span className="badge bg-warning text-dark">🔁 Re-uploaded</span>
                     ) : (
                       <span className="badge bg-secondary">New</span>
@@ -311,6 +309,14 @@ export default function HrPending() {
     className="img-fluid rounded"
     style={{ height: "100px", objectFit: "cover", cursor: "pointer" }}
     onClick={() => openPreview(fileUrl, doc.docType)}
+    onError={(e) => {
+      e.target.onerror = null;
+      e.target.src =
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(
+          `<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f8d7da'/><text x='50%' y='50%' font-size='11' text-anchor='middle' fill='%23842029' dy='.3em'>Load failed</text></svg>`
+        );
+    }}
   />
 )}
 
@@ -321,42 +327,32 @@ export default function HrPending() {
               })}
             </div>
 
-                        {selected.status === "admin_pending" ? (
-              <div className="mt-3 alert alert-info mb-0">
-                ⏳ Already approved by you — waiting for <b>Admin's</b> final approval.
-              </div>
-            ) : (
-              <div className="mt-3">
-                <label className="fw-semibold">HR Remark</label>
-                <textarea
-                  className="form-control"
-                  rows="3"
-                  placeholder="Enter remarks..."
-                  value={remark}
-                  onChange={(e) => setRemark(e.target.value)}
-                />
-              </div>
-            )}
+            <div className="mt-3">
+              <label className="fw-semibold">Admin Remark</label>
+              <textarea
+                className="form-control"
+                rows="3"
+                placeholder="Enter admin remarks..."
+                value={remark}
+                onChange={(e) => setRemark(e.target.value)}
+              />
+            </div>
 
             <div className="mt-3 d-flex gap-2 flex-wrap">
-              {selected.status !== "admin_pending" && (
-                <>
-                  <button className="btn btn-success" onClick={() => handleApprove(selected._id)}>
-                    Approve
-                  </button>
-                  <button
-                    className="btn btn-danger"
-                    disabled={!remark}
-                    onClick={() => handleReject(selected._id)}
-                  >
-                    Reject
-                  </button>
-                </>
-              )}
+              <button className="btn btn-success" onClick={() => handleApprove(selected._id)}>
+                Approve
+              </button>
+              <button
+                className="btn btn-danger"
+                disabled={!remark}
+                onClick={() => handleReject(selected._id)}
+              >
+                Reject
+              </button>
               <button className="btn btn-secondary" onClick={handleClose}>
                 Close
               </button>
-              </div>
+            </div>
 
           </div>
         </div>
@@ -535,6 +531,8 @@ export default function HrPending() {
         }
         .modal-box {
           background: #fff;
+          color: #212529;
+          opacity: 1;
           padding: 20px;
           border-radius: 12px;
           width: 90%;
@@ -546,6 +544,14 @@ export default function HrPending() {
           border: 1px solid #eee;
           padding: 10px;
           border-radius: 10px;
+          color: #212529;
+        }
+        .modal-box h5,
+        .modal-box p,
+        .modal-box h6,
+        .modal-box small {
+          color: #212529 !important;
+          opacity: 1 !important;
         }
         .preview-modal {
           position: fixed;

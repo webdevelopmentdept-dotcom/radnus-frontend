@@ -32,6 +32,14 @@ export default function AdminSidebar() {
         { name: "Dashboard", path: "/admin/dashboard", icon: "bi-speedometer2" },
       ],
     },
+
+    {
+      module: "Employees",
+      items: [
+        { name: "Pending Approvals", path: "/admin/pending-approvals", icon: "bi-clock-history" },
+      ],
+    },
+
     {
       module: "Training",
       items: [
@@ -62,13 +70,13 @@ export default function AdminSidebar() {
     },
 
     {
-  module: "BDE",
-  items: [
-    { name: "Loan Process", path: "/admin/loan-process", icon: "bi-cash-coin" },
-         { name: "Loan Process Access", path: "/admin/loan-process/access", icon: "bi-person-check-fill" },
+      module: "BDE",
+      items: [
+        { name: "Loan Process", path: "/admin/loan-process", icon: "bi-cash-coin" },
+        { name: "Loan Process Access", path: "/admin/loan-process/access", icon: "bi-person-check-fill" },
 
-  ],
-},
+      ],
+    },
 
     {
       module: "Settings",
@@ -182,9 +190,8 @@ export default function AdminSidebar() {
 
       {/* DESKTOP SIDEBAR */}
       <div
-        className={`d-none d-md-flex flex-column justify-content-between ${
-          theme === "dark" ? "text-light" : "text-dark"
-        }`}
+        className={`d-none d-md-flex flex-column justify-content-between ${theme === "dark" ? "text-light" : "text-dark"
+          }`}
         style={{
           width: hover ? "230px" : "72px",
           height: "100vh",
