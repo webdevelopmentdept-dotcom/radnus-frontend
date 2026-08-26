@@ -156,6 +156,14 @@ const getLastMonthPeriod = () => {
   return d.toLocaleString("en-US", { month: "long", year: "numeric" }); // "August 2026"
 };
 
+// ✅ Attendance monthly-report API year/month numbers vendum, adhukku
+const getLastMonthNum = () => {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - 1);
+  return { year: d.getFullYear(), month: d.getMonth() + 1 }; // { year: 2026, month: 8 }
+};
+
 const downloadFile = async (url, filename) => {
   try {
     const response = await fetch(url);
@@ -1083,18 +1091,22 @@ const EmployeeDetailsPanel = ({ employee, onClose, onViewDocs }) => {
   const [activation, setActivation] = useState(null);
   const [esslId, setEsslId] = useState(employee.essl_id ?? "");
     const [lastMonthPerf, setLastMonthPerf] = useState(null); // { score, rating, period } | { score: null, period }
+  const [lastMonthAttendance, setLastMonthAttendance] = useState(null); // { pct, present, absent, late, half_day, on_leave, work_days, label } | null
 
   const [loading, setLoading] = useState(true);
 
     useEffect(() => {
     let cancelled = false;
     setLoading(true);
+        const { year: lastY, month: lastM } = getLastMonthNum();
+
     Promise.all([
       fetch(`${API_BASE}/api/employee/me/${employee._id}`).then(r => r.json()).catch(() => ({})),
       fetch(`${API_BASE}/api/hr/activation/docs/${employee._id}`).then(r => r.json()).catch(() => ({})),
       fetch(`${API_BASE}/api/hr/activation/${employee._id}`).then(r => r.json()).catch(() => null),
       fetch(`${API_BASE}/api/performance-reviews/${employee._id}`).then(r => r.json()).catch(() => null), // ✅ NEW
-    ]).then(([empRes, hrRes, actRes, perfRes]) => {
+      fetch(`${API_BASE}/api/attendance/monthly-report?year=${lastY}&month=${lastM}`).then(r => r.json()).catch(() => null), // ✅ NEW
+    ]).then(([empRes, hrRes, actRes, perfRes, attRes]) => {
       if (cancelled) return;
       setAllDocs(empRes.documents || employee.documents || []);
       setHrDocs(hrRes.success ? (hrRes.data || []) : []);
@@ -1109,6 +1121,24 @@ const EmployeeDetailsPanel = ({ employee, onClose, onViewDocs }) => {
         match
           ? { score: match.final_score, rating: match.rating, period: match.period }
           : { score: null, rating: null, period: lastMonthLabel }
+      );
+
+      // ✅ NEW: kadantha maasam oda attendance % match pannu
+      const attList = attRes?.success ? (attRes.data || []) : [];
+      const attMatch = attList.find(r => (r._id || r.employee_id) === employee._id);
+      setLastMonthAttendance(
+        attMatch
+          ? {
+              pct: attMatch.attendance_pct ?? 0,
+              present: attMatch.present ?? 0,
+              absent: attMatch.absent ?? 0,
+              late: attMatch.late ?? 0,
+              half_day: attMatch.half_day ?? 0,
+              on_leave: attMatch.on_leave ?? 0,
+              work_days: attMatch.work_days ?? 0,
+              label: lastMonthLabel,
+            }
+          : { pct: null, label: lastMonthLabel }
       );
 
     }).catch(() => { }).finally(() => { if (!cancelled) setLoading(false); });
@@ -1196,8 +1226,33 @@ const EmployeeDetailsPanel = ({ employee, onClose, onViewDocs }) => {
                   <DetailField label="eSSL Device ID" value={esslId} />
                 </div>
               </div>
+              {/* Salary */}
+              <div>
+                {editInfoSectionTitle("Salary Structure")}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px 16px" }}>
+                  <DetailField label="CTC (Annual)" value={fmtMoney(sal.ctc)} />
+                  <DetailField label="Basic" value={fmtMoney(sal.basic)} />
+                  <DetailField label="HRA" value={fmtMoney(sal.hra)} />
+                  <DetailField label="Special Allowance" value={fmtMoney(sal.special_allowance)} />
+                  <DetailField label="Conveyance" value={fmtMoney(sal.conveyance_allowance)} />
+                  <DetailField label="Gross Salary" value={fmtMoney(sal.gross_salary)} />
+                  <DetailField label="Net Salary" value={fmtMoney(sal.net_salary)} />
+                  <DetailField label="Professional Tax" value={fmtMoney(sal.professional_tax)} />
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                  {[
+                    { label: "PF", on: sal.pf_applicable },
+                    { label: "ESI", on: sal.esi_applicable },
+                    { label: "TDS", on: sal.tds_applicable },
+                  ].map(x => (
+                    <span key={x.label} style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: x.on ? "#f0fdf4" : "#f3f4f6", color: x.on ? "#16a34a" : "#9ca3af", border: `1px solid ${x.on ? "#bbf7d0" : "#e5e7eb"}` }}>
+                      {x.label} {x.on ? "Applicable" : "Not Applicable"}
+                    </span>
+                  ))}
+                </div>
+              </div>
 
-               {/* Performance */}
+{/* Performance */}
               <div>
                 {editInfoSectionTitle("Performance")}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 14px" }}>
@@ -1224,31 +1279,47 @@ const EmployeeDetailsPanel = ({ employee, onClose, onViewDocs }) => {
                 </div>
               </div>
 
-              {/* Salary */}
+
+              {/* Attendance */}
               <div>
-                {editInfoSectionTitle("Salary Structure")}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px 16px" }}>
-                  <DetailField label="CTC (Annual)" value={fmtMoney(sal.ctc)} />
-                  <DetailField label="Basic" value={fmtMoney(sal.basic)} />
-                  <DetailField label="HRA" value={fmtMoney(sal.hra)} />
-                  <DetailField label="Special Allowance" value={fmtMoney(sal.special_allowance)} />
-                  <DetailField label="Conveyance" value={fmtMoney(sal.conveyance_allowance)} />
-                  <DetailField label="Gross Salary" value={fmtMoney(sal.gross_salary)} />
-                  <DetailField label="Net Salary" value={fmtMoney(sal.net_salary)} />
-                  <DetailField label="Professional Tax" value={fmtMoney(sal.professional_tax)} />
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
-                  {[
-                    { label: "PF", on: sal.pf_applicable },
-                    { label: "ESI", on: sal.esi_applicable },
-                    { label: "TDS", on: sal.tds_applicable },
-                  ].map(x => (
-                    <span key={x.label} style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: x.on ? "#f0fdf4" : "#f3f4f6", color: x.on ? "#16a34a" : "#9ca3af", border: `1px solid ${x.on ? "#bbf7d0" : "#e5e7eb"}` }}>
-                      {x.label} {x.on ? "Applicable" : "Not Applicable"}
+                {editInfoSectionTitle("Attendance")}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 14px", marginBottom: 8 }}>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: "#1a1a2e" }}>
+                      {lastMonthAttendance?.label || "—"} Attendance
+                    </p>
+                    <p style={{ margin: "2px 0 0", fontSize: 11, color: "#9ca3af" }}>
+                      {lastMonthAttendance?.pct !== null && lastMonthAttendance?.pct !== undefined
+                        ? `${lastMonthAttendance.present ?? 0} present · ${lastMonthAttendance.absent ?? 0} absent of ${lastMonthAttendance.work_days ?? 0} work days`
+                        : "No attendance data for this month"}
+                    </p>
+                  </div>
+                  {lastMonthAttendance?.pct !== null && lastMonthAttendance?.pct !== undefined ? (
+                    <span style={{
+                      fontSize: 18, fontWeight: 800,
+                      color: lastMonthAttendance.pct >= 90 ? "#16a34a" : lastMonthAttendance.pct >= 75 ? "#d97706" : "#dc2626",
+                    }}>
+                      {lastMonthAttendance.pct}%
                     </span>
-                  ))}
+                  ) : (
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af" }}>—</span>
+                  )}
                 </div>
+                {lastMonthAttendance?.pct !== null && lastMonthAttendance?.pct !== undefined && (
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {[
+                      { label: "Late", value: lastMonthAttendance.late, color: "#d97706", bg: "#fffbeb" },
+                      { label: "Half Day", value: lastMonthAttendance.half_day, color: "#7c3aed", bg: "#f5f3ff" },
+                      { label: "On Leave", value: lastMonthAttendance.on_leave, color: "#0891b2", bg: "#ecfeff" },
+                    ].map(x => (
+                      <span key={x.label} style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: x.bg, color: x.color }}>
+                        {x.label}: {x.value}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
+
 
               {/* Documents Status */}
               <div>
