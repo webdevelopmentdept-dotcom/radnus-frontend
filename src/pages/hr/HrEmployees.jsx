@@ -131,6 +131,13 @@ export default function HrEmployees() {
     }
   };
 
+   // ── Resolve exit status (fallback to `status` field if exitType missing) ──
+  const getExitType = (emp) => {
+    if (emp.exitType === "relieved" || emp.exitType === "fired") return emp.exitType;
+    if (emp.status === "relieved" || emp.status === "fired") return emp.status;
+    return null;
+  };
+
   // ── Status Badge ──────────────────────────────────────────────
   const getStatusBadge = (emp) => {
     if (emp.exitType === "relieved") {
@@ -158,14 +165,15 @@ export default function HrEmployees() {
   };
 
   // ── Filter ────────────────────────────────────────────────────
-  const filteredEmployees = employees
+    const filteredEmployees = employees
     .filter((emp) => {
+      const exitStatus = getExitType(emp);
       if (filter === "all") return true;
-      if (filter === "active") return !emp.exitType;
-      if (filter === "relieved") return emp.exitType === "relieved";
-      if (filter === "fired") return emp.exitType === "fired";
+      if (filter === "active") return !exitStatus;
+      if (filter === "relieved") return exitStatus === "relieved";
+      if (filter === "fired") return exitStatus === "fired";
       if (filter === "access-pending")
-        return (emp.exitType === "relieved" || emp.exitType === "fired") &&
+        return (exitStatus === "relieved" || exitStatus === "fired") &&
           !emp.accessDeactivated;
       return true;
     })
@@ -179,9 +187,10 @@ export default function HrEmployees() {
       );
     });
 
-  const pendingAccessCount = employees.filter(
-    (e) => (e.exitType === "relieved" || e.exitType === "fired") && !e.accessDeactivated
-  ).length;
+    const pendingAccessCount = employees.filter((e) => {
+    const exitStatus = getExitType(e);
+    return (exitStatus === "relieved" || exitStatus === "fired") && !e.accessDeactivated;
+  }).length;
 
   return (
     <div className="container-fluid p-3">
@@ -267,65 +276,50 @@ export default function HrEmployees() {
                     <td>{emp.email}</td>
                     <td>{emp.department}</td>
                     <td>{getStatusBadge(emp)}</td>
-                    <td>
+                                        <td>
+                      {(() => {
+                        const exitStatus = getExitType(emp);
+                        return (
                       <div className="d-flex gap-1 flex-wrap">
 
                         {/* Active employees — Relieve / Fire */}
-                        {!emp.exitType && (
+                        {!exitStatus && (
                           <>
-                            <button
-                              className="btn btn-sm btn-outline-warning"
-                              onClick={() => handleRelieve(emp._id)}
-                            >
+                            <button className="btn btn-sm btn-outline-warning" onClick={() => handleRelieve(emp._id)}>
                               Relieve
                             </button>
-                            <button
-                              className="btn btn-sm btn-outline-danger"
-                              onClick={() => handleFire(emp._id)}
-                            >
+                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleFire(emp._id)}>
                               Fire
                             </button>
                           </>
                         )}
 
-                        {/* Relieved/Fired — Deactivate Access (if not yet deactivated) */}
-                        {(emp.exitType === "relieved" || emp.exitType === "fired") &&
+                        {(exitStatus === "relieved" || exitStatus === "fired") &&
                           !emp.accessDeactivated && (
                             <button
                               className="btn btn-sm btn-danger"
-                              onClick={() => {
-                                setSelectedEmp(emp);
-                                setShowDeactivateModal(true);
-                              }}
+                              onClick={() => { setSelectedEmp(emp); setShowDeactivateModal(true); }}
                             >
                               🔒 Deactivate Access
                             </button>
                           )}
 
-                        {/* Access already off label */}
                         {emp.accessDeactivated && (
                           <span className="text-muted small">✔ Access removed</span>
                         )}
 
-                        {/* ✅ Reactivate — for any relieved/fired employee */}
-                        {emp.exitType && (
-                          <button
-                            className="btn btn-sm btn-outline-success"
-                            onClick={() => handleReactivate(emp._id)}
-                          >
+                        {exitStatus && (
+                          <button className="btn btn-sm btn-outline-success" onClick={() => handleReactivate(emp._id)}>
                             ♻️ Reactivate
                           </button>
                         )}
 
-                        {/* Delete */}
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleDelete(emp._id)}
-                        >
+                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(emp._id)}>
                           Delete
                         </button>
-
                       </div>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))
@@ -361,11 +355,11 @@ export default function HrEmployees() {
                   </li>
                   <li>Department: {selectedEmp.department}</li>
                   <li>
-                    Exit type:{" "}
-                    <span className="badge bg-warning text-dark">
-                      {selectedEmp.exitType}
-                    </span>
-                  </li>
+  Exit type:{" "}
+  <span className="badge bg-warning text-dark">
+    {getExitType(selectedEmp)}
+  </span>
+</li>
                 </ul>
                 <p className="text-danger mt-2">
                   ⚠️ This will prevent the employee from logging into any company system.
