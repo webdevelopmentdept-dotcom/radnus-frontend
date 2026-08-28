@@ -28,6 +28,7 @@ function getHrId() {
 export default function HrDashboard() {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false); // mirrors HrSidebar's hover state
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   const [pendingCount, setPendingCount] = useState(0);
@@ -303,7 +304,7 @@ export default function HrDashboard() {
       `}</style>
 
       {/* Sidebar */}
-      <HrSidebar />
+      <HrSidebar onHoverChange={setSidebarExpanded} />
 
       {/* ✅ Single wrapper — auto-stacks notification + pending review, no manual pixel math */}
       <div className="top-right-stack">
@@ -356,7 +357,7 @@ export default function HrDashboard() {
       {/* Main Content */}
       <div
         style={{
-          marginLeft: isMobile ? "0px" : "260px",
+          marginLeft: isMobile ? "0px" : (sidebarExpanded ? "260px" : "72px"),
           padding: isMobile ? "15px" : "20px",
           transition: "0.3s",
         }}

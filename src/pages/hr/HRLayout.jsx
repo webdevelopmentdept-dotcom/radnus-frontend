@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import HrSidebar from './HrSidebar';
 import { Outlet } from 'react-router-dom';
 
 export default function HRLayout() {
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+
   return (
     <>
       <style>
@@ -16,7 +18,7 @@ export default function HRLayout() {
             }
           }
 
-          /* DESKTOP FIX — KEEP CONTENT VISIBLE ALWAYS */
+          /* DESKTOP */
           @media(min-width: 769px){
             .content-area {
               transition: margin-left 0.3s ease;
@@ -27,9 +29,9 @@ export default function HRLayout() {
 
       <div style={{ display: "flex" }}>
         {/* LEFT SIDEBAR */}
-        <HrSidebar />
+        <HrSidebar onHoverChange={setSidebarExpanded} />
 
-        {/* FIXED MAIN CONTENT AREA */}
+        {/* MAIN CONTENT AREA — shifts in sync with the sidebar's hover state */}
         <div
           className="content-area"
           style={{
@@ -37,7 +39,7 @@ export default function HRLayout() {
             background: "#F8F9FA",
             minHeight: "100vh",
             padding: "20px 30px",
-            margin: 0,
+            marginLeft: sidebarExpanded ? "260px" : "72px",
             overflowX: "hidden",
           }}
         >
