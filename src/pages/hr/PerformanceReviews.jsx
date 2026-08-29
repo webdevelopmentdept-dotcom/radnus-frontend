@@ -859,11 +859,34 @@ export default function PerformanceReviews() {
             </div>
           </div>
 
-          <div className="pr-logs-sidebar" style={{ flexDirection: "column", gap: 16 }}>
+                    <div className="pr-logs-sidebar" style={{ flexDirection: "column", gap: 16 }}>
             <div style={{ background: "#fff", borderRadius: 14, padding: 20, border: "1px solid #e5e7eb" }}>
-              <p style={{ margin: "0 0 14px", fontWeight: 700, fontSize: 14, color: "#1a1a2e", display: "flex", alignItems: "center", gap: 7 }}>
-                <BarChart2 size={15} color="#374151" /> Running Totals
-              </p>
+              {(() => {
+                const kpiItems = selectedAssignmentData?.month_version_id?.kpi_items || selectedAssignmentData?.template_id?.kpi_items;
+                const hasData = selectedEmployeeLog && Object.keys(logTotals).length > 0 && kpiItems?.length > 0;
+                let avgPct = 0;
+                let avgColor = "#dc2626";
+                if (hasData) {
+                  const pctList = kpiItems.map((item) => {
+                    const total = logTotals[item._id] || 0;
+                    return Math.min(Math.round((total / item.target) * 100), 100);
+                  });
+                  avgPct = Math.round(pctList.reduce((sum, p) => sum + p, 0) / pctList.length);
+                  avgColor = avgPct >= 100 ? "#16a34a" : avgPct >= 75 ? "#2563eb" : avgPct >= 50 ? "#d97706" : "#dc2626";
+                }
+                return (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#1a1a2e", display: "flex", alignItems: "center", gap: 7 }}>
+                      <BarChart2 size={15} color="#374151" /> Running Totals
+                    </p>
+                    {hasData && (
+                      <span style={{ fontSize: 12, fontWeight: 800, color: avgColor, background: `${avgColor}15`, padding: "3px 10px", borderRadius: 99 }}>
+                        Avg: {avgPct}%
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
               {!selectedEmployeeLog ? (
                 <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "20px 0" }}>Select employee first</p>
               ) : Object.keys(logTotals).length === 0 ? (

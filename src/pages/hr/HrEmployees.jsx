@@ -131,7 +131,7 @@ export default function HrEmployees() {
     }
   };
 
-   // ── Resolve exit status (fallback to `status` field if exitType missing) ──
+  // ── Resolve exit status (fallback to `status` field if exitType missing) ──
   const getExitType = (emp) => {
     if (emp.exitType === "relieved" || emp.exitType === "fired") return emp.exitType;
     if (emp.status === "relieved" || emp.status === "fired") return emp.status;
@@ -165,7 +165,7 @@ export default function HrEmployees() {
   };
 
   // ── Filter ────────────────────────────────────────────────────
-    const filteredEmployees = employees
+  const filteredEmployees = employees
     .filter((emp) => {
       const exitStatus = getExitType(emp);
       if (filter === "all") return true;
@@ -187,7 +187,7 @@ export default function HrEmployees() {
       );
     });
 
-    const pendingAccessCount = employees.filter((e) => {
+  const pendingAccessCount = employees.filter((e) => {
     const exitStatus = getExitType(e);
     return (exitStatus === "relieved" || exitStatus === "fired") && !e.accessDeactivated;
   }).length;
@@ -217,25 +217,25 @@ export default function HrEmployees() {
       )}
 
       {/* Search Bar */}
-<div className="mb-3">
-  <input
-    type="text"
-    className="form-control"
-    placeholder="🔍 Search by Name, Emp ID or Department..."
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-    style={{ maxWidth: "400px" }}
-  />
-</div>
+      <div className="mb-3">
+        <input
+          type="text"
+          className="form-control"
+          placeholder="🔍 Search by Name, Emp ID or Department..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ maxWidth: "400px" }}
+        />
+      </div>
 
 
       {/* Filter tabs */}
       <div className="d-flex gap-2 mb-3 flex-wrap">
         {[
-          { key: "all",            label: "All Employees" },
-          { key: "active",         label: "Active" },
-          { key: "relieved",       label: "Relieved" },
-          { key: "fired",          label: "Fired / Terminated" },
+          { key: "all", label: "All Employees" },
+          { key: "active", label: "Active" },
+          { key: "relieved", label: "Relieved" },
+          { key: "fired", label: "Fired / Terminated" },
           { key: "access-pending", label: `⚠️ Access Pending (${pendingAccessCount})` },
         ].map((tab) => (
           <button
@@ -276,48 +276,48 @@ export default function HrEmployees() {
                     <td>{emp.email}</td>
                     <td>{emp.department}</td>
                     <td>{getStatusBadge(emp)}</td>
-                                        <td>
+                    <td>
                       {(() => {
                         const exitStatus = getExitType(emp);
                         return (
-                      <div className="d-flex gap-1 flex-wrap">
+                          <div className="d-flex gap-1 flex-wrap">
 
-                        {/* Active employees — Relieve / Fire */}
-                        {!exitStatus && (
-                          <>
-                            <button className="btn btn-sm btn-outline-warning" onClick={() => handleRelieve(emp._id)}>
-                              Relieve
+                            {/* Active employees — Relieve / Fire */}
+                            {!exitStatus && (
+                              <>
+                                <button className="btn btn-sm btn-outline-warning" onClick={() => handleRelieve(emp._id)}>
+                                  Relieve
+                                </button>
+                                <button className="btn btn-sm btn-outline-danger" onClick={() => handleFire(emp._id)}>
+                                  Fire
+                                </button>
+                              </>
+                            )}
+
+                            {(exitStatus === "relieved" || exitStatus === "fired") &&
+                              !emp.accessDeactivated && (
+                                <button
+                                  className="btn btn-sm btn-danger"
+                                  onClick={() => { setSelectedEmp(emp); setShowDeactivateModal(true); }}
+                                >
+                                  🔒 Deactivate Access
+                                </button>
+                              )}
+
+                            {emp.accessDeactivated && (
+                              <span className="text-muted small">✔ Access removed</span>
+                            )}
+
+                            {exitStatus && (
+                              <button className="btn btn-sm btn-outline-success" onClick={() => handleReactivate(emp._id)}>
+                                ♻️ Reactivate
+                              </button>
+                            )}
+
+                            <button className="btn btn-sm btn-danger" onClick={() => handleDelete(emp._id)}>
+                              Delete
                             </button>
-                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleFire(emp._id)}>
-                              Fire
-                            </button>
-                          </>
-                        )}
-
-                        {(exitStatus === "relieved" || exitStatus === "fired") &&
-                          !emp.accessDeactivated && (
-                            <button
-                              className="btn btn-sm btn-danger"
-                              onClick={() => { setSelectedEmp(emp); setShowDeactivateModal(true); }}
-                            >
-                              🔒 Deactivate Access
-                            </button>
-                          )}
-
-                        {emp.accessDeactivated && (
-                          <span className="text-muted small">✔ Access removed</span>
-                        )}
-
-                        {exitStatus && (
-                          <button className="btn btn-sm btn-outline-success" onClick={() => handleReactivate(emp._id)}>
-                            ♻️ Reactivate
-                          </button>
-                        )}
-
-                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(emp._id)}>
-                          Delete
-                        </button>
-                      </div>
+                          </div>
                         );
                       })()}
                     </td>
@@ -355,11 +355,11 @@ export default function HrEmployees() {
                   </li>
                   <li>Department: {selectedEmp.department}</li>
                   <li>
-  Exit type:{" "}
-  <span className="badge bg-warning text-dark">
-    {getExitType(selectedEmp)}
-  </span>
-</li>
+                    Exit type:{" "}
+                    <span className="badge bg-warning text-dark">
+                      {getExitType(selectedEmp)}
+                    </span>
+                  </li>
                 </ul>
                 <p className="text-danger mt-2">
                   ⚠️ This will prevent the employee from logging into any company system.
