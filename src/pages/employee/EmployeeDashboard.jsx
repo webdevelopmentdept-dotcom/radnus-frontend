@@ -1283,18 +1283,32 @@ export default function EmployeeDashboard() {
                 )}
               </div>
 
-              <div style={{ marginTop: 10 }}>
-                {(showAllPerformers ? performersRanked : performersRanked.slice(0, 5)).map((r, i) => {
-                  const medal = ["🥇", "🥈", "🥉"][i];
-                  const empId = r.employee_id?._id || r.employee_id;
-                  const isMe = empId?.toString() === (employee?._id || employee?.id)?.toString();
-                  const scoreColor = r.final_score >= 90 ? "#00c896" : r.final_score >= 75 ? "#4f8ef7" : r.final_score >= 60 ? "#f0a500" : "#f45b5b";
-                  return (
-                    <div key={r._id} className="ed-ann-row" style={isMe ? { background: "#eff6ff" } : {}}>
-                      <div style={{ width: 26, textAlign: "center", fontSize: 14, fontWeight: 800, color: "#9ca3af", flexShrink: 0 }}>
-                        {medal || `#${i + 1}`}
-                      </div>
-                      <div style={{
+           <div style={{ marginTop: 10 }}>
+  {(showAllPerformers ? performersRanked : performersRanked.slice(0, 5)).map((r, i, arr) => {
+    // Dense ranking: tie groups share a rank; next distinct score = prevRank + 1 (no skipping)
+    const rank = i > 0
+      ? (r.final_score === arr[i - 1].final_score ? arr[i - 1]._rank : arr[i - 1]._rank + 1)
+      : 1;
+    r._rank = rank; // cache on the row so the next tie can read it back
+const badgeColors = {
+  1: { bg: "#fef3c7", fg: "#b45309" },
+  2: { bg: "#e5e7eb", fg: "#4b5563" },
+  3: { bg: "#fde3cc", fg: "#c2410c" },
+};
+const badge = badgeColors[rank] || { bg: "#f3f4f6", fg: "#9ca3af" };
+const empId = r.employee_id?._id || r.employee_id;
+const isMe = empId?.toString() === (employee?._id || employee?.id)?.toString();
+const scoreColor = r.final_score >= 90 ? "#00c896" : r.final_score >= 75 ? "#4f8ef7" : r.final_score >= 60 ? "#f0a500" : "#f45b5b";
+return (
+  <div key={r._id} className="ed-ann-row" style={isMe ? { background: "#eff6ff" } : {}}>
+    <div style={{
+      width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: 12, fontWeight: 800,
+      background: badge.bg, color: badge.fg,
+    }}>
+      {rank}
+    </div>       <div style={{
                         width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
                         background: "#f0f4ff", border: "1px solid #c7d2fe",
                         display: "flex", alignItems: "center", justifyContent: "center",
