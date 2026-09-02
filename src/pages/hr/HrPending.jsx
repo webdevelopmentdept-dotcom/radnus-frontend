@@ -325,16 +325,29 @@ export default function HrPending() {
               <div className="mt-3 alert alert-info mb-0">
                 ⏳ Already approved by you — waiting for <b>Admin's</b> final approval.
               </div>
-            ) : (
-              <div className="mt-3">
-                <label className="fw-semibold">HR Remark</label>
-                <textarea
-                  className="form-control"
-                  rows="3"
-                  placeholder="Enter remarks..."
-                  value={remark}
-                  onChange={(e) => setRemark(e.target.value)}
-                />
+                        ) : (
+              <div className="mt-3 row g-2">
+                <div className="col-md-6">
+                  <label className="fw-semibold small">HR Remark</label>
+                  <textarea
+                    className="form-control form-control-sm"
+                    rows="2"
+                    placeholder="Enter remarks..."
+                    value={remark}
+                    onChange={(e) => setRemark(e.target.value)}
+                  />
+                </div>
+                <div className="col-md-6">
+                  <label className="fw-semibold small">MD Remark</label>
+                  <textarea
+                    className="form-control form-control-sm"
+                    rows="2"
+                    placeholder="No remarks from MD yet"
+                    value={selected.mdRemarks || ""}
+                    readOnly
+                    disabled
+                  />
+                </div>
               </div>
             )}
 

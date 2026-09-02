@@ -327,15 +327,28 @@ export default function AdminPendingApprovals() {
               })}
             </div>
 
-            <div className="mt-3">
-              <label className="fw-semibold">Admin Remark</label>
-              <textarea
-                className="form-control"
-                rows="3"
-                placeholder="Enter admin remarks..."
-                value={remark}
-                onChange={(e) => setRemark(e.target.value)}
-              />
+                      <div className="mt-3 row g-2">
+              <div className="col-md-6">
+                <label className="fw-semibold small">HR Remark</label>
+                <textarea
+                  className="form-control form-control-sm"
+                  rows="2"
+                  placeholder="No remarks from HR"
+                  value={selected.hrRemarks || ""}
+                  readOnly
+                  disabled
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="fw-semibold small">MD Remark</label>
+                <textarea
+                  className="form-control form-control-sm"
+                  rows="2"
+                  placeholder="Enter your remarks..."
+                  value={remark}
+                  onChange={(e) => setRemark(e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="mt-3 d-flex gap-2 flex-wrap">

@@ -435,7 +435,7 @@ export default function HrApproved() {
             <table className="hr-table">
               <thead>
                 <tr style={{ background: "#f8fafc" }}>
-                  {["#", "Employee Code", "Name", "Email", "Department", "Designation", "Status", "Action"].map(h => (
+                  {["#", "Employee Code", "Name", "Email", "Department", "Designation", "HR Remark", "MD Remark", "Status", "Action"].map(h => (
                     <th key={h} style={{ padding: "12px 20px", textAlign: "left", fontWeight: 700, color: "#374151", borderBottom: "2px solid #e5e7eb", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
@@ -466,6 +466,12 @@ export default function HrApproved() {
                     <td style={{ padding: "14px 20px", color: "#6b7280", whiteSpace: "nowrap" }}>{emp.email}</td>
                     <td style={{ padding: "14px 20px", color: "#374151", whiteSpace: "nowrap" }}>{getDepartment(emp) || "—"}</td>
                     <td style={{ padding: "14px 20px", color: "#374151", whiteSpace: "nowrap" }}>{getDesignation(emp) || "—"}</td>
+<td style={{ padding: "14px 20px", color: "#6b7280", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={emp.hrRemarks || ""}>
+  {emp.hrRemarks || "—"}
+</td>
+<td style={{ padding: "14px 20px", color: "#6b7280", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={emp.mdRemarks || ""}>
+  {emp.mdRemarks || "—"}
+</td>
                     <td style={{ padding: "14px 20px" }}>
                       <span style={{
                         background: emp.status === "active" ? "#f0fdf4" : "#fffbeb",
