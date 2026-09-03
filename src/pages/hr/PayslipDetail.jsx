@@ -1,6 +1,10 @@
 // pages/hr/PayslipDetail.jsx
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePayslipDetail } from "../../hooks/usePayroll";
+import EditPayslipModal from "./EditPayslipModal";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"];
@@ -45,30 +49,94 @@ function numberToWords(num) {
 }
 const amountInWords = (v) => `${numberToWords(v)} Rupees Only`;
 
+// "Worked Days" here = payable_days (present + half-day + paid leave + holidays + weekends).
+// Sundays/weekly-offs count towards Worked Days too — only LOP (absent/unpaid leave) is excluded.
 const WORKED_DAYS = (p) =>
-  (p.present_days || 0) + (p.half_days || 0) * 0.5 + (p.paid_leave_days || 0);
+  p.payable_days ??
+  ((p.present_days || 0) + (p.half_days || 0) * 0.5 + (p.paid_leave_days || 0) +
+   (p.holiday_days || 0) + (p.weekend_days || 0));
 
 export default function PayslipDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: p, isLoading } = usePayslipDetail(id);
+  const [showEdit, setShowEdit] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    const el = document.getElementById("payslip-print");
+    if (!el) return;
+    setDownloading(true);
+    try {
+      // captures ONLY the payslip card — the floating "Pending Review" widget,
+      // sidebar, browser date/URL/page-number headers are all outside this
+      // element, so none of them end up in the PDF.
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "pt", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      if (imgHeight <= pageHeight) {
+        pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      } else {
+        // taller than one A4 page — slice across multiple pages
+        let heightLeft = imgHeight;
+        let position = 0;
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+      }
+
+      const fileName = `Payslip_${(p.employee_name || "employee").replace(/\s+/g, "_")}_${MONTH_NAMES[p.month]}_${p.year}.pdf`;
+      pdf.save(fileName);
+    } catch (err) {
+      alert("PDF generate பண்றதுல problem வந்துச்சு: " + err.message);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   if (isLoading) return <div style={{ padding: 60, textAlign: "center", color: "#6b7280" }}>Loading...</div>;
   if (!p) return <div style={{ padding: 60, textAlign: "center", color: "#9ca3af" }}>Payslip not found.</div>;
 
  
-const lopAmount = (p.absent_days || 0) * (p.per_day_rate || 0);
+const lopDays = p.lop_days ?? ((p.absent_days || 0) + (p.unpaid_leave_days || 0));
+const lopAmount = lopDays * (p.per_day_rate || 0);
 const halfDayAmount = (p.half_days || 0) * (p.per_day_rate || 0) * 0.5;
 // deductions.total_deductions already includes any advance recovery amount
 const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount + halfDayAmount;
   const totalEarnings = p.earnings?.gross_earnings || 0;
+  const isEditable = p.status === "draft";
 
   return (
     <div style={{ padding: 24, maxWidth: 820, margin: "0 auto" }}>
-      <button onClick={() => navigate(-1)} className="no-print" style={{
-        background: "none", border: "none", color: "#2563eb", fontSize: 13, fontWeight: 600,
-        cursor: "pointer", marginBottom: 16,
-      }}>← Back</button>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16,
+      }}>
+        <button onClick={() => navigate(-1)} className="no-print" style={{
+          background: "none", border: "none", color: "#2563eb", fontSize: 13, fontWeight: 600,
+          cursor: "pointer",
+        }}>← Back</button>
+
+        {isEditable && (
+          <button onClick={() => setShowEdit(true)} className="no-print" style={{
+            background: "#fff", border: "1px solid #d1d5db", color: "#374151", fontSize: 13,
+            fontWeight: 600, borderRadius: 8, padding: "7px 14px", cursor: "pointer",
+          }}>✏️ Edit</button>
+        )}
+      </div>
 
       <div id="payslip-print" style={{
         background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden",
@@ -94,9 +162,10 @@ const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount + half
           <InfoRow label="Pay Period" value={`${MONTH_NAMES[p.month]} ${p.year}`} />
           <InfoRow label="Designation" value={p.designation} />
           <InfoRow label="Worked Days" value={WORKED_DAYS(p)} />
+          <InfoRow label="Total Days in Month" value={p.total_days_in_month || "—"} />
           <InfoRow label="Department" value={p.department} />
           {p.employee_code && <InfoRow label="Employee Code" value={p.employee_code} />}
-          <InfoRow label="Absent (LOP) Days" value={p.absent_days || 0} />
+          <InfoRow label="Absent (LOP) Days" value={lopDays} />
         </div>
 
         {/* Earnings | Deductions table */}
@@ -110,7 +179,7 @@ const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount + half
             </tr>
           </thead>
           <tbody>
-{buildRows(p, lopAmount, halfDayAmount).map((row, i) => (
+{buildRows(p, lopDays, lopAmount, halfDayAmount).map((row, i) => (
               <tr key={i}>
                 <td style={tdStyle}>{row.eLabel}</td>
                 <td style={{ ...tdStyle, textAlign: "right" }}>{row.eAmount}</td>
@@ -162,10 +231,22 @@ const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount + half
         </p>
       </div>
 
-      <button onClick={() => window.print()} className="no-print" style={{
-        marginTop: 16, background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 8,
-        padding: "10px 22px", fontWeight: 700, fontSize: 13, cursor: "pointer",
-      }}>🖨️ Print Payslip</button>
+      <div className="no-print" style={{ display: "flex", gap: 10, marginTop: 16 }}>
+        <button onClick={handleDownloadPDF} disabled={downloading} style={{
+          background: "#1a1a2e", color: "#fff", border: "none", borderRadius: 8,
+          padding: "10px 22px", fontWeight: 700, fontSize: 13,
+          cursor: downloading ? "not-allowed" : "pointer", opacity: downloading ? 0.7 : 1,
+        }}>{downloading ? "Generating PDF..." : "⬇️ Download PDF"}</button>
+
+        <button onClick={() => window.print()} style={{
+          background: "#fff", color: "#374151", border: "1px solid #d1d5db", borderRadius: 8,
+          padding: "10px 22px", fontWeight: 700, fontSize: 13, cursor: "pointer",
+        }}>🖨️ Print</button>
+      </div>
+
+      {showEdit && (
+        <EditPayslipModal payslip={p} onClose={() => setShowEdit(false)} />
+      )}
 
       <style>{`
         @media print {
@@ -178,7 +259,7 @@ const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount + half
 }
 
 // ── Build side-by-side earnings/deductions rows (pads shorter column with blanks) ──
-function buildRows(p, lopAmount, halfDayAmount) {
+function buildRows(p, lopDays, lopAmount, halfDayAmount) {
   const earningsList = [
     { label: "Basic", amount: p.earnings?.basic },
     { label: "HRA", amount: p.earnings?.hra },
@@ -189,7 +270,7 @@ function buildRows(p, lopAmount, halfDayAmount) {
 
   const deductionsList = [];
   
-  if (p.absent_days > 0) deductionsList.push({ label: `LOP (${p.absent_days} day${p.absent_days > 1 ? "s" : ""})`, amount: lopAmount });
+  if (lopDays > 0) deductionsList.push({ label: `LOP (${lopDays} day${lopDays > 1 ? "s" : ""})`, amount: lopAmount });
   if (p.half_days > 0) deductionsList.push({ label: `Half Day (${p.half_days} day${p.half_days > 1 ? "s" : ""})`, amount: halfDayAmount });
   (p.advance_recoveries || []).forEach((a) => {
     deductionsList.push({ label: `Advance Recovery (${a.reason})`, amount: a.amount });

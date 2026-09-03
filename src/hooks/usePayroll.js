@@ -136,6 +136,21 @@ export const useSetOtherDeduction = () => {
   });
 };
 
+export const useUpdatePayslip = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, payload }) => {
+      const res = await axios.put(`${API}/payslip/${id}`, payload);
+      return res.data;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["payslip", vars.id] });
+      qc.invalidateQueries({ queryKey: ["payroll-payslips"] });
+      qc.invalidateQueries({ queryKey: ["payroll-runs"] });
+    },
+  });
+};
+
 
 // ── Single payslip detail ───────────────────────────────────
 export const usePayslipDetail = (payslipId) => {

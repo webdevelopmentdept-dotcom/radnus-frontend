@@ -920,6 +920,7 @@ export default function UploadDocuments() {
   const [identityChoice, setIdentityChoice] = useState(null);
   const [companies, setCompanies] = useState([{ id: Date.now(), name: "" }]);
   const [showRefNote, setShowRefNote] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const employeeId = localStorage.getItem("employeeId");
@@ -1024,16 +1025,18 @@ export default function UploadDocuments() {
     (hasExperience === true && companies.every(c => COMPANY_DOCS.every(cd => statuses[`${cd.id}_${c.id}`] === "success")));
   const canSubmit = mandatoryAllDone && ugAllDone && expAllDone && hasUG !== null && hasExperience !== null && identityProofDone;
 
-  const handleSubmit = async () => {
+    const handleSubmit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
     try {
       await axios.put(`${API_BASE}/api/employee/complete-documents`, { employeeId: localStorage.getItem("employeeId") });
       alert("Documents Submitted");
       window.location.href = "/employee/dashboard";
     } catch (err) {
       alert(err.response?.data?.message || "Submission failed");
+      setSubmitting(false);
     }
   };
-
   // Prop bundles passed to the top-level components (see note above styles).
   const docCardProps = { statuses, files, dragActive, setDragActive, handleFileChange, openPreview, removeFile, handleUpload };
   const textFieldProps = { statuses, textFields, setTextFields, handleSaveText };
@@ -1307,8 +1310,8 @@ export default function UploadDocuments() {
           {!mandatoryAllDone && <p style={{ ...styles.alertDanger, display: "inline-block", marginBottom: 10 }}>Please upload all mandatory documents first.</p>}
 
           <div>
-            <button style={styles.submitBtn(canSubmit)} disabled={!canSubmit} onClick={handleSubmit}>
-              Submit Documents
+                        <button style={styles.submitBtn(canSubmit)} disabled={!canSubmit || submitting} onClick={handleSubmit}>
+              {submitting ? "Submitting..." : "Submit Documents"}
             </button>
           </div>
         </div>
