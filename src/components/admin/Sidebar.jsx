@@ -72,6 +72,7 @@ export default function AdminSidebar() {
     {
       module: "BDE",
       items: [
+        { name: "Loan Analytics", path: "/admin/loan-analytics", icon: "bi-graph-up-arrow" },
         { name: "Loan Process", path: "/admin/loan-process", icon: "bi-cash-coin" },
         { name: "Loan Process Access", path: "/admin/loan-process/access", icon: "bi-person-check-fill" },
 

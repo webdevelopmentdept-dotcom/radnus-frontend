@@ -141,6 +141,7 @@ import TechnicianList from "./components/admin/Technicianlist";
 import AdminLoanProcess from "./components/admin/AdminLoanProcess";
 import AdminLoanAccess from "./components/admin/Adminloanaccess";
 import AdminPendingApprovals from "./components/admin/AdminPendingApprovals";
+import AdminLoanAnalytics from "./components/admin/AdminLoanAnalytics";
 
 /* Channel */
 import ChannelDashboard from "./pages/Channel/ChannelDashboard";
@@ -366,6 +367,7 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="loan-process" element={<AdminLoanProcess />} />
           <Route path="loan-process/access" element={<AdminLoanAccess />} />
+          <Route path="loan-analytics" element={<AdminLoanAnalytics />} />
           <Route path="applicants" element={<ApplicantList />} />
           <Route path="partners" element={<PartnerList />} />
           <Route path="leads" element={<LeadList />} />

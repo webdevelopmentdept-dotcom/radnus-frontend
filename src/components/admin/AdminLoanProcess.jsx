@@ -43,13 +43,6 @@ export default function AdminLoanProcess() {
   const [schemeFilter, setSchemeFilter] = useState("");
   const [sortOption, setSortOption] = useState("");
 
-  // ── Metrics (always full grand total — independent of filters above) ──────
-  const [metrics, setMetrics] = useState(null);
-  const [metricsLoading, setMetricsLoading] = useState(false);
-
-  // ── Staff breakdown table visibility (button toggle) ───────────────────
-  const [showStaffTable, setShowStaffTable] = useState(false);
-
   const loadCustomers = async () => {
     setLoading(true);
     try {
@@ -78,23 +71,9 @@ export default function AdminLoanProcess() {
     }
   };
 
-  const loadMetrics = async () => {
-    setMetricsLoading(true);
-    try {
-      const res = await fetch(`${API}/api/admin-loan-process/metrics`);
-      const data = await res.json();
-      if (data.success) setMetrics(data.data);
-    } catch (err) {
-      console.error("ADMIN LOAN METRICS ERROR", err);
-    } finally {
-      setMetricsLoading(false);
-    }
-  };
-
   useEffect(() => {
     loadCustomers();
     loadStaffList();
-    loadMetrics(); // fetched once — always full grand total, not affected by search/filter
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -246,54 +225,11 @@ export default function AdminLoanProcess() {
         .alp-doc-chip.uploaded { border-color: var(--lp-accent); }
         .alp-doc-chip a { color: var(--lp-primary); font-weight: 600; text-decoration: none; font-size: 11px; }
 
-        /* ── Metrics dashboard ─────────────────────────────────────────── */
-        .alp-metrics-grid {
-          display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: 10px; margin-bottom: 16px;
-        }
-        .alp-metric-card {
-          background: var(--lp-surface); border: 1px solid var(--lp-border);
-          border-radius: var(--lp-radius-md); box-shadow: var(--lp-shadow-sm);
-          padding: 12px 14px;
-        }
-        .alp-metric-label {
-          font-size: 10.5px; font-weight: 700; text-transform: uppercase;
-          letter-spacing: 0.04em; color: var(--lp-text-muted); margin-bottom: 4px;
-        }
-        .alp-metric-value { font-size: 20px; font-weight: 800; color: var(--lp-text); line-height: 1.2; }
-        .alp-metric-value.accent { color: var(--lp-accent); }
-        .alp-metric-value.primary { color: var(--lp-primary); }
-
-        /* ── Header row: title + staff breakdown toggle button ──────────── */
+        /* ── Header row ───────────────────────────────────────────────── */
         .alp-header-row {
           display: flex; align-items: flex-start; justify-content: space-between;
           gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
         }
-        .alp-staff-toggle-btn {
-          display: inline-flex; align-items: center; gap: 6px;
-          padding: 8px 14px; border-radius: var(--lp-radius-sm);
-          border: 1px solid var(--lp-border); background: var(--lp-surface);
-          color: var(--lp-primary); font-size: 12.5px; font-weight: 700;
-          cursor: pointer; box-shadow: var(--lp-shadow-sm); white-space: nowrap;
-          flex-shrink: 0;
-        }
-        .alp-staff-toggle-btn:hover { background: var(--lp-primary-soft); }
-        .alp-staff-toggle-icon { font-size: 10px; transition: transform 0.15s ease; }
-
-        .alp-staff-table-wrap {
-          background: var(--lp-surface); border: 1px solid var(--lp-border);
-          border-radius: var(--lp-radius-md); box-shadow: var(--lp-shadow-sm);
-          overflow: hidden; margin-top: 10px;
-        }
-        .alp-staff-table-wrap-top { margin-top: 0; margin-bottom: 16px; }
-        .alp-staff-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-        .alp-staff-table th {
-          text-align: left; padding: 8px 14px; background: var(--lp-bg);
-          font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;
-          color: var(--lp-text-muted); font-weight: 700; border-bottom: 1px solid var(--lp-border);
-        }
-        .alp-staff-table td { padding: 8px 14px; border-bottom: 1px solid var(--lp-border); }
-        .alp-staff-table tr:last-child td { border-bottom: none; }
       `}</style>
 
       <div className="alp-header-row">
@@ -303,87 +239,7 @@ export default function AdminLoanProcess() {
             All telecallers' customers across the BDE department.
           </p>
         </div>
-
-        {/* ── Staff breakdown toggle button — moved to top ── */}
-        {metrics?.staffBreakdown && metrics.staffBreakdown.length > 0 && (
-          <button
-            type="button"
-            className="alp-staff-toggle-btn"
-            onClick={() => setShowStaffTable((v) => !v)}
-          >
-            <span>{showStaffTable ? "Hide" : "Show"} Telecaller-wise Breakdown</span>
-            <span
-              className="alp-staff-toggle-icon"
-              style={{ transform: showStaffTable ? "rotate(180deg)" : "rotate(0deg)" }}
-            >
-              ▼
-            </span>
-          </button>
-        )}
       </div>
-
-      {showStaffTable && metrics?.staffBreakdown && metrics.staffBreakdown.length > 0 && (
-        <div className="alp-staff-table-wrap alp-staff-table-wrap-top">
-          <table className="alp-staff-table">
-            <thead>
-              <tr>
-                <th>Telecaller</th>
-                <th>Applications</th>
-                <th>Revenue</th>
-                <th>Completed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {metrics.staffBreakdown.map((s) => (
-                <tr key={s._id || s.staffName}>
-                  <td style={{ fontWeight: 600 }}>{s.staffName || "Unknown"}</td>
-                  <td>{s.applications}</td>
-                  <td>{formatRupee(s.revenue)}</td>
-                  <td>{s.completedCount}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ══════════════ METRICS DASHBOARD (always full grand total) ══════════════ */}
-      {metricsLoading && !metrics && (
-        <p style={{ color: "var(--lp-text-muted)", fontSize: 13 }}>Loading metrics…</p>
-      )}
-
-      {metrics && (
-        <div className="alp-metrics-grid">
-          <div className="alp-metric-card">
-            <div className="alp-metric-label">Total Applications</div>
-            <div className="alp-metric-value">{metrics.totalApplications}</div>
-          </div>
-          <div className="alp-metric-card">
-            <div className="alp-metric-label">Total Revenue</div>
-            <div className="alp-metric-value">{formatRupee(metrics.totalRevenue)}</div>
-          </div>
-          <div className="alp-metric-card">
-            <div className="alp-metric-label">Completed Revenue</div>
-            <div className="alp-metric-value accent">{formatRupee(metrics.completedRevenue)}</div>
-          </div>
-          <div className="alp-metric-card">
-            <div className="alp-metric-label">Completed</div>
-            <div className="alp-metric-value accent">{metrics.completedCount}</div>
-          </div>
-          <div className="alp-metric-card">
-            <div className="alp-metric-label">In Progress</div>
-            <div className="alp-metric-value primary">{metrics.inProgressCount}</div>
-          </div>
-          {/* <div className="alp-metric-card">
-            <div className="alp-metric-label">Avg Progress</div>
-            <div className="alp-metric-value">{metrics.avgProgress}%</div>
-          </div> */}
-          {/* <div className="alp-metric-card">
-            <div className="alp-metric-label">Pending Reason</div>
-            <div className="alp-metric-value">{metrics.pendingCount}</div>
-          </div> */}
-        </div>
-      )}
 
       <div className="alp-filters">
         <input
