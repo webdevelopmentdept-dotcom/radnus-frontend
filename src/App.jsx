@@ -142,6 +142,7 @@ import AdminLoanProcess from "./components/admin/AdminLoanProcess";
 import AdminLoanAccess from "./components/admin/Adminloanaccess";
 import AdminPendingApprovals from "./components/admin/AdminPendingApprovals";
 import AdminLoanAnalytics from "./components/admin/AdminLoanAnalytics";
+import LoanProcessReport from "./pages/employee/LoanProcessReport";
 
 /* Channel */
 import ChannelDashboard from "./pages/Channel/ChannelDashboard";
@@ -265,6 +266,10 @@ function App() {
         <Route path="/employee/loan-process" element={<EmployeeProtectedRoute>  <LoanProcess /> </EmployeeProtectedRoute>
         }
         />
+        <Route path="/employee/loan-process-report" element={<EmployeeProtectedRoute>  <LoanProcessReport /> </EmployeeProtectedRoute>
+        }
+        />
+
 
 
         {/* HR Routes */}
@@ -367,6 +372,7 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="loan-process" element={<AdminLoanProcess />} />
           <Route path="loan-process/access" element={<AdminLoanAccess />} />
+          
           <Route path="loan-analytics" element={<AdminLoanAnalytics />} />
           <Route path="applicants" element={<ApplicantList />} />
           <Route path="partners" element={<PartnerList />} />

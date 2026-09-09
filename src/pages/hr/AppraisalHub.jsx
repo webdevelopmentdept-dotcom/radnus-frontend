@@ -3,7 +3,7 @@ import axios from "axios";
 import {
   Plus, Search, Eye, Edit2, Trash2,
   CheckCircle, Clock, TrendingUp, Users,
-  X, Save, Send
+  X, Save, Send, RefreshCw, Award, Zap, Star, Lightbulb
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -55,6 +55,8 @@ const STYLES = `
   @media (max-width: 480px) {
     .ah-stats { grid-template-columns: 1fr !important; }
   }
+  .spin { animation: ah-spin 0.8s linear infinite; }
+  @keyframes ah-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 `;
 
 const inputStyle = {
@@ -239,13 +241,19 @@ const AppraisalCard = ({ a, onView, onEdit, onPublish, onDelete }) => (
     </div>
 
     {/* Info grid */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px 10px", marginBottom: 12 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 10px", marginBottom: 12 }}>
       <div>
         <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>Rating</span>
         <p style={{ margin: "2px 0 0" }}>
           {a.hr_rating
             ? <Badge label={a.hr_rating} color={RATING_COLORS[a.hr_rating]} />
             : <span style={{ fontSize: 12, color: "#9ca3af" }}>—</span>}
+        </p>
+      </div>
+      <div>
+        <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>Recognition</span>
+        <p style={{ margin: "2px 0 0", fontSize: 13, fontWeight: 700, color: COLORS.blue, display: "flex", alignItems: "center", gap: 4 }}>
+          <Award size={12} /> {a.recognition_score || 0} pts
         </p>
       </div>
       <div>
@@ -294,6 +302,7 @@ export default function AppraisalHub() {
   const [showView,     setShowView]     = useState(null);
   const [showEdit,     setShowEdit]     = useState(null);
   const [saving,       setSaving]       = useState(false);
+  const [refreshingRecognition, setRefreshingRecognition] = useState(false);
 
   const emptyForm = {
     title: "", period_from: "", period_to: "",
@@ -377,6 +386,24 @@ export default function AppraisalHub() {
       await axios.delete(`${API_BASE}/api/appraisals/${id}`);
       fetchAppraisals();
     } catch { alert("Error deleting appraisal"); }
+  };
+
+  // Re-pull recognition score from Recognition Hub — useful when awards were
+  // announced after this appraisal was first created.
+  const handleRefreshRecognition = async (id) => {
+    setRefreshingRecognition(true);
+    try {
+      const res = await axios.patch(`${API_BASE}/api/appraisals/${id}/refresh-recognition`);
+      const updated = res.data?.data;
+      if (updated) {
+        setShowView(updated);
+        setAppraisals(prev => prev.map(a => (a._id === updated._id ? updated : a)));
+      }
+    } catch {
+      alert("Error refreshing recognition score");
+    } finally {
+      setRefreshingRecognition(false);
+    }
   };
 
   const openEdit = (a) => {
@@ -501,7 +528,7 @@ export default function AppraisalHub() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e5e7eb" }}>
-                    {["Title", "Employee", "Type", "Period", "Rating", "Increment", "Status", "Actions"].map(h => (
+                    {["Title", "Employee", "Type", "Period", "Rating", "Recognition", "Increment", "Status", "Actions"].map(h => (
                       <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 600, color: "#6b7280", textAlign: "left", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
@@ -540,6 +567,11 @@ export default function AppraisalHub() {
                         {a.hr_rating
                           ? <Badge label={a.hr_rating} color={RATING_COLORS[a.hr_rating]} />
                           : <span style={{ fontSize: 12, color: "#9ca3af" }}>—</span>}
+                      </td>
+                      <td style={{ padding: "14px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 700, color: COLORS.blue }}>
+                          <Award size={12} /> {a.recognition_score || 0} pts
+                        </div>
                       </td>
                       <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 600, color: COLORS.green }}>
                         {a.increment_percent > 0 ? `+${a.increment_percent}%` : "—"}
@@ -657,6 +689,50 @@ export default function AppraisalHub() {
                   <div style={{ fontSize: 13, color: "#374151" }}>{showView.remarks}</div>
                 </div>
               )}
+            </div>
+
+            {/* ── Recognition Score (pulled from Recognition Hub) ── */}
+            <div style={{ marginTop: 20, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px 16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <Award size={15} color={COLORS.blue} />
+                  <span style={{ fontWeight: 700, fontSize: 13, color: "#111827" }}>Recognition Score</span>
+                  <span style={{ fontSize: 11, color: "#9ca3af" }}>(for this appraisal period)</span>
+                </div>
+                <button
+                  onClick={() => handleRefreshRecognition(showView._id)}
+                  disabled={refreshingRecognition}
+                  style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", color: "#6b7280", fontSize: 11.5, fontWeight: 700, cursor: refreshingRecognition ? "not-allowed" : "pointer" }}>
+                  <RefreshCw size={12} className={refreshingRecognition ? "spin" : ""} /> {refreshingRecognition ? "Refreshing..." : "Refresh"}
+                </button>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 10 }}>
+                {[
+                  { label: "Spot Awards",   icon: <Zap size={13} color="#f59e0b" />,       key: "spot",         color: "#f59e0b" },
+                  { label: "Monthly Star",  icon: <Star size={13} color="#3b82f6" />,       key: "monthly_star", color: "#3b82f6" },
+                  { label: "Innovation",    icon: <Lightbulb size={13} color="#8b5cf6" />,  key: "innovation",   color: "#8b5cf6" },
+                ].map(row => {
+                  const b = showView.recognition_breakdown?.[row.key] || { count: 0, points: 0 };
+                  return (
+                    <div key={row.key} style={{ background: "#f8fafc", borderRadius: 8, padding: "8px 10px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4, fontSize: 10.5, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" }}>
+                        {row.icon} {row.label}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{b.count} <span style={{ fontWeight: 500, color: "#9ca3af", fontSize: 11 }}>nominations</span></div>
+                      <div style={{ fontSize: 11, color: row.color, fontWeight: 700 }}>{b.points} pts</div>
+                    </div>
+                  );
+                })}
+                <div style={{ background: COLORS.blue + "12", borderRadius: 8, padding: "8px 10px", border: `1px solid ${COLORS.blue}33` }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: COLORS.blue, textTransform: "uppercase", marginBottom: 4 }}>Total</div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: COLORS.blue }}>{showView.recognition_score || 0} pts</div>
+                </div>
+              </div>
+
+              <div style={{ fontSize: 11, color: "#9ca3af", lineHeight: 1.5, borderTop: "1px dashed #e5e7eb", paddingTop: 8 }}>
+                PMS Score = KPI Achievement ({showView.performance_score || 0}%) + Competency/Behaviour ({showView.hr_rating || "—"}) + Recognition ({showView.recognition_score || 0} pts, incl. Innovation)
+              </div>
             </div>
           </div>
         </Modal>

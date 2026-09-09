@@ -98,6 +98,38 @@ export default function AdminLoanAccess() {
     }
   };
 
+  const toggleReportAccess = async (emp) => {
+    const nextValue = !emp.loanProcessReportAccess;
+
+    // optimistic update
+    setEmployees((prev) =>
+      prev.map((e) => (e._id === emp._id ? { ...e, loanProcessReportAccess: nextValue } : e))
+    );
+    setSavingId(emp._id);
+
+    try {
+      const res = await fetch(`${API}/api/admin-loan-process/access/${emp._id}/report-access`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: nextValue }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        // revert on failure
+        setEmployees((prev) =>
+          prev.map((e) => (e._id === emp._id ? { ...e, loanProcessReportAccess: !nextValue } : e))
+        );
+      }
+    } catch (err) {
+      console.error("TOGGLE REPORT ACCESS ERROR", err);
+      setEmployees((prev) =>
+        prev.map((e) => (e._id === emp._id ? { ...e, loanProcessReportAccess: !nextValue } : e))
+      );
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   const departments = [...new Set(employees.map((e) => e.department).filter(Boolean))];
 
   return (
@@ -130,7 +162,7 @@ export default function AdminLoanAccess() {
           border-radius: var(--lp-radius-lg); box-shadow: var(--lp-shadow-sm); overflow: hidden;
         }
                 .ala-row {
-          display: grid; grid-template-columns: 2fr 1.4fr 1fr auto auto;
+          display: grid; grid-template-columns: 2fr 1.4fr 1fr auto auto auto;
           align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--lp-border);
         }
         .ala-row:last-child { border-bottom: none; }
@@ -159,7 +191,7 @@ export default function AdminLoanAccess() {
         .ala-switch.on .ala-switch-thumb { left: 23px; }
         .ala-switch.off .ala-switch-thumb { left: 3px; }
         .ala-header-row {
-          display: grid; grid-template-columns: 2fr 1.4fr 1fr auto; gap: 12px; padding: 10px 20px;
+          display: grid; grid-template-columns: 2fr 1.4fr 1fr auto auto; gap: 12px; padding: 10px 20px;
           font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
           color: var(--lp-text-muted); border-bottom: 1px solid var(--lp-border); background: var(--lp-bg);
         }
@@ -191,7 +223,7 @@ export default function AdminLoanAccess() {
           <div>Department</div>
           <div>Access</div>
               <div>Head</div>
-          <div></div>
+          <div>Report</div>
         </div>
 
         {loading && <div style={{ padding: 20, color: "var(--lp-text-muted)" }}>Loading…</div>}
@@ -225,6 +257,15 @@ export default function AdminLoanAccess() {
               disabled={savingId === emp._id || !emp.canManageLoanProcess}
               title={!emp.canManageLoanProcess ? "Module access venum head aaganum na" : ""}
               aria-label={`Set ${emp.name} as Loan Process Head`}
+            >
+              <span className="ala-switch-thumb" />
+            </button>
+            <button
+              className={`ala-switch ${emp.loanProcessReportAccess ? "on" : "off"}`}
+              onClick={() => toggleReportAccess(emp)}
+              disabled={savingId === emp._id}
+              title="Read-only report: customer details + checklist, no documents, no edit"
+              aria-label={`Toggle Loan Process Report access for ${emp.name}`}
             >
               <span className="ala-switch-thumb" />
             </button>

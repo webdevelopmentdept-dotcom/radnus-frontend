@@ -37,6 +37,64 @@ const SCHEME_OPTIONS = [
     { value: "AABCS", label: "AABCS - Annal Ambedkar Business Champions Scheme" },
 ];
 
+// PMEGP eligible business list — fixed list so everyone picks from the same
+// names instead of typing free text (report-a consistent-a eduka idhu mukkiyam).
+const BUSINESS_TYPE_OPTIONS = [
+    "Mobile Service Center",
+    "TV Service Center",
+    "Tailoring Shop & Garments",
+    "Manufacturing of Food Industry",
+    "Medicine Manufacturing",
+    "Farm Fresh Organic Products",
+    "Milk Products Manufacturing",
+    "Mara Chekku Machine",
+    "Auto Mobile Work",
+    "LED Screen Manufacturing",
+    "Manufacture of Paper Cups, Tissue & Table Paper Roll",
+    "Pet Bottle Manufacturing",
+    "Beauty Parlour & Saloon",
+    "Areca Plate Manufacturing",
+    "Bricks Manufacturing (Stone Cutting)",
+    "Speaker and PCB Manufacturing",
+    "Electrical Equipments",
+    "Manufacturing of Bags & Suitcase",
+    "Cement Blocking (Fly Ash Bricks)",
+    "Power Laundry Service",
+    "Samosa Manufacturing",
+    "Bakery Products Manufacturing",
+    "Agarbatti Manufacturing",
+    "Manufacturing of PP Covers and Rolls",
+    "Computer Assembling (Computer & Mobile Service)",
+    "Iron Grill Making (Shutter Material Parts Production)",
+    "Beverages / Soft Drink Processing",
+    "Engineering Works / Mechanic Workshop",
+    "Chicken Farming Business",
+    "Cow Farming Business",
+    "Goat Farming Business",
+    "Cattle Food Manufacturing",
+    "Xerox Shop",
+    "Car Taxi Loan",
+    "Aadhar Service Centre",
+];
+
+// Fixed bank list — nationalised banks + City Union Bank + Federal Bank.
+const BANK_NAME_OPTIONS = [
+    "State Bank of India",
+    "Punjab National Bank",
+    "Bank of Baroda",
+    "Canara Bank",
+    "Union Bank of India",
+    "Bank of India",
+    "Indian Bank",
+    "Central Bank of India",
+    "Indian Overseas Bank",
+    "UCO Bank",
+    "Bank of Maharashtra",
+    "Punjab & Sind Bank",
+    "City Union Bank",
+    "Federal Bank",
+];
+
 const todayStr = () => new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
 
 
@@ -53,6 +111,76 @@ const BLANK_FORM = {
     bankName: "",
     ifscCode: "",
 };
+
+// ── Searchable dropdown (combobox) ──────────────────────────────────────────
+// Reused for Business Type + Bank Name so employees pick from the fixed list
+// instead of typing free text (keeps report data consistent). Works with the
+// existing handleChange(e) functions by dispatching a fake {target:{name,value}}
+// event, so no other form-state logic needs to change.
+function SearchableSelect({ name, value, onChange, options, placeholder, invalid }) {
+    const [query, setQuery] = useState(value || "");
+    const [open, setOpen] = useState(false);
+    const wrapRef = useRef(null);
+
+    useEffect(() => {
+        setQuery(value || "");
+    }, [value]);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+                setOpen(false);
+                setQuery(value || ""); // typed but didn't pick — revert the box text
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [value]);
+
+    const filtered = options.filter((opt) =>
+        opt.toLowerCase().includes((query || "").toLowerCase())
+    );
+
+    const selectOption = (opt) => {
+        onChange({ target: { name, value: opt } });
+        setQuery(opt);
+        setOpen(false);
+    };
+
+    return (
+        <div className="lp-searchable-select" ref={wrapRef}>
+            <input
+                name={name}
+                value={query}
+                onChange={(e) => {
+                    setQuery(e.target.value);
+                    setOpen(true);
+                    // clear the real form value until they actually pick a list item —
+                    // stops half-typed / made-up names from being saved
+                    onChange({ target: { name, value: "" } });
+                }}
+                onFocus={() => setOpen(true)}
+                placeholder={placeholder}
+                autoComplete="off"
+                className={invalid ? "lp-input-invalid" : ""}
+            />
+            {open && (
+                <div className="lp-searchable-dropdown">
+                    {filtered.length === 0 && <div className="lp-searchable-empty">No match found</div>}
+                    {filtered.map((opt) => (
+                        <div
+                            key={opt}
+                            className={`lp-searchable-option ${opt === value ? "selected" : ""}`}
+                            onMouseDown={() => selectOption(opt)}
+                        >
+                            {opt}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function LoanProcess() {
     const API = import.meta.env.VITE_API_BASE_URL;
@@ -653,6 +781,15 @@ export default function LoanProcess() {
 }
 .lp-field input:focus, .lp-field select:focus { outline: none; border-color: var(--lp-primary); background: var(--lp-surface); }
 .lp-field input.lp-input-invalid, .lp-field select.lp-input-invalid { border-color: var(--lp-danger); background: var(--lp-danger-soft); }
+          .lp-searchable-select { position: relative; }
+          .lp-searchable-dropdown {
+            position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 40;
+            background: var(--lp-surface); border: 1px solid var(--lp-border); border-radius: var(--lp-radius-sm);
+            box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12); max-height: 220px; overflow-y: auto;
+          }
+          .lp-searchable-option { padding: 9px 12px; font-size: 13.5px; cursor: pointer; }
+          .lp-searchable-option:hover, .lp-searchable-option.selected { background: var(--lp-primary-soft, #EEF1FD); color: var(--lp-primary); }
+          .lp-searchable-empty { padding: 9px 12px; font-size: 13px; color: var(--lp-text-muted); }
           .lp-field-error { color: var(--lp-danger); font-size: 12px; margin-top: 4px; }
           .lp-doc-box.invalid { border-color: var(--lp-danger); background: var(--lp-danger-soft); border-style: solid; }
           .lp-doc-error { color: var(--lp-danger); font-size: 11px; margin-top: 2px; font-weight: 600; }
@@ -834,12 +971,13 @@ export default function LoanProcess() {
                                 </div>
                                 <div className="lp-field">
                                     <label>Business Type *</label>
-                                    <input
+                                    <SearchableSelect
                                         name="businessType"
                                         value={form.businessType}
                                         onChange={handleChange}
-                                        required
-                                        className={fieldErrors.businessType ? "lp-input-invalid" : ""}
+                                        options={BUSINESS_TYPE_OPTIONS}
+                                        placeholder="Type to search business type…"
+                                        invalid={!!fieldErrors.businessType}
                                     />
                                     {fieldErrors.businessType && <div className="lp-field-error">{fieldErrors.businessType}</div>}
                                 </div>
@@ -876,12 +1014,13 @@ export default function LoanProcess() {
                                 </div>
                                 <div className="lp-field">
                                     <label>Bank Name *</label>
-                                    <input
+                                    <SearchableSelect
                                         name="bankName"
                                         value={form.bankName}
                                         onChange={handleChange}
-                                        required
-                                        className={fieldErrors.bankName ? "lp-input-invalid" : ""}
+                                        options={BANK_NAME_OPTIONS}
+                                        placeholder="Type to search bank…"
+                                        invalid={!!fieldErrors.bankName}
                                     />
                                     {fieldErrors.bankName && <div className="lp-field-error">{fieldErrors.bankName}</div>}
                                 </div>
@@ -1147,11 +1286,13 @@ export default function LoanProcess() {
                                                 </div>
                                                 <div className="lp-field">
                                                     <label>Business Type *</label>
-                                                    <input
+                                                    <SearchableSelect
                                                         name="businessType"
                                                         value={editForm.businessType}
                                                         onChange={handleEditChange}
-                                                        className={editFieldErrors.businessType ? "lp-input-invalid" : ""}
+                                                        options={BUSINESS_TYPE_OPTIONS}
+                                                        placeholder="Type to search business type…"
+                                                        invalid={!!editFieldErrors.businessType}
                                                     />
                                                     {editFieldErrors.businessType && (
                                                         <div className="lp-field-error">{editFieldErrors.businessType}</div>
@@ -1193,11 +1334,13 @@ export default function LoanProcess() {
                                                 </div>
                                                 <div className="lp-field">
                                                     <label>Bank Name *</label>
-                                                    <input
+                                                    <SearchableSelect
                                                         name="bankName"
                                                         value={editForm.bankName}
                                                         onChange={handleEditChange}
-                                                        className={editFieldErrors.bankName ? "lp-input-invalid" : ""}
+                                                        options={BANK_NAME_OPTIONS}
+                                                        placeholder="Type to search bank…"
+                                                        invalid={!!editFieldErrors.bankName}
                                                     />
                                                     {editFieldErrors.bankName && (
                                                         <div className="lp-field-error">{editFieldErrors.bankName}</div>

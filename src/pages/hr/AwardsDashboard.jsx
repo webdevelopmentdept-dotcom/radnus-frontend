@@ -67,6 +67,24 @@ const TABS = [
   { id: "analytics",   label: "Analytics",     icon: <BarChart2 size={14}/> },
 ];
 
+// Recognition categories — used on the Nominate form. Ties each nomination
+// to a concrete PMS-relevant reason (Performance Excellence, Teamwork, etc.)
+const CATEGORY_OPTIONS = [
+  "Performance Excellence",
+  "Teamwork & Support",
+  "Process Improvement",
+  "Customer Service Excellence",
+  "Additional Responsibility",
+  "Difficult Task Completion",
+  "Other",
+];
+
+const LEADERBOARD_PERIODS = [
+  { id: "all",     label: "All Time" },
+  { id: "month",   label: "This Month" },
+  { id: "quarter", label: "This Quarter" },
+];
+
 // ─── Confetti ────────────────────────────────────────────────────────────────
 function Confetti({ active }) {
   const canvasRef = useRef(null);
@@ -149,6 +167,70 @@ function MiniBar({ pct, color }) {
   );
 }
 
+// ─── Searchable Employee Dropdown ──────────────────────────────────────────
+function EmployeeSearchSelect({ employees, value, onChange, placeholder = "-- Choose --" }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen]   = useState(false);
+  const wrapRef = useRef(null);
+
+  const selected = employees.find(e => e._id === value);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = employees.filter(e =>
+    (e.name || "").toLowerCase().includes(query.toLowerCase()) ||
+    (e.department || "").toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <div ref={wrapRef} style={{ position:"relative" }}>
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{ width:"100%", padding:"9px 11px", background:"#f9fafb", border:`1px solid ${open?"#3b82f6":"#e5e7eb"}`, borderRadius:8, color: selected?"#111827":"#9ca3af", fontSize:13, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", boxSizing:"border-box" }}>
+        <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+          {selected ? `${selected.name} — ${selected.department}` : placeholder}
+        </span>
+        <span style={{ fontSize:10, color:"#9ca3af", flexShrink:0, marginLeft:6 }}>▼</span>
+      </div>
+
+      {open && (
+        <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0, background:"#fff", border:"1px solid #e5e7eb", borderRadius:9, boxShadow:"0 12px 32px rgba(0,0,0,.14)", zIndex:2000, maxHeight:260, overflowY:"auto" }}>
+          <div style={{ padding:8, borderBottom:"1px solid #f3f4f6", position:"sticky", top:0, background:"#fff" }}>
+            <input
+              autoFocus
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search name or department…"
+              onClick={e => e.stopPropagation()}
+              style={{ width:"100%", padding:"7px 9px", border:"1px solid #e5e7eb", borderRadius:6, fontSize:12.5, outline:"none", boxSizing:"border-box" }}
+            />
+          </div>
+          {filtered.length === 0 ? (
+            <div style={{ padding:"14px", fontSize:12.5, color:"#9ca3af", textAlign:"center" }}>No employees found</div>
+          ) : (
+            filtered.map(e => (
+              <div key={e._id}
+                onClick={() => { onChange(e._id); setQuery(""); setOpen(false); }}
+                style={{ padding:"9px 12px", fontSize:12.5, cursor:"pointer", color: value===e._id?"#3b82f6":"#111827", background: value===e._id?"#eff6ff":"transparent", fontWeight: value===e._id?700:500 }}
+                onMouseEnter={ev => { ev.currentTarget.style.background = "#f3f4f6"; }}
+                onMouseLeave={ev => { ev.currentTarget.style.background = value===e._id?"#eff6ff":"transparent"; }}
+              >
+                {e.name} <span style={{ color:"#9ca3af", fontWeight:400 }}>— {e.department}</span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Quick Spot Modal ─────────────────────────────────────────────────────────
 function QuickSpotModal({ employees, onClose, onSave }) {
   const [empId, setEmpId]   = useState("");
@@ -158,7 +240,7 @@ function QuickSpotModal({ employees, onClose, onSave }) {
   const handle = async () => {
     if (!empId || !reason) return;
     setSaving(true);
-    await onSave({ award_type:"spot", employee_id:empId, reason, cash_amount:500, nomination_source:"hr" });
+    await onSave({ award_type:"spot", employee_id:empId, reason, cash_amount:500, nomination_source:"hr", category:"Instant Recognition" });
     setSaving(false);
     onClose();
   };
@@ -182,11 +264,7 @@ function QuickSpotModal({ employees, onClose, onSave }) {
         </div>
         <div style={{ marginBottom:14 }}>
           <label style={{ display:"block", fontSize:11, fontWeight:700, color:"#6b7280", marginBottom:6, textTransform:"uppercase", letterSpacing:"0.05em" }}>Select Employee</label>
-          <select value={empId} onChange={e=>setEmpId(e.target.value)}
-            style={{ width:"100%", padding:"10px 12px", background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:9, color:"#111827", fontSize:13, outline:"none" }}>
-            <option value="">-- Choose --</option>
-            {employees.map(e => <option key={e._id} value={e._id}>{e.name} — {e.department}</option>)}
-          </select>
+          <EmployeeSearchSelect employees={employees} value={empId} onChange={setEmpId} />
         </div>
         <div style={{ marginBottom:20 }}>
           <label style={{ display:"block", fontSize:11, fontWeight:700, color:"#6b7280", marginBottom:6, textTransform:"uppercase", letterSpacing:"0.05em" }}>Why are they awesome?</label>
@@ -200,6 +278,7 @@ function QuickSpotModal({ employees, onClose, onSave }) {
         </button>
       </div>
     </div>
+
   );
 }
 
@@ -207,7 +286,7 @@ function QuickSpotModal({ employees, onClose, onSave }) {
 function NominationForm({ employees, onClose, onSave }) {
   const [form, setForm] = useState({
     award_type:"monthly_star", employee_id:"", nomination_source:"manager",
-    period:"", reason:"", achievement_details:"", cash_amount:3000,
+    category:"Performance Excellence", period:"", reason:"", achievement_details:"", cash_amount:3000,
   });
   const [saving, setSaving] = useState(false);
   const cfg = AWARD_CONFIG[form.award_type];
@@ -255,10 +334,13 @@ function NominationForm({ employees, onClose, onSave }) {
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
             <div>
               <label style={{ display:"block", fontSize:11, fontWeight:700, color:"#6b7280", marginBottom:6, textTransform:"uppercase", letterSpacing:"0.05em" }}>Employee *</label>
-              <select value={form.employee_id} onChange={e=>setForm(f=>({...f,employee_id:e.target.value}))}
+              <EmployeeSearchSelect employees={employees} value={form.employee_id} onChange={id=>setForm(f=>({...f,employee_id:id}))} placeholder="-- Select --" />
+            </div>
+            <div>
+              <label style={{ display:"block", fontSize:11, fontWeight:700, color:"#6b7280", marginBottom:6, textTransform:"uppercase", letterSpacing:"0.05em" }}>Category *</label>
+              <select value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))}
                 style={{ width:"100%", padding:"9px 11px", background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:8, color:"#111827", fontSize:13, outline:"none" }}>
-                <option value="">-- Select --</option>
-                {employees.map(e => <option key={e._id} value={e._id}>{e.name} ({e.department})</option>)}
+                {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
@@ -325,6 +407,7 @@ export default function AwardsDashboard() {
   const [filterType, setFilterType]     = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [search, setSearch]             = useState("");
+  const [leaderboardPeriod, setLeaderboardPeriod] = useState("all");
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -333,11 +416,13 @@ export default function AwardsDashboard() {
     try {
       const [awRes, empRes, sumRes] = await Promise.all([
         axios.get(`${API_BASE}/api/employee-awards`),
-        axios.get(`${API_BASE}/api/hr/approved`),
+        axios.get(`${API_BASE}/api/hr/employees`),
         axios.get(`${API_BASE}/api/employee-awards/summary`),
       ]);
       if (awRes.data.success)  setAwards(awRes.data.data);
-      if (empRes.data)         setEmployees(empRes.data);
+      if (Array.isArray(empRes.data)) {
+        setEmployees(empRes.data.filter(e => e.status === "active" || e.status === "approved"));
+      }
       if (sumRes.data.success) setSummary(sumRes.data.data);
     } catch { showToastMsg("Failed to load", "error"); }
     finally { setLoading(false); }
@@ -379,10 +464,21 @@ export default function AwardsDashboard() {
     } catch { showToastMsg("Failed", "error"); }
   };
 
-  // Leaderboard
+  // Leaderboard — filterable by This Month / This Quarter / All Time
+  const getPeriodStart = (period) => {
+    const now = new Date();
+    if (period === "month")   return new Date(now.getFullYear(), now.getMonth(), 1);
+    if (period === "quarter") return new Date(now.getFullYear(), Math.floor(now.getMonth()/3)*3, 1);
+    return null; // all time
+  };
+
   const leaderboard = useMemo(() => {
+    const periodStart = getPeriodStart(leaderboardPeriod);
     const map = {};
-    awards.filter(a => a.status === "announced").forEach(a => {
+    awards
+      .filter(a => a.status === "announced")
+      .filter(a => !periodStart || (a.announced_at && new Date(a.announced_at) >= periodStart))
+      .forEach(a => {
       const id   = a.employee_id?._id;
       const name = a.employee_id?.name;
       const dept = a.employee_id?.department;
@@ -393,7 +489,7 @@ export default function AwardsDashboard() {
       map[id].awards.push(a.award_type);
     });
     return Object.values(map).sort((a,b) => b.points - a.points).slice(0,10);
-  }, [awards]);
+  }, [awards, leaderboardPeriod]);
 
   // Wall of Fame
   const wallOfFame = useMemo(() =>
@@ -420,7 +516,7 @@ export default function AwardsDashboard() {
   const exportExcel = () => {
     const rows = filtered.map((a,i) => ({
       "#": i+1, "Employee": a.employee_id?.name, "Department": a.employee_id?.department,
-      "Award": AWARD_CONFIG[a.award_type]?.label, "Period": a.period,
+      "Award": AWARD_CONFIG[a.award_type]?.label, "Category": a.category || "—", "Period": a.period,
       "Reason": a.reason, "Cash (₹)": a.cash_amount,
       "Status": STATUS_CONFIG[a.status]?.label,
     }));
@@ -641,6 +737,9 @@ export default function AwardsDashboard() {
                               <span style={{ background:"#f3f4f6", color:"#6b7280", padding:"3px 8px", borderRadius:6, fontSize:11, fontWeight:600 }}>{a.period||"—"}</span>
                             </td>
                             <td style={{ padding:"12px 16px", maxWidth:180 }}>
+                              {a.category && (
+                                <span style={{ display:"inline-block", fontSize:9.5, fontWeight:700, color:"#6b7280", background:"#f3f4f6", padding:"1px 6px", borderRadius:4, marginBottom:3 }}>{a.category}</span>
+                              )}
                               <p style={{ margin:0, fontSize:12, color:"#6b7280", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", maxWidth:160 }}>{a.reason}</p>
                             </td>
                             <td style={{ padding:"12px 16px", fontWeight:700, color:"#10b981", fontSize:13 }}>
@@ -732,9 +831,22 @@ export default function AwardsDashboard() {
         {activeTab === "leaderboard" && (
           <div>
             <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:"18px 22px", marginBottom:18 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
-                <Crown size={18} color="#f59e0b"/>
-                <p style={{ margin:0, fontWeight:800, fontSize:15, color:"#111827" }}>Recognition Leaderboard</p>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:10, marginBottom:4 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <Crown size={18} color="#f59e0b"/>
+                  <p style={{ margin:0, fontWeight:800, fontSize:15, color:"#111827" }}>Recognition Leaderboard</p>
+                </div>
+                <div style={{ display:"flex", gap:2, background:"#f3f4f6", borderRadius:8, padding:3 }}>
+                  {LEADERBOARD_PERIODS.map(p => (
+                    <button key={p.id} onClick={()=>setLeaderboardPeriod(p.id)}
+                      style={{ padding:"6px 12px", border:"none", borderRadius:6, cursor:"pointer", fontWeight:700, fontSize:11.5,
+                        background: leaderboardPeriod===p.id?"#fff":"transparent",
+                        color: leaderboardPeriod===p.id?"#111827":"#6b7280",
+                        boxShadow: leaderboardPeriod===p.id?"0 1px 2px rgba(0,0,0,.08)":"none" }}>
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <p style={{ margin:0, fontSize:12, color:"#9ca3af", display:"flex", alignItems:"center", gap:10 }}>
                 <span style={{ display:"flex", alignItems:"center", gap:4 }}><Zap size={11} color="#f59e0b"/> Spot = 10 pts</span>
@@ -835,6 +947,9 @@ export default function AwardsDashboard() {
                         </div>
 
                         <div style={{ background:"#f9fafb", borderRadius:8, padding:"10px 12px", borderLeft:`3px solid ${cfg.color}` }}>
+                          {a.category && (
+                            <p style={{ margin:"0 0 4px", fontSize:10, fontWeight:700, color:cfg.color, textTransform:"uppercase", letterSpacing:"0.03em" }}>{a.category}</p>
+                          )}
                           <p style={{ margin:0, fontSize:12, color:"#6b7280", lineHeight:1.5, fontStyle:"italic" }}>"{a.reason}"</p>
                         </div>
 

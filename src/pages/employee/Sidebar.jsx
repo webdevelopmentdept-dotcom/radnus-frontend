@@ -88,6 +88,15 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
     ];
   }
 
+  
+  if (employee?.loanProcessReportAccess) {
+    navItems = [
+      ...navItems.slice(0, -2),
+      { href: "/employee/loan-process-report", icon: ClipboardList, label: "Loan Process Report" },
+      ...navItems.slice(-2),
+    ];
+  }
+
   useEffect(() => {
     localStorage.setItem("esb-theme", dark ? "dark" : "light");
   }, [dark]);

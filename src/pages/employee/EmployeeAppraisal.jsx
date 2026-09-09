@@ -106,6 +106,7 @@ export default function EmployeeAppraisal() {
                 {[
                   { label: "Performance Score", value: `${latest.performance_score || 0}%` },
                   { label: "HR Rating",         value: latest.hr_rating || "—"             },
+                  { label: "Recognition Score", value: `${latest.recognition_score || 0} pts` },
                   { label: "Increment",         value: latest.increment_percent > 0 ? `+${latest.increment_percent}%` : "—" },
                   { label: "Promotion",         value: latest.promotion ? "Yes ✅" : "No"  },
                 ].map((s, i) => (
@@ -245,6 +246,33 @@ export default function EmployeeAppraisal() {
                     <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>{selected.remarks}</div>
                   </div>
                 )}
+              </div>
+
+              {/* Recognition Score breakdown — from Recognition Hub */}
+              <div style={{ marginTop: 16, background: "#f8fafc", borderRadius: 10, padding: "14px 16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                  <Award size={14} color="#2563eb" />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>Recognition Score</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                  {[
+                    { label: "Spot",         key: "spot" },
+                    { label: "Monthly Star", key: "monthly_star" },
+                    { label: "Innovation",   key: "innovation" },
+                  ].map(row => {
+                    const b = selected.recognition_breakdown?.[row.key] || { count: 0, points: 0 };
+                    return (
+                      <div key={row.key} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px 10px" }}>
+                        <div style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", marginBottom: 3 }}>{row.label}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{b.count} <span style={{ fontWeight: 500, color: "#9ca3af", fontSize: 10 }}>× {b.points > 0 ? Math.round(b.points / b.count) : 0}</span></div>
+                      </div>
+                    );
+                  })}
+                  <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "8px 10px" }}>
+                    <div style={{ fontSize: 10, color: "#2563eb", fontWeight: 600, textTransform: "uppercase", marginBottom: 3 }}>Total</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#2563eb" }}>{selected.recognition_score || 0} pts</div>
+                  </div>
+                </div>
               </div>
             </div>
           </Modal>
