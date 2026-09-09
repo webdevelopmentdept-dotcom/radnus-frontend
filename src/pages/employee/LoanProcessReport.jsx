@@ -187,7 +187,11 @@ export default function LoanProcessReport() {
             background: var(--lp-primary-soft); padding: 4px 10px; border-radius: 20px;
             width: fit-content;
           }
-          .lpr-badge { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+          .lpr-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; line-height: 1.5; padding: 4px 12px;
+            border-radius: 20px; width: fit-content; white-space: nowrap; justify-self: end;
+          }
           .lpr-badge.done { background: var(--lp-accent-soft); color: var(--lp-accent); }
           .lpr-badge.progress { background: var(--lp-primary-soft); color: var(--lp-primary); }
           .lpr-detail { padding: 14px 18px; border-top: 1px solid var(--lp-border); }
