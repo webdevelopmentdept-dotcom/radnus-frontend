@@ -75,6 +75,71 @@ const BUSINESS_TYPE_OPTIONS = [
     "Xerox Shop",
     "Car Taxi Loan",
     "Aadhar Service Centre",
+    // ── Agriculture & Allied Activities ──
+    "Paddy Cultivation",
+    "Vegetable Farming",
+    "Fruit Orchards",
+    "Dairy Farming",
+    "Sheep Breeding",
+    "Poultry Farming",
+    "Inland Fisheries",
+    "Beekeeping",
+    "Organic Farming",
+    "Vermicompost Production",
+    "Mushroom Cultivation",
+    "Floriculture",
+    "Agro-Service Centers",
+    // ── Small Trade & Retail Stores ──
+    "Grocery Store (Kirana Shop)",
+    "Textile and Readymade Garment Shop",
+    "Footwear Retail Shop",
+    "Fancy and Stationery Store",
+    "Electrical and Hardware Shop",
+    "Mobile Phone Sales Shop",
+    "Sports Goods Shop",
+    "Medical Store (Pharmacy)",
+    "Vessel and Utensil Shop",
+    "Meat and Fish Retail Stall",
+    "Vegetable and Fruit Vending Stall",
+    "Flower Shop",
+    // ── Services & Self-Employment ──
+    "Hotel, Restaurant, and Tea Stall",
+    "Catering Service",
+    "Hair Salon",
+    "Photocopy (Xerox) and DTP Center",
+    "Mobile and Electronics Repair Shop",
+    "DTP and Digital Printing Unit",
+    "Tailoring and Embroidery Unit",
+    "Tuition and Coaching Center",
+    "Two-Wheeler Repair Workshop",
+    "Car Washing and Servicing Unit",
+    "Electrical Wiring and Plumbing Service",
+    "Dry Cleaning and Laundry Service",
+    "Photography and Video Studio",
+    // ── Transport Sector ──
+    "Auto-Rickshaw Service",
+    "E-Rickshaw Service",
+    "Tourist Taxi and Cab Service",
+    "Mini-Truck Goods Transport",
+    "Pick-Up Van Delivery Service",
+    // ── Handicrafts & Traditional Occupations ──
+    "Pottery and Clay Crafts Unit",
+    "Handloom and Powerloom Weaving",
+    "Leather Goods Manufacturing",
+    "Woodcarving and Carpentry Workshop",
+    "Blacksmithy and Metal Welding Shop",
+    "Cane and Bamboo Furniture Making",
+    "Candle and Camphor Making",
+    "Coir Product Manufacturing",
+    // ── Professional Services ──
+    "Medical Clinic",
+    "Dental Clinic",
+    "Physiotherapy Center",
+    "Engineering Consultancy Firm",
+    "Architectural Design Studio",
+    "Legal Consultancy Office",
+    "Auditing and Tax Consultancy Firm",
+    "Computer Training Institute",
 ];
 
 // Fixed bank list — nationalised banks + City Union Bank + Federal Bank.
@@ -846,12 +911,12 @@ export default function LoanProcess() {
           .lp-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
           .lp-alert-error { background: var(--lp-danger-soft); color: var(--lp-danger); padding: 10px 14px; border-radius: var(--lp-radius-sm); font-size: 13px; margin-bottom: 16px; }
           .lp-alert-success { background: var(--lp-accent-soft); color: var(--lp-accent); padding: 10px 14px; border-radius: var(--lp-radius-sm); font-size: 13px; margin-bottom: 16px; }
-          .lp-cust-card { border: 1px solid var(--lp-border); border-radius: var(--lp-radius-md); margin-bottom: 14px; overflow: hidden; }
-          .lp-cust-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; cursor: pointer; background: var(--lp-surface); }
+          .lp-cust-card { border: 1px solid var(--lp-border); border-radius: var(--lp-radius-md); margin-bottom: 14px; overflow: visible; }
+          .lp-cust-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; cursor: pointer; background: var(--lp-surface); border-radius: var(--lp-radius-md) var(--lp-radius-md) 0 0; }
           .lp-cust-head:hover { background: var(--lp-bg); }
           .lp-progress-bar { height: 6px; background: var(--lp-border); border-radius: 4px; overflow: hidden; width: 140px; }
           .lp-progress-fill { height: 100%; background: var(--lp-accent); transition: width 0.3s; }
-          .lp-checklist-body { padding: 16px 20px; border-top: 1px solid var(--lp-border); background: var(--lp-bg); }
+          .lp-checklist-body { padding: 16px 20px; border-top: 1px solid var(--lp-border); background: var(--lp-bg); border-radius: 0 0 var(--lp-radius-md) var(--lp-radius-md); }
           .lp-stage-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; cursor: pointer; }
           .lp-stage-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--lp-accent); }
           .lp-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
