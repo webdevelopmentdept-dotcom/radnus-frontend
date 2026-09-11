@@ -83,6 +83,7 @@ export default function LoanProcessReport() {
       if (staffFilter) params.append("staffId", staffFilter);
       if (dateFrom) params.append("dateFrom", dateFrom);
       if (dateTo) params.append("dateTo", dateTo);
+      if (search) params.append("search", search); // FIX: was missing, so name search never reached the export route
 
       const res = await fetch(`${API}/api/loan-process/report/export?${params.toString()}`, {
         headers: authHeaders(),
