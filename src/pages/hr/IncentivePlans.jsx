@@ -471,7 +471,8 @@ function SearchableSelect({ options = [], value, onChange, placeholder = "Search
   );
 
   return (
-    <div ref={wrapRef} style={{ position: "relative" }}>
+    // ⬇️ isolate stacking context so absolute child never affects sibling layout
+    <div ref={wrapRef} style={{ position: "relative", zIndex: open ? 100 : "auto" }}>
       <div
         onClick={() => !disabled && setOpen(o => !o)}
         style={{
@@ -487,11 +488,21 @@ function SearchableSelect({ options = [], value, onChange, placeholder = "Search
       </div>
 
       {open && !disabled && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
-          background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 10,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.12)", overflow: "hidden",
-        }}>
+        <div
+          style={{
+            position: "absolute",   // ⬅️ this MUST stay absolute
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 9999,           // ⬅️ raised so it always floats above modal content
+            background: "#fff",
+            border: "1.5px solid #e2e8f0",
+            borderRadius: 10,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            overflow: "hidden",
+            maxHeight: 260,
+          }}
+        >
           <input
             autoFocus
             value={query}
@@ -544,21 +555,57 @@ export default function IncentivePlans() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  const fetchAll = async () => {
-    setLoading(true);
-    try {
-      const [p, d, k] = await Promise.all([
-        axios.get(`${API_BASE}/api/incentive-plans`),
-        axios.get(`${API_BASE}/api/departments`),
-        axios.get(`${API_BASE}/api/kpi-templates`),
-      ]);
-      setPlans(p.data?.data || p.data || []);
-      const list = d.data?.data || d.data || [];
-      setDepts(list.map(x => typeof x === "string" ? x : x.name));
-      if (k.data?.success) setKpiTemplates(k.data.data || []);
-    } catch { showToast("Failed to load data", "error"); }
-    finally { setLoading(false); }
-  };
+ const fetchAll = async () => {
+  setLoading(true);
+
+  const results = await Promise.allSettled([
+    axios.get(`${API_BASE}/api/incentive-plans`),
+    axios.get(`${API_BASE}/api/departments`),
+    axios.get(`${API_BASE}/api/kpi-templates`),
+  ]);
+
+  const [pRes, dRes, kRes] = results;
+
+  // ── Plans ──
+  let plansData = [];
+  if (pRes.status === "fulfilled") {
+    plansData = pRes.value.data?.data || pRes.value.data || [];
+    setPlans(plansData);
+  } else {
+    console.error("Plans fetch failed:", pRes.reason);
+    showToast("Failed to load plans", "error");
+  }
+
+  // ── Departments ──
+  let deptNames = [];
+  if (dRes.status === "fulfilled") {
+    const list = dRes.value.data?.data || dRes.value.data || [];
+    if (Array.isArray(list)) {
+      deptNames = list
+        .map(x => (typeof x === "string" ? x : x?.name || x?.department_name || x?.dept_name))
+        .filter(Boolean);
+    } else {
+      console.warn("Departments API returned non-array:", list);
+    }
+  } else {
+    console.error("Departments fetch failed:", dRes.reason);
+  }
+
+  // Fallback: build from plans if departments API gave nothing usable
+  if (deptNames.length === 0) {
+    deptNames = [...new Set(plansData.map(pl => pl.department).filter(Boolean))];
+  }
+  setDepts(deptNames);
+
+  // ── KPI Templates ──
+  if (kRes.status === "fulfilled" && kRes.value.data?.success) {
+    setKpiTemplates(kRes.value.data.data || []);
+  } else if (kRes.status === "rejected") {
+    console.error("KPI templates fetch failed:", kRes.reason);
+  }
+
+  setLoading(false);
+};
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -947,14 +994,18 @@ export default function IncentivePlans() {
                     />
                   </div>
                   <div>
-                    <label style={lbl}>Department *</label>
-                    <SearchableSelect
-                      options={depts.map(d => ({ value: d, label: d }))}
-                      value={form.department}
-                      onChange={(v) => setForm(f => ({ ...f, department: v, kpi_template_id: "", selected_kpis: [], kpi_configs: [] }))}
-                      placeholder="Search department..."
-                    />
-                  </div>
+  <label style={lbl}>Department *</label>
+  <select
+    value={form.department}
+    onChange={(e) => setForm(f => ({ ...f, department: e.target.value, kpi_template_id: "", selected_kpis: [], kpi_configs: [] }))}
+    style={inp}
+  >
+    <option value="">Select Department</option>
+    {depts.map(d => (
+      <option key={d} value={d}>{d}</option>
+    ))}
+  </select>
+</div>
                   <div>
                     <label style={lbl}>Plan Type *</label>
                     <div style={{ display: "flex", gap: 8 }}>
