@@ -125,6 +125,7 @@ import HrTickets from "./pages/hr/HrTickets";
 import HrFeedback from "./pages/hr/HrFeedback";
 import AdvanceRequests from "./pages/hr/AdvanceRequests";
 import ProductManagement from "./pages/hr/Productmanagement";
+import LoanIncentivePayouts from "./pages/hr/LoanIncentivePayouts";
 
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
@@ -322,6 +323,7 @@ function App() {
           <Route path="incentives/plans" element={<IncentivePlans />} />
           <Route path="incentives/assign" element={<IncentiveAssign />} />
           <Route path="incentives/results" element={<IncentiveResults />} />
+          <Route path="incentives/loan-payouts" element={<LoanIncentivePayouts />} />
 
           <Route path="/hr/dashboard/appraisal" element={<AppraisalHub />} />
 

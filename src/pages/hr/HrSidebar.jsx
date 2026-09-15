@@ -212,6 +212,7 @@ const HR_MENU = [
       { to: "/hr/dashboard/incentives/plans", end: false, icon: ChartAverageIcon, size: 18, label: "Incentive Plans", flow: "1", notif: false },
       { to: "/hr/dashboard/incentives/assign", end: false, icon: UserMultiple02Icon, size: 18, label: "Assign Plans", flow: "2", notif: false },
       { to: "/hr/dashboard/incentives/results", end: false, icon: Medal01Icon, size: 18, label: "Results & Payout", flow: "3", notif: false },
+      { to: "/hr/dashboard/incentives/loan-payouts", end: false, icon: MoneyBag01Icon, size: 18, label: "Loan Incentive Payouts", flow: "4", notif: false }, 
     ],
   },
   {

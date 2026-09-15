@@ -9,6 +9,11 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+function formatDate(d) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
 function isKpiPlan(plan) {
   if (!plan) return false;
   if (typeof plan === "string") return false;
@@ -345,7 +350,11 @@ function ExpandedDetail({ r, fetchMyIncentives }) {
         </div>
         {r.status === "pending" && <div style={{ marginTop: 10, padding: "8px 12px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a" }}><p style={{ margin: 0, fontSize: 12, color: "#92400e", fontWeight: 600 }}>⏳ Under HR review — you'll be notified once approved.</p></div>}
         {r.status === "approved" && <div style={{ marginTop: 10, padding: "8px 12px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #86efac" }}><p style={{ margin: 0, fontSize: 12, color: "#15803d", fontWeight: 600 }}>✅ Approved! Payment will be processed in the next payroll cycle.</p></div>}
-        {r.status === "paid" && <div style={{ marginTop: 10, padding: "8px 12px", background: "#eff6ff", borderRadius: 8, border: "1px solid #bfdbfe" }}><p style={{ margin: 0, fontSize: 12, color: "#1d4ed8", fontWeight: 600 }}>💸 Paid! ₹{total.toLocaleString("en-IN")} has been credited.</p></div>}
+        {r.status === "paid" && <div style={{ marginTop: 10, padding: "8px 12px", background: "#eff6ff", borderRadius: 8, border: "1px solid #bfdbfe" }}><p style={{ margin: 0, fontSize: 12, color: "#1d4ed8", fontWeight: 600 }}>💸 Paid! ₹{total.toLocaleString("en-IN")} has been credited{r.paid_at ? ` on ${formatDate(r.paid_at)}` : ""}.</p></div>}
+        <div style={{ marginTop: 10, fontSize: 11, color: "#9ca3af", textAlign: "center" }}>
+          Assigned on {formatDate(r.createdAt)}
+          {r.status === "paid" && r.paid_at && <> · Paid on {formatDate(r.paid_at)}</>}
+        </div>
       </div>
 
       {/* Payout summary */}
@@ -564,6 +573,10 @@ function IncentiveCard({ r, expanded, onToggle, fetchMyIncentives }) {
             <div style={{ fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {r.plan_id?.name || "—"} · {r.cycle || "Monthly"}
             </div>
+            <div style={{ fontSize: 10, color: "#c1c7d0", marginTop: 1 }}>
+              Created {formatDate(r.createdAt)}
+              {r.status === "paid" && r.paid_at && <> · Paid {formatDate(r.paid_at)}</>}
+            </div>
           </div>
           <div style={{ color: "#9ca3af", flexShrink: 0 }}>{isExp ? <ChevronUp size={15} /> : <ChevronDown size={15} />}</div>
         </div>
@@ -594,6 +607,66 @@ function IncentiveCard({ r, expanded, onToggle, fetchMyIncentives }) {
 
       {/* Expanded */}
       {isExp && <ExpandedDetail r={r} fetchMyIncentives={fetchMyIncentives} />}
+    </div>
+  );
+}
+
+// ── Loan incentive section ──────────────────────────────────────────────
+// Separate from the KPI-linked incentive engine above — pulls straight from
+// LoanCustomer.incentive (Online Loan Application + Projection Dispatch)
+// via GET /api/loan-process/incentives/mine.
+function LoanIncentiveSection() {
+  const [loans, setLoans] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("employeeToken") || sessionStorage.getItem("employeeToken");
+    if (!token) { setLoading(false); return; }
+    fetch(`${API_BASE}/api/loan-process/incentives/mine`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => { if (data.success) setLoans(data.customers || []); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading || loans.length === 0) return null;
+
+  return (
+    <div className="fade-up" style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", padding: 16, marginBottom: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <Wallet size={18} color="#6366f1" />
+        <p style={{ margin: 0, fontWeight: 800, fontSize: 14, color: "#1a1a2e" }}>Loan incentives</p>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {loans.map((l) => {
+          const paid = l.incentive?.eligibility === "Paid";
+          return (
+            <div
+              key={l._id}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                gap: 10, padding: "10px 14px", borderRadius: 10,
+                background: paid ? "#f0fdf4" : "#fffbeb",
+                border: `1px solid ${paid ? "#bbf7d0" : "#fde68a"}`,
+                fontSize: 13, flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 600, color: "#1a1a2e" }}>{l.customerName}'s loan</div>
+                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
+                  Eligible since {formatDate(l.incentive?.eligibleAt)}
+                  {paid && <> · Paid on {formatDate(l.incentive?.paidAt)}</>}
+                </div>
+              </div>
+              <span style={{ fontWeight: 700, color: paid ? "#16a34a" : "#b45309" }}>
+                {paid ? `₹${l.incentive.amount} paid` : "Eligible — pending HR approval"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -701,11 +774,14 @@ export default function MyIncentive() {
           </div>
         </div>
 
+                <LoanIncentiveSection />
+
+
         {results.length === 0 ? (
           <div style={{ textAlign: "center", padding: "80px 20px", background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb" }}>
             <div style={{ fontSize: 52, marginBottom: 16 }}>🎯</div>
-            <p style={{ fontWeight: 700, fontSize: 16, color: "#1a1a2e", margin: "0 0 8px" }}>No Incentive Records Yet</p>
-            <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>Once your KPI review is completed and an incentive plan is assigned, your results will appear here.</p>
+            <p style={{ fontWeight: 700, fontSize: 16, color: "#1a1a2e", margin: "0 0 8px" }}>No Performance Incentive Plan Assigned Yet</p>
+            <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>This is separate from any loan incentives shown above. Once your KPI review is completed and a performance incentive plan is assigned by HR, your results will appear here.</p>
           </div>
         ) : (
           <>

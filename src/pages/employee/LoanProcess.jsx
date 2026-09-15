@@ -19,15 +19,19 @@ const DOC_FIELDS = [
 const CHECKLIST_STAGES = [
     { key: "cibilVerification", label: "CIBIL Verification" },
     { key: "documentCollection", label: "Document Collection" },
-    { key: "applicationProcess", label: "Application Process" },
+       { key: "applicationProcess", label: "Online Loan Application", incentiveLinked: true },
     { key: "quotation", label: "Quotation" },
     { key: "auditorReference", label: "Auditor Reference" },
     { key: "documentPayment", label: "Document Payment" },
     { key: "finalisationVerification", label: "Finalisation & Verification" },
     { key: "finalSubmission", label: "Final Submission" },
-    { key: "courier", label: "Courier" },
+      { key: "courier", label: "Projection Dispatch/Courier", incentiveLinked: true },
+
     { key: "completed", label: "Completed" },
 ];
+
+// These 2 stages drive incentive eligibility
+const INCENTIVE_LINKED_KEYS = ["applicationProcess", "courier"];
 
 const DATE_ENABLED_STAGES = ["documentPayment", "courier"]; // date field intha rendu stages ku mattum
 
@@ -503,8 +507,22 @@ export default function LoanProcess() {
         }
     };
 
-    /* ------------------------ TAB 2 — CHECKLIST ------------------------ */
+        /* ------------------------ TAB 2 — CHECKLIST ------------------------ */
     const toggleStage = async (customerId, field, currentValue) => {
+        const current = customers.find((c) => c._id === customerId);
+
+        if (current?.incentive?.eligibility === "Paid" && INCENTIVE_LINKED_KEYS.includes(field)) {
+            alert("Incentive already paid for this loan. Online Loan Application / Projection Dispatch can't be changed anymore.");
+            return;
+        }
+
+        if (currentValue === true && INCENTIVE_LINKED_KEYS.includes(field)) {
+            const ok = window.confirm(
+                "Unchecking this will revert the incentive eligibility for this loan. Are you sure?"
+            );
+            if (!ok) return;
+        }
+
         // optimistic update
         setCustomers((prev) =>
             prev.map((c) =>
@@ -1547,7 +1565,17 @@ export default function LoanProcess() {
                                             <div style={{ fontWeight: 700, fontSize: 15 }}>{c.customerName}</div>
                                             <div style={{ fontSize: 12, color: "var(--lp-text-muted)" }}>{c.contactNo}</div>
                                         </div>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                                                                                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                                            {c.incentive?.eligibility === "Eligible for Processing" && (
+                                                <span className="lp-badge" style={{ background: "#fff4d6", color: "#8a6100" }}>
+                                                    Eligible for incentive
+                                                </span>
+                                            )}
+                                            {c.incentive?.eligibility === "Paid" && (
+                                                <span className="lp-badge done">
+                                                    ₹{c.incentive.amount} paid
+                                                </span>
+                                            )}
                                             <span className={`lp-badge ${c.status === "COMPLETED" ? "done" : "progress"}`}>
                                                 {c.status === "COMPLETED" ? "Completed" : `${pct}%`}
                                             </span>
@@ -1566,6 +1594,7 @@ export default function LoanProcess() {
                                                         <input
                                                             type="checkbox"
                                                             checked={!!c.checklist?.[stage.key]}
+                                                            disabled={stage.incentiveLinked && c.incentive?.eligibility === "Paid"}
                                                             onChange={() => toggleStage(c._id, stage.key, c.checklist?.[stage.key])}
                                                         />
                                                         {stage.label}
