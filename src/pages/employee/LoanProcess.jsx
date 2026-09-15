@@ -72,6 +72,7 @@ const BUSINESS_TYPE_OPTIONS = [
     "Cow Farming Business",
     "Goat Farming Business",
     "Cattle Food Manufacturing",
+    "Cloud Kitchen",
     "Xerox Shop",
     "Car Taxi Loan",
     "Aadhar Service Centre",
@@ -157,6 +158,7 @@ const BANK_NAME_OPTIONS = [
     "Bank of Maharashtra",
     "Punjab & Sind Bank",
     "City Union Bank",
+    "Tamilnad Mercantile Bank",
     "Federal Bank",
 ];
 
@@ -1129,8 +1131,11 @@ export default function LoanProcess() {
                             </div>
                         </div>
 
-                        <div className="lp-card">
-                            <div className="lp-section-title">Govt Documents</div>
+                       <div className="lp-card">
+    <div className="lp-section-title">Govt Documents</div>
+    <p style={{ color: "var(--lp-danger)", fontSize: 12.5, fontWeight: 600, marginTop: -8, marginBottom: 14 }}>
+        * Maximum file size allowed per document: 5MB
+    </p>
                             <div className="lp-doc-grid">
                                 {DOC_FIELDS.map((doc) => (
                                     <div key={doc.key}>
