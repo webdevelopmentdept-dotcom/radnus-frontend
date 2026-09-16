@@ -97,6 +97,14 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
     ];
   }
 
+  if (employee?.canApproveLoanIncentive) {
+  navItems = [
+    ...navItems.slice(0, -2),
+    { href: "/employee/loan-incentive-payouts", icon: Wallet, label: "Loan Incentive" },
+    ...navItems.slice(-2),
+  ];
+}
+
   useEffect(() => {
     localStorage.setItem("esb-theme", dark ? "dark" : "light");
   }, [dark]);

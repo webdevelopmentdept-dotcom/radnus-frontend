@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef  } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Eye, Download } from "lucide-react";
 import EmployeeLayout from "./EmployeeLayout";
 
@@ -19,14 +19,13 @@ const DOC_FIELDS = [
 const CHECKLIST_STAGES = [
     { key: "cibilVerification", label: "CIBIL Verification" },
     { key: "documentCollection", label: "Document Collection" },
-       { key: "applicationProcess", label: "Online Loan Application", incentiveLinked: true },
+    { key: "applicationProcess", label: "Online Loan Application", incentiveLinked: true, remarkLabel: "Application Number", remarkPlaceholder: "Application Number" },
     { key: "quotation", label: "Quotation" },
     { key: "auditorReference", label: "Auditor Reference" },
     { key: "documentPayment", label: "Document Payment" },
     { key: "finalisationVerification", label: "Finalisation & Verification" },
     { key: "finalSubmission", label: "Final Submission" },
-      { key: "courier", label: "Projection Dispatch/Courier", incentiveLinked: true },
-
+    { key: "courier", label: "Projection Dispatch/Courier", incentiveLinked: true, remarkLabel: "Courier Slip No", remarkPlaceholder: "Courier Slip No" },
     { key: "completed", label: "Completed" },
 ];
 
@@ -507,13 +506,23 @@ export default function LoanProcess() {
         }
     };
 
-        /* ------------------------ TAB 2 — CHECKLIST ------------------------ */
+    /* ------------------------ TAB 2 — CHECKLIST ------------------------ */
     const toggleStage = async (customerId, field, currentValue) => {
         const current = customers.find((c) => c._id === customerId);
 
         if (current?.incentive?.eligibility === "Paid" && INCENTIVE_LINKED_KEYS.includes(field)) {
             alert("Incentive already paid for this loan. Online Loan Application / Projection Dispatch can't be changed anymore.");
             return;
+        }
+
+        // Can't tick Online Loan Application / Projection Dispatch without its proof number filled in first.
+        if (currentValue !== true && INCENTIVE_LINKED_KEYS.includes(field)) {
+            const remarkNow = (remarkDraft[customerId]?.[field] ?? current?.checklistRemarks?.[field] ?? "").trim();
+            if (!remarkNow) {
+                const stage = CHECKLIST_STAGES.find((s) => s.key === field);
+                alert(`Enter the ${stage?.remarkLabel || "number"} first — it's proof for the incentive, then you can check this box.`);
+                return;
+            }
         }
 
         if (currentValue === true && INCENTIVE_LINKED_KEYS.includes(field)) {
@@ -539,6 +548,7 @@ export default function LoanProcess() {
             if (data.success) {
                 setCustomers((prev) => prev.map((c) => (c._id === customerId ? data.customer : c)));
             } else {
+                alert(data.message || "Couldn't update — please try again.");
                 loadCustomers(); // revert on failure
             }
         } catch (err) {
@@ -547,7 +557,7 @@ export default function LoanProcess() {
         }
     };
 
-        const saveReason = async (customerId) => {
+    const saveReason = async (customerId) => {
         const current = customers.find((c) => c._id === customerId);
         const reasonForPending = reasonDraft[customerId] ?? current?.reasonForPending ?? "";
         try {
@@ -567,7 +577,13 @@ export default function LoanProcess() {
     const saveRemark = async (customerId, field) => {
         const current = customers.find((c) => c._id === customerId);
         const remark = remarkDraft[customerId]?.[field] ?? current?.checklistRemarks?.[field] ?? "";
-        const currentValue = !!current?.checklist?.[field];
+        let currentValue = !!current?.checklist?.[field];
+
+        // Application Number / Courier Slip No is proof — clearing it auto-unchecks the box.
+        if (INCENTIVE_LINKED_KEYS.includes(field) && currentValue && !remark.trim()) {
+            currentValue = false;
+        }
+
         try {
             const res = await fetch(`${API}/api/loan-process/${customerId}/checklist`, {
                 method: "PATCH",
@@ -577,13 +593,16 @@ export default function LoanProcess() {
             const data = await res.json();
             if (data.success) {
                 setCustomers((prev) => prev.map((c) => (c._id === customerId ? data.customer : c)));
+            } else if (data.message) {
+                alert(data.message);
+                loadCustomers();
             }
         } catch (err) {
             console.error("REMARK SAVE ERROR", err);
         }
     };
 
-     const clearRemark = async (customerId, field) => {
+    const clearRemark = async (customerId, field) => {
         const key = `${customerId}-${field}`;
         if (remarkInputRefs.current[key]) remarkInputRefs.current[key].value = "";
 
@@ -593,7 +612,12 @@ export default function LoanProcess() {
         }));
 
         const current = customers.find((c) => c._id === customerId);
-        const currentValue = !!current?.checklist?.[field];
+        let currentValue = !!current?.checklist?.[field];
+
+        if (INCENTIVE_LINKED_KEYS.includes(field) && currentValue) {
+            currentValue = false;
+        }
+
         try {
             const res = await fetch(`${API}/api/loan-process/${customerId}/checklist`, {
                 method: "PATCH",
@@ -605,13 +629,14 @@ export default function LoanProcess() {
                 setCustomers((prev) => prev.map((c) => (c._id === customerId ? data.customer : c)));
             } else {
                 console.error("REMARK CLEAR FAILED:", res.status, data.message);
+                if (data.message) alert(data.message);
+                loadCustomers();
             }
         } catch (err) {
             console.error("REMARK CLEAR ERROR", err);
         }
     };
-
-        const saveDate = async (customerId, field, dateValue) => {
+    const saveDate = async (customerId, field, dateValue) => {
         const current = customers.find((c) => c._id === customerId);
         const currentValue = !!current?.checklist?.[field];
         try {
@@ -1149,11 +1174,11 @@ export default function LoanProcess() {
                             </div>
                         </div>
 
-                       <div className="lp-card">
-    <div className="lp-section-title">Govt Documents</div>
-    <p style={{ color: "var(--lp-danger)", fontSize: 12.5, fontWeight: 600, marginTop: -8, marginBottom: 14 }}>
-        * Maximum file size allowed per document: 5MB
-    </p>
+                        <div className="lp-card">
+                            <div className="lp-section-title">Govt Documents</div>
+                            <p style={{ color: "var(--lp-danger)", fontSize: 12.5, fontWeight: 600, marginTop: -8, marginBottom: 14 }}>
+                                * Maximum file size allowed per document: 5MB
+                            </p>
                             <div className="lp-doc-grid">
                                 {DOC_FIELDS.map((doc) => (
                                     <div key={doc.key}>
@@ -1243,9 +1268,9 @@ export default function LoanProcess() {
                                                     <div className="lp-view-value">{c.mailId || "—"}</div>
                                                 </div>
                                                 <div className="lp-view-item">
-  <div className="lp-view-label">Contact No</div>
-  <div className="lp-view-value">{c.contactNo || "—"}</div>
-</div>
+                                                    <div className="lp-view-label">Contact No</div>
+                                                    <div className="lp-view-value">{c.contactNo || "—"}</div>
+                                                </div>
                                                 <div className="lp-view-item">
                                                     <div className="lp-view-label">Date</div>
                                                     <div className="lp-view-value">{c.loanDate ? new Date(c.loanDate).toLocaleDateString() : "—"}</div>
@@ -1387,25 +1412,25 @@ export default function LoanProcess() {
                                                     )}
                                                 </div>
 
-                                                  <div className="lp-field">
-                          <label>Scheme *</label>
-                          <select
-                            name="scheme"
-                            value={editForm.scheme}
-                            onChange={handleEditChange}
-                            className={editFieldErrors.scheme ? "lp-input-invalid" : ""}
-                          >
-                            <option value="">Select Scheme</option>
-                            {SCHEME_OPTIONS.map((opt) => (
-                              <option key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </option>
-                            ))}
-                          </select>
-                          {editFieldErrors.scheme && (
-                            <div className="lp-field-error">{editFieldErrors.scheme}</div>
-                          )}
-                        </div>
+                                                <div className="lp-field">
+                                                    <label>Scheme *</label>
+                                                    <select
+                                                        name="scheme"
+                                                        value={editForm.scheme}
+                                                        onChange={handleEditChange}
+                                                        className={editFieldErrors.scheme ? "lp-input-invalid" : ""}
+                                                    >
+                                                        <option value="">Select Scheme</option>
+                                                        {SCHEME_OPTIONS.map((opt) => (
+                                                            <option key={opt.value} value={opt.value}>
+                                                                {opt.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    {editFieldErrors.scheme && (
+                                                        <div className="lp-field-error">{editFieldErrors.scheme}</div>
+                                                    )}
+                                                </div>
                                                 <div className="lp-field">
                                                     <label>Loan Value *</label>
                                                     <input
@@ -1565,7 +1590,7 @@ export default function LoanProcess() {
                                             <div style={{ fontWeight: 700, fontSize: 15 }}>{c.customerName}</div>
                                             <div style={{ fontSize: 12, color: "var(--lp-text-muted)" }}>{c.contactNo}</div>
                                         </div>
-                                                                                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                                             {c.incentive?.eligibility === "Eligible for Processing" && (
                                                 <span className="lp-badge" style={{ background: "#fff4d6", color: "#8a6100" }}>
                                                     Eligible for incentive
@@ -1588,23 +1613,38 @@ export default function LoanProcess() {
 
                                     {isOpen && (
                                         <div className="lp-checklist-body">
-                                                                                        {CHECKLIST_STAGES.map((stage) => (
+                                            {CHECKLIST_STAGES.map((stage) => (
                                                 <div className="lp-stage-row" key={stage.key} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                                                     <label style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 180 }}>
                                                         <input
                                                             type="checkbox"
                                                             checked={!!c.checklist?.[stage.key]}
-                                                            disabled={stage.incentiveLinked && c.incentive?.eligibility === "Paid"}
+                                                            disabled={
+                                                                (stage.incentiveLinked && c.incentive?.eligibility === "Paid") ||
+                                                                (stage.incentiveLinked &&
+                                                                    !c.checklist?.[stage.key] &&
+                                                                    !(remarkDraft[c._id]?.[stage.key] ?? c.checklistRemarks?.[stage.key] ?? "").trim())
+                                                            }
+                                                            title={
+                                                                stage.incentiveLinked && c.incentive?.eligibility === "Paid"
+                                                                    ? "Incentive already paid — locked"
+                                                                    : stage.incentiveLinked &&
+                                                                        !c.checklist?.[stage.key] &&
+                                                                        !(remarkDraft[c._id]?.[stage.key] ?? c.checklistRemarks?.[stage.key] ?? "").trim()
+                                                                        ? `Enter the ${stage.remarkLabel} first — it's proof for the incentive`
+                                                                        : undefined
+                                                            }
                                                             onChange={() => toggleStage(c._id, stage.key, c.checklist?.[stage.key])}
                                                         />
                                                         {stage.label}
                                                     </label>
-                                                                                                        <div style={{ position: "relative", flex: "1 1 200px", display: "flex", alignItems: "center" }}>
+                                                    <div style={{ position: "relative", flex: "1 1 200px", display: "flex", alignItems: "center" }}>
                                                         <input
                                                             ref={(el) => { remarkInputRefs.current[`${c._id}-${stage.key}`] = el; }}
                                                             type="text"
-                                                            placeholder="Remark (optional)"
+                                                            placeholder={stage.remarkPlaceholder || "Remark (optional)"}
                                                             defaultValue={c.checklistRemarks?.[stage.key] || ""}
+                                                            disabled={stage.incentiveLinked && c.incentive?.eligibility === "Paid"}
                                                             onChange={(e) =>
                                                                 setRemarkDraft((prev) => ({
                                                                     ...prev,
@@ -1621,6 +1661,7 @@ export default function LoanProcess() {
                                                             <button
                                                                 type="button"
                                                                 title="Clear remark"
+                                                                disabled={stage.incentiveLinked && c.incentive?.eligibility === "Paid"}
                                                                 onMouseDown={(e) => e.preventDefault()}
                                                                 onClick={() => clearRemark(c._id, stage.key)}
                                                                 style={{
@@ -1633,11 +1674,12 @@ export default function LoanProcess() {
                                                             </button>
                                                         )}
                                                     </div>
-                                                                                                    
+
                                                     {DATE_ENABLED_STAGES.includes(stage.key) && (
                                                         <input
                                                             type="date"
                                                             value={c.checklistDates?.[stage.key] ? c.checklistDates[stage.key].slice(0, 10) : ""}
+                                                            disabled={stage.incentiveLinked && c.incentive?.eligibility === "Paid"}
                                                             onChange={(e) => saveDate(c._id, stage.key, e.target.value)}
                                                             style={{
                                                                 padding: "4px 8px", border: "1px solid var(--lp-border)",
@@ -1648,7 +1690,7 @@ export default function LoanProcess() {
                                                 </div>
                                             ))}
 
-                                            
+
 
                                             <div style={{ marginTop: 12 }}>
                                                 <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>

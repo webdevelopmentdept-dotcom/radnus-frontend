@@ -4,15 +4,25 @@
 // checklist (see LoanProcess.jsx / LoanCustomer.incentive on backend).
 // This page is intentionally separate from the KPI-linked Incentive engine
 // (IncentivePlan/IncentiveAssignment/IncentiveResult) — it doesn't touch it.
-
+import EmployeeLayout from "../employee/EmployeeLayout";
 import { useState, useEffect } from "react";
 import { Wallet, CheckCircle2, Clock, X, IndianRupee, User } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const authHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem("hrToken") || localStorage.getItem("adminToken") || ""}`,
+  Authorization: `Bearer ${
+    localStorage.getItem("hrToken") ||
+    localStorage.getItem("adminToken") ||
+    localStorage.getItem("employeeToken") ||
+    sessionStorage.getItem("employeeToken") ||
+    ""
+  }`,
 });
+
+// Access-control section (who from Accounts team can approve/pay) is
+// HR/Admin only — the Accounts employee who HAS access must not see it.
+const isHrOrAdmin = () => window.location.pathname.startsWith("/hr");
 
 const formatDate = (d) => {
   if (!d) return "—";
@@ -40,6 +50,56 @@ export default function LoanIncentivePayouts() {
   const [amount, setAmount] = useState("");
   const [remark, setRemark] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // ── Loan Incentive Payout access (Accounts team, single fixed person) ──
+  // HR/Admin only — not shown to the Accounts employee who has access.
+  const showAccessControl = isHrOrAdmin();
+  const [accEmployees, setAccEmployees] = useState([]);
+  const [accLoading, setAccLoading] = useState(false);
+  const [accSavingId, setAccSavingId] = useState(null);
+
+  const loadAccountsEmployees = async () => {
+    setAccLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/loan-process/incentives/access/accounts-employees`, {
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (data.success) setAccEmployees(data.data || []);
+    } catch (err) {
+      console.error("LOAD ACCOUNTS EMPLOYEES ERROR", err);
+    } finally {
+      setAccLoading(false);
+    }
+  };
+
+  const toggleLoanIncentiveAccess = async (emp) => {
+    const nextValue = !emp.canApproveLoanIncentive;
+
+    // optimistic update — only one Accounts person can hold this at a time
+    setAccEmployees((prev) =>
+      prev.map((e) => ({
+        ...e,
+        canApproveLoanIncentive: e._id === emp._id ? nextValue : false,
+      }))
+    );
+    setAccSavingId(emp._id);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/loan-process/incentives/access/${emp._id}`, {
+        method: "PATCH",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: nextValue }),
+      });
+      const data = await res.json();
+      if (!data.success) loadAccountsEmployees(); // re-sync on failure
+    } catch (err) {
+      console.error("TOGGLE LOAN INCENTIVE ACCESS ERROR", err);
+      loadAccountsEmployees();
+    } finally {
+      setAccSavingId(null);
+    }
+  };
 
   const loadPending = async () => {
     try {
@@ -81,6 +141,8 @@ export default function LoanIncentivePayouts() {
   useEffect(() => {
   setLoading(true);
   Promise.all([loadPending(), loadPaid()]).finally(() => setLoading(false));
+  if (showAccessControl) loadAccountsEmployees();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 
   const openApprove = (loan) => {
@@ -129,7 +191,7 @@ export default function LoanIncentivePayouts() {
     loans.length === 0 &&
     (tab === "pending" ? pendingLoaded : paidLoaded);
 
-  return (
+  const page = (
     <div style={{ padding: 24, maxWidth: 960, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
         <Wallet size={22} />
@@ -139,6 +201,85 @@ export default function LoanIncentivePayouts() {
         Loans where the employee has completed both "Online Loan Application" and
         "Projection Dispatch". Enter the incentive amount and approve to release payout.
       </p>
+
+      {showAccessControl && (
+        <div
+          style={{
+            border: "1px solid #e5e7eb",
+            borderRadius: 12,
+            padding: "14px 16px",
+            marginBottom: 22,
+          }}
+        >
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>
+            Loan Incentive Payout Access (Account team)
+          </div>
+          <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>
+            Only Account-team employees show here. Turn access ON for the one person who should
+            approve &amp; pay loan incentives — "Loan Incentive" shows up in their dashboard.
+            Turning ON for someone new automatically turns it OFF for the previous person.
+          </div>
+
+          {accLoading && <div style={{ fontSize: 12, color: "#6b7280" }}>Loading…</div>}
+          {!accLoading && accEmployees.length === 0 && (
+            <div style={{ fontSize: 12, color: "#6b7280" }}>
+              No Account-team employees found (department must contain "Account").
+            </div>
+          )}
+          {!accLoading && accEmployees.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {accEmployees.map((emp) => (
+                <div
+                  key={emp._id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    padding: "6px 0",
+                    borderTop: "1px solid #f3f4f6",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{emp.name}</div>
+                    <div style={{ fontSize: 11, color: "#6b7280" }}>{emp.email}</div>
+                  </div>
+                  <button
+                    onClick={() => toggleLoanIncentiveAccess(emp)}
+                    disabled={accSavingId === emp._id}
+                    style={{
+                      width: 44,
+                      height: 24,
+                      borderRadius: 30,
+                      border: "none",
+                      position: "relative",
+                      flexShrink: 0,
+                      cursor: accSavingId === emp._id ? "not-allowed" : "pointer",
+                      background: emp.canApproveLoanIncentive ? "#0F9D80" : "#CBD5E1",
+                      opacity: accSavingId === emp._id ? 0.6 : 1,
+                    }}
+                    aria-label={`Toggle Loan Incentive Payout access for ${emp.name}`}
+                  >
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: 3,
+                        left: emp.canApproveLoanIncentive ? 23 : 3,
+                        width: 18,
+                        height: 18,
+                        background: "#fff",
+                        borderRadius: "50%",
+                        transition: "left 0.2s",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
+                      }}
+                    />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <div
@@ -232,6 +373,9 @@ export default function LoanIncentivePayouts() {
                   <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
                     By {loan.staffName} · Loan value ₹{loan.loanValue?.toLocaleString?.() || 0}
                   </div>
+                  <div style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>
+  App No: {loan.checklistRemarks?.applicationProcess || "—"} · Slip No: {loan.checklistRemarks?.courier || "—"}
+</div>
                   <div
                     style={{
                       display: "inline-flex",
@@ -407,7 +551,9 @@ export default function LoanIncentivePayouts() {
             </button>
           </div>
         </div>
-      )}
+        )}
     </div>
   );
+
+  return isHrOrAdmin() ? page : <EmployeeLayout>{page}</EmployeeLayout>;
 }

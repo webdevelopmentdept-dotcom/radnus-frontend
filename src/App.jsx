@@ -262,6 +262,7 @@ function App() {
         <Route path="/employee/feedback" element={<EmployeeFeedback />} />
         <Route path="/employee/my-advance" element={<MyAdvances />} />
         <Route path="/employee/products" element={<EmployeeProtectedRoute> <EmployeeProductManagement />  </EmployeeProtectedRoute>
+
         }
         />
         <Route path="/employee/loan-process" element={<EmployeeProtectedRoute>  <LoanProcess /> </EmployeeProtectedRoute>
@@ -270,6 +271,9 @@ function App() {
         <Route path="/employee/loan-process-report" element={<EmployeeProtectedRoute>  <LoanProcessReport /> </EmployeeProtectedRoute>
         }
         />
+        <Route path="/employee/loan-incentive-payouts" element={<EmployeeProtectedRoute>  <LoanIncentivePayouts /> </EmployeeProtectedRoute>
+}
+/>
 
 
 
@@ -374,7 +378,7 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="loan-process" element={<AdminLoanProcess />} />
           <Route path="loan-process/access" element={<AdminLoanAccess />} />
-          
+
           <Route path="loan-analytics" element={<AdminLoanAnalytics />} />
           <Route path="applicants" element={<ApplicantList />} />
           <Route path="partners" element={<PartnerList />} />
