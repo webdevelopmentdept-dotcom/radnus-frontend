@@ -6,7 +6,7 @@
 // (IncentivePlan/IncentiveAssignment/IncentiveResult) — it doesn't touch it.
 import EmployeeLayout from "../employee/EmployeeLayout";
 import { useState, useEffect } from "react";
-import { Wallet, CheckCircle2, Clock, X, IndianRupee, User } from "lucide-react";
+import { Wallet, CheckCircle2, Clock, IndianRupee, User } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -23,6 +23,8 @@ const authHeaders = () => ({
 // Access-control section (who from Accounts team can approve/pay) is
 // HR/Admin only — the Accounts employee who HAS access must not see it.
 const isHrOrAdmin = () => window.location.pathname.startsWith("/hr");
+
+const FIXED_INCENTIVE_AMOUNT = 150; // ₹150 per customer, fixed — no manual entry
 
 const formatDate = (d) => {
   if (!d) return "—";
@@ -46,10 +48,7 @@ export default function LoanIncentivePayouts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [approveFor, setApproveFor] = useState(null); // loan being approved
-  const [amount, setAmount] = useState("");
-  const [remark, setRemark] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [approvingId, setApprovingId] = useState(null); // _id of loan currently being approved
 
   // ── Loan Incentive Payout access (Accounts team, single fixed person) ──
   // HR/Admin only — not shown to the Accounts employee who has access.
@@ -145,42 +144,33 @@ export default function LoanIncentivePayouts() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 
-  const openApprove = (loan) => {
-    setApproveFor(loan);
-    setAmount("");
-    setRemark("");
-  };
-
-  const submitApprove = async () => {
-    const amt = Number(amount);
-    if (!amt || amt <= 0) {
-      alert("Enter a valid incentive amount");
+  const approveAndPay = async (loan) => {
+    if (!window.confirm(`Pay ₹${FIXED_INCENTIVE_AMOUNT} incentive to ${loan.staffName} for ${loan.customerName}'s loan?`)) {
       return;
     }
-    setSubmitting(true);
+    setApprovingId(loan._id);
     try {
       const res = await fetch(
-        `${API_BASE}/api/loan-process/${approveFor._id}/incentive/approve`,
+        `${API_BASE}/api/loan-process/${loan._id}/incentive/approve`,
         {
           method: "POST",
           headers: { ...authHeaders(), "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: amt, remark }),
+          body: JSON.stringify({ amount: FIXED_INCENTIVE_AMOUNT, remark: "" }),
         }
       );
       const data = await res.json();
       if (data.success) {
         // Move the loan from Pending list into Paid list immediately.
-        setPendingLoans((prev) => prev.filter((l) => l._id !== approveFor._id));
+        setPendingLoans((prev) => prev.filter((l) => l._id !== loan._id));
         setPaidLoans((prev) => [data.customer, ...prev]);
         setPaidLoaded(true);
-        setApproveFor(null);
       } else {
         alert(data.message || "Failed to approve incentive");
       }
     } catch (err) {
       alert("Server error while approving incentive");
     } finally {
-      setSubmitting(false);
+      setApprovingId(null);
     }
   };
 
@@ -199,7 +189,7 @@ export default function LoanIncentivePayouts() {
       </div>
       <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 20 }}>
         Loans where the employee has completed both "Online Loan Application" and
-        "Projection Dispatch". Enter the incentive amount and approve to release payout.
+        "Projection Dispatch". Click "Approve & pay" to release the fixed ₹{FIXED_INCENTIVE_AMOUNT} incentive.
       </p>
 
       {showAccessControl && (
@@ -393,19 +383,20 @@ export default function LoanIncentivePayouts() {
                   </div>
                 </div>
                 <button
-                  onClick={() => openApprove(loan)}
+                  onClick={() => approveAndPay(loan)}
+                  disabled={approvingId === loan._id}
                   style={{
-                    background: "#111827",
+                    background: approvingId === loan._id ? "#9ca3af" : "#111827",
                     color: "#fff",
                     border: "none",
                     borderRadius: 8,
                     padding: "8px 16px",
                     fontSize: 13,
                     fontWeight: 600,
-                    cursor: "pointer",
+                    cursor: approvingId === loan._id ? "not-allowed" : "pointer",
                   }}
                 >
-                  Approve & pay
+                  {approvingId === loan._id ? "Processing…" : "Approve & pay"}
                 </button>
               </div>
             ) : (
@@ -481,77 +472,6 @@ export default function LoanIncentivePayouts() {
           )}
         </div>
       )}
-
-      {approveFor && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
-          }}
-          onClick={() => !submitting && setApproveFor(null)}
-        >
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 14,
-              padding: 24,
-              width: 360,
-              maxWidth: "90vw",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>Approve incentive</div>
-              <X size={18} style={{ cursor: "pointer" }} onClick={() => setApproveFor(null)} />
-            </div>
-            <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 14 }}>
-              {approveFor.customerName} — {approveFor.staffName}
-            </div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>Incentive amount</label>
-            <div style={{ display: "flex", alignItems: "center", border: "1px solid #d1d5db", borderRadius: 8, marginTop: 6, marginBottom: 14, padding: "8px 10px" }}>
-              <IndianRupee size={14} style={{ marginRight: 4, color: "#6b7280" }} />
-              <input
-                type="number"
-                min="1"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="e.g. 1000"
-                style={{ border: "none", outline: "none", width: "100%", fontSize: 14 }}
-                autoFocus
-              />
-            </div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>Remark (optional)</label>
-            <textarea
-              value={remark}
-              onChange={(e) => setRemark(e.target.value)}
-              rows={2}
-              style={{ width: "100%", border: "1px solid #d1d5db", borderRadius: 8, marginTop: 6, marginBottom: 18, padding: 8, fontSize: 13, resize: "vertical" }}
-            />
-            <button
-              onClick={submitApprove}
-              disabled={submitting}
-              style={{
-                width: "100%",
-                background: submitting ? "#9ca3af" : "#111827",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                padding: "10px 0",
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: submitting ? "not-allowed" : "pointer",
-              }}
-            >
-              {submitting ? "Processing…" : "Confirm & mark paid"}
-            </button>
-          </div>
-        </div>
-        )}
     </div>
   );
 
