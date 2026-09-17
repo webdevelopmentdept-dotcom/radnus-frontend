@@ -55,7 +55,7 @@ const STANDALONE_PAYOUT_TYPES = [
 
 const EMPTY_STANDALONE_SLAB = () => ({
   min_target: 0,
-  max_target: 0,
+  max_target: null,
   payout_type: "fixed",
   payout_value: 0,
 });
@@ -192,7 +192,9 @@ function StandaloneSlabEditor({ slabs, targetType, onAdd, onUpdate, onRemove }) 
             ))}
           </div>
 
-          {slabs.map((slab, si) => (
+          {slabs.map((slab, si) => {
+           const isNoLimit = slab.max_target === null;   // ⬅️ FIXED: only an explicit null means "no limit"
+           return (
             <div key={si} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 160px 1fr 32px", gap: 8, marginBottom: 8, alignItems: "start" }}>
               {/* Min target */}
               <div>
@@ -212,21 +214,21 @@ function StandaloneSlabEditor({ slabs, targetType, onAdd, onUpdate, onRemove }) 
               <div>
                 <input
                   type="number" min="0"
-                  value={Number(slab.max_target) === 0 ? "" : slab.max_target}
+                  value={isNoLimit ? "" : slab.max_target}
                   onChange={e => onUpdate(si, "max_target", e.target.value)}
-                  disabled={Number(slab.max_target) === 0}
+                  disabled={isNoLimit}
                   placeholder="e.g. 200000"
-                  style={{ ...inp, padding: "7px 8px", fontSize: 12, background: Number(slab.max_target) === 0 ? "#f8fafc" : "#fff", color: Number(slab.max_target) === 0 ? "#9ca3af" : "#1e293b" }}
+                  style={{ ...inp, padding: "7px 8px", fontSize: 12, background: isNoLimit ? "#f8fafc" : "#fff", color: isNoLimit ? "#9ca3af" : "#1e293b" }}
                 />
                 <label style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 4, cursor: "pointer" }}>
                   <input
                     type="checkbox"
-                    checked={Number(slab.max_target) === 0}
-                    onChange={e => onUpdate(si, "max_target", e.target.checked ? 0 : "")}
+                    checked={isNoLimit}
+                    onChange={e => onUpdate(si, "max_target", e.target.checked ? null : "")}
                     style={{ width: 12, height: 12, cursor: "pointer" }}
                   />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: Number(slab.max_target) === 0 ? "#4f46e5" : "#94a3b8" }}>
-                    {Number(slab.max_target) === 0 ? "∞ No Limit (& Above)" : "No limit?"}
+                  <span style={{ fontSize: 10, fontWeight: 700, color: isNoLimit ? "#4f46e5" : "#94a3b8" }}>
+                    {isNoLimit ? "∞ No Limit (& Above)" : "No limit?"}
                   </span>
                 </label>
               </div>
@@ -270,19 +272,22 @@ function StandaloneSlabEditor({ slabs, targetType, onAdd, onUpdate, onRemove }) 
                 <HugeiconsIcon icon={Delete02Icon} size={13} color="#dc2626" strokeWidth={2} />
               </button>
             </div>
-          ))}
+            );
+          })}
 
           {/* Slab preview */}
           {slabs.length > 0 && (
             <div style={{ marginTop: 12, background: "#f8fafc", borderRadius: 10, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
               <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Preview</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {slabs.map((slab, si) => (
+                {slabs.map((slab, si) => {
+                  const isNoLimit = slab.max_target === null;   // ⬅️ FIXED: only an explicit null means "no limit"
+                  return (
                   <div key={si} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: "#374151" }}>
                     <span style={{ color: "#64748b" }}>
                       {formatTarget(slab.min_target, targetType)}
                       {" → "}
-                      {Number(slab.max_target) === 0 ? "∞" : formatTarget(slab.max_target, targetType)}
+                      {isNoLimit ? "∞" : formatTarget(slab.max_target, targetType)}
                     </span>
                     <span style={{ margin: "0 6px", color: "#cbd5e1" }}>|</span>
                     <span style={{ color: "#16a34a", fontWeight: 700 }}>
@@ -293,7 +298,8 @@ function StandaloneSlabEditor({ slabs, targetType, onAdd, onUpdate, onRemove }) 
                           : `${slab.payout_value}% ${slab.payout_type === "percent_of_salary" ? "of salary" : "of achieved"}`}
                     </span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -653,18 +659,21 @@ export default function IncentivePlans() {
       const newMin = last ? (Number(last.max_target) + 1) : 0;
       return {
         ...f,
-        standalone_slabs: [...f.standalone_slabs, { min_target: newMin, max_target: 0, payout_type: "fixed", payout_value: 0 }],
+         standalone_slabs: [...f.standalone_slabs, { min_target: newMin, max_target: null, payout_type: "fixed", payout_value: 0 }],
       };
     });
   };
 
   const updateStandaloneSlab = (si, field, val) => {
-    setForm(f => {
-      const slabs = [...f.standalone_slabs];
-      slabs[si] = { ...slabs[si], [field]: field === "payout_type" ? val : Number(val) };
-      return { ...f, standalone_slabs: slabs };
-    });
-  };
+  setForm(f => {
+    const slabs = [...f.standalone_slabs];
+    slabs[si] = {
+      ...slabs[si],
+      [field]: (field === "payout_type" || val === null) ? val : Number(val),
+    };
+    return { ...f, standalone_slabs: slabs };
+  });
+};
 
   const removeStandaloneSlab = (si) => {
     setForm(f => ({ ...f, standalone_slabs: f.standalone_slabs.filter((_, i) => i !== si) }));
