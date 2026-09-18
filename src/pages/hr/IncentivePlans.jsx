@@ -1132,7 +1132,7 @@ export default function IncentivePlans() {
                   </div>
                 </div>
                 <p style={{ fontSize: 12, color: "#64748b", marginTop: 6 }}>
-                  Idhu leave pண்ணா plan default ah andha period (month/quarter) முழுக்க valid ah irukum. Specific date range வேணும்னா (e.g. 1 day, 1 week, custom quarter) idhula fill pண்ணுங்க.
+                  If you leave this blank, the plan will default to being valid for the entire period (month/quarter). If you need a specific date range (e.g., 1 day, 1 week, a custom quarter), fill it in here
                 </p>
               </Section>
 

@@ -391,19 +391,23 @@ export default function PerformanceReviews() {
   // ───────────────────────────────────────────────
 
   const handleEmployeeLogSelect = (assignmentId) => {
-    setSelectedEmployeeLog(assignmentId);
-    setLogDateFrom(""); setLogDateTo("");
-    setEmployeeLogs([]); setLogTotals({});
-    if (!assignmentId) return;
-    const assignment = allAssignments.find(a => a._id === assignmentId);
-    if (assignment) fetchEmployeeLogs(assignment.employee_id?._id || assignment.employee_id, assignmentId);
-  };
+  setSelectedEmployeeLog(assignmentId);
+  // ✅ Date fields touch பண்ணாம இருக்கும் — previous filter அப்படியே stay ஆகும்
+  setEmployeeLogs([]); setLogTotals({});
+  if (!assignmentId) return;
+  const assignment = allAssignments.find(a => a._id === assignmentId);
+  if (assignment) fetchEmployeeLogs(assignment.employee_id?._id || assignment.employee_id, assignmentId);
+};
 
   const filteredLogs = employeeLogs.filter(log => {
-    if (logDateFrom && log.log_date < logDateFrom) return false;
-    if (logDateTo && log.log_date > logDateTo) return false;
-    return true;
-  });
+  // Ore field mattum fill pannirundha, adhu single-day filter aaga irukanum
+  const effectiveFrom = logDateFrom || logDateTo;
+  const effectiveTo = logDateTo || logDateFrom;
+
+  if (effectiveFrom && log.log_date < effectiveFrom) return false;
+  if (effectiveTo && log.log_date > effectiveTo) return false;
+  return true;
+});
 
   const logsByDate = filteredLogs.reduce((acc, log) => {
     if (!acc[log.log_date]) acc[log.log_date] = [];
@@ -411,7 +415,16 @@ export default function PerformanceReviews() {
     return acc;
   }, {});
 
+  // ── Totals that respect the From/To date filter (Running Totals panel) ──
+  const filteredTotals = filteredLogs
+    .filter(log => !log.isDeleted)
+    .reduce((acc, log) => {
+      acc[log.kpi_item_id] = (acc[log.kpi_item_id] || 0) + log.value;
+      return acc;
+    }, {});
+
   const selectedAssignmentData = allAssignments.find(a => a._id === selectedEmployeeLog);
+
   const liveScore = calcLiveScore();
   const { label: liveLabel, color: liveColor } = getRatingInfo(liveScore);
   const pendingAssessments = assessments.filter(a => !isReviewed(a._id));
@@ -863,12 +876,12 @@ export default function PerformanceReviews() {
             <div style={{ background: "#fff", borderRadius: 14, padding: 20, border: "1px solid #e5e7eb" }}>
               {(() => {
                 const kpiItems = selectedAssignmentData?.month_version_id?.kpi_items || selectedAssignmentData?.template_id?.kpi_items;
-                const hasData = selectedEmployeeLog && Object.keys(logTotals).length > 0 && kpiItems?.length > 0;
+                const hasData = selectedEmployeeLog && Object.keys(filteredTotals).length > 0 && kpiItems?.length > 0;
                 let avgPct = 0;
                 let avgColor = "#dc2626";
                 if (hasData) {
                   const pctList = kpiItems.map((item) => {
-                    const total = logTotals[item._id] || 0;
+                    const total = filteredTotals[item._id] || 0;
                     return Math.min(Math.round((total / item.target) * 100), 100);
                   });
                   avgPct = Math.round(pctList.reduce((sum, p) => sum + p, 0) / pctList.length);
@@ -876,9 +889,20 @@ export default function PerformanceReviews() {
                 }
                 return (
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#1a1a2e", display: "flex", alignItems: "center", gap: 7 }}>
-                      <BarChart2 size={15} color="#374151" /> Running Totals
-                    </p>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#1a1a2e", display: "flex", alignItems: "center", gap: 7 }}>
+                        <BarChart2 size={15} color="#374151" /> Running Totals
+                      </p>
+                      {selectedAssignmentData?.employee_id?.name && (
+                        <span style={{
+                          display: "inline-block", marginTop: 5, fontSize: 11, fontWeight: 700,
+                          color: "#2563eb", background: "#eff6ff", padding: "3px 10px",
+                          borderRadius: 99, border: "1px solid #bfdbfe"
+                        }}>
+                          {selectedAssignmentData.employee_id.name}
+                        </span>
+                      )}
+                    </div>
                     {hasData && (
                       <span style={{ fontSize: 12, fontWeight: 800, color: avgColor, background: `${avgColor}15`, padding: "3px 10px", borderRadius: 99 }}>
                         Avg: {avgPct}%
@@ -887,13 +911,14 @@ export default function PerformanceReviews() {
                   </div>
                 );
               })()}
+
               {!selectedEmployeeLog ? (
                 <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "20px 0" }}>Select employee first</p>
-              ) : Object.keys(logTotals).length === 0 ? (
-                <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "20px 0" }}>No logs yet</p>
+              ) : Object.keys(filteredTotals).length === 0 ? (
+                <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "20px 0" }}>No logs in this date range</p>
               ) : (
                 (selectedAssignmentData?.month_version_id?.kpi_items || selectedAssignmentData?.template_id?.kpi_items)?.map((item, i) => {
-                  const total = logTotals[item._id] || 0;
+                  const total = filteredTotals[item._id] || 0;
                   const pct = Math.min(Math.round((total / item.target) * 100), 100);
                   const color = pct >= 100 ? "#16a34a" : pct >= 75 ? "#2563eb" : pct >= 50 ? "#d97706" : "#dc2626";
                   return (

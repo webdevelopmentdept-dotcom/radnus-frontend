@@ -78,6 +78,7 @@ const HR_MENU = [
     icon: MailSend01Icon,
     items: [
       { to: "/hr/dashboard/applicants", end: false, icon: MailSend01Icon, size: 20, label: "Applicants ✅", flow: null, notif: false },
+      { to: "/hr/dashboard/internships", end: false, icon: MailSend01Icon, size: 20, label: "Internships ", flow: null, notif: false }, 
       { to: "/hr/dashboard/job-postings", end: false, icon: TaskDone01Icon, size: 20, label: "Job Postings ✅", flow: null, notif: false },
     ],
   },
