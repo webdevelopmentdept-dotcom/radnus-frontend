@@ -122,9 +122,12 @@ function AddSaleEntry({ resultId, onUpdate }) {
   const [locked, setLocked]       = useState(false);
   const [lockDate, setLockDate]   = useState(null);
   const [loading, setLoading]     = useState(true);
-
+  const [payoutFrequency, setPayoutFrequency] = useState("monthly"); // 🆕
   const [amount, setAmount] = useState("");
   const [note, setNote]     = useState("");
+    const [showDatePicker, setShowDatePicker] = useState(false); // 🆕
+  const [entryDate, setEntryDate] = useState("");
+
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
 
@@ -140,20 +143,24 @@ function AddSaleEntry({ resultId, onUpdate }) {
       setEntries(d.entries || []);
       setTotal(d.total_achieved || 0);
       setEstimated(d.estimated_amount || 0);
-      setLocked(!!d.period_locked);
+            setLocked(!!d.period_locked);
       setLockDate(d.lock_date || null);
+      setPayoutFrequency(d.payout_frequency || "monthly"); // 🆕
     } catch { /* silent */ }
     finally { setLoading(false); }
   };
 
   useEffect(() => { fetchEntries(); }, [resultId]);
 
-  const handleAdd = async () => {
+    const handleAdd = async () => {
     if (!amount || Number(amount) <= 0) { setErr("Enter a valid amount"); return; }
     setErr(""); setSubmitting(true);
     try {
-      await axios.post(`${API_BASE}/api/incentive-results/${resultId}/add-entry`, { amount, note });
-      setAmount(""); setNote("");
+      await axios.post(`${API_BASE}/api/incentive-results/${resultId}/add-entry`, {
+        amount, note,
+        ...(entryDate ? { date: entryDate } : {}),   // 🆕 empty → backend defaults to today
+      });
+      setAmount(""); setNote(""); setEntryDate(""); setShowDatePicker(false);
       await fetchEntries();
       onUpdate?.();
     } catch (e) {
@@ -207,6 +214,18 @@ function AddSaleEntry({ resultId, onUpdate }) {
     } finally { setFinalSubmitting(false); }
   };
 
+    // 🆕 Daily-mode entry status badge
+  const entryStatusBadge = (status) => {
+    const map = {
+      pending:  { label: "⏳ Waiting for HR", bg: "#fffbeb", color: "#92400e" },
+      approved: { label: "✅ Approved — payment pending", bg: "#eff6ff", color: "#1d4ed8" },
+      paid:     { label: "💸 Paid", bg: "#f0fdf4", color: "#15803d" },
+      rejected: { label: "❌ Rejected", bg: "#fef2f2", color: "#dc2626" },
+    };
+    const s = map[status] || map.pending;
+    return <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: s.bg, color: s.color }}>{s.label}</span>;
+  };
+
   if (loading) return <p style={{ fontSize: 12, color: "#9ca3af" }}>Loading entries…</p>;
 
   return (
@@ -241,10 +260,12 @@ function AddSaleEntry({ resultId, onUpdate }) {
                 </div>
               ) : (
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
+                                    <div>
                     <span style={{ fontSize: 12, fontWeight: 700, color: "#1f2937" }}>{Number(e.amount).toLocaleString("en-IN")}</span>
                     {e.note && <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: 8 }}>{e.note}</span>}
                     {e.added_by === "hr" && <span style={{ fontSize: 10, marginLeft: 8, background: "#fef9c3", color: "#a16207", padding: "1px 6px", borderRadius: 10, fontWeight: 700 }}>HR</span>}
+                                        {payoutFrequency === "daily" && <span style={{ marginLeft: 8 }}>{entryStatusBadge(e.status)}</span>}
+                    {payoutFrequency === "daily" && e.hr_remark && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>HR note: {e.hr_remark}</div>}
                     {/* 🆕 per-entry matched slab + payout */}
                     <div style={{ marginTop: 2 }}>
                       {e.matched_slab ? (
@@ -254,11 +275,18 @@ function AddSaleEntry({ resultId, onUpdate }) {
                       ) : (
                         <span style={{ fontSize: 11, color: "#dc2626" }}>No matching slab</span>
                       )}
+                      {/* 🆕 Paid date — different from the entry (achieved) date */}
+                      {e.status === "paid" && e.paid_at && (
+                        <span style={{ fontSize: 10, color: "#15803d", marginLeft: 8 }}>
+                          💸 Paid on {new Date(e.paid_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, color: "#9ca3af" }}>{new Date(e.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
-                    {!locked && (
+                                        <span style={{ fontSize: 11, color: "#9ca3af" }}>{new Date(e.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                    {/* 🆕 Daily mode: edit/delete only while HR hasn't acted (status pending) */}
+                    {!locked && (payoutFrequency !== "daily" || e.status === "pending") && (
                       <>
                         <button onClick={() => startEdit(e)} style={{ background: "#eff6ff", border: "none", borderRadius: 5, padding: "3px 7px", cursor: "pointer", fontSize: 11, color: "#2563eb", fontWeight: 700 }}>✎</button>
                         <button onClick={() => handleDelete(e._id)} style={{ background: "#fef2f2", border: "none", borderRadius: 5, padding: "3px 7px", cursor: "pointer", fontSize: 11, color: "#dc2626", fontWeight: 700 }}>✕</button>
@@ -283,9 +311,39 @@ function AddSaleEntry({ resultId, onUpdate }) {
       ) : (
         <>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 12 }}>
-            <div style={{ flex: 1, minWidth: 130 }}>
+                        <div style={{ flex: 1, minWidth: 130 }}>
               <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Amount <span style={{ color: "#dc2626" }}>*</span></p>
-              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 100000" style={{ width: "100%", padding: "8px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+              <div style={{ display: "flex", gap: 6 }}>
+                <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 100000" style={{ flex: 1, padding: "8px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                {/* 🆕 Calendar icon — click to pick a date. Left empty = today, automatic. */}
+                <button
+                  type="button"
+                  onClick={() => setShowDatePicker(s => !s)}
+                  title={entryDate ? `Date: ${entryDate}` : "Defaults to today — click to change"}
+                  style={{
+                    width: 38, flexShrink: 0, border: entryDate ? "1.5px solid #6366f1" : "1.5px solid #e5e7eb",
+                    borderRadius: 8, background: entryDate ? "#eef2ff" : "#fff", cursor: "pointer", fontSize: 16,
+                  }}
+                >
+                  📅
+                </button>
+              </div>
+              {showDatePicker && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+                  <input
+                    type="date"
+                    value={entryDate}
+                    max={new Date().toISOString().slice(0, 10)}
+                    onChange={e => setEntryDate(e.target.value)}
+                    style={{ padding: "6px 8px", border: "1.5px solid #e5e7eb", borderRadius: 6, fontSize: 12, outline: "none" }}
+                  />
+                  {entryDate && (
+                    <button type="button" onClick={() => setEntryDate("")} style={{ background: "none", border: "none", color: "#dc2626", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>
+                      ✕ Use today
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
             <div style={{ flex: 2, minWidth: 160 }}>
               <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Note (optional)</p>
@@ -296,18 +354,26 @@ function AddSaleEntry({ resultId, onUpdate }) {
             </button>
           </div>
 
-          {err && <p style={{ margin: "0 0 10px", fontSize: 11, color: "#dc2626" }}>{err}</p>}
+                    {err && <p style={{ margin: "0 0 10px", fontSize: 11, color: "#dc2626" }}>{err}</p>}
 
-          {/* 🆕 Manual Final Submit */}
-          <div style={{ borderTop: "1px dashed #e5e7eb", paddingTop: 12, display: "flex", justifyContent: "flex-end" }}>
-            <button
-              onClick={handleFinalSubmit}
-              disabled={finalSubmitting || entries.length === 0}
-              style={{ padding: "9px 22px", background: finalSubmitting || entries.length === 0 ? "#d1d5db" : "#16a34a", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: finalSubmitting || entries.length === 0 ? "not-allowed" : "pointer" }}
-            >
-              {finalSubmitting ? "Submitting..." : "✅ Final Submit to HR"}
-            </button>
-          </div>
+          {/* 🆕 Daily mode → each entry is auto-sent to HR, no final submit needed */}
+          {payoutFrequency === "daily" ? (
+            <div style={{ borderTop: "1px dashed #e5e7eb", paddingTop: 12 }}>
+              <p style={{ margin: 0, fontSize: 11, color: "#6b7280" }}>
+                ⚡ Daily payout plan — every entry you add goes to HR as its own request. HR can approve & pay it the same day.
+              </p>
+            </div>
+          ) : (
+            <div style={{ borderTop: "1px dashed #e5e7eb", paddingTop: 12, display: "flex", justifyContent: "flex-end" }}>
+              <button
+                onClick={handleFinalSubmit}
+                disabled={finalSubmitting || entries.length === 0}
+                style={{ padding: "9px 22px", background: finalSubmitting || entries.length === 0 ? "#d1d5db" : "#16a34a", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: finalSubmitting || entries.length === 0 ? "not-allowed" : "pointer" }}
+              >
+                {finalSubmitting ? "Submitting..." : "✅ Final Submit to HR"}
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -316,6 +382,8 @@ function AddSaleEntry({ resultId, onUpdate }) {
 
 // ── Expanded Detail Panel ─────────────────────────────────────────────────────
 function ExpandedDetail({ r, fetchMyIncentives }) {
+   const [descOpen, setDescOpen] = useState(false); // 🆕 read more/less for plan description
+
   const isKpi = isKpiPlan(r.plan_id);
   const total = r.calculated_amount || 0;
   const bonus = r.completion_bonus || 0;
@@ -473,11 +541,31 @@ function ExpandedDetail({ r, fetchMyIncentives }) {
           <>
             <div style={{ background: "#fffbeb", borderRadius: 12, padding: "14px 16px", border: "1px solid #fde68a", marginBottom: 10 }}>
   <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: "#92400e", textTransform: "uppercase" }}>Standalone Plan Details</p>
-  {r.plan_id?.description && (
-    <p style={{ margin: "0 0 10px", fontSize: 12, color: "#78350f", fontWeight: 500, lineHeight: 1.4 }}>
-      {r.plan_id.description}
-    </p>
-  )}
+    {r.plan_id?.description && (() => {
+    const isLong = r.plan_id.description.length > 400;
+    return (
+      <div style={{ margin: "0 0 10px" }}>
+        <p style={{
+          margin: 0, fontSize: 12, color: "#78350f", fontWeight: 500, lineHeight: 1.5,
+          whiteSpace: "pre-wrap",
+          display: descOpen || !isLong ? "block" : "-webkit-box",
+          WebkitLineClamp: descOpen || !isLong ? "unset" : 4,
+          WebkitBoxOrient: "vertical",
+          overflow: descOpen || !isLong ? "visible" : "hidden",
+        }}>
+          {r.plan_id.description}
+        </p>
+        {isLong && (
+          <button
+            onClick={() => setDescOpen(o => !o)}
+            style={{ background: "none", border: "none", padding: 0, marginTop: 6, fontSize: 11, fontWeight: 700, color: "#b45309", cursor: "pointer", textDecoration: "underline" }}
+          >
+            {descOpen ? "▲ Show less" : "▼ Read full terms"}
+          </button>
+        )}
+      </div>
+    );
+  })()}
   <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
     {[
       { label: "Metric", value: metricLabel(r.plan_id) },
@@ -716,8 +804,11 @@ export default function MyIncentive() {
   }, [results]);
 
   const pendingList   = results.filter(r => r.status === "pending");
-  const completedList = results.filter(r => r.status === "approved" || r.status === "paid");
-
+  // 🆕 Daily-mode results stay "open" (so employees can keep logging entries
+  // all month) even after individual entries get paid — result.status won't
+  // flip to "paid" for them anymore (see backend fix), but guard here too.
+  const isDailyPlan = (r) => (r.plan_id?.payout_frequency) === "daily";
+  const completedList = results.filter(r => !isDailyPlan(r) && (r.status === "approved" || r.status === "paid"));
   const handleToggle = (id) => setExpanded(prev => prev === id ? null : id);
 
   if (loading) return (

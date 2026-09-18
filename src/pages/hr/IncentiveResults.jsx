@@ -19,7 +19,7 @@ function calcIncentive(plan, finalScore, salary = 0, kpiBreakdown = []) {
   // ── STANDALONE ──
   if (plan.plan_type === "standalone") {
     const score = Math.round(finalScore || 0);
-    const slab  = (plan.slabs || []).find(s => score >= s.min_score && score <= s.max_score);
+    const slab = (plan.slabs || []).find(s => score >= s.min_score && score <= s.max_score);
     if (!slab || slab.type === "none") return { amount: 0, slabLabel: `${score}% → No Bonus`, kpiDetails: [] };
     const amount = slab.type === "percentage"
       ? Math.round((slab.value / 100) * salary)
@@ -34,7 +34,7 @@ function calcIncentive(plan, finalScore, salary = 0, kpiBreakdown = []) {
   const normalize = (s) => (s || "").toLowerCase().trim();
 
   let totalAmount = 0;
-  const labels    = [];
+  const labels = [];
   const kpiDetails = []; // ← structured data for UI rendering
 
   kpiConfigs.forEach(cfg => {
@@ -44,7 +44,7 @@ function calcIncentive(plan, finalScore, salary = 0, kpiBreakdown = []) {
 
     // ── ADMISSION KPI: per-program slab calculation ──────────────────────────
     if (cfg.is_admission_kpi) {
-      const programSlabs   = cfg.program_slabs   || [];
+      const programSlabs = cfg.program_slabs || [];
       const programTargets = cfg.program_targets || [];
 
       let admissionTotal = 0;
@@ -69,8 +69,8 @@ function calcIncentive(plan, finalScore, salary = 0, kpiBreakdown = []) {
 
         // Find matching slab for this program
         const progSlabEntry = programSlabs.find(ps => ps.program_id === pt.program_id);
-        const slabs         = progSlabEntry?.slabs || [];
-        const slab          = slabs.find(s => achPct >= s.min_score && achPct <= s.max_score);
+        const slabs = progSlabEntry?.slabs || [];
+        const slab = slabs.find(s => achPct >= s.min_score && achPct <= s.max_score);
 
         let amt = 0;
         let slabDesc = "No Slab";
@@ -89,23 +89,23 @@ function calcIncentive(plan, finalScore, salary = 0, kpiBreakdown = []) {
 
         admissionTotal += amt;
         programDetails.push({
-          program_id:   pt.program_id,
+          program_id: pt.program_id,
           program_name: pt.program_name,
-          target:       programTarget,
-          actual:       actualAdmissions,
+          target: programTarget,
+          actual: actualAdmissions,
           achPct,
           slabDesc,
-          amount:       amt,
+          amount: amt,
         });
       });
 
       totalAmount += admissionTotal;
       labels.push(`${cfg.kpi_name}: ₹${admissionTotal.toLocaleString("en-IN")} (${programTargets.length} programs)`);
       kpiDetails.push({
-        kpi_name:        cfg.kpi_name,
+        kpi_name: cfg.kpi_name,
         is_admission_kpi: true,
-        weight:          cfg.weight,
-        amount:          admissionTotal,
+        weight: cfg.weight,
+        amount: admissionTotal,
         programDetails,
       });
       return;
@@ -146,14 +146,14 @@ function calcIncentive(plan, finalScore, salary = 0, kpiBreakdown = []) {
     }
 
     kpiDetails.push({
-      kpi_name:        cfg.kpi_name,
+      kpi_name: cfg.kpi_name,
       is_admission_kpi: false,
-      weight:          cfg.weight,
-      target:          kpiData?.target ?? cfg.target,
-      actual:          kpiData?.actual_value,
-      achPct:          kpiScore,
-      amount:          amt,
-      slabDesc:        slab
+      weight: cfg.weight,
+      target: kpiData?.target ?? cfg.target,
+      actual: kpiData?.actual_value,
+      achPct: kpiScore,
+      amount: amt,
+      slabDesc: slab
         ? slab.type === "none"
           ? "No Bonus"
           : `${slab.min_score}–${slab.max_score}%`
@@ -194,31 +194,31 @@ function calcIncentive(plan, finalScore, salary = 0, kpiBreakdown = []) {
   }
 
   return {
-    amount:     totalAmount,
-    slabLabel:  labels.join(" | ") || "No slabs matched",
+    amount: totalAmount,
+    slabLabel: labels.join(" | ") || "No slabs matched",
     kpiDetails,
   };
 }
 
 const STATUS_META = {
-  pending:  { label: "Pending",  color: "#d97706", bg: "#fffbeb" },
+  pending: { label: "Pending", color: "#d97706", bg: "#fffbeb" },
   approved: { label: "Approved", color: "#16a34a", bg: "#f0fdf4" },
-  paid:     { label: "Paid",     color: "#2563eb", bg: "#eff6ff" },
+  paid: { label: "Paid", color: "#2563eb", bg: "#eff6ff" },
 };
 
 export default function IncentiveResults() {
-  const [results,     setResults]     = useState([]);
-  const [plans,       setPlans]       = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [toast,       setToast]       = useState(null);
-  const [bulkBusy,    setBulkBusy]    = useState(false);
-  const [recalcIds,   setRecalcIds]   = useState(new Set());
+  const [results, setResults] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [recalcIds, setRecalcIds] = useState(new Set());
   const [expandedRow, setExpandedRow] = useState(null);
   const [activeTab, setActiveTab] = useState("results");
 
   // filters
   const [fStatus, setFStatus] = useState("All");
-  const [fDept,   setFDept]   = useState("All");
+  const [fDept, setFDept] = useState("All");
   const [fPeriod, setFPeriod] = useState("All");
 
   useEffect(() => { fetchAll(); }, []);
@@ -231,9 +231,9 @@ export default function IncentiveResults() {
         axios.get(`${API_BASE}/api/incentive-plans`),
       ]);
       setResults(rRes.data?.data || rRes.data || []);
-      setPlans(pRes.data?.data   || pRes.data || []);
+      setPlans(pRes.data?.data || pRes.data || []);
     } catch { showToast("Failed to load", "error"); }
-    finally   { setLoading(false); }
+    finally { setLoading(false); }
   };
 
   const showToast = (msg, type = "success") => {
@@ -242,124 +242,124 @@ export default function IncentiveResults() {
 
   // ── Recalculate ───────────────────────────────────────────────────────────
   const recalculate = async (result) => {
-  const resultId   = result._id;
-  const employeeId = result.employee_id?._id || result.employee_id;
-  const period     = result.cycle_period;
+    const resultId = result._id;
+    const employeeId = result.employee_id?._id || result.employee_id;
+    const period = result.cycle_period;
 
-  if (!employeeId || !period) {
-    showToast("Missing employee or period info", "error"); return;
-  }
-
-  setRecalcIds(prev => new Set(prev).add(resultId));
-
-  try {
-    const reviewRes = await axios.get(`${API_BASE}/api/performance-reviews/${employeeId}`);
-    const reviews   = reviewRes.data?.data || [];
-
-    if (!reviews.length) {
-      showToast("No performance reviews found", "error"); return;
+    if (!employeeId || !period) {
+      showToast("Missing employee or period info", "error"); return;
     }
 
-    const toMonthYear = (p = "") => {
-      if (isNaN(p[0])) return p.trim().toLowerCase();
-      const [year, month] = p.split("-");
-      if (!year || !month) return p.trim().toLowerCase();
-      return new Date(parseInt(year), parseInt(month) - 1, 1)
-        .toLocaleString("en-US", { month: "long", year: "numeric" }).toLowerCase();
-    };
+    setRecalcIds(prev => new Set(prev).add(resultId));
 
-    const matched = reviews.filter(rv => toMonthYear(rv.period) === toMonthYear(period));
-    if (!matched.length) {
-      const available = [...new Set(reviews.map(rv => rv.period))].join(", ");
-      showToast(`No review for "${period}". Available: ${available}`, "error"); return;
-    }
-
-    const sorted  = [...matched].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    const best    = sorted.find(rv => rv.status === "finalized") || sorted[0];
-    const latestScore     = best?.final_score ?? 0;
-    const latestBreakdown = best?.kpi_breakdown || [];
-
-    if (latestScore === 0) {
-      showToast("Review score is 0 — finalize the review first", "error"); return;
-    }
-
-    // ✅ FIX: Daily logs-இல் இருந்து program-wise actuals fetch பண்ணு
-    let enrichedBreakdown = [...latestBreakdown];
     try {
-      const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/${employeeId}`);
-      if (assignRes.data.success && assignRes.data.data) {
-        const assignmentId = assignRes.data.data._id;
-        const logsRes = await axios.get(`${API_BASE}/api/daily-logs/${employeeId}/${assignmentId}`);
-        const allLogs = logsRes.data.data || [];
+      const reviewRes = await axios.get(`${API_BASE}/api/performance-reviews/${employeeId}`);
+      const reviews = reviewRes.data?.data || [];
 
-        // Program-wise totals build பண்ணு
-        const programTotals = {}; // { kpi_item_id: { program_id: total } }
-        allLogs.forEach(log => {
-          if (log.program_values && Object.keys(log.program_values).length > 0) {
-            if (!programTotals[log.kpi_item_id]) programTotals[log.kpi_item_id] = {};
-            Object.entries(log.program_values).forEach(([progId, val]) => {
-              programTotals[log.kpi_item_id][progId] = 
-                (programTotals[log.kpi_item_id][progId] || 0) + (Number(val) || 0);
-            });
-          }
-        });
-
-        // kpi_items from assignment to get program_targets
-        const kpiItems = assignRes.data.data.template_id?.kpi_items || [];
-
-        // enrichedBreakdown-ல் admission KPI-க்கு program entries add பண்ணு
-        const additionalEntries = [];
-        kpiItems.forEach(kpiItem => {
-          if (kpiItem.is_admission_kpi && kpiItem.program_targets?.length > 0) {
-            const progTotals = programTotals[kpiItem._id] || {};
-            kpiItem.program_targets.forEach(pt => {
-              additionalEntries.push({
-                kpi_name:     kpiItem.kpi_name,
-                program_id:   pt.program_id,
-                program_name: pt.program_name,
-                actual_value: progTotals[pt.program_id] || 0,
-                target:       pt.target,
-              });
-            });
-          }
-        });
-
-        if (additionalEntries.length > 0) {
-          enrichedBreakdown = [...latestBreakdown, ...additionalEntries];
-        }
+      if (!reviews.length) {
+        showToast("No performance reviews found", "error"); return;
       }
-    } catch (logErr) {
-      console.warn("Could not fetch daily logs for program actuals:", logErr);
-      // Fallback: latestBreakdown மட்டும் use பண்ணு
+
+      const toMonthYear = (p = "") => {
+        if (isNaN(p[0])) return p.trim().toLowerCase();
+        const [year, month] = p.split("-");
+        if (!year || !month) return p.trim().toLowerCase();
+        return new Date(parseInt(year), parseInt(month) - 1, 1)
+          .toLocaleString("en-US", { month: "long", year: "numeric" }).toLowerCase();
+      };
+
+      const matched = reviews.filter(rv => toMonthYear(rv.period) === toMonthYear(period));
+      if (!matched.length) {
+        const available = [...new Set(reviews.map(rv => rv.period))].join(", ");
+        showToast(`No review for "${period}". Available: ${available}`, "error"); return;
+      }
+
+      const sorted = [...matched].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      const best = sorted.find(rv => rv.status === "finalized") || sorted[0];
+      const latestScore = best?.final_score ?? 0;
+      const latestBreakdown = best?.kpi_breakdown || [];
+
+      if (latestScore === 0) {
+        showToast("Review score is 0 — finalize the review first", "error"); return;
+      }
+
+      // ✅ FIX: Daily logs-இல் இருந்து program-wise actuals fetch பண்ணு
+      let enrichedBreakdown = [...latestBreakdown];
+      try {
+        const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/${employeeId}`);
+        if (assignRes.data.success && assignRes.data.data) {
+          const assignmentId = assignRes.data.data._id;
+          const logsRes = await axios.get(`${API_BASE}/api/daily-logs/${employeeId}/${assignmentId}`);
+          const allLogs = logsRes.data.data || [];
+
+          // Program-wise totals build பண்ணு
+          const programTotals = {}; // { kpi_item_id: { program_id: total } }
+          allLogs.forEach(log => {
+            if (log.program_values && Object.keys(log.program_values).length > 0) {
+              if (!programTotals[log.kpi_item_id]) programTotals[log.kpi_item_id] = {};
+              Object.entries(log.program_values).forEach(([progId, val]) => {
+                programTotals[log.kpi_item_id][progId] =
+                  (programTotals[log.kpi_item_id][progId] || 0) + (Number(val) || 0);
+              });
+            }
+          });
+
+          // kpi_items from assignment to get program_targets
+          const kpiItems = assignRes.data.data.template_id?.kpi_items || [];
+
+          // enrichedBreakdown-ல் admission KPI-க்கு program entries add பண்ணு
+          const additionalEntries = [];
+          kpiItems.forEach(kpiItem => {
+            if (kpiItem.is_admission_kpi && kpiItem.program_targets?.length > 0) {
+              const progTotals = programTotals[kpiItem._id] || {};
+              kpiItem.program_targets.forEach(pt => {
+                additionalEntries.push({
+                  kpi_name: kpiItem.kpi_name,
+                  program_id: pt.program_id,
+                  program_name: pt.program_name,
+                  actual_value: progTotals[pt.program_id] || 0,
+                  target: pt.target,
+                });
+              });
+            }
+          });
+
+          if (additionalEntries.length > 0) {
+            enrichedBreakdown = [...latestBreakdown, ...additionalEntries];
+          }
+        }
+      } catch (logErr) {
+        console.warn("Could not fetch daily logs for program actuals:", logErr);
+        // Fallback: latestBreakdown மட்டும் use பண்ணு
+      }
+
+      const plan = plans.find(p => p._id === (result.plan_id?._id || result.plan_id));
+      const { amount } = calcIncentive(plan, latestScore, result.salary || 0, enrichedBreakdown);
+
+      await axios.put(`${API_BASE}/api/incentive-results/${resultId}`, {
+        performance_score: latestScore,
+        kpi_breakdown: enrichedBreakdown,
+        calculated_amount: amount,
+      });
+
+      showToast(`Recalculated ✅ Score: ${Math.round(latestScore)}% → ₹${amount.toLocaleString("en-IN")}`);
+      fetchAll();
+
+    } catch (err) {
+      console.error("Recalculate error:", err);
+      showToast("Recalculate failed", "error");
+    } finally {
+      setRecalcIds(prev => { const s = new Set(prev); s.delete(resultId); return s; });
     }
+  };
 
-    const plan = plans.find(p => p._id === (result.plan_id?._id || result.plan_id));
-    const { amount } = calcIncentive(plan, latestScore, result.salary || 0, enrichedBreakdown);
-
-    await axios.put(`${API_BASE}/api/incentive-results/${resultId}`, {
-      performance_score: latestScore,
-      kpi_breakdown:     enrichedBreakdown,
-      calculated_amount: amount,
-    });
-
-    showToast(`Recalculated ✅ Score: ${Math.round(latestScore)}% → ₹${amount.toLocaleString("en-IN")}`);
-    fetchAll();
-
-  } catch (err) {
-    console.error("Recalculate error:", err);
-    showToast("Recalculate failed", "error");
-  } finally {
-    setRecalcIds(prev => { const s = new Set(prev); s.delete(resultId); return s; });
-  }
-};
-
-  const depts   = useMemo(() => ["All", ...new Set(results.map(r => r.employee_id?.department).filter(Boolean))], [results]);
+  const depts = useMemo(() => ["All", ...new Set(results.map(r => r.employee_id?.department).filter(Boolean))], [results]);
   const periods = useMemo(() => ["All", ...new Set(results.map(r => r.cycle_period).filter(Boolean))].sort((a, b) => b.localeCompare(a)), [results]);
 
   const filtered = useMemo(() => results.filter(r => {
     if (fStatus !== "All" && r.status !== fStatus.toLowerCase()) return false;
-    if (fDept   !== "All" && r.employee_id?.department !== fDept) return false;
-    if (fPeriod !== "All" && r.cycle_period !== fPeriod)          return false;
+    if (fDept !== "All" && r.employee_id?.department !== fDept) return false;
+    if (fPeriod !== "All" && r.cycle_period !== fPeriod) return false;
     return true;
   }), [results, fStatus, fDept, fPeriod]);
 
@@ -369,13 +369,13 @@ export default function IncentiveResults() {
   };
 
   const stats = useMemo(() => {
-    const amt  = (r) => r.calculated_amount ?? getCalc(r).amount;
-    const total    = filtered.reduce((s, r) => s + amt(r), 0);
+    const amt = (r) => r.calculated_amount ?? getCalc(r).amount;
+    const total = filtered.reduce((s, r) => s + amt(r), 0);
     const approved = filtered.filter(r => r.status === "approved").reduce((s, r) => s + amt(r), 0);
     return {
       total, approved,
       pending: filtered.filter(r => r.status === "pending").length,
-      paid:    filtered.filter(r => r.status === "paid").length,
+      paid: filtered.filter(r => r.status === "paid").length,
     };
   }, [filtered, plans]);
 
@@ -403,13 +403,13 @@ export default function IncentiveResults() {
       const { amount } = calcIncentive(plan, r.performance_score, r.salary, r.kpi_breakdown || []);
       return {
         "#": i + 1,
-        "Employee":        r.employee_id?.name || "—",
-        "Department":      r.employee_id?.department || "—",
-        "Period":          r.cycle_period || "—",
-        "Plan":            plan?.name || "—",
+        "Employee": r.employee_id?.name || "—",
+        "Department": r.employee_id?.department || "—",
+        "Period": r.cycle_period || "—",
+        "Plan": plan?.name || "—",
         "Final Score (%)": r.performance_score ?? 0,
-        "Incentive (₹)":   r.calculated_amount ?? amount,
-        "Status":          r.status || "pending",
+        "Incentive (₹)": r.calculated_amount ?? amount,
+        "Status": r.status || "pending",
       };
     });
     const wb = XLSX.utils.book_new();
@@ -438,26 +438,26 @@ export default function IncentiveResults() {
         <div>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#1a1a2e" }}>Results & Payout</h2>
           {/* Tab Bar */}
-<div style={{ display: "flex", gap: 4, background: "#f1f5f9", borderRadius: 10, padding: 4, marginBottom: 24, width: "fit-content" }}>
-  {[
-    { key: "results", label: "📊 Results & Payout" },
-    { key: "reviews", label: "⏳ HR Review Requests" },
-  ].map(tab => (
-    <button
-      key={tab.key}
-      onClick={() => setActiveTab(tab.key)}
-      style={{
-        padding: "8px 20px", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer",
-        background: activeTab === tab.key ? "#fff" : "transparent",
-        color: activeTab === tab.key ? "#1d4ed8" : "#6b7280",
-        boxShadow: activeTab === tab.key ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-        transition: "all 0.15s",
-      }}
-    >
-      {tab.label}
-    </button>
-  ))}
-</div>
+          <div style={{ display: "flex", gap: 4, background: "#f1f5f9", borderRadius: 10, padding: 4, marginBottom: 24, width: "fit-content" }}>
+            {[
+              { key: "results", label: "📊 Results & Payout" },
+              { key: "reviews", label: "⏳ HR Review Requests" },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  padding: "8px 20px", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer",
+                  background: activeTab === tab.key ? "#fff" : "transparent",
+                  color: activeTab === tab.key ? "#1d4ed8" : "#6b7280",
+                  boxShadow: activeTab === tab.key ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+                  transition: "all 0.15s",
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
           <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 14 }}>
             KPI-based incentives — recalc to sync latest review scores
           </p>
@@ -472,17 +472,17 @@ export default function IncentiveResults() {
         </div>
       </div>
 
-          
-    {activeTab === "reviews" && <HRReviewQueue onRefresh={fetchAll} />}
+
+      {activeTab === "reviews" && <HRReviewQueue onRefresh={fetchAll} />}
       {activeTab === "results" && (
         <>
           {/* Stats */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 16, marginBottom: 24 }}>
             {[
-              { label: "Total Payout",    value: `₹${stats.total.toLocaleString("en-IN")}`,    color: "#1d4ed8", icon: <DollarSign size={20} color="#1d4ed8" /> },
+              { label: "Total Payout", value: `₹${stats.total.toLocaleString("en-IN")}`, color: "#1d4ed8", icon: <DollarSign size={20} color="#1d4ed8" /> },
               { label: "Approved Amount", value: `₹${stats.approved.toLocaleString("en-IN")}`, color: "#16a34a", icon: <TrendingUp size={20} color="#16a34a" /> },
-              { label: "Pending",         value: stats.pending,                                  color: "#d97706", icon: <Users size={20} color="#d97706" /> },
-              { label: "Paid",            value: stats.paid,                                     color: "#2563eb", icon: <CheckCircle size={20} color="#2563eb" /> },
+              { label: "Pending", value: stats.pending, color: "#d97706", icon: <Users size={20} color="#d97706" /> },
+              { label: "Paid", value: stats.paid, color: "#2563eb", icon: <CheckCircle size={20} color="#2563eb" /> },
             ].map(s => (
               <div key={s.label} style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", border: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
@@ -497,9 +497,9 @@ export default function IncentiveResults() {
           {/* Filters */}
           <div style={{ background: "#fff", borderRadius: 14, padding: "16px 20px", border: "1px solid #e5e7eb", marginBottom: 20, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-end" }}>
             {[
-              { label: "Status",     val: fStatus, set: setFStatus, opts: ["All", "Pending", "Approved", "Paid"] },
-              { label: "Department", val: fDept,   set: setFDept,   opts: depts },
-              { label: "Period",     val: fPeriod, set: setFPeriod, opts: periods },
+              { label: "Status", val: fStatus, set: setFStatus, opts: ["All", "Pending", "Approved", "Paid"] },
+              { label: "Department", val: fDept, set: setFDept, opts: depts },
+              { label: "Period", val: fPeriod, set: setFPeriod, opts: periods },
             ].map(f => (
               <div key={f.label} style={{ minWidth: 150 }}>
                 <label style={labelStyle}>{f.label}</label>
@@ -543,20 +543,23 @@ export default function IncentiveResults() {
                     {filtered.map((r, i) => {
                       const plan = plans.find(p => p._id === (r.plan_id?._id || r.plan_id));
                       const { amount, slabLabel, kpiDetails } = calcIncentive(plan, r.performance_score, r.salary, r.kpi_breakdown || []);
-                      const finalAmt   = r.calculated_amount ?? amount;
-                      const sm         = STATUS_META[r.status] || STATUS_META.pending;
-                      const score      = Math.round(r.performance_score || 0);
+                      const finalAmt = r.calculated_amount ?? amount;
+                      const sm = STATUS_META[r.status] || STATUS_META.pending;
+                      const score = Math.round(r.performance_score || 0);
                       const scoreColor = score >= 90 ? "#16a34a" : score >= 75 ? "#2563eb" : score >= 60 ? "#d97706" : "#dc2626";
-                      const isBusy     = recalcIds.has(r._id);
+                      const isBusy = recalcIds.has(r._id);
                       const isExpanded = expandedRow === r._id;
                       const hasBreakdown = (r.kpi_breakdown || []).length > 0 || kpiDetails.length > 0;
+                      // 🆕 Standalone/daily plans — expand to show entry-wise paid history instead of KPI breakdown
+                      const hasEntries = plan?.plan_type === "standalone" && (r.sale_entries || []).length > 0;
+                      const canExpand = hasBreakdown || hasEntries;
 
                       return (
                         <>
                           <tr
                             key={r._id}
-                            className="row-expandable"
-                            onClick={() => hasBreakdown && setExpandedRow(isExpanded ? null : r._id)}
+                                                      className="row-expandable"
+                            onClick={() => canExpand && setExpandedRow(isExpanded ? null : r._id)}
                             style={{ borderBottom: isExpanded ? "none" : "1px solid #f3f4f6", background: i % 2 === 0 ? "#fff" : "#fafafa" }}
                           >
                             <td style={{ padding: "12px 16px", color: "#9ca3af", fontWeight: 600 }}>{i + 1}</td>
@@ -595,9 +598,16 @@ export default function IncentiveResults() {
                                 {finalAmt > 0 ? `₹${finalAmt.toLocaleString("en-IN")}` : "—"}
                               </p>
                             </td>
-                            <td style={{ padding: "12px 16px", fontSize: 11, color: "#9ca3af", maxWidth: 220 }}>
+                                                        <td style={{ padding: "12px 16px", fontSize: 11, color: "#9ca3af", maxWidth: 220 }}>
                               {plan?.plan_type === "standalone" ? (
-                                <span style={{ color: "#9ca3af", fontSize: 11 }}>— not applicable</span>
+                                hasEntries ? (
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                                    <span style={{ color: "#374151", fontWeight: 600 }}>{r.sale_entries.length} entr{r.sale_entries.length === 1 ? "y" : "ies"} logged</span>
+                                    <span style={{ color: "#a5b4fc", fontSize: 10 }}>{isExpanded ? "▲ hide history" : "▼ view payment history"}</span>
+                                  </div>
+                                ) : (
+                                  <span style={{ color: "#9ca3af", fontSize: 11 }}>— no entries yet</span>
+                                )
                               ) : hasBreakdown ? (
                                 <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                                   {slabLabel.split(" | ").map((l, idx) => (
@@ -644,7 +654,53 @@ export default function IncentiveResults() {
                                 )}
                               </div>
                             </td>
-                          </tr>
+                                                    </tr>
+
+                          {isExpanded && hasEntries && (
+                            <tr key={`${r._id}-entries-exp`}>
+                              <td colSpan={10} style={{ padding: "0 16px 16px", background: "#f8fafc", borderBottom: "1px solid #f3f4f6" }}>
+                                <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e7eb", overflow: "hidden", marginTop: 4 }}>
+                                  <div style={{ padding: "10px 16px", background: "#f1f5f9", borderBottom: "1px solid #e5e7eb" }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>💰 Payment History — {r.employee_id?.name}</span>
+                                  </div>
+                                  {[...r.sale_entries].sort((a, b) => new Date(b.date) - new Date(a.date)).map((se, seIdx) => {
+                                    const seStatusMap = {
+                                      pending:  { label: "⏳ Pending",  bg: "#fffbeb", color: "#92400e" },
+                                      approved: { label: "✅ Approved", bg: "#eff6ff", color: "#1d4ed8" },
+                                      paid:     { label: "💸 Paid",     bg: "#f0fdf4", color: "#15803d" },
+                                      rejected: { label: "❌ Rejected", bg: "#fef2f2", color: "#dc2626" },
+                                    };
+                                    const seBadge = seStatusMap[se.status || "pending"];
+                                    return (
+                                      <div key={se._id || seIdx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", borderBottom: seIdx < r.sale_entries.length - 1 ? "1px solid #f3f4f6" : "none", flexWrap: "wrap", gap: 8 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                                          <span style={{ fontSize: 13, fontWeight: 700, color: "#1f2937" }}>{Number(se.amount).toLocaleString("en-IN")}</span>
+                                          {se.note && <span style={{ fontSize: 11, color: "#9ca3af" }}>{se.note}</span>}
+                                          {se.added_by === "hr" && <span style={{ fontSize: 10, background: "#fef9c3", color: "#a16207", padding: "1px 6px", borderRadius: 10, fontWeight: 700 }}>HR added</span>}
+                                          <span style={{ fontSize: 11, fontWeight: 700, color: "#16a34a" }}>
+                                            {se.payout > 0 ? `→ ₹${Number(se.payout).toLocaleString("en-IN")}` : (se.status === "paid" ? `→ ₹${Number(se.amount).toLocaleString("en-IN")}` : "")}
+                                          </span>
+                                          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: seBadge.bg, color: seBadge.color }}>{seBadge.label}</span>
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                          <span style={{ fontSize: 11, color: "#9ca3af" }}>Logged {new Date(se.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                                          {se.status === "paid" && se.paid_at && (
+                                            <span style={{ fontSize: 11, color: "#15803d", fontWeight: 600 }}>· Paid {new Date(se.paid_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                  <div style={{ background: "#f0fdf4", borderTop: "2px solid #86efac", padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ fontWeight: 700, color: "#15803d", fontSize: 13 }}>💰 Total Paid So Far</span>
+                                    <span style={{ fontWeight: 800, color: "#16a34a", fontSize: 18 }}>
+                                      ₹{r.sale_entries.filter(se => se.status === "paid").reduce((s, se) => s + (Number(se.payout || se.amount) || 0), 0).toLocaleString("en-IN")}
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
 
                           {isExpanded && hasBreakdown && (
                             <tr key={`${r._id}-exp`}>
@@ -781,14 +837,16 @@ export default function IncentiveResults() {
 
 // ── HR Review Queue Component ─────────────────────────────────────────────────
 function HRReviewQueue({ onRefresh }) {
-  const [reviews,  setReviews]  = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [remarks,  setRemarks]  = useState({});   // { [id]: string }
-  const [amounts,  setAmounts]  = useState({});   // { [id]: string }
-  const [busy,     setBusy]     = useState({});   // { [id]: bool }
-  const [toast,    setToast]    = useState(null);
-    const [entryDrafts, setEntryDrafts] = useState({}); // 🆕 { [resultId]: { amount, note } }
-
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [remarks, setRemarks] = useState({});   // { [id]: string }
+  const [amounts, setAmounts] = useState({});   // { [id]: string }
+  const [busy, setBusy] = useState({});   // { [id]: bool }
+  const [toast, setToast] = useState(null);
+  const [entryDrafts, setEntryDrafts] = useState({}); // 🆕 { [resultId]: { amount, note, date } }
+  const [datePickerFor, setDatePickerFor] = useState(null); // 🆕 which result's date-picker is open
+  const [payDates, setPayDates] = useState({});       // 🆕 { [entryId]: "2026-09-15" }
+  const [payDatePickerFor, setPayDatePickerFor] = useState(null); // 🆕 which entry's pay-date picker is open
   useEffect(() => { fetchReviews(); }, []);
 
   const fetchReviews = async () => {
@@ -845,8 +903,10 @@ function HRReviewQueue({ onRefresh }) {
     try {
       const res = await axios.post(`${API_BASE}/api/incentive-results/${id}/hr-entry`, {
         amount: draft.amount, note: draft.note || "",
+        ...(draft.date ? { date: draft.date } : {}),   // 🆕 empty → backend defaults to today
       });
-      setEntryDrafts(d => ({ ...d, [id]: { amount: "", note: "" } }));
+      setEntryDrafts(d => ({ ...d, [id]: { amount: "", note: "", date: "" } }));
+      setDatePickerFor(null);
       // Sync the auto-fill amount to the newly recalculated total
       const updated = res.data?.data;
       if (updated) setAmounts(a => ({ ...a, [id]: String(updated.calculated_amount || 0) }));
@@ -868,6 +928,49 @@ function HRReviewQueue({ onRefresh }) {
     } catch (e) { showT(e.response?.data?.message || "Remove entry failed", "error"); }
   };
 
+  // 🆕 Daily mode — approve one entry
+  const handleApproveEntry = async (resultId, entryId) => {
+    setBusy(b => ({ ...b, [entryId]: true }));
+    try {
+      await axios.post(`${API_BASE}/api/incentive-results/${resultId}/entries/${entryId}/approve`, {
+        remark: remarks[entryId] || "",
+      });
+      showT("Entry approved ✅");
+      fetchReviews();
+    } catch (e) { showT(e.response?.data?.message || "Approve failed", "error"); }
+    finally { setBusy(b => ({ ...b, [entryId]: false })); }
+  };
+
+  // 🆕 Daily mode — pay one entry (same day pay)
+  // 🆕 Daily mode — pay one entry (defaults to today, or the HR-picked date)
+  const handlePayEntry = async (resultId, entryId) => {
+    setBusy(b => ({ ...b, [entryId]: true }));
+    try {
+      await axios.post(`${API_BASE}/api/incentive-results/${resultId}/entries/${entryId}/pay`, {
+        ...(payDates[entryId] ? { paid_date: payDates[entryId] } : {}),
+      });
+      showT("Entry paid 💸");
+      setPayDates(d => { const c = { ...d }; delete c[entryId]; return c; });
+      setPayDatePickerFor(null);
+      fetchReviews();
+      onRefresh?.();
+    } catch (e) { showT(e.response?.data?.message || "Pay failed", "error"); }
+    finally { setBusy(b => ({ ...b, [entryId]: false })); }
+  };
+
+  // 🆕 Daily mode — reject one entry
+  const handleRejectEntry = async (resultId, entryId) => {
+    setBusy(b => ({ ...b, [entryId]: true }));
+    try {
+      await axios.post(`${API_BASE}/api/incentive-results/${resultId}/entries/${entryId}/reject`, {
+        remark: remarks[entryId] || "",
+      });
+      showT("Entry rejected");
+      fetchReviews();
+    } catch (e) { showT(e.response?.data?.message || "Reject failed", "error"); }
+    finally { setBusy(b => ({ ...b, [entryId]: false })); }
+  };
+
   if (loading) return <div style={{ textAlign: "center", padding: 60, color: "#6b7280" }}>Loading reviews...</div>;
 
   return (
@@ -887,8 +990,8 @@ function HRReviewQueue({ onRefresh }) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {reviews.map(r => {
-            const slabs   = r.plan_id?.standalone_slabs || [];
-            const achVal  = r.employee_submitted_value || 0;
+            const slabs = r.plan_id?.standalone_slabs || [];
+            const achVal = r.employee_submitted_value || 0;
             const entries = r.sale_entries || [];
 
             // 🆕 Per-entry slab match (client-side mirror of backend logic)
@@ -898,11 +1001,11 @@ function HRReviewQueue({ onRefresh }) {
             const payoutFor = (amt, slab) => {
               if (!slab || !slab.payout_value) return 0;
               switch (slab.payout_type) {
-                case "fixed":               return Number(slab.payout_value) || 0;
+                case "fixed": return Number(slab.payout_value) || 0;
                 case "percent_of_achieved": return Math.round(((Number(slab.payout_value) || 0) / 100) * amt);
-                case "percent_of_salary":   return Math.round(((Number(slab.payout_value) || 0) / 100) * (r.salary || 0));
-                case "per_unit":            return Math.round(amt * (Number(slab.payout_value) || 0));
-                default:                    return 0;
+                case "percent_of_salary": return Math.round(((Number(slab.payout_value) || 0) / 100) * (r.salary || 0));
+                case "per_unit": return Math.round(amt * (Number(slab.payout_value) || 0));
+                default: return 0;
               }
             };
 
@@ -951,52 +1054,152 @@ function HRReviewQueue({ onRefresh }) {
                   ) : (
                     entries.map((e, ei) => {
                       const eMatched = matchSlabFor(Number(e.amount) || 0);
-                      const ePayout  = payoutFor(Number(e.amount) || 0, eMatched);
+                      const ePayout = payoutFor(Number(e.amount) || 0, eMatched);
+                      const isDaily = r.plan_id?.payout_frequency === "daily";
+                      const eStatus = e.status || "pending";
+                      const statusMap = {
+                        pending: { label: "⏳ Pending", bg: "#fffbeb", color: "#92400e" },
+                        approved: { label: "✅ Approved", bg: "#eff6ff", color: "#1d4ed8" },
+                        paid: { label: "💸 Paid", bg: "#f0fdf4", color: "#15803d" },
+                        rejected: { label: "❌ Rejected", bg: "#fef2f2", color: "#dc2626" },
+                      };
+                      const sBadge = statusMap[eStatus];
                       return (
-                        <div key={ei} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 14px", borderBottom: ei < entries.length - 1 ? "1px solid #f3f4f6" : "none" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "#1f2937" }}>{Number(e.amount).toLocaleString("en-IN")}</span>
-                            {e.note && <span style={{ fontSize: 11, color: "#9ca3af" }}>{e.note}</span>}
-                            {e.added_by === "hr" && <span style={{ fontSize: 10, background: "#fef9c3", color: "#a16207", padding: "1px 6px", borderRadius: 10, fontWeight: 700 }}>HR added</span>}
-                            {/* 🆕 per-entry slab + payout */}
-                            <span style={{ fontSize: 11, fontWeight: 700, color: ePayout > 0 ? "#16a34a" : "#dc2626" }}>
-                              {ePayout > 0 ? `→ ₹${ePayout.toLocaleString("en-IN")}` : "No slab match"}
-                            </span>
+                        <div key={ei}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 14px", borderBottom: payDatePickerFor === e._id ? "none" : (ei < entries.length - 1 ? "1px solid #f3f4f6" : "none"), flexWrap: "wrap", gap: 8 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: "#1f2937" }}>{Number(e.amount).toLocaleString("en-IN")}</span>
+                              {e.note && <span style={{ fontSize: 11, color: "#9ca3af" }}>{e.note}</span>}
+                              {e.added_by === "hr" && <span style={{ fontSize: 10, background: "#fef9c3", color: "#a16207", padding: "1px 6px", borderRadius: 10, fontWeight: 700 }}>HR added</span>}
+                              {/* 🆕 per-entry slab + payout */}
+                              <span style={{ fontSize: 11, fontWeight: 700, color: ePayout > 0 ? "#16a34a" : "#dc2626" }}>
+                                {ePayout > 0 ? `→ ₹${ePayout.toLocaleString("en-IN")}` : "No slab match"}
+                              </span>
+                              {/* 🆕 daily-mode status badge */}
+                              {isDaily && sBadge && (
+                                <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: sBadge.bg, color: sBadge.color }}>
+                                  {sBadge.label}
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <span style={{ fontSize: 11, color: "#9ca3af" }}>{new Date(e.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+
+                              {/* 🆕 Daily mode: per-entry approve/pay/reject */}
+                              {isDaily && eStatus === "pending" && (
+                                <>
+                                  <button onClick={() => handleApproveEntry(r._id, e._id)} disabled={busy[e._id]}
+                                    style={{ background: "#eff6ff", border: "none", borderRadius: 5, padding: "3px 8px", cursor: "pointer", fontSize: 11, color: "#2563eb", fontWeight: 700 }}>
+                                    ✓ Approve
+                                  </button>
+                                  <button onClick={() => handleRejectEntry(r._id, e._id)} disabled={busy[e._id]}
+                                    style={{ background: "#fef2f2", border: "none", borderRadius: 5, padding: "3px 8px", cursor: "pointer", fontSize: 11, color: "#dc2626", fontWeight: 700 }}>
+                                    ✕ Reject
+                                  </button>
+                                </>
+                              )}
+                              {isDaily && eStatus === "approved" && (
+                                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setPayDatePickerFor(p => p === e._id ? null : e._id)}
+                                    title={payDates[e._id] ? `Pay date: ${payDates[e._id]}` : "Defaults to today — click to change"}
+                                    style={{ width: 26, height: 26, border: payDates[e._id] ? "1.5px solid #15803d" : "1.5px solid #e5e7eb", borderRadius: 5, background: payDates[e._id] ? "#f0fdf4" : "#fff", cursor: "pointer", fontSize: 12 }}
+                                  >
+                                    📅
+                                  </button>
+                                  <button onClick={() => handlePayEntry(r._id, e._id)} disabled={busy[e._id]}
+                                    style={{ background: "#f0fdf4", border: "none", borderRadius: 5, padding: "3px 8px", cursor: "pointer", fontSize: 11, color: "#15803d", fontWeight: 700 }}>
+                                    💸 Pay Now
+                                  </button>
+                                </div>
+                              )}
+                              {/* 🆕 Paid date, once paid */}
+                              {/* Old behavior: manual delete (monthly mode, or HR correction anytime) */}
+                              {(!isDaily || eStatus !== "paid") && (
+                                <button
+                                  onClick={() => handleDeleteEntry(r._id, e._id)}
+                                  style={{ background: "#fef2f2", border: "none", borderRadius: 5, padding: "3px 7px", cursor: "pointer", fontSize: 11, color: "#dc2626", fontWeight: 700 }}
+                                >
+                                  ✕
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <span style={{ fontSize: 11, color: "#9ca3af" }}>{new Date(e.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
-                            <button
-                              onClick={() => handleDeleteEntry(r._id, e._id)}
-                              style={{ background: "#fef2f2", border: "none", borderRadius: 5, padding: "3px 7px", cursor: "pointer", fontSize: 11, color: "#dc2626", fontWeight: 700 }}
-                            >
-                              ✕
-                            </button>
-                          </div>
+                          {/* 🆕 Pay-date picker row — shown only while choosing a custom paid date for THIS entry */}
+                          {payDatePickerFor === e._id && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 14px 8px", borderBottom: ei < entries.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                              <span style={{ fontSize: 11, color: "#6b7280" }}>Pay date:</span>
+                              <input
+                                type="date"
+                                value={payDates[e._id] || ""}
+                                max={new Date().toISOString().slice(0, 10)}
+                                onChange={ev => setPayDates(d => ({ ...d, [e._id]: ev.target.value }))}
+                                style={{ padding: "4px 8px", border: "1.5px solid #e5e7eb", borderRadius: 6, fontSize: 12, outline: "none" }}
+                              />
+                              {payDates[e._id] && (
+                                <button type="button" onClick={() => setPayDates(d => { const c = { ...d }; delete c[e._id]; return c; })} style={{ background: "none", border: "none", color: "#dc2626", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>
+                                  ✕ Use today
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })
                   )}
                   {/* 🆕 HR correction — add entry even though period is locked */}
-                  <div style={{ display: "flex", gap: 8, padding: "8px 14px", background: "#fafafa", borderTop: "1px solid #f3f4f6" }}>
-                    <input
-                      type="number"
-                      placeholder="Amount"
-                      value={entryDrafts[r._id]?.amount || ""}
-                      onChange={e => setEntryDrafts(d => ({ ...d, [r._id]: { ...d[r._id], amount: e.target.value } }))}
-                      style={{ width: 100, padding: "6px 10px", border: "1.5px solid #e5e7eb", borderRadius: 6, fontSize: 12, outline: "none" }}
-                    />
-                    <input
-                      placeholder="Note (optional)"
-                      value={entryDrafts[r._id]?.note || ""}
-                      onChange={e => setEntryDrafts(d => ({ ...d, [r._id]: { ...d[r._id], note: e.target.value } }))}
-                      style={{ flex: 1, padding: "6px 10px", border: "1.5px solid #e5e7eb", borderRadius: 6, fontSize: 12, outline: "none" }}
-                    />
-                    <button
-                      onClick={() => handleHrAddEntry(r._id)}
-                      style={{ background: "#eef2ff", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: "#4f46e5", cursor: "pointer", whiteSpace: "nowrap" }}
-                    >
-                      + Add (HR)
-                    </button>
+                  {/* 🆕 HR correction — add entry even though period is locked */}
+                  <div style={{ padding: "8px 14px", background: "#fafafa", borderTop: "1px solid #f3f4f6" }}>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        type="number"
+                        placeholder="Amount"
+                        value={entryDrafts[r._id]?.amount || ""}
+                        onChange={e => setEntryDrafts(d => ({ ...d, [r._id]: { ...d[r._id], amount: e.target.value } }))}
+                        style={{ width: 100, padding: "6px 10px", border: "1.5px solid #e5e7eb", borderRadius: 6, fontSize: 12, outline: "none" }}
+                      />
+                      {/* 🆕 Calendar icon — click to pick a date. Left empty = today, automatic. */}
+                      <button
+                        type="button"
+                        onClick={() => setDatePickerFor(p => p === r._id ? null : r._id)}
+                        title={entryDrafts[r._id]?.date ? `Date: ${entryDrafts[r._id].date}` : "Defaults to today — click to change"}
+                        style={{
+                          width: 32, flexShrink: 0, border: entryDrafts[r._id]?.date ? "1.5px solid #4f46e5" : "1.5px solid #e5e7eb",
+                          borderRadius: 6, background: entryDrafts[r._id]?.date ? "#eef2ff" : "#fff", cursor: "pointer", fontSize: 13,
+                        }}
+                      >
+                        📅
+                      </button>
+                      <input
+                        placeholder="Note (optional)"
+                        value={entryDrafts[r._id]?.note || ""}
+                        onChange={e => setEntryDrafts(d => ({ ...d, [r._id]: { ...d[r._id], note: e.target.value } }))}
+                        style={{ flex: 1, padding: "6px 10px", border: "1.5px solid #e5e7eb", borderRadius: 6, fontSize: 12, outline: "none" }}
+                      />
+                      <button
+                        onClick={() => handleHrAddEntry(r._id)}
+                        style={{ background: "#eef2ff", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: "#4f46e5", cursor: "pointer", whiteSpace: "nowrap" }}
+                      >
+                        + Add (HR)
+                      </button>
+                    </div>
+                    {datePickerFor === r._id && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+                        <input
+                          type="date"
+                          value={entryDrafts[r._id]?.date || ""}
+                          max={new Date().toISOString().slice(0, 10)}
+                          onChange={e => setEntryDrafts(d => ({ ...d, [r._id]: { ...d[r._id], date: e.target.value } }))}
+                          style={{ padding: "5px 8px", border: "1.5px solid #e5e7eb", borderRadius: 6, fontSize: 12, outline: "none" }}
+                        />
+                        {entryDrafts[r._id]?.date && (
+                          <button type="button" onClick={() => setEntryDrafts(d => ({ ...d, [r._id]: { ...d[r._id], date: "" } }))} style={{ background: "none", border: "none", color: "#dc2626", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>
+                            ✕ Use today
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1006,41 +1209,47 @@ function HRReviewQueue({ onRefresh }) {
                   </p>
                 )}
 
-                {/* Approve form */}
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
-                  <div>
-                    <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Approve Amount (₹)</p>
-                    <input
-                      type="number"
-                      value={amounts[r._id] || ""}
-                      onChange={e => setAmounts(a => ({ ...a, [r._id]: e.target.value }))}
-                      style={{ padding: "8px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, width: 150, outline: "none" }}
-                    />
+                {/* Approve form — monthly plans only; daily plans use per-entry Approve/Pay above */}
+                {r.plan_id?.payout_frequency === "daily" ? (
+                  <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
+                    ⚡ Daily payout plan — approve & pay each entry individually above.
+                  </p>
+                ) : (
+                  <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+                    <div>
+                      <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Approve Amount (₹)</p>
+                      <input
+                        type="number"
+                        value={amounts[r._id] || ""}
+                        onChange={e => setAmounts(a => ({ ...a, [r._id]: e.target.value }))}
+                        style={{ padding: "8px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, width: 150, outline: "none" }}
+                      />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 160 }}>
+                      <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Remark (optional)</p>
+                      <input
+                        value={remarks[r._id] || ""}
+                        onChange={e => setRemarks(rm => ({ ...rm, [r._id]: e.target.value }))}
+                        placeholder="e.g. Verified with CRM data"
+                        style={{ width: "100%", padding: "8px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => handleApprove(r._id)}
+                      disabled={busy[r._id]}
+                      style={{ padding: "8px 20px", background: busy[r._id] ? "#86efac" : "#16a34a", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+                    >
+                      ✅ Approve
+                    </button>
+                    <button
+                      onClick={() => handleReject(r._id)}
+                      disabled={busy[r._id]}
+                      style={{ padding: "8px 16px", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+                    >
+                      ✕ Reject
+                    </button>
                   </div>
-                  <div style={{ flex: 1, minWidth: 160 }}>
-                    <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Remark (optional)</p>
-                    <input
-                      value={remarks[r._id] || ""}
-                      onChange={e => setRemarks(rm => ({ ...rm, [r._id]: e.target.value }))}
-                      placeholder="e.g. Verified with CRM data"
-                      style={{ width: "100%", padding: "8px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box" }}
-                    />
-                  </div>
-                  <button
-                    onClick={() => handleApprove(r._id)}
-                    disabled={busy[r._id]}
-                    style={{ padding: "8px 20px", background: busy[r._id] ? "#86efac" : "#16a34a", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
-                  >
-                    ✅ Approve
-                  </button>
-                  <button
-                    onClick={() => handleReject(r._id)}
-                    disabled={busy[r._id]}
-                    style={{ padding: "8px 16px", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
-                  >
-                    ✕ Reject
-                  </button>
-                </div>
+                )}
               </div>
             );
           })}

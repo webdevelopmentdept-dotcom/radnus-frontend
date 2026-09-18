@@ -38,6 +38,7 @@ const SCHEME_OPTIONS = [
     { value: "PMEGP", label: "PMEGP - Prime Minister's Employment Generation Programme" },
     { value: "UYEGP", label: "UYEGP - Unemployed Youth Employment Generation Programme" },
     { value: "AABCS", label: "AABCS - Annal Ambedkar Business Champions Scheme" },
+     { value: "NEEDS", label: "NEEDS - New Entrepreneur-cum-Enterprise Development Scheme" },
 ];
 
 // PMEGP eligible business list — fixed list so everyone picks from the same

@@ -79,6 +79,7 @@ const EMPTY_KPI_CONFIG = (kpiItem) => ({
 
 const EMPTY_FORM = {
   name: "", description: "", department: "", plan_type: "kpi_linked",
+  payout_frequency: "monthly", validity_start: "", validity_end: "",
   period_type: "Monthly", period_month: new Date().getMonth() + 1,
   period_quarter: "Q1", period_half: "H1", period_year: CURRENT_YEAR,
   kpi_template_id: "", selected_kpis: [], kpi_configs: [],
@@ -549,6 +550,7 @@ function SearchableSelect({ options = [], value, onChange, placeholder = "Search
 // ════════════════════════════════════════════════════════════════════════════
 export default function IncentivePlans() {
   const [plans, setPlans] = useState([]);
+    const [expandedDesc, setExpandedDesc] = useState({}); // 🆕 { [planId]: true/false }
   const [depts, setDepts] = useState([]);
   const [kpiTemplates, setKpiTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -659,7 +661,7 @@ export default function IncentivePlans() {
       const newMin = last ? (Number(last.max_target) + 1) : 0;
       return {
         ...f,
-         standalone_slabs: [...f.standalone_slabs, { min_target: newMin, max_target: null, payout_type: "fixed", payout_value: 0 }],
+         standalone_slabs: [...f.standalone_slabs, { min_target: newMin, max_target: null, payout_type: "fixed", payout_value: 0 }], 
       };
     });
   };
@@ -706,11 +708,14 @@ export default function IncentivePlans() {
       return { ...c, is_admission_kpi: c.is_admission_kpi || false, program_targets, program_slabs, slabs: c.slabs || [] };
     });
 
-    setForm({
+       setForm({
       name: p.name,
       description: p.description || "",   // 🆕
       department: p.department,
       plan_type: p.plan_type ?? "kpi_linked",
+      payout_frequency: p.payout_frequency || "monthly",
+      validity_start: p.validity_start ? p.validity_start.slice(0, 10) : "",
+      validity_end:   p.validity_end   ? p.validity_end.slice(0, 10)   : "",
       period_type: p.period_type || "Monthly",
       period_month: p.period_month || new Date().getMonth() + 1,
       period_quarter: p.period_quarter || "Q1",
@@ -748,9 +753,12 @@ export default function IncentivePlans() {
     }
     setSaving(true);
     try {
-      const payload = {
+            const payload = {
         name: form.name, description: form.description,
         department: form.department, plan_type: form.plan_type,
+        payout_frequency: form.payout_frequency,
+        validity_start: form.validity_start || null,
+        validity_end:   form.validity_end   || null,
         period_type: form.period_type,
         period_month: form.period_type === "Monthly" ? form.period_month : null,
         period_quarter: form.period_type === "Quarterly" ? form.period_quarter : null,
@@ -878,11 +886,32 @@ export default function IncentivePlans() {
                     </div>
                     <div>
                       <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "#1e293b" }}>{plan.name}</p>
-                      {plan.description && (
-                        <p style={{ margin: "2px 0 4px", fontSize: 12, color: "#64748b", lineHeight: 1.4 }}>
-                          {plan.description}
-                        </p>
-                      )}
+                                           {plan.description && (() => {
+                        const isLong = plan.description.length > 140;
+                        const isOpen = !!expandedDesc[plan._id];
+                        return (
+                          <div style={{ margin: "2px 0 4px" }}>
+                            <p style={{
+                              margin: 0, fontSize: 12, color: "#64748b", lineHeight: 1.4,
+                              display: isOpen ? "block" : "-webkit-box",
+                              WebkitLineClamp: isOpen ? "unset" : 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: isOpen ? "visible" : "hidden",
+                              whiteSpace: isOpen ? "pre-wrap" : "normal",
+                            }}>
+                              {plan.description}
+                            </p>
+                            {isLong && (
+                              <button
+                                onClick={() => setExpandedDesc(d => ({ ...d, [plan._id]: !d[plan._id] }))}
+                                style={{ background: "none", border: "none", padding: 0, marginTop: 2, fontSize: 11, fontWeight: 700, color: "#6366f1", cursor: "pointer" }}
+                              >
+                                {isOpen ? "▲ Show less" : "▼ Read full details"}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
                       <p style={{ margin: "3px 0 0", fontSize: 12, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                         <span style={{ background: bg, color, fontWeight: 700, padding: "1px 8px", borderRadius: 5, fontSize: 11 }}>{plan.department}</span>
                         <span style={{ color: "#94a3b8", display: "flex", alignItems: "center", gap: 3 }}>
@@ -1073,6 +1102,38 @@ export default function IncentivePlans() {
                   <HugeiconsIcon icon={Calendar01Icon} size={14} color="#4f46e5" strokeWidth={2} />
                   Period: {periodLabel(form)}
                 </div>
+              </Section>
+
+              {/* 🆕 STEP 2b: Payout Mode + Validity */}
+              <Section step="2b" title="Payout Mode & Validity" icon="💸">
+                <div>
+                  <label style={lbl}>Payout Frequency *</label>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {[
+                      { val: "monthly", label: "🗓️ Monthly — log entries, one final submit & pay at month end" },
+                      { val: "daily",   label: "⚡ Daily — each entry is its own request, HR can pay same day" },
+                    ].map(opt => (
+                      <div key={opt.val} onClick={() => setForm(f => ({ ...f, payout_frequency: opt.val }))}
+                        style={{ flex: 1, padding: "10px 12px", borderRadius: 9, cursor: "pointer", fontSize: 13, fontWeight: 700, border: form.payout_frequency === opt.val ? "2px solid #4f46e5" : "2px solid #e2e8f0", background: form.payout_frequency === opt.val ? "#eef2ff" : "#fafafa", color: form.payout_frequency === opt.val ? "#4f46e5" : "#64748b" }}>
+                        {opt.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 12, marginTop: 12 }}>
+                  <div>
+                    <label style={lbl}>Valid From</label>
+                    <input type="date" value={form.validity_start} onChange={e => setForm({ ...form, validity_start: e.target.value })} style={inp} />
+                  </div>
+                  <div>
+                    <label style={lbl}>Valid Till</label>
+                    <input type="date" value={form.validity_end} onChange={e => setForm({ ...form, validity_end: e.target.value })} style={inp} />
+                  </div>
+                </div>
+                <p style={{ fontSize: 12, color: "#64748b", marginTop: 6 }}>
+                  Idhu leave pண்ணா plan default ah andha period (month/quarter) முழுக்க valid ah irukum. Specific date range வேணும்னா (e.g. 1 day, 1 week, custom quarter) idhula fill pண்ணுங்க.
+                </p>
               </Section>
 
               {/* ═══════════════════════════════════════════════════
