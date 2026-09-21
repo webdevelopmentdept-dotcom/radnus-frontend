@@ -106,6 +106,28 @@ const Career = () => {   // ← { jobsData } remove, empty பண்ணு
           <p className="fs-6">Explore exciting opportunities to grow with us.</p>
         </div>
 
+        {/* INTERNSHIP CTA BANNER — new */}
+        <div className="container mb-5">
+          <div
+            className="d-flex flex-column flex-md-row justify-content-between align-items-center p-4 rounded shadow-sm"
+            style={{ background: "linear-gradient(135deg, #b30000, #660000)" }}
+          >
+            <div className="text-white mb-3 mb-md-0 text-center text-md-start">
+              <h4 className="fw-bold mb-1">Looking for an Internship?</h4>
+              <p className="mb-0" style={{ opacity: 0.9 }}>
+                Work on real Radnus projects — Learn, Research, Solve, Implement, Present.
+              </p>
+            </div>
+            <Link
+              to="/internship-apply"
+              className="btn btn-light fw-semibold px-4 py-2"
+              style={{ whiteSpace: "nowrap" }}
+            >
+              Apply for Internship
+            </Link>
+          </div>
+        </div>
+
         {/* FILTER — தொடல */}
         <Row className="mb-5 justify-content-center">
           <Col md={3} sm={6} className="mb-3">

@@ -25,6 +25,7 @@ import ThankYou from "./ThankYou";
 import jobsData from "./components/jobsData";
 import ShadeOfTrust from "./components/Shadeoftrust";
 import Mascot from "./components/shared/Mascot";
+import InternshipApply from "./pages/InternshipApply";
 
 /* Auth */
 import Login from "./pages/auth/Login";
@@ -126,6 +127,7 @@ import HrFeedback from "./pages/hr/HrFeedback";
 import AdvanceRequests from "./pages/hr/AdvanceRequests";
 import ProductManagement from "./pages/hr/Productmanagement";
 import LoanIncentivePayouts from "./pages/hr/LoanIncentivePayouts";
+import HrInternships from "./pages/hr/HrInternships";
 
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
@@ -202,6 +204,7 @@ function App() {
         <Route path="/whitelabel" element={<WhiteLabelPage />} />
         <Route path="/careers" element={<Career jobsData={jobsData} />} />
         <Route path="/careers/:jobTitle" element={<CareerDetail />} />
+        <Route path="/internship-apply" element={<InternshipApply />} />
         <Route path="/tools-tech" element={<ToolsTech />} />
         <Route path="/accessories" element={<Accessories />} />
         <Route path="/service" element={<Service />} />
@@ -286,6 +289,7 @@ function App() {
           <Route path="applicants" element={<HrApplicants />} />
           <Route path="job-postings" element={<JobPostings />} />
           <Route path="employees" element={<HrEmployees />} />
+          <Route path="internships" element={<HrInternships />} />
 
           <Route path="hr-pending" element={<HrPending />} />
           <Route path="hr-approved" element={<HrApproved />} />

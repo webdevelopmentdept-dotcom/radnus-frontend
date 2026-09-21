@@ -39,6 +39,8 @@ const SCHEME_OPTIONS = [
     { value: "UYEGP", label: "UYEGP - Unemployed Youth Employment Generation Programme" },
     { value: "AABCS", label: "AABCS - Annal Ambedkar Business Champions Scheme" },
      { value: "NEEDS", label: "NEEDS - New Entrepreneur-cum-Enterprise Development Scheme" },
+     { value: "TABCEDCO", label: "TABCEDCO - Tamil Nadu Backward Classes Economic Development Corporation" },
+
 ];
 
 // PMEGP eligible business list — fixed list so everyone picks from the same
@@ -162,8 +164,9 @@ const BANK_NAME_OPTIONS = [
     "Bank of Maharashtra",
     "Punjab & Sind Bank",
     "City Union Bank",
-    "Tamilnad Mercantile Bank",
+    "Tamilnadu Mercantile Bank",
     "Federal Bank",
+        "Karur Vysya Bank",
 ];
 
 const todayStr = () => new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
