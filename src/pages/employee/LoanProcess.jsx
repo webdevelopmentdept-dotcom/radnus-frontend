@@ -96,6 +96,7 @@ const BUSINESS_TYPE_OPTIONS = [
     "Mushroom Cultivation",
     "Floriculture",
     "Agro-Service Centers",
+    "Fish Aquarium",
     // ── Small Trade & Retail Stores ──
     "Grocery Store (Kirana Shop)",
     "Textile and Readymade Garment Shop",
@@ -109,6 +110,7 @@ const BUSINESS_TYPE_OPTIONS = [
     "Meat and Fish Retail Stall",
     "Vegetable and Fruit Vending Stall",
     "Flower Shop",
+    "Home Appliances",
     // ── Services & Self-Employment ──
     "Hotel, Restaurant, and Tea Stall",
     "Catering Service",
@@ -123,6 +125,7 @@ const BUSINESS_TYPE_OPTIONS = [
     "Electrical Wiring and Plumbing Service",
     "Dry Cleaning and Laundry Service",
     "Photography and Video Studio",
+    " Gymnasium/Gym",
     // ── Transport Sector ──
     "Auto-Rickshaw Service",
     "E-Rickshaw Service",

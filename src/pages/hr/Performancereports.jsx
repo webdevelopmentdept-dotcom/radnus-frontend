@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import * as XLSX from "xlsx";
-import { Download, TrendingUp, Users, Award, BarChart2, Building2, User, Globe, AlertTriangle } from "lucide-react";
+import KpiCycleView from "./KpiCycleView";
+import { Download, TrendingUp, Users, Award, BarChart2, Building2, User, Globe, AlertTriangle, Target } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -1066,6 +1067,7 @@ export default function PerformanceReports() {
     { key: "team",       label: "Team / Dept",  icon: <Building2 size={15} /> },
     { key: "overall",    label: "Overall",      icon: <Globe size={15} /> },
     { key: "gap",        label: "Gap Analysis", icon: <AlertTriangle size={15} /> },
+    { key: "kpi",        label: "KPI Cycle",    icon: <Target size={15} /> },
   ];
 
   return (
@@ -1090,7 +1092,7 @@ export default function PerformanceReports() {
 
       <div className="rp-view-toggle" style={{ display: "flex", gap: 8, marginBottom: 24, background: "#fff", padding: 6, borderRadius: 14, border: "1px solid #e5e7eb" }}>
         {VIEWS.map(v => (
-          <button key={v.key} className="rp-view-btn" onClick={() => setActiveView(v.key)} style={{ display: "flex", alignItems: "center", gap: 8, borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 700, background: activeView === v.key ? (v.key === "gap" ? "#ea580c" : "#1a1a2e") : "transparent", color: activeView === v.key ? "#fff" : "#6b7280", transition: "all 0.18s" }}>
+          <button key={v.key} className="rp-view-btn" onClick={() => setActiveView(v.key)} style={{ display: "flex", alignItems: "center", gap: 8, borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 700, background: activeView === v.key ? (v.key === "gap" ? "#ea580c" : v.key === "kpi" ? "#2563eb" : "#1a1a2e") : "transparent", color: activeView === v.key ? "#fff" : "#6b7280", transition: "all 0.18s" }}>
             {v.icon}{v.label}
           </button>
         ))}
@@ -1108,6 +1110,7 @@ export default function PerformanceReports() {
           {activeView === "team"       && <TeamView reviews={reviews} />}
           {activeView === "overall"    && <OverallView reviews={reviews} />}
           {activeView === "gap"        && <GapAnalysisView reviews={reviews} />}
+          {activeView === "kpi"        && <KpiCycleView endpoint={`${API_BASE}/api/performance-reviews/kpi-compliance`} />}
         </>
       )}
     </div>

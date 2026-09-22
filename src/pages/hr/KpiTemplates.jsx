@@ -145,6 +145,7 @@ export default function KpiTemplates() {
 
   // Search state (UI-only, does not touch any existing data/logic)
   const [searchQuery, setSearchQuery] = useState("");
+  const [deptFilter, setDeptFilter] = useState("All"); // ⭐ NEW: department filter dropdown (UI-only)
 
   // Month Management states
   const [monthVersions, setMonthVersions] = useState([]);
@@ -576,6 +577,7 @@ export default function KpiTemplates() {
 
   // ===== SEARCH (UI-only, filters existing "templates" data, no data/logic change) =====
   const filteredTemplates = templates.filter(t => {
+    if (deptFilter !== "All" && t.department !== deptFilter) return false; // ⭐ NEW: department filter
     const q = searchQuery.trim().toLowerCase();
     if (!q) return true;
     const inBasic =
@@ -610,20 +612,36 @@ export default function KpiTemplates() {
 
       {/* Search Bar (new, does not affect existing data/logic) */}
       <div style={{ marginBottom: 20 }}>
-        <div className="kpi-search-wrap">
-          <span className="kpi-search-icon">🔍</span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search templates by name, role, department, KPI..."
-            className="kpi-search-input"
-          />
-          {searchQuery && (
-            <button className="kpi-search-clear" onClick={() => setSearchQuery("")} title="Clear search">✕</button>
-          )}
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <div className="kpi-search-wrap" style={{ flex: "1 1 320px" }}>
+            <span className="kpi-search-icon">🔍</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search templates by name, role, department, KPI..."
+              className="kpi-search-input"
+            />
+            {searchQuery && (
+              <button className="kpi-search-clear" onClick={() => setSearchQuery("")} title="Clear search">✕</button>
+            )}
+          </div>
+
+          {/* ⭐ NEW: Department filter dropdown (UI-only, uses the same "departments" list already loaded for the form) */}
+          <select
+            value={deptFilter}
+            onChange={e => setDeptFilter(e.target.value)}
+            style={{
+              padding: "10px 14px", border: "1px solid #d1d5db", borderRadius: 8,
+              fontSize: 13, color: "#1a1a2e", background: "#fff", minWidth: 180,
+              flex: "0 0 auto", cursor: "pointer",
+            }}
+          >
+            <option value="All">All Departments</option>
+            {departments.map(d => <option key={d._id} value={d.name}>{d.name}</option>)}
+          </select>
         </div>
-        {searchQuery && (
+        {(searchQuery || deptFilter !== "All") && (
           <p style={{ margin: "8px 0 0", fontSize: 12, color: "#6b7280" }}>
             {filteredTemplates.length} of {templates.length} template{templates.length !== 1 ? "s" : ""} matched
           </p>
