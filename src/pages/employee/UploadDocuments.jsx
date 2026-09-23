@@ -983,15 +983,21 @@ export default function UploadDocuments() {
     }
   };
 
+    const [savingField, setSavingField] = useState(null);
+
   const handleSaveText = async (fieldId) => {
+    if (savingField === fieldId) return;
     const value = textFields[fieldId]?.trim();
     if (!value) return;
     const employeeId = localStorage.getItem("employeeId");
+    setSavingField(fieldId);
     try {
       await axios.post(`${API_BASE}/api/employee/save-link`, { employeeId, docType: fieldId, url: value });
       setStatuses(p => ({ ...p, [fieldId]: "success" }));
     } catch (err) {
       alert(err.response?.data?.message || "Save failed");
+    } finally {
+      setSavingField(null);
     }
   };
 

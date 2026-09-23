@@ -83,6 +83,7 @@ const BUSINESS_TYPE_OPTIONS = [
     "Car Taxi Loan",
     "Aadhar Service Centre",
      "Pani Puri Manufacturing ",
+     "Honey Spoon Manufacturing",
     // ── Agriculture & Allied Activities ──
     "Paddy Cultivation",
     "Vegetable Farming",
@@ -112,6 +113,7 @@ const BUSINESS_TYPE_OPTIONS = [
     "Vegetable and Fruit Vending Stall",
     "Flower Shop",
     "Home Appliances",
+    "Tiles and Granites",
     // ── Services & Self-Employment ──
     "Hotel, Restaurant, and Tea Stall",
     "Catering Service",

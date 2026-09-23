@@ -263,9 +263,21 @@ export default function HrPending() {
               {selected.documents?.map((doc, i) => {
                 const fileUrl = getFileUrl(doc.fileUrl);
 
-                return (
+                                  return (
                   <div key={i} className="col-6 col-md-4 mb-3">
-                    <div className="doc-card text-center">
+                    <div className="doc-card text-center position-relative">
+                      <button
+                        className="btn btn-sm btn-outline-danger position-absolute top-0 end-0"
+                        style={{ padding: "0 6px", fontSize: 11, zIndex: 2 }}
+                        onClick={async () => {
+                          if (!window.confirm(`Delete "${doc.docType}"?`)) return;
+                          await fetch(`${API_BASE}/api/employee/document/${doc._id}`, { method: "DELETE" });
+                          setSelected(prev => ({
+                            ...prev,
+                            documents: prev.documents.filter(d => d._id !== doc._id),
+                          }));
+                        }}
+                      >✕</button>
                       <small className="text-uppercase fw-semibold">{doc.docType}</small>
                       <div className="mt-2">
 
