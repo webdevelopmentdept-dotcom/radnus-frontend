@@ -1,12 +1,7 @@
-// LoanIncentivePayouts.jsx — HR/Admin: approve & pay loan incentives
-// Loans become "Eligible for Processing" once the employee marks both
-// "Online Loan Application" and "Projection Dispatch" on the Loan Process
-// checklist (see LoanProcess.jsx / LoanCustomer.incentive on backend).
-// This page is intentionally separate from the KPI-linked Incentive engine
-// (IncentivePlan/IncentiveAssignment/IncentiveResult) — it doesn't touch it.
+
 import EmployeeLayout from "../employee/EmployeeLayout";
 import { useState, useEffect } from "react";
-import { Wallet, CheckCircle2, Clock, IndianRupee, User } from "lucide-react";
+import { Wallet, CheckCircle2, Clock, IndianRupee, User, Pencil } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -62,6 +57,37 @@ export default function LoanIncentivePayouts() {
   const [accEmployees, setAccEmployees] = useState([]);
   const [accLoading, setAccLoading] = useState(false);
   const [accSavingId, setAccSavingId] = useState(null);
+  const [accOpen, setAccOpen] = useState(false); 
+
+  // ✅ Edit paid date on an already-Paid loan
+  const [editDateLoan, setEditDateLoan] = useState(null); // loan object or null
+  const [editDateValue, setEditDateValue] = useState(todayStr());
+
+  const openEditDate = (loan) => {
+    setEditDateValue(loan.incentive?.paidAt ? loan.incentive.paidAt.slice(0, 10) : todayStr());
+    setEditDateLoan(loan);
+  };
+
+  const saveEditedDate = async () => {
+    const loan = editDateLoan;
+    if (!loan || !editDateValue) return;
+    setEditDateLoan(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/loan-process/${loan._id}/incentive/paid-date`, {
+        method: "PATCH",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ paidAt: editDateValue }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPaidLoans((prev) => prev.map((l) => (l._id === loan._id ? data.customer : l)));
+      } else {
+        alert(data.message || "Failed to update paid date");
+      }
+    } catch (err) {
+      alert("Server error while updating paid date");
+    }
+  };
 
   const loadAccountsEmployees = async () => {
     setAccLoading(true);
@@ -189,6 +215,56 @@ export default function LoanIncentivePayouts() {
     }
   };
 
+  const rejectLoan = async (loan) => {
+    const remark = window.prompt(`Reject incentive for ${loan.customerName}? Enter a reason:`);
+    if (remark === null) return;
+    if (!remark.trim()) { alert("Remark is required to reject."); return; }
+
+    setApprovingId(loan._id);
+    try {
+      const res = await fetch(`${API_BASE}/api/loan-process/${loan._id}/incentive/reject`, {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ remark }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPendingLoans((prev) => prev.filter((l) => l._id !== loan._id));
+      } else {
+        alert(data.message || "Failed to reject incentive");
+      }
+    } catch (err) {
+      alert("Server error while rejecting incentive");
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  const deleteLoan = async (loan) => {
+    const remark = window.prompt(`Remove ${loan.customerName}'s loan from the incentive queue?. Enter a reason:`);
+    if (remark === null) return;
+    if (!remark.trim()) { alert("Remark is required."); return; }
+
+    setApprovingId(loan._id);
+    try {
+      const res = await fetch(`${API_BASE}/api/loan-process/${loan._id}/incentive/remove`, {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ remark }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPendingLoans((prev) => prev.filter((l) => l._id !== loan._id));
+      } else {
+        alert(data.message || "Failed to remove from incentive queue");
+      }
+    } catch (err) {
+      alert("Server error while removing from incentive queue");
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
   const loans = tab === "pending" ? pendingLoans : paidLoans;
   const showEmpty =
     !loading &&
@@ -216,23 +292,41 @@ export default function LoanIncentivePayouts() {
             marginBottom: 22,
           }}
         >
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>
-            Loan Incentive Payout Access (Account team)
-          </div>
-          <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>
-            Only Account-team employees show here. Turn access ON for the one person who should
-            approve &amp; pay loan incentives — "Loan Incentive" shows up in their dashboard.
-            Turning ON for someone new automatically turns it OFF for the previous person.
+                   <div
+            onClick={() => setAccOpen((v) => !v)}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ fontWeight: 700, fontSize: 14 }}>
+              Loan Incentive Payout Access (Account team)
+            </div>
+            <span style={{ fontSize: 14, color: "#6b7280" }}>{accOpen ? "▲" : "▼"}</span>
           </div>
 
-          {accLoading && <div style={{ fontSize: 12, color: "#6b7280" }}>Loading…</div>}
-          {!accLoading && accEmployees.length === 0 && (
-            <div style={{ fontSize: 12, color: "#6b7280" }}>
-              No Account-team employees found (department must contain "Account").
+          {!accOpen && (
+            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
+              Currently: {accEmployees.find((e) => e.canApproveLoanIncentive)?.name || "no one"} — click to change
             </div>
           )}
-          {!accLoading && accEmployees.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+
+          {accOpen && (
+            <>
+              <div style={{ fontSize: 12, color: "#6b7280", margin: "8px 0 12px" }}>
+                Only Account-team employees show here. Turn access ON for the one person who should
+                approve &amp; pay loan incentives — "Loan Incentive" shows up in their dashboard.
+                Turning ON for someone new automatically turns it OFF for the previous person.
+              </div>
+
+              {accLoading && <div style={{ fontSize: 12, color: "#6b7280" }}>Loading…</div>}
+              {!accLoading && accEmployees.length === 0 && (
+                <div style={{ fontSize: 12, color: "#6b7280" }}>
+                  No Account-team employees found (department must contain "Account").
+                </div>
+              )}
+              {!accLoading && accEmployees.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {accEmployees.map((emp) => (
                 <div
                   key={emp._id}
@@ -280,8 +374,10 @@ export default function LoanIncentivePayouts() {
                     />
                   </button>
                 </div>
-              ))}
-            </div>
+                          ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -381,38 +477,86 @@ export default function LoanIncentivePayouts() {
                   <div style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>
   App No: {loan.checklistRemarks?.applicationProcess || "—"} · Slip No: {loan.checklistRemarks?.courier || "—"}
 </div>
-                  <div
+                                  <div
                     style={{
-                      display: "inline-flex",
+                      display: "flex",
                       alignItems: "center",
-                      gap: 4,
-                      fontSize: 11,
-                      color: "#8a6100",
-                      background: "#fff4d6",
-                      padding: "2px 8px",
-                      borderRadius: 999,
+                      gap: 8,
+                      flexWrap: "wrap",
                       marginTop: 6,
                     }}
                   >
-                    <Clock size={12} /> Eligible for processing
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        fontSize: 11,
+                        color: "#8a6100",
+                        background: "#fff4d6",
+                        padding: "2px 8px",
+                        borderRadius: 999,
+                      }}
+                    >
+                      <Clock size={12} /> Eligible for processing
+                    </div>
+                    <span style={{ fontSize: 11, color: "#6b7280" }}>
+                      since {formatDate(loan.incentive?.eligibleAt)}
+                    </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => openApproveConfirm(loan)}
-                  disabled={approvingId === loan._id}
-                  style={{
-                    background: approvingId === loan._id ? "#9ca3af" : "#111827",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 8,
-                    padding: "8px 16px",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: approvingId === loan._id ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {approvingId === loan._id ? "Processing…" : "Approve & pay"}
-                </button>
+                              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => openApproveConfirm(loan)}
+                    disabled={approvingId === loan._id}
+                    style={{
+                      background: approvingId === loan._id ? "#9ca3af" : "#111827",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 8,
+                      padding: "8px 16px",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: approvingId === loan._id ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {approvingId === loan._id ? "Processing…" : "Approve & pay"}
+                  </button>
+
+                  <button
+                    onClick={() => rejectLoan(loan)}
+                    disabled={approvingId === loan._id}
+                    style={{
+                      background: "#fff",
+                      color: "#b45309",
+                      border: "1px solid #b45309",
+                      borderRadius: 8,
+                      padding: "8px 16px",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: approvingId === loan._id ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    Reject
+                  </button>
+
+                  <button
+                    onClick={() => deleteLoan(loan)}
+                    disabled={approvingId === loan._id}
+                    style={{
+                      background: "#fff",
+                      color: "#dc2626",
+                      border: "1px solid #dc2626",
+                      borderRadius: 8,
+                      padding: "8px 16px",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: approvingId === loan._id ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ) : (
               <div
@@ -438,6 +582,9 @@ export default function LoanIncentivePayouts() {
                       "{loan.incentive.paidRemark}"
                     </div>
                   )}
+                                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>
+                    Eligible since {formatDate(loan.incentive?.eligibleAt)}
+                  </div>
                   <div
                     style={{
                       display: "flex",
@@ -445,11 +592,48 @@ export default function LoanIncentivePayouts() {
                       gap: 4,
                       fontSize: 11,
                       color: "#6b7280",
-                      marginTop: 6,
+                      marginTop: 4,
                     }}
                   >
                     <User size={12} />
                     Paid by {loan.incentive?.paidByName || "—"} on {formatDate(loan.incentive?.paidAt)}
+                    <button
+                      onClick={() => openEditDate(loan)}
+                      title="Edit paid date"
+                      style={{ border: "none", background: "none", cursor: "pointer", color: "#6b7280", padding: 2, display: "inline-flex" }}
+                    >
+                      <Pencil size={12} />
+                    </button>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontWeight: 700,
+                      fontSize: 15,
+                      color: "#166534",
+                    }}
+                  >
+                    <IndianRupee size={14} />
+                    {loan.incentive?.amount?.toLocaleString?.() || 0}
+                  </div>
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontSize: 11,
+                      color: "#166534",
+                      background: "#dcfce7",
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      marginTop: 6,
+                    }}
+                  >
+                    <CheckCircle2 size={12} /> Paid
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -541,5 +725,50 @@ export default function LoanIncentivePayouts() {
     </div>
   );
 
-  return isHrOrAdmin() ? <>{page}{confirmModal}</> : <EmployeeLayout>{page}{confirmModal}</EmployeeLayout>;
+    const editDateModal = editDateLoan && (
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 300,
+        background: "rgba(0,0,0,0.45)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 16,
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) setEditDateLoan(null); }}
+    >
+      <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 380, padding: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Edit paid date</div>
+        <div style={{ fontSize: 13, color: "#4b5563", marginBottom: 16 }}>
+          {editDateLoan.customerName}'s incentive paid date
+        </div>
+
+        <input
+          type="date"
+          value={editDateValue}
+          max={todayStr()}
+          onChange={(e) => setEditDateValue(e.target.value)}
+          style={{
+            width: "100%", boxSizing: "border-box", marginBottom: 18,
+            border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 12px", fontSize: 13,
+          }}
+        />
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button
+            onClick={() => setEditDateLoan(null)}
+            style={{ padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={saveEditedDate}
+            style={{ padding: "8px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", background: "#111827", color: "#fff", cursor: "pointer" }}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return isHrOrAdmin() ? <>{page}{confirmModal}{editDateModal}</> : <EmployeeLayout>{page}{confirmModal}{editDateModal}</EmployeeLayout>;
 }

@@ -38,9 +38,9 @@ const SCHEME_OPTIONS = [
     { value: "PMEGP", label: "PMEGP - Prime Minister's Employment Generation Programme" },
     { value: "UYEGP", label: "UYEGP - Unemployed Youth Employment Generation Programme" },
     { value: "AABCS", label: "AABCS - Annal Ambedkar Business Champions Scheme" },
-     { value: "NEEDS", label: "NEEDS - New Entrepreneur-cum-Enterprise Development Scheme" },
-     { value: "TABCEDCO", label: "TABCEDCO - Tamil Nadu Backward Classes Economic Development Corporation" },
-{ value: "TWEES", label: "TWEES - Tamil Nadu Women Entrepreneur Empowerment Scheme" },
+    { value: "NEEDS", label: "NEEDS - New Entrepreneur-cum-Enterprise Development Scheme" },
+    { value: "TABCEDCO", label: "TABCEDCO - Tamil Nadu Backward Classes Economic Development Corporation" },
+    { value: "TWEES", label: "TWEES - Tamil Nadu Women Entrepreneur Empowerment Scheme" },
 ];
 
 // PMEGP eligible business list — fixed list so everyone picks from the same
@@ -82,8 +82,8 @@ const BUSINESS_TYPE_OPTIONS = [
     "Xerox Shop",
     "Car Taxi Loan",
     "Aadhar Service Centre",
-     "Pani Puri Manufacturing ",
-     "Honey Spoon Manufacturing",
+    "Pani Puri Manufacturing ",
+    "Honey Spoon Manufacturing",
     // ── Agriculture & Allied Activities ──
     "Paddy Cultivation",
     "Vegetable Farming",
@@ -172,7 +172,7 @@ const BANK_NAME_OPTIONS = [
     "City Union Bank",
     "Tamilnadu Mercantile Bank",
     "Federal Bank",
-        "Karur Vysya Bank",
+    "Karur Vysya Bank",
 ];
 
 const todayStr = () => new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
@@ -184,6 +184,7 @@ const BLANK_FORM = {
     communicationAddress: "",
     unitAddress: "",
     businessType: "",
+    businessSubType: "",
     scheme: "",
     loanValue: "",
     contactNo: "",
@@ -676,6 +677,8 @@ export default function LoanProcess() {
             communicationAddress: customer.communicationAddress || "",
             unitAddress: customer.unitAddress || "",
             businessType: customer.businessType || "",
+                        businessSubType: customer.businessSubType || "",
+
             scheme: customer.scheme || "",
             loanValue: customer.loanValue ?? "",
             contactNo: customer.contactNo || "",
@@ -1089,7 +1092,7 @@ export default function LoanProcess() {
                                     />
                                     {fieldErrors.mailId && <div className="lp-field-error">{fieldErrors.mailId}</div>}
                                 </div>
-                                <div className="lp-field">
+                                                               <div className="lp-field">
                                     <label>Business Type *</label>
                                     <SearchableSelect
                                         name="businessType"
@@ -1100,6 +1103,15 @@ export default function LoanProcess() {
                                         invalid={!!fieldErrors.businessType}
                                     />
                                     {fieldErrors.businessType && <div className="lp-field-error">{fieldErrors.businessType}</div>}
+                                </div>
+                                <div className="lp-field">
+                                    <label>Business Sub-Type (optional)</label>
+                                    <input
+                                        name="businessSubType"
+                                        value={form.businessSubType}
+                                        onChange={handleChange}
+                                        placeholder="e.g. Masala, Pani Puri"
+                                    />
                                 </div>
 
                                 <div className="lp-field">
@@ -1407,7 +1419,7 @@ export default function LoanProcess() {
                                                     />
                                                     {editFieldErrors.mailId && <div className="lp-field-error">{editFieldErrors.mailId}</div>}
                                                 </div>
-                                                <div className="lp-field">
+                                                                                                <div className="lp-field">
                                                     <label>Business Type *</label>
                                                     <SearchableSelect
                                                         name="businessType"
@@ -1421,6 +1433,16 @@ export default function LoanProcess() {
                                                         <div className="lp-field-error">{editFieldErrors.businessType}</div>
                                                     )}
                                                 </div>
+                                                <div className="lp-field">
+                                                    <label>Business Sub-Type (optional)</label>
+                                                    <input
+                                                        name="businessSubType"
+                                                        value={editForm.businessSubType}
+                                                        onChange={handleEditChange}
+                                                        placeholder="e.g. Masala, Pani Puri"
+                                                    />
+                                                </div>
+                                                
 
                                                 <div className="lp-field">
                                                     <label>Scheme *</label>
@@ -1609,6 +1631,24 @@ export default function LoanProcess() {
                                             {c.incentive?.eligibility === "Paid" && (
                                                 <span className="lp-badge done">
                                                     ₹{c.incentive.amount} paid
+                                                </span>
+                                            )}
+                                            {c.incentive?.eligibility === "Rejected" && (
+                                                <span
+                                                    className="lp-badge"
+                                                    style={{ background: "#fee2e2", color: "#b91c1c" }}
+                                                    title={c.incentive.rejectedRemark}
+                                                >
+                                                    Rejected: {c.incentive.rejectedRemark}
+                                                </span>
+                                            )}
+                                            {c.incentive?.eligibility === "Removed" && (
+                                                <span
+                                                    className="lp-badge"
+                                                    style={{ background: "#f3f4f6", color: "#6b7280" }}
+                                                    title={c.incentive.removedRemark}
+                                                >
+                                                    Not available
                                                 </span>
                                             )}
                                             <span className={`lp-badge ${c.status === "COMPLETED" ? "done" : "progress"}`}>

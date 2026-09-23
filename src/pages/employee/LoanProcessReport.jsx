@@ -333,6 +333,8 @@ export default function LoanProcessReport() {
                   <div className="lpr-section-title">Customer Details</div>
                   <div className="lpr-info-grid">
                     <div className="lpr-info-item"><b>Business Type</b>{c.businessType || "—"}</div>
+                                        <div className="lpr-info-item"><b>Business Sub-Type</b>{c.businessSubType || "—"}</div>
+
                     <div className="lpr-info-item"><b>Scheme</b>{c.scheme || "—"}</div>
                     <div className="lpr-info-item"><b>Loan Value</b>{c.loanValue ? formatRupee(c.loanValue) : "—"}</div>
                     <div className="lpr-info-item"><b>Contact No</b>{c.contactNo || "—"}</div>

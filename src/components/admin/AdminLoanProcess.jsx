@@ -338,6 +338,8 @@ export default function AdminLoanProcess() {
                 <div className="alp-section-title">Customer Details</div>
                 <div className="alp-info-grid">
                   <div className="alp-info-item"><b>Business Type</b>{c.businessType || "—"}</div>
+                  <div className="alp-info-item"><b>Business Sub-Type</b>{c.businessSubType || "—"}</div>
+
                   <div className="alp-info-item"><b>Scheme</b>{c.scheme || "—"}</div>
                   <div className="alp-info-item"><b>Loan Value</b>{c.loanValue ? `₹${c.loanValue}` : "—"}</div>
                   <div className="alp-info-item"><b>Contact No</b>{c.contactNo || "—"}</div>
@@ -348,7 +350,7 @@ export default function AdminLoanProcess() {
                   <div className="alp-info-item"><b>Unit Address</b>{c.unitAddress || "—"}</div>
                 </div>
 
-                                <div className="alp-section-title">Process Checklist</div>
+                <div className="alp-section-title">Process Checklist</div>
                 <div className="alp-checklist-grid">
                   {CHECKLIST_STAGES.map((stage) => (
                     <div key={stage.key}>
@@ -356,12 +358,12 @@ export default function AdminLoanProcess() {
                         <input
                           type="checkbox"
                           checked={!!c.checklist?.[stage.key]}
-                          onChange={() => {}}
+                          onChange={() => { }}
                           onClick={(e) => e.preventDefault()}
                         />
                         {stage.label}
                       </label>
-                                            {c.checklistRemarks?.[stage.key] && (
+                      {c.checklistRemarks?.[stage.key] && (
                         <div style={{ fontSize: 11, color: "var(--lp-text-muted)", marginLeft: 22, marginTop: -2 }}>
                           📝 {c.checklistRemarks[stage.key]}
                         </div>
