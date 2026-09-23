@@ -40,7 +40,7 @@ const SCHEME_OPTIONS = [
     { value: "AABCS", label: "AABCS - Annal Ambedkar Business Champions Scheme" },
      { value: "NEEDS", label: "NEEDS - New Entrepreneur-cum-Enterprise Development Scheme" },
      { value: "TABCEDCO", label: "TABCEDCO - Tamil Nadu Backward Classes Economic Development Corporation" },
-
+{ value: "TWEES", label: "TWEES - Tamil Nadu Women Entrepreneur Empowerment Scheme" },
 ];
 
 // PMEGP eligible business list — fixed list so everyone picks from the same
@@ -82,6 +82,7 @@ const BUSINESS_TYPE_OPTIONS = [
     "Xerox Shop",
     "Car Taxi Loan",
     "Aadhar Service Centre",
+     "Pani Puri Manufacturing ",
     // ── Agriculture & Allied Activities ──
     "Paddy Cultivation",
     "Vegetable Farming",
