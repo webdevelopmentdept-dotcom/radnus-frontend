@@ -7,75 +7,76 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const Icons = {
   leave: (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
     </svg>
   ),
   attendance: (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
     </svg>
   ),
   employee: (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
     </svg>
   ),
   document: (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
     </svg>
   ),
   system: (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+      <circle cx="12" cy="12" r="3" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
     </svg>
   ),
   general: (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
   ),
   bell: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
   ),
   checkAll: (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="17 6 9 17 4 12"/><polyline points="23 6 12 17"/>
+      <polyline points="17 6 9 17 4 12" /><polyline points="23 6 12 17" />
     </svg>
   ),
   send: (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
     </svg>
   ),
   close: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   ),
   users: (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   ),
 };
 
 const TYPE_META = {
-  leave:      { label: "Leave",      color: "#6d28d9", bg: "#f5f3ff", border: "#ddd6fe", icon: "leave"      },
+  leave: { label: "Leave", color: "#6d28d9", bg: "#f5f3ff", border: "#ddd6fe", icon: "leave" },
   attendance: { label: "Attendance", color: "#b45309", bg: "#fffbeb", border: "#fde68a", icon: "attendance" },
-  employee:   { label: "Employee",   color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", icon: "employee"   },
-  document:   { label: "Document",   color: "#047857", bg: "#f0fdf4", border: "#bbf7d0", icon: "document"   },
-  system:     { label: "System",     color: "#374151", bg: "#f9fafb", border: "#e5e7eb", icon: "system"     },
+  employee: { label: "Employee", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", icon: "employee" },
+  document: { label: "Document", color: "#047857", bg: "#f0fdf4", border: "#bbf7d0", icon: "document" },
+  system: { label: "System", color: "#374151", bg: "#f9fafb", border: "#e5e7eb", icon: "system" },
+    hr_message_sent: { label: "Sent",  color: "#047857", bg: "#f0fdf4", border: "#bbf7d0", icon: "employee" }, 
 };
 const DEFAULT_META = { label: "General", color: "#374151", bg: "#f9fafb", border: "#e5e7eb", icon: "general" };
 
 function timeAgo(dateStr) {
   const diff = (Date.now() - new Date(dateStr)) / 1000;
-  if (diff < 60)     return "Just now";
-  if (diff < 3600)   return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400)  return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 60) return "Just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
   return new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }
@@ -87,7 +88,7 @@ function getHrId() {
       const obj = JSON.parse(hrUserRaw);
       const id = obj?._id || obj?.id || obj?.hrId || obj?.userId || obj?.empId;
       if (id) return String(id);
-    } catch (_) {}
+    } catch (_) { }
   }
   const hrId = localStorage.getItem("hrId");
   if (hrId && hrId !== "undefined" && hrId !== "null" && hrId.trim() !== "") return hrId.trim();
@@ -97,7 +98,7 @@ function getHrId() {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const id = payload?._id || payload?.id || payload?.hrId || payload?.userId;
       if (id) return String(id);
-    } catch (_) {}
+    } catch (_) { }
   }
   const jsonKeys = ["user", "hr", "employee", "authUser", "loggedInUser", "currentUser", "userData", "auth"];
   for (const key of jsonKeys) {
@@ -107,7 +108,7 @@ function getHrId() {
         const obj = JSON.parse(raw);
         const id = obj?._id || obj?.id || obj?.hrId || obj?.userId || obj?.empId;
         if (id) return String(id);
-      } catch (_) {}
+      } catch (_) { }
     }
   }
   for (let i = 0; i < localStorage.length; i++) {
@@ -120,7 +121,7 @@ function getHrId() {
         const obj = JSON.parse(val);
         const id = obj?._id || obj?.id || obj?.hrId || obj?.userId;
         if (id && String(id).length >= 10) return String(id);
-      } catch (_) {}
+      } catch (_) { }
     }
   }
   return null;
@@ -141,29 +142,91 @@ async function fetchAllEmployees(apiBase) {
 }
 
 // ── Send Message Modal ────────────────────────────────────────────────────────
-function SendMessageModal({ employees, onClose }) {
-  const [selectedEmpId, setSelectedEmpId] = useState("all");
-  const [msgTitle,      setMsgTitle]      = useState("");
-  const [msgBody,       setMsgBody]       = useState("");
-  const [sending,       setSending]       = useState(false);
-  const [sendSuccess,   setSendSuccess]   = useState(false);
-  const [sendError,     setSendError]     = useState("");
+function SendMessageModal({ employees, hrId, onClose }) {  // ✅ mode: "all" | "department" | "individual"
+  const [recipientMode, setRecipientMode] = useState("all");
+  const [selectedDept, setSelectedDept] = useState("");
+  const [selectedEmpIds, setSelectedEmpIds] = useState([]); // array — department & individual modes both use this
+  const [empSearch, setEmpSearch] = useState("");
+  const [msgTitle, setMsgTitle] = useState("");
+  const [msgBody, setMsgBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendSuccess, setSendSuccess] = useState(false);
+  const [sendError, setSendError] = useState("");
+
+  const empName = (emp) => emp.name || emp.fullName || emp.employeeName || emp.email || emp._id;
+
+  // ── department list, derived from employees ──
+  const departments = [...new Set(employees.map(e => e.department).filter(Boolean))].sort();
+
+  // ── employees shown in the checklist, based on mode ──
+  const listedEmployees = (
+    recipientMode === "department"
+      ? employees.filter(e => e.department === selectedDept)
+      : employees
+  ).filter(e => empName(e).toLowerCase().includes(empSearch.toLowerCase()));
+
+  const toggleEmp = (id) => {
+    setSelectedEmpIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAllListed = () => {
+    const listedIds = listedEmployees.map(e => e._id || e.id);
+    const allSelected = listedIds.every(id => selectedEmpIds.includes(id));
+    setSelectedEmpIds(prev =>
+      allSelected
+        ? prev.filter(id => !listedIds.includes(id))   // unselect all listed
+        : [...new Set([...prev, ...listedIds])]         // select all listed
+    );
+  };
+
+  // ── when department changes, reset picked employees & auto-select whole dept ──
+  const handleDeptChange = (dept) => {
+    setSelectedDept(dept);
+    const deptIds = employees.filter(e => e.department === dept).map(e => e._id || e.id);
+    setSelectedEmpIds(deptIds);
+  };
+
+  const handleModeChange = (mode) => {
+    setRecipientMode(mode);
+    setSelectedDept("");
+    setEmpSearch("");
+    setSelectedEmpIds([]);
+    setSendError("");
+  };
 
   const handleSend = async () => {
     setSendError("");
     if (!msgBody.trim()) { setSendError("Please enter a message."); return; }
+
+    let employeeIds;
+    if (recipientMode === "all") {
+      employeeIds = ["all"];
+    } else {
+      employeeIds = selectedEmpIds;
+      if (employeeIds.length === 0) {
+        setSendError(
+          recipientMode === "department"
+            ? "Please select a department (or uncheck at least one person)."
+            : "Please select at least one employee."
+        );
+        return;
+      }
+    }
+
     setSending(true);
     try {
-      const employeeIds = selectedEmpId === "all" ? ["all"] : [selectedEmpId];
-      await axios.post(`${API_BASE}/api/notifications/send-hr-message`, {
+            await axios.post(`${API_BASE}/api/notifications/send-hr-message`, {
         employeeIds,
         title:   msgTitle.trim() || "HR Message",
         message: msgBody.trim(),
+        hrId,
       });
       setSendSuccess(true);
       setMsgTitle("");
       setMsgBody("");
-      setSelectedEmpId("all");
+      handleModeChange("all");
       setTimeout(() => { setSendSuccess(false); onClose(); }, 1800);
     } catch (e) {
       setSendError("Failed to send. Please try again.");
@@ -176,6 +239,11 @@ function SendMessageModal({ employees, onClose }) {
   const handleBackdrop = (e) => {
     if (e.target === e.currentTarget) onClose();
   };
+
+  const recipientCountLabel =
+    recipientMode === "all"
+      ? "All Employees"
+      : `${selectedEmpIds.length} employee${selectedEmpIds.length === 1 ? "" : "s"} selected`;
 
   return (
     <div className="modal-backdrop" onClick={handleBackdrop}>
@@ -198,18 +266,85 @@ function SendMessageModal({ employees, onClose }) {
 
           <div className="modal-field">
             <label className="modal-label">{Icons.users} Recipient</label>
-            <select
-              className="modal-select"
-              value={selectedEmpId}
-              onChange={e => setSelectedEmpId(e.target.value)}
-            >
-              <option value="all">All Employees</option>
-              {employees.map(emp => (
-                <option key={emp._id || emp.id} value={emp._id || emp.id}>
-                  {emp.name || emp.fullName || emp.employeeName || emp.email || emp._id}
-                </option>
-              ))}
-            </select>
+
+            {/* ✅ Mode tabs — All / Department / Individual */}
+            <div className="modal-mode-tabs">
+              <button type="button"
+                className={`modal-mode-tab ${recipientMode === "all" ? "active" : ""}`}
+                onClick={() => handleModeChange("all")}>
+                All Employees
+              </button>
+              <button type="button"
+                className={`modal-mode-tab ${recipientMode === "department" ? "active" : ""}`}
+                onClick={() => handleModeChange("department")}>
+                By Department
+              </button>
+              <button type="button"
+                className={`modal-mode-tab ${recipientMode === "individual" ? "active" : ""}`}
+                onClick={() => handleModeChange("individual")}>
+                Individual
+              </button>
+            </div>
+
+            {/* ✅ Department dropdown — only in department mode */}
+            {recipientMode === "department" && (
+              <select
+                className="modal-select"
+                value={selectedDept}
+                onChange={e => handleDeptChange(e.target.value)}
+              >
+                <option value="">Select department…</option>
+                {departments.map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+            )}
+
+            {/* ✅ Employee checklist — department mode (after dept picked) & individual mode */}
+            {((recipientMode === "department" && selectedDept) || recipientMode === "individual") && (
+              <div className="modal-emp-picker">
+                {recipientMode === "individual" && (
+                  <input
+                    className="modal-input"
+                    type="text"
+                    placeholder="Search employee by name…"
+                    value={empSearch}
+                    onChange={e => setEmpSearch(e.target.value)}
+                    style={{ marginBottom: 8 }}
+                  />
+                )}
+
+                {listedEmployees.length === 0 ? (
+                  <div className="modal-emp-empty">No employees found</div>
+                ) : (
+                  <>
+                    <button type="button" className="modal-emp-selectall" onClick={toggleSelectAllListed}>
+                      {listedEmployees.every(e => selectedEmpIds.includes(e._id || e.id))
+                        ? "Unselect all" : "Select all"} ({listedEmployees.length})
+                    </button>
+                    <div className="modal-emp-list">
+                      {listedEmployees.map(emp => {
+                        const id = emp._id || emp.id;
+                        const checked = selectedEmpIds.includes(id);
+                        return (
+                          <label key={id} className={`modal-emp-row ${checked ? "checked" : ""}`}>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleEmp(id)}
+                            />
+                            <span className="modal-emp-name">{empName(emp)}</span>
+                            {emp.department && <span className="modal-emp-dept">{emp.department}</span>}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            <div className="modal-recipient-summary">{recipientCountLabel}</div>
           </div>
 
           <div className="modal-field">
@@ -235,7 +370,7 @@ function SendMessageModal({ employees, onClose }) {
             />
           </div>
 
-          {sendError   && <div className="modal-error">⚠ {sendError}</div>}
+          {sendError && <div className="modal-error">⚠ {sendError}</div>}
           {sendSuccess && <div className="modal-success">✓ Message sent successfully!</div>}
         </div>
 
@@ -259,11 +394,11 @@ function SendMessageModal({ employees, onClose }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function HrNotifications() {
   const [notifications, setNotifications] = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [filter,        setFilter]        = useState("all");
-  const [markingAll,    setMarkingAll]    = useState(false);
-  const [showModal,     setShowModal]     = useState(false);
-  const [employees,     setEmployees]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [markingAll, setMarkingAll] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [employees, setEmployees] = useState([]);
 
   const hrId = getHrId();
 
@@ -277,7 +412,7 @@ export default function HrNotifications() {
 
   const fetchNotifications = async () => {
     try {
-      const res  = await axios.get(`${API_BASE}/api/notifications/hr/${hrId}`);
+      const res = await axios.get(`${API_BASE}/api/notifications/hr/${hrId}`);
       const data = res.data?.data || res.data || [];
       setNotifications(
         [...data].sort((a, b) => {
@@ -312,26 +447,26 @@ export default function HrNotifications() {
     finally { setMarkingAll(false); }
   };
 
-  const unreadCount    = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter(n => !n.isRead).length;
   const availableTypes = ["all", ...new Set(notifications.map(n => n.type).filter(Boolean))];
-  const filtered       = filter === "all" ? notifications : notifications.filter(n => n.type === filter);
+  const filtered = filter === "all" ? notifications : notifications.filter(n => n.type === filter);
 
   if (loading) return (
-    <div style={{ display:"flex", justifyContent:"center", alignItems:"center", height:"60vh" }}>
-      <div style={{ width:28, height:28, border:"2.5px solid #e5e7eb", borderTopColor:"#1d4ed8", borderRadius:"50%", animation:"spin 0.75s linear infinite" }} />
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
+      <div style={{ width: 28, height: 28, border: "2.5px solid #e5e7eb", borderTopColor: "#1d4ed8", borderRadius: "50%", animation: "spin 0.75s linear infinite" }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 
   if (!hrId) return (
-    <div style={{ display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", height:"60vh", gap:12 }}>
-      <div style={{ width:48, height:48, borderRadius:12, background:"#fef2f2", border:"1px solid #fecaca", display:"flex", alignItems:"center", justifyContent:"center", color:"#dc2626" }}>
+    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", height: "60vh", gap: 12 }}>
+      <div style={{ width: 48, height: 48, borderRadius: 12, background: "#fef2f2", border: "1px solid #fecaca", display: "flex", alignItems: "center", justifyContent: "center", color: "#dc2626" }}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
       </div>
-      <div style={{ fontSize:14, fontWeight:600, color:"#111827" }}>Session expired</div>
-      <div style={{ fontSize:12, color:"#9ca3af" }}>Please login again to continue.</div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>Session expired</div>
+      <div style={{ fontSize: 12, color: "#9ca3af" }}>Please login again to continue.</div>
     </div>
   );
 
@@ -404,7 +539,7 @@ export default function HrNotifications() {
         .hrn-item-body   { flex: 1; min-width: 0; }
         .hrn-item-title  { font-size: 13px; font-weight: 700; color: #111827; margin: 0 0 3px; line-height: 1.4; }
         .hrn-item.unread .hrn-item-title { color: #1d4ed8; }
-        .hrn-item-msg    { font-size: 12px; color: #6b7280; margin: 0 0 8px; line-height: 1.5; }
+        .hrn-item-msg    { font-size: 12px; color: #6b7280; margin: 0 0 8px; line-height: 1.5; white-space: pre-line; }
         .hrn-item-footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .hrn-item-time   { font-size: 11px; color: #9ca3af; font-weight: 500; }
         .hrn-item-badge  { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; display: flex; align-items: center; gap: 4px; }
@@ -426,16 +561,20 @@ export default function HrNotifications() {
         }
         @keyframes mFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .modal-box {
+                .modal-box {
           background: #fff; border-radius: 14px;
           width: 100%; max-width: 460px;
+          max-height: 88vh;
+          display: flex;
+          flex-direction: column;
           box-shadow: 0 20px 60px rgba(0,0,0,0.18);
           animation: mSlideUp 0.2s ease;
           overflow: hidden;
         }
         @keyframes mSlideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .modal-header {
+                .modal-header {
+          flex-shrink: 0;
           display: flex; align-items: center; justify-content: space-between;
           padding: 16px 20px; border-bottom: 1px solid #f3f4f6;
         }
@@ -454,8 +593,8 @@ export default function HrNotifications() {
         }
         .modal-close-btn:hover { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
 
-        .modal-body   { padding: 18px 20px; display: flex; flex-direction: column; gap: 13px; }
-        .modal-footer { padding: 14px 20px; border-top: 1px solid #f3f4f6; display: flex; justify-content: flex-end; gap: 8px; }
+                .modal-body   { padding: 18px 20px; display: flex; flex-direction: column; gap: 13px; overflow-y: auto; flex: 1; min-height: 0; }
+        .modal-footer { flex-shrink: 0; padding: 14px 20px; border-top: 1px solid #f3f4f6; display: flex; justify-content: flex-end; gap: 8px; }
 
         .modal-field  { display: flex; flex-direction: column; gap: 5px; }
         .modal-label  { font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; }
@@ -473,6 +612,42 @@ export default function HrNotifications() {
           box-shadow: 0 0 0 3px rgba(16,185,129,0.08);
         }
         .modal-textarea { min-height: 100px; resize: vertical; }
+
+        /* ✅ Recipient mode tabs */
+        .modal-mode-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+        .modal-mode-tab {
+          flex: 1; padding: 7px 8px; border-radius: 7px; font-size: 11.5px; font-weight: 600;
+          border: 1px solid #e5e7eb; background: #f9fafb; color: #6b7280;
+          cursor: pointer; font-family: inherit; transition: all 0.15s;
+        }
+        .modal-mode-tab:hover   { background: #f3f4f6; }
+        .modal-mode-tab.active { background: #047857; border-color: #047857; color: #fff; }
+
+        /* ✅ Employee checklist picker (department / individual modes) */
+        .modal-emp-picker {
+          margin-top: 8px; border: 1px solid #e5e7eb; border-radius: 8px;
+          background: #f9fafb; padding: 8px;
+        }
+        .modal-emp-selectall {
+          display: block; margin: 0 0 6px 2px; font-size: 11px; font-weight: 700;
+          color: #047857; background: none; border: none; cursor: pointer; font-family: inherit;
+        }
+        .modal-emp-selectall:hover { text-decoration: underline; }
+        .modal-emp-list { max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+        .modal-emp-row {
+          display: flex; align-items: center; gap: 8px;
+          padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12.5px; color: #374151;
+        }
+        .modal-emp-row:hover   { background: #f3f4f6; }
+        .modal-emp-row.checked { background: #f0fdf4; }
+        .modal-emp-row input   { flex-shrink: 0; accent-color: #047857; cursor: pointer; }
+        .modal-emp-name { flex: 1; }
+        .modal-emp-dept {
+          font-size: 10px; font-weight: 600; color: #6b7280; background: #eef2f7;
+          padding: 1px 7px; border-radius: 99px; flex-shrink: 0;
+        }
+        .modal-emp-empty { font-size: 12px; color: #9ca3af; text-align: center; padding: 10px 0; }
+        .modal-recipient-summary { font-size: 11px; color: #6b7280; margin-top: 6px; }
 
         .modal-error   { font-size: 12px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; border-radius: 7px; padding: 8px 12px; }
         .modal-success { font-size: 12px; color: #047857; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 7px; padding: 8px 12px; font-weight: 600; }
@@ -539,12 +714,18 @@ export default function HrNotifications() {
           {/* ── Stats ── */}
           <div className="hrn-stats">
             {[
-              { val: notifications.length,               lbl: "Total",  iconBg: "#f3f4f6", iconColor: "#374151",
-                icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> },
-              { val: unreadCount,                        lbl: "Unread", iconBg: "#eff6ff", iconColor: "#1d4ed8",
-                icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> },
-              { val: notifications.length - unreadCount, lbl: "Read",   iconBg: "#f0fdf4", iconColor: "#16a34a",
-                icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> },
+              {
+                val: notifications.length, lbl: "Total", iconBg: "#f3f4f6", iconColor: "#374151",
+                icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>
+              },
+              {
+                val: unreadCount, lbl: "Unread", iconBg: "#eff6ff", iconColor: "#1d4ed8",
+                icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+              },
+              {
+                val: notifications.length - unreadCount, lbl: "Read", iconBg: "#f0fdf4", iconColor: "#16a34a",
+                icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              },
             ].map((s, i) => (
               <div key={i} className="hrn-stat">
                 <div className="hrn-stat-icon" style={{ background: s.iconBg, color: s.iconColor }}>{s.icon}</div>
@@ -559,7 +740,7 @@ export default function HrNotifications() {
           {/* ── Filter Chips ── */}
           <div className="hrn-filter-bar">
             {availableTypes.map(type => {
-              const meta  = TYPE_META[type] || DEFAULT_META;
+              const meta = TYPE_META[type] || DEFAULT_META;
               const count = type === "all" ? notifications.length : notifications.filter(n => n.type === type).length;
               return (
                 <button key={type} onClick={() => setFilter(type)} className={`hrn-chip ${filter === type ? "active" : ""}`}>
@@ -579,8 +760,8 @@ export default function HrNotifications() {
           {filtered.length === 0 ? (
             <div className="hrn-empty">
               <div className="hrn-empty-icon">{Icons.bell}</div>
-              <div style={{ fontSize:14, fontWeight:700, color:"#374151", marginBottom:4 }}>No notifications</div>
-              <div style={{ fontSize:12, color:"#9ca3af" }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 4 }}>No notifications</div>
+              <div style={{ fontSize: 12, color: "#9ca3af" }}>
                 {filter === "all" ? "You're all caught up!" : `No ${filter} notifications found`}
               </div>
             </div>
@@ -588,7 +769,7 @@ export default function HrNotifications() {
             <div>
               {unreadCount > 0 && <div className="hrn-section-label">Unread — {unreadCount}</div>}
               {filtered.map((notif) => {
-                const meta     = TYPE_META[notif.type] || DEFAULT_META;
+                const meta = TYPE_META[notif.type] || DEFAULT_META;
                 const isUnread = !notif.isRead;
                 return (
                   <div key={notif._id} className={`hrn-item ${isUnread ? "unread" : ""}`}
@@ -619,8 +800,9 @@ export default function HrNotifications() {
 
       {/* ✅ Modal */}
       {showModal && (
-        <SendMessageModal
+                <SendMessageModal
           employees={employees}
+          hrId={hrId}
           onClose={() => setShowModal(false)}
         />
       )}

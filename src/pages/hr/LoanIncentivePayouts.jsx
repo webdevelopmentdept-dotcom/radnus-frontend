@@ -50,6 +50,12 @@ export default function LoanIncentivePayouts() {
 
   const [approvingId, setApprovingId] = useState(null); // _id of loan currently being approved
 
+  // ✅ Approve confirmation modal — lets HR pick the paid date
+  // (defaults to today, but editable for backdating old/already-paid incentives)
+  const [confirmLoan, setConfirmLoan] = useState(null); // loan object or null
+  const todayStr = () => new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+  const [payDate, setPayDate] = useState(todayStr());
+
   // ── Loan Incentive Payout access (Accounts team, single fixed person) ──
   // HR/Admin only — not shown to the Accounts employee who has access.
   const showAccessControl = isHrOrAdmin();
@@ -144,10 +150,19 @@ export default function LoanIncentivePayouts() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 
-  const approveAndPay = async (loan) => {
-    if (!window.confirm(`Pay ₹${FIXED_INCENTIVE_AMOUNT} incentive to ${loan.staffName} for ${loan.customerName}'s loan?`)) {
+  const openApproveConfirm = (loan) => {
+    setPayDate(todayStr()); // reset to today each time the modal opens
+    setConfirmLoan(loan);
+  };
+
+  const approveAndPay = async () => {
+    const loan = confirmLoan;
+    if (!loan) return;
+    if (!payDate) {
+      alert("Please choose a paid date.");
       return;
     }
+    setConfirmLoan(null);
     setApprovingId(loan._id);
     try {
       const res = await fetch(
@@ -155,7 +170,7 @@ export default function LoanIncentivePayouts() {
         {
           method: "POST",
           headers: { ...authHeaders(), "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: FIXED_INCENTIVE_AMOUNT, remark: "" }),
+          body: JSON.stringify({ amount: FIXED_INCENTIVE_AMOUNT, remark: "", paidAt: payDate }),
         }
       );
       const data = await res.json();
@@ -383,7 +398,7 @@ export default function LoanIncentivePayouts() {
                   </div>
                 </div>
                 <button
-                  onClick={() => approveAndPay(loan)}
+                  onClick={() => openApproveConfirm(loan)}
                   disabled={approvingId === loan._id}
                   style={{
                     background: approvingId === loan._id ? "#9ca3af" : "#111827",
@@ -475,5 +490,56 @@ export default function LoanIncentivePayouts() {
     </div>
   );
 
-  return isHrOrAdmin() ? page : <EmployeeLayout>{page}</EmployeeLayout>;
+  const confirmModal = confirmLoan && (
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 300,
+        background: "rgba(0,0,0,0.45)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 16,
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) setConfirmLoan(null); }}
+    >
+      <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 380, padding: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Approve &amp; pay incentive</div>
+        <div style={{ fontSize: 13, color: "#4b5563", marginBottom: 16 }}>
+          Pay ₹{FIXED_INCENTIVE_AMOUNT} incentive to {confirmLoan.staffName} for {confirmLoan.customerName}'s loan?
+        </div>
+
+        <label style={{ fontSize: 11, fontWeight: 600, color: "#374151", textTransform: "uppercase", letterSpacing: 0.4 }}>
+          Paid date
+        </label>
+        <input
+          type="date"
+          value={payDate}
+          max={todayStr()}
+          onChange={(e) => setPayDate(e.target.value)}
+          style={{
+            width: "100%", boxSizing: "border-box", marginTop: 6, marginBottom: 4,
+            border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 12px", fontSize: 13,
+          }}
+        />
+        <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 18 }}>
+          Defaults to today. Change this if you're recording an old payment that was already paid earlier.
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button
+            onClick={() => setConfirmLoan(null)}
+            style={{ padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={approveAndPay}
+            style={{ padding: "8px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", background: "#111827", color: "#fff", cursor: "pointer" }}
+          >
+            Approve &amp; pay
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return isHrOrAdmin() ? <>{page}{confirmModal}</> : <EmployeeLayout>{page}{confirmModal}</EmployeeLayout>;
 }

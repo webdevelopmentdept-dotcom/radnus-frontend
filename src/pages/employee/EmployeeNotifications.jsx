@@ -10,9 +10,21 @@ const TYPE_META = {
   hr_message:   { label: "HR Message",   color: "#047857", bg: "#f0fdf4", border: "#bbf7d0", icon: "💬" },
   attendance:   { label: "Attendance",   color: "#b45309", bg: "#fffbeb", border: "#fde68a", icon: "📅" },
   leave:        { label: "Leave",        color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff", icon: "🌴" },
+  leave_approved: { label: "Leave",      color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff", icon: "🌴" },
+  leave_rejected: { label: "Leave",      color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff", icon: "🌴" },
   salary:       { label: "Salary",       color: "#059669", bg: "#f0fdf4", border: "#bbf7d0", icon: "💰" },
   system:       { label: "System",       color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb", icon: "⚙️" },
   announcement: { label: "Announcement", color: "#be185d", bg: "#fdf2f8", border: "#f9a8d4", icon: "📢" },
+  // ✅ Incentive-related types — all grouped under one "Incentive" chip
+  incentive_assigned: { label: "Incentive", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", icon: "🎯" },
+  incentive_review:   { label: "Incentive", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", icon: "🎯" },
+  incentive_approved: { label: "Incentive", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", icon: "🎯" },
+  incentive_rejected: { label: "Incentive", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", icon: "🎯" },
+  incentive_paid:     { label: "Incentive", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", icon: "🎯" },
+  // ✅ Performance-related types — grouped under one "Performance" chip
+  kpi_assigned: { label: "Performance", color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd", icon: "📈" },
+  review_done:  { label: "Performance", color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd", icon: "📈" },
+  general:      { label: "General",     color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb", icon: "🔔" },
 };
 
 const DEFAULT_META = { label: "General", color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb", icon: "🔔" };
@@ -74,12 +86,19 @@ export default function EmployeeNotifications() {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  // Filter types available from actual data
-  const availableTypes = ["all", ...new Set(notifications.map(n => n.type).filter(Boolean))];
+  // ✅ Filter chips grouped by LABEL (not raw type), so "Incentive Assigned",
+  // "Incentive Paid" etc. all collapse into a single "Incentive" chip instead
+  // of showing up as separate duplicate chips.
+  const getMeta = (type) => TYPE_META[type] || DEFAULT_META;
+
+  const availableTypes = [
+    "all",
+    ...new Set(notifications.map(n => getMeta(n.type).label).filter(Boolean))
+  ];
 
   const filtered = filter === "all"
     ? notifications
-    : notifications.filter(n => n.type === filter);
+    : notifications.filter(n => getMeta(n.type).label === filter);
 
   if (loading) return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
@@ -128,11 +147,9 @@ export default function EmployeeNotifications() {
 
         /* Filter chips */
         .notif-filters {
-          display: flex; gap: 8px; overflow-x: auto;
-          -webkit-overflow-scrolling: touch; scrollbar-width: none;
-          margin-bottom: 14px; padding-bottom: 2px;
-        }
-        .notif-filters::-webkit-scrollbar { display: none; }
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 14px; padding-bottom: 2px;
+}
 
         .notif-chip {
           border: 1.5px solid #e5e7eb; background: #fff;
@@ -186,7 +203,7 @@ export default function EmployeeNotifications() {
         .notif-item.unread .notif-title { color: #1d4ed8; }
         .notif-msg {
           font-size: 12px; color: #6b7280; margin: 0 0 6px;
-          line-height: 1.5;
+          line-height: 1.5; white-space: pre-line;
         }
         .notif-footer {
           display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -253,22 +270,24 @@ export default function EmployeeNotifications() {
           {/* Filter chips */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
             <div className="notif-filters" style={{ flex: 1 }}>
-              {availableTypes.map(type => {
-                const meta = TYPE_META[type] || DEFAULT_META;
-                const count = type === "all"
+              {availableTypes.map(label => {
+                const count = label === "all"
                   ? notifications.length
-                  : notifications.filter(n => n.type === type).length;
+                  : notifications.filter(n => getMeta(n.type).label === label).length;
+                // pick any notification's meta matching this label, just for the icon
+                const sampleNotif = notifications.find(n => getMeta(n.type).label === label);
+                const meta = sampleNotif ? getMeta(sampleNotif.type) : DEFAULT_META;
                 return (
                   <button
-                    key={type}
-                    onClick={() => setFilter(type)}
-                    className={`notif-chip ${filter === type ? "active" : ""}`}
+                    key={label}
+                    onClick={() => setFilter(label)}
+                    className={`notif-chip ${filter === label ? "active" : ""}`}
                   >
-                    {type !== "all" && <span>{meta.icon}</span>}
-                    {type === "all" ? "All" : meta.label}
+                    {label !== "all" && <span>{meta.icon}</span>}
+                    {label === "all" ? "All" : label}
                     <span style={{
-                      background: filter === type ? "rgba(255,255,255,0.25)" : "#f3f4f6",
-                      color: filter === type ? "#fff" : "#374151",
+                      background: filter === label ? "rgba(255,255,255,0.25)" : "#f3f4f6",
+                      color: filter === label ? "#fff" : "#374151",
                       borderRadius: 99, padding: "1px 6px", fontSize: 10, fontWeight: 700
                     }}>
                       {count}
