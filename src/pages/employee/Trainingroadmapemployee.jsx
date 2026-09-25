@@ -10,6 +10,26 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+// ── Video length helpers ─────────────────────────────────────────
+// Chapter length is auto-detected (Cloudinary upload response / first play),
+// never typed by HR. Program length = total of its chapters when all are known.
+const fmtVideoLen = (sec) => {
+  const mins = Math.max(1, Math.round(Number(sec) / 60));
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return h ? `${h} hr${m ? ` ${m} min` : ""}` : `${m} min`;
+};
+const parseVideoLen = (str) => {
+  const h = /(\d+)\s*hr/i.exec(str || ""), m = /(\d+)\s*min/i.exec(str || "");
+  return ((h ? +h[1] : 0) * 60 + (m ? +m[1] : 0)) * 60;
+};
+const programLength = (p) => {
+  if (p?.chapters?.length) {
+    const secs = p.chapters.map(c => parseVideoLen(c.duration));
+    return secs.every(x => x > 0) ? fmtVideoLen(secs.reduce((a, b) => a + b, 0)) : "";
+  }
+  return p?.duration || "";
+};
+
 // ✅ NEW — pulls the 11-char YouTube video ID out of any common URL shape
 // (watch?v=, youtu.be/, already-an-embed URL). Returns null if it can't
 // find one, so callers can fall back to a plain non-interactive iframe.
@@ -130,6 +150,13 @@ const STYLES = `
     .tr-table-wrap table { min-width: 480px; }
     .tr-modal-sheet { align-items: flex-end !important; padding: 0 !important; }
     .tr-modal-sheet > div { max-width: 100% !important; width: 100% !important; border-radius: 18px 18px 0 0 !important; max-height: 92vh !important; }
+    /* ✅ NEW — multi-chapter course view on small screens */
+    .tr-chapter-item { padding: 10px 12px !important; }
+    .tr-chapter-header { gap: 8px !important; }
+    .tr-chapter-title { font-size: 12.5px !important; }
+    .tr-chapter-video video, .tr-chapter-video iframe { border-radius: 8px !important; }
+    .tr-cert-box { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
+    .tr-cert-box button, .tr-cert-box a { width: 100% !important; text-align: center !important; justify-content: center !important; }
   }
 
   @media (max-width: 480px) {
@@ -174,7 +201,7 @@ function getEmployeeId() {
 }
 
 // ─── Training Card ──────────────────────────────────────────────
-function TrainingCard({ record, onStart, onViewDetails, onSubmit }) {
+function TrainingCard({ record, onStart, onViewDetails }) {
   const st  = STATUS_CONFIG[record.status] || STATUS_CONFIG.pending;
   const typ = TYPE_CONFIG[record.programId?.type] || TYPE_CONFIG.job_role;
   const prog = record.programId;
@@ -185,6 +212,41 @@ function TrainingCard({ record, onStart, onViewDetails, onSubmit }) {
   end.setHours(23, 59, 59, 999);
   return end < new Date();
 })() && record.status !== "completed";
+
+  // ✅ Real progress + one clear action, instead of two buttons that could
+  // both be visible/clickable at once ("Start Training" + "Submit for Review").
+  const chapters = prog?.chapters || [];
+  const hasChapters = chapters.length > 0;
+  const completedChapters = hasChapters
+    ? chapters.filter(c => record.chapterProgress?.find(cp => cp.chapterNo === c.chapterNo)?.watched).length
+    : 0;
+  const now = new Date();
+  const notYetOpen = !!(prog?.accessStartDate && now < new Date(prog.accessStartDate));
+  const windowClosed = !!(prog?.accessEndDate && now > new Date(prog.accessEndDate));
+
+  let action = null; // { label, disabled, hint, onClick }
+  if (isOffline) {
+    action = null; // handled by the "Attend session" pill below, unchanged
+  } else if (record.status === "completed") {
+    action = null; // CheckCircle2 below is enough
+  } else if (record.status === "pending_review") {
+    action = { label: "Awaiting HR review", disabled: true };
+  } else if (notYetOpen) {
+    action = { label: `Opens ${new Date(prog.accessStartDate).toLocaleDateString("en-IN")}`, disabled: true };
+  } else if (windowClosed && record.status !== "completed") {
+    action = { label: "Access window closed", disabled: true };
+  } else if (hasChapters && completedChapters < chapters.length) {
+    action = {
+      label: record.status === "pending" ? "Start Course" : `Continue (${completedChapters}/${chapters.length})`,
+      onClick: () => { if (record.status === "pending") onStart(record._id); onViewDetails(record); },
+    };
+  } else if (hasChapters && completedChapters === chapters.length) {
+    action = { label: "Take Test", onClick: () => onViewDetails(record) };
+  } else if (record.status === "pending") {
+    action = { label: "Start Course", onClick: () => { onStart(record._id); onViewDetails(record); } };
+  } else if (record.status === "in_progress") {
+    action = { label: "Continue", onClick: () => onViewDetails(record) };
+  }
 
   return (
     <div className="tr-card tr-training-card" style={{
@@ -205,22 +267,32 @@ function TrainingCard({ record, onStart, onViewDetails, onSubmit }) {
             </span>
           )}
         </div>
-        {prog?.duration && <span style={{ fontSize: 11, color: "var(--muted-2)" }}>{prog.duration}</span>}
+        {programLength(prog) && <span style={{ fontSize: 11, color: "var(--muted-2)" }}>{programLength(prog)}</span>}
       </div>
 
       {/* Title */}
       <p className="tr-font-display" style={{ margin: "0 0 8px", fontWeight: 700, fontSize: 15, color: "var(--ink)", lineHeight: 1.3 }}>{prog?.title}</p>
 
       {/* Modules */}
-      {prog?.modules?.length > 0 && (
+      {(hasChapters ? chapters.map(c => c.title) : prog?.modules || []).length > 0 && (
         <div style={{ marginBottom: 10 }}>
-          {prog.modules.slice(0, 3).map((m, i) => (
+          {(hasChapters ? chapters.map(c => c.title) : prog.modules).slice(0, 3).map((m, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
               <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--muted-2)", flexShrink: 0 }} />
               <span style={{ fontSize: 12.5, color: "var(--muted)" }}>{m}</span>
             </div>
           ))}
-          {prog.modules.length > 3 && <span style={{ fontSize: 11, color: "var(--muted-2)", marginLeft: 11 }}>+{prog.modules.length - 3} more topics</span>}
+          {(hasChapters ? chapters.length : prog.modules.length) > 3 && <span style={{ fontSize: 11, color: "var(--muted-2)", marginLeft: 11 }}>+{(hasChapters ? chapters.length : prog.modules.length) - 3} more topics</span>}
+        </div>
+      )}
+
+      {/* Chapter progress */}
+      {hasChapters && record.status !== "completed" && (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ height: 6, borderRadius: 3, background: "var(--line)", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${Math.round((completedChapters / chapters.length) * 100)}%`, background: "var(--brand)" }} />
+          </div>
+          <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--muted-2)" }}>{completedChapters} of {chapters.length} chapters</p>
         </div>
       )}
 
@@ -253,27 +325,25 @@ function TrainingCard({ record, onStart, onViewDetails, onSubmit }) {
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {/* ✅ NEW — opens the course-content modal (product list, SOPs,
               videos, procedures) for this program. */}
+          {/* "View Details" always opens the course (chapters, quiz, certificate) — it's
+              never hidden, so there's always a way in even once a chapter course is complete. */}
           <button className="tr-btn" onClick={() => onViewDetails(record)}
             style={{ padding: "6px 14px", border: "1.5px solid var(--brand)", borderRadius: "var(--radius-sm)", background: "#fff", color: "var(--brand)", fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>
             View Details
           </button>
-                                  {!isOffline && record.status === "pending" && (
-          <button onClick={() => onStart(record._id)}
-            style={{ padding: "5px 12px", border: "none", borderRadius: 7, background: "#3b82f6", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
-            Start Training
-          </button>
-        )}
-        {!isOffline && record.status === "in_progress" && !record.submittedForReview && (
-          <button onClick={() => onSubmit(record._id)}
-            style={{ padding: "5px 12px", border: "none", borderRadius: 7, background: "#10b981", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
-            Submit for Review
-          </button>
-        )}
-        {!isOffline && record.status === "in_progress" && record.submittedForReview && (
-          <span style={{ background: "#fffbeb", color: "#92400e", border: "1px solid #fde68a", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
-            Submitted — Awaiting HR
-          </span>
-        )}
+          {/* One action button whose label always matches what will actually happen next. */}
+          {!isOffline && action && (
+            action.disabled ? (
+              <span style={{ background: "var(--bg-soft)", color: "var(--muted)", border: "1px solid var(--line)", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
+                {action.label}
+              </span>
+            ) : (
+              <button onClick={action.onClick}
+                style={{ padding: "5px 12px", border: "none", borderRadius: 7, background: "#3b82f6", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                {action.label}
+              </button>
+            )
+          )}
         {isOffline && record.status !== "completed" && (
           <span style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
             Attend session — HR marks attendance
@@ -297,6 +367,54 @@ function TrainingCard({ record, onStart, onViewDetails, onSubmit }) {
 }
 
 // ─── Training Details Modal ──────────────────────────────────────
+// ─── Certificate Status Box ─────────────────────────────────────
+// ✅ Shared across every program type (single-video/quiz, equipment,
+// multi-chapter). Fully passive on the employee side — no button, no
+// click — it just reflects where the certificate stands:
+//   1. certificateRequestStatus === "issued" (HR uploaded the file)
+//      → "Your certificate is ready!" + Download button
+//   2. status === "completed" (HR confirmed it; backend auto-flips
+//      certificateRequestStatus to "requested" at that moment, so it
+//      shows up in HR's own Certificate Requests tab) but HR hasn't
+//      uploaded the file yet → "waiting for HR to unlock your certificate"
+//   3. status === "pending_review" (quiz/submission is with HR, not
+//      confirmed yet) → "waiting for HR review"
+function CertificateStatusBox({ record }) {
+  const show =
+    record.certificateRequestStatus === "issued" ||
+    record.status === "completed" ||
+    record.status === "pending_review";
+  if (!show) return null;
+
+  return (
+    <div
+      className="tr-cert-box"
+      style={{ marginTop: 14, padding: "13px 15px", borderRadius: "var(--radius-md)", background: "var(--success-tint)", border: "1px solid #b7ecd6", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}
+    >
+      {record.certificateRequestStatus === "issued" ? (
+        <>
+          <p style={{ margin: 0, fontSize: 12.5, color: "var(--success)", fontWeight: 700 }}>🎓 Your certificate is ready!</p>
+          {/* fl_attachment makes Cloudinary send it as a real file download,
+              with the original filename HR uploaded it as. */}
+          <a
+            href={record.certificateUrl.replace("/upload/", `/upload/fl_attachment:${encodeURIComponent((record.certificateFileName || "certificate.pdf").replace(/\.[^/.]+$/, ""))}/`)}
+            download={record.certificateFileName || "certificate.pdf"}
+            rel="noreferrer"
+            className="tr-btn"
+            style={{ padding: "8px 16px", borderRadius: "var(--radius-sm)", background: "var(--success)", color: "#fff", fontSize: 12, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            Download Certificate
+          </a>
+        </>
+      ) : record.status === "completed" ? (
+        <p style={{ margin: 0, fontSize: 12.5, color: "var(--success)", fontWeight: 600 }}>🔒 Completed — waiting for HR to unlock your certificate.</p>
+      ) : (
+        <p style={{ margin: 0, fontSize: 12.5, color: "var(--success)", fontWeight: 600 }}>📩 Waiting for HR review — your certificate will unlock once HR confirms your completion.</p>
+      )}
+    </div>
+  );
+}
+
 // Shows the actual course content for a program: for "equipment" type
 // programs (the shared "Equipment Training — All Products" program),
 // that means every linked product's SOP, training video, operating
@@ -458,6 +576,21 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
     }
   };
 
+  // ✅ NEW — refetch this exact record fresh from the server instead of
+// trusting the PUT response's snapshot (which was causing the next
+// chapter to stay locked until a manual page refresh).
+const refetchRecord = async () => {
+  const employeeId = getEmployeeId();
+  if (!employeeId) return;
+  try {
+    const res = await axios.get(`${API_BASE}/api/training/my/${employeeId}`);
+    const fresh = (res.data.data || []).find(r => r._id === record._id);
+    if (fresh) setRecord(fresh);
+  } catch (e) {
+    // silent — the optimistic update from the PUT response still stands
+  }
+};
+
   return (
     <div className="tr-modal-sheet" style={{ position: "fixed", inset: 0, background: "rgba(16,24,40,.55)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div style={{ background: "var(--surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-lg)", maxWidth: 640, width: "100%", maxHeight: "85vh", overflowY: "auto", padding: 24 }} onClick={e => e.stopPropagation()}>
@@ -469,8 +602,21 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
           <button onClick={onClose} style={{ border: "none", background: "var(--bg-soft)", width: 30, height: 30, borderRadius: "50%", fontSize: 18, cursor: "pointer", color: "var(--muted)", lineHeight: 1, flexShrink: 0 }}>×</button>
         </div>
 
+        {/* ✅ NEW — multi-chapter course (e.g. "66 video sessions"). Old
+            single-video programs (chapters.length === 0) fall through to
+            the existing flow below, completely unchanged. */}
+        {!isEquipment && prog?.chapters?.length > 0 && (
+          <ChapterCourseView
+            record={record}
+            prog={prog}
+            onClose={onClose}
+            onOpenQuiz={onOpenQuiz}
+                        onRecordUpdate={(updated) => { setRecord(prev => ({ ...prev, ...updated })); refetchRecord(); onRefresh?.(); }}
+          />
+        )}
+
         {/* Non-equipment programs: nothing extra to fetch, just show what's already known */}
-        {!isEquipment && (() => {
+        {!isEquipment && !(prog?.chapters?.length > 0) && (() => {
           // ✅ NEW — true only once every attached material (video, PDF)
           // has been consumed. Both gates apply if both exist.
           const materialsReady = (!prog?.videoUrl || record.videoWatched) && (!prog?.pdfUrl || record.pdfRead);
@@ -566,6 +712,15 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
                )}
             </div>
             )}
+
+            {/* ✅ Certificate status — was previously only shown for
+                multi-chapter courses; single-video/quiz programs (like
+                this one) never told the employee what was happening
+                after HR marked it "completed". Now every program type
+                reflects: pending_review → "waiting for HR review",
+                completed → "HR will unlock certificate soon", issued →
+                Download button. */}
+            {!isOffline && <CertificateStatusBox record={record} />}
           </div>
           );
         })()}
@@ -735,12 +890,17 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
                     </>
                   )}
                 </div>
+
+                {/* ✅ Certificate status — equipment programs also fell
+                    through this gap before; nothing told the employee
+                    a certificate was coming once HR confirmed completion. */}
+                {alreadyAttempted && <CertificateStatusBox record={record} />}
               </>
             )}
           </div>
         )}
 
-                {!isOffline && prog?.videoUrl && (
+                {!isOffline && prog?.videoUrl && !(prog?.chapters?.length > 0) && (
   <div style={{ marginTop: 14 }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
       <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>Training Video:</p>
@@ -821,6 +981,639 @@ function TrainingDetailsModal({ record: initialRecord, onClose, onRefresh, onOpe
 
       </div>
     </div>
+  );
+}
+
+// ─── Multi-Chapter Course View ──────────────────────────────────
+// ✅ NEW — renders a "66 video sessions" style course: intro
+// description, then chapters unlocked strictly in order. Each video
+// tracks the furthest point actually played (maxPlayedRef) and snaps
+// the seek bar back if the employee tries to drag ahead — so just
+// dragging to the end and letting it "finish" doesn't count. Once
+// every chapter is watched, the quiz unlocks (reusing the existing
+// program-level quiz); once the quiz is passed, the employee can
+// request a certificate, which HR then uploads from their side.
+function ChapterCourseView({ record, prog, onClose, onOpenQuiz, onRecordUpdate }) {
+  const chapters = [...(prog.chapters || [])].sort((a, b) => a.chapterNo - b.chapterNo);
+  const chapterProgress = record.chapterProgress || [];
+  const isWatched = (no) => !!chapterProgress.find(c => c.chapterNo === no && c.watched);
+  // ✅ NEW — video/PDF confirmed done, but (for a quizzed chapter) waiting on the quiz below
+  const isContentDone = (no) => !!chapterProgress.find(c => c.chapterNo === no && c.contentDone);
+  const watchedCount = chapterProgress.filter(c => c.watched).length;
+  const nextUnlocked = watchedCount + 1;
+  const allWatched = chapters.length > 0 && watchedCount >= chapters.length;
+
+  const now = new Date();
+  const startDate = prog.accessStartDate ? new Date(prog.accessStartDate) : null;
+  const endDate   = prog.accessEndDate   ? new Date(prog.accessEndDate)   : null;
+  const notYetOpen  = !!(startDate && now < startDate);
+  const windowClosed = !!(endDate && now > endDate);
+
+  const [openChapter, setOpenChapter] = useState(nextUnlocked <= chapters.length ? nextUnlocked : null);
+
+// ✅ NEW — whenever chapterProgress changes (a chapter just got marked watched),
+// auto-open the newly-unlocked next chapter instead of waiting for a page refresh.
+const prevNextUnlocked = useRef(nextUnlocked);
+useEffect(() => {
+  if (nextUnlocked !== prevNextUnlocked.current) {
+    setOpenChapter(nextUnlocked <= chapters.length ? nextUnlocked : null);
+    prevNextUnlocked.current = nextUnlocked;
+  }
+}, [nextUnlocked, chapters.length]);
+
+  const [marking, setMarking] = useState(null);
+  const [hasProgramQuiz, setHasProgramQuiz] = useState(null);
+  // ✅ Server-verified watch tracking (heartbeats). chapterNo -> { percent, ranges, duration, lastPosition }
+  const [tracking, setTracking] = useState(() => {
+    const m = {};
+    (record.chapterProgress || []).forEach(c => {
+      m[c.chapterNo] = { percent: c.watchPercent || 0, ranges: c.watchedRanges || [], duration: c.duration || 0, lastPosition: c.lastPosition || 0 };
+    });
+    return m;
+  });
+  const [notice, setNotice] = useState({});   // chapterNo -> message shown under the video
+  const playerApis = useRef({});               // chapterNo -> { seekTo(sec) }
+  const beatQueue = useRef(Promise.resolve()); // heartbeats are sent one at a time, in order
+  const submittingRef = useRef(false);         // blocks duplicate "chapter complete" requests
+
+  useEffect(() => {
+    if (!prog?._id) return;
+    (async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/training/quiz-questions`, { params: { programId: prog._id } });
+        setHasProgramQuiz((res.data.data || []).length > 0);
+      } catch (e) { setHasProgramQuiz(false); }
+    })();
+  }, [prog?._id]);
+
+  // Sends one heartbeat (position of the video). The SERVER decides how much of the
+  // video counts as really watched — skipped / fast-forwarded parts earn nothing.
+  const sendBeat = (chapterNo, snap) => {
+    const job = beatQueue.current.then(async () => {
+      try {
+        const res = await axios.put(`${API_BASE}/api/training/my/${record._id}/chapter/${chapterNo}/heartbeat`, {
+          position: snap.position, duration: snap.duration, playing: snap.playing, rate: snap.rate,
+        });
+        const d = res.data.data;
+        setTracking(t => ({ ...t, [chapterNo]: { percent: d.percent, ranges: d.ranges, duration: d.duration, lastPosition: d.lastPosition } }));
+        // Safety net: if the player's "ended" event never arrives, finishing the last
+        // seconds with 95%+ verified still completes the chapter.
+        if (d.ready && !d.watched && snap.duration && snap.position >= snap.duration - 12) submitChapterWatched(chapterNo);
+        return d;
+      } catch (e) { console.warn("Heartbeat failed", e?.response?.data || e.message); return null; }
+    });
+    beatQueue.current = job.catch(() => {});
+    return job;
+  };
+
+  const submitChapterWatched = async (chapterNo) => {
+    if (submittingRef.current) return;          // one request at a time (no duplicates)
+    submittingRef.current = true;
+    setMarking(chapterNo);
+    try {
+      const res = await axios.put(`${API_BASE}/api/training/my/${record._id}/chapter/${chapterNo}/watched`, {});
+           onRecordUpdate?.(res.data.data);
+      setNotice(n => ({ ...n, [chapterNo]: "" }));
+    } catch (e) {
+      setNotice(n => ({ ...n, [chapterNo]: e?.response?.data?.message || "Could not mark this chapter complete. Please try again." }));
+    } finally {
+      submittingRef.current = false;
+      setMarking(null);
+    }
+  };
+
+  // Video reached its end → send a last heartbeat, then complete only if the server agrees.
+  const handleVideoEnded = async (chapterNo, snap) => {
+    if (isWatched(chapterNo)) return;
+    const d = await sendBeat(chapterNo, snap);
+    if (d?.ready) submitChapterWatched(chapterNo);
+    else if (!d) setNotice(n => ({ ...n, [chapterNo]: "Could not reach the server to verify your progress. Check your connection, then tap 'Complete chapter' once it appears." }));
+    else setNotice(n => ({ ...n, [chapterNo]: `Only ${d?.percent ?? 0}% of this chapter is verified as watched (need ${REQUIRED_WATCH_PERCENT}%). Tap "Jump to unwatched part" and watch what you skipped.` }));
+  };
+
+  const lastAttempt = record.quizAttempts?.[record.quizAttempts.length - 1];
+  const quizPassed = !!lastAttempt?.passed;
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      {prog.description && <p style={{ fontSize: 13, color: "var(--body)", marginBottom: 14, lineHeight: 1.5 }}>{prog.description}</p>}
+
+      {notYetOpen && (
+        <div style={{ padding: "12px 14px", borderRadius: "var(--radius-md)", background: "var(--bg-soft)", border: "1px solid var(--line)", marginBottom: 14 }}>
+          <p style={{ margin: 0, fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>
+            🔒 This course opens on {startDate.toLocaleDateString("en-IN")}.
+          </p>
+        </div>
+      )}
+      {!notYetOpen && windowClosed && !allWatched && (
+        <div style={{ padding: "12px 14px", borderRadius: "var(--radius-md)", background: "var(--danger-tint)", border: "1px solid #f6c6c1", marginBottom: 14 }}>
+          <p style={{ margin: 0, fontSize: 12.5, color: "var(--danger)", fontWeight: 600 }}>
+            ⏰ The access window for this course has closed. Contact HR to reopen it.
+          </p>
+        </div>
+      )}
+
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--body)" }}>Course progress</span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: allWatched ? "var(--success)" : "var(--brand)" }}>{watchedCount}/{chapters.length} chapters</span>
+        </div>
+        <div style={{ height: 8, background: "var(--bg-soft)", borderRadius: 5, overflow: "hidden" }}>
+          <div style={{ height: "100%", background: allWatched ? "var(--success)" : "var(--brand)", width: `${(watchedCount / chapters.length) * 100}%`, transition: "width .3s" }} />
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+        {chapters.map(ch => {
+          const watched = isWatched(ch.chapterNo);
+          const locked = notYetOpen || (!watched && ch.chapterNo !== nextUnlocked);
+          const isOpen = openChapter === ch.chapterNo;
+          const youtubeId = ch.videoSource === "youtube" ? extractYouTubeId(ch.videoUrl) : null;
+          return (
+            <div key={ch.chapterNo} className="tr-chapter-item" style={{ border: `1px solid ${watched ? "#b7ecd6" : locked ? "var(--line)" : "#c9dcfd"}`, borderRadius: "var(--radius-md)", overflow: "hidden", opacity: locked ? 0.6 : 1 }}>
+              <button
+                className="tr-chapter-header"
+                onClick={() => !locked && setOpenChapter(isOpen ? null : ch.chapterNo)}
+                disabled={locked}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 13px", background: isOpen ? "var(--bg-soft)" : watched ? "var(--success-tint)" : "#fff", border: "none", cursor: locked ? "not-allowed" : "pointer", textAlign: "left" }}
+              >
+                <div style={{ width: 28, height: 28, borderRadius: "50%", background: watched ? "var(--success)" : locked ? "var(--line)" : "var(--brand)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                  {watched ? <CheckCircle2 size={14} /> : locked ? "🔒" : ch.chapterNo}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p className="tr-chapter-title" style={{ margin: 0, fontWeight: 700, fontSize: 13.5, color: "var(--ink)" }}>
+                    Ch {ch.chapterNo}: {ch.title}
+                    {/* ✅ NEW — quiz question-count badge, only when this chapter has one */}
+                    {ch.quizQuestions?.length > 0 && (
+                      <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: "var(--brand)", background: "var(--brand-tint)", borderRadius: 20, padding: "1px 7px", whiteSpace: "nowrap" }}>
+                        📝 Quiz ({ch.quizQuestions.length})
+                      </span>
+                    )}
+                  </p>
+                  {ch.duration && <p style={{ margin: 0, fontSize: 11, color: "var(--muted-2)" }}>{ch.duration}</p>}
+                </div>
+                {!locked && <ChevronRight size={16} color="var(--muted-2)" style={{ transform: isOpen ? "rotate(90deg)" : "none", transition: "transform .15s", flexShrink: 0 }} />}
+              </button>
+
+              {isOpen && !locked && (
+                <div style={{ padding: "11px 13px 15px", borderTop: "1px solid var(--line-soft)" }}>
+                  {ch.description && <p style={{ margin: "0 0 10px", fontSize: 12.5, color: "var(--body)" }}>{ch.description}</p>}
+                  {ch.contentType === "pdf" ? (
+                    // ── PDF chapter — no watch-time to verify, just open it and confirm you read it.
+                    <>
+                      <div className="tr-chapter-video" style={{ marginBottom: 8 }}>
+                        {ch.pdfUrl ? (
+                          <iframe src={ch.pdfUrl} title={ch.title} width="100%" height="420" style={{ border: "1px solid var(--line)", borderRadius: 8 }} />
+                        ) : (
+                          <p style={{ fontSize: 12.5, color: "var(--muted-2)" }}>No PDF attached for this chapter yet.</p>
+                        )}
+                      </div>
+                      {/* ✅ NEW — chapter has a quiz: "Mark as Read" first confirms the PDF
+                          was read (sets contentDone), THEN the quiz appears. Passing it is
+                          what actually marks the chapter watched / unlocks the next one. */}
+                      {!watched && (
+                        isContentDone(ch.chapterNo) && ch.quizQuestions?.length > 0 ? (
+                          <ChapterQuizPanel recordId={record._id} chapterNo={ch.chapterNo} onPassed={(rec) => onRecordUpdate?.(rec)} />
+                        ) : (
+                          <>
+                            {notice[ch.chapterNo] && (
+                              <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--danger, #dc2626)" }}>{notice[ch.chapterNo]}</p>
+                            )}
+                            <button type="button" className="btn btn-sm btn-success fw-bold" style={{ fontSize: 12 }}
+                              disabled={marking === ch.chapterNo || !ch.pdfUrl} onClick={() => submitChapterWatched(ch.chapterNo)}>
+                              {marking === ch.chapterNo ? "Saving…" : "Mark as Read ✓"}
+                            </button>
+                          </>
+                        )
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="tr-chapter-video">
+                        {ch.videoSource === "youtube" ? (
+                          youtubeId ? (
+                            <ChapterYouTubePlayer
+                              youtubeId={youtubeId}
+                              watched={watched}
+                              initial={tracking[ch.chapterNo]?.lastPosition || 0}
+                              onBeat={(snap) => sendBeat(ch.chapterNo, snap)}
+                              onEnded={(snap) => handleVideoEnded(ch.chapterNo, snap)}
+                              onApi={(api) => { playerApis.current[ch.chapterNo] = api; }}
+                            />
+                          ) : (
+                            <iframe width="100%" height="220" src={ch.videoUrl.replace("watch?v=", "embed/")} frameBorder="0" allowFullScreen style={{ borderRadius: 8 }} />
+                          )
+                        ) : (
+                          <ChapterHtml5Player
+                            src={ch.videoUrl}
+                            watched={watched}
+                            initial={tracking[ch.chapterNo]?.lastPosition || 0}
+                            onBeat={(snap) => sendBeat(ch.chapterNo, snap)}
+                            onEnded={(snap) => handleVideoEnded(ch.chapterNo, snap)}
+                            onApi={(api) => { playerApis.current[ch.chapterNo] = api; }}
+                          />
+                        )}
+                      </div>
+                      {!watched && (() => {
+                        const tr = tracking[ch.chapterNo] || {};
+                        const ready = (tr.percent || 0) >= REQUIRED_WATCH_PERCENT;
+                        return (
+                          <>
+                            <WatchMap
+                              ranges={tr.ranges} duration={tr.duration} percent={tr.percent || 0}
+                              onJump={(t) => playerApis.current[ch.chapterNo]?.seekTo(t)}
+                            />
+                            {notice[ch.chapterNo] && (
+                              <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--danger, #dc2626)" }}>{notice[ch.chapterNo]}</p>
+                            )}
+                            {/* ✅ NEW — "Complete chapter" always shows first (marks contentDone
+                                for a quizzed chapter, or completes it outright with no quiz).
+                                The quiz then appears only once that click has gone through. */}
+                            {ready && !isContentDone(ch.chapterNo) && (
+                              <button type="button" className="btn btn-sm btn-success fw-bold" style={{ marginTop: 8, fontSize: 12 }}
+                                disabled={marking === ch.chapterNo} onClick={() => submitChapterWatched(ch.chapterNo)}>
+                                {marking === ch.chapterNo ? "Saving…" : "Complete chapter ✓"}
+                              </button>
+                            )}
+                            {isContentDone(ch.chapterNo) && ch.quizQuestions?.length > 0 && (
+                              <ChapterQuizPanel recordId={record._id} chapterNo={ch.chapterNo} onPassed={(rec) => onRecordUpdate?.(rec)} />
+                            )}
+                            <p style={{ margin: "8px 0 0", fontSize: 11, color: "var(--muted-2)" }}>
+                              Only parts you actually play are counted (speed is locked at 1x). You can rewind or jump around, but skipped parts must be watched to unlock the next chapter.
+                            </p>
+                          </>
+                        );
+                      })()}
+                    </>
+                  )}
+                  {watched && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 8, background: "var(--success-tint)", color: "var(--success)", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
+                      <CheckCircle2 size={11} /> Completed
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ marginTop: 18, padding: "13px 15px", borderRadius: "var(--radius-md)", background: allWatched ? "var(--brand-tint)" : "var(--bg-soft)", border: `1px solid ${allWatched ? "#c9dcfd" : "var(--line)"}` }}>
+        {!allWatched ? (
+          <p style={{ margin: 0, fontSize: 12.5, color: "var(--muted)" }}>Finish all {chapters.length} chapters above to unlock the test.</p>
+        ) : quizPassed ? (
+          <p style={{ margin: 0, fontSize: 12.5, color: "var(--success)", fontWeight: 600 }}>✅ You've passed the quiz — score {lastAttempt.score}%.</p>
+        ) : lastAttempt ? (
+          <p style={{ margin: 0, fontSize: 12.5, color: "var(--warning)", fontWeight: 600 }}>You attempted the quiz but didn't pass. Contact HR to retake.</p>
+        ) : hasProgramQuiz === false ? (
+          <p style={{ margin: 0, fontSize: 12.5, color: "var(--muted)" }}>No quiz has been added for this course yet — check with HR.</p>
+        ) : hasProgramQuiz === null ? (
+          <p style={{ margin: 0, fontSize: 12, color: "var(--muted-2)" }}>Checking…</p>
+        ) : (
+          <>
+            <p style={{ margin: "0 0 9px", fontSize: 12.5, color: "var(--brand)" }}>All chapters done! You get one attempt — answer carefully.</p>
+            <button className="tr-btn" onClick={() => { onOpenQuiz?.(record); onClose?.(); }} style={{ padding: "9px 16px", border: "none", borderRadius: "var(--radius-sm)", fontSize: 12.5, fontWeight: 700, background: "var(--brand)", color: "#fff", cursor: "pointer", width: "100%" }}>
+              Take Test
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* ✅ Certificate area — same shared box used by every program type
+          now (see CertificateStatusBox above). Gated on quizPassed here
+          specifically: if the employee failed the Final Test, the
+          "didn't pass, contact HR" message above already covers it, so
+          we don't also show a certificate box for a failed attempt. */}
+       <CertificateStatusBox record={record} />
+    </div>
+  );
+}
+
+// ─── Chapter Quiz Panel ───────────────────────────────────────────
+// ✅ NEW — optional per-chapter "understanding check" quiz. Renders
+// inline right under the chapter's video/PDF (no modal). Completely
+// separate from the program Final Test: UNLIMITED retries, and passing
+// it is what marks the chapter watched (the parent's onRecordUpdate
+// refreshes chapterProgress, which unlocks the next chapter the same
+// way "Complete chapter"/"Mark as Read" always has).
+function ChapterQuizPanel({ recordId, chapterNo, onPassed }) {
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [questions, setQuestions] = useState(null);
+  const [passThreshold, setPassThreshold] = useState(70);
+  const [answers, setAnswers] = useState({});     // question index -> selected option index
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [result, setResult] = useState(null);      // { score, passed, correctCount, total }
+
+  const loadQuestions = async () => {
+    setLoading(true); setLoadError("");
+    try {
+      const res = await axios.get(`${API_BASE}/api/training/my/${recordId}/chapter/${chapterNo}/quiz`);
+      setQuestions(res.data.data.questions);
+      setPassThreshold(res.data.data.passThreshold || 70);
+    } catch (e) {
+      setLoadError(e?.response?.data?.message || "Could not load the quiz. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadQuestions(); }, [recordId, chapterNo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const retry = () => { setResult(null); setAnswers({}); setSubmitError(""); };
+
+  const submit = async () => {
+    if (!questions || Object.keys(answers).length < questions.length) {
+      setSubmitError("Please answer every question before submitting.");
+      return;
+    }
+    setSubmitting(true); setSubmitError("");
+    try {
+      const payload = { answers: Object.entries(answers).map(([index, selectedOptionIndex]) => ({ index: Number(index), selectedOptionIndex })) };
+      const res = await axios.post(`${API_BASE}/api/training/my/${recordId}/chapter/${chapterNo}/quiz/submit`, payload);
+      const d = res.data.data;
+      setResult(d);
+      if (d.passed) onPassed?.(d.record);
+    } catch (e) {
+      setSubmitError(e?.response?.data?.message || "Could not submit the quiz. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) return <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--muted-2)" }}>Loading quiz…</p>;
+
+  if (loadError) {
+    return (
+      <div style={{ marginTop: 8 }}>
+        <p style={{ margin: "0 0 6px", fontSize: 12, color: "var(--danger, #dc2626)" }}>{loadError}</p>
+        <button type="button" className="btn btn-sm btn-light" onClick={loadQuestions}>Retry</button>
+      </div>
+    );
+  }
+
+  if (!questions?.length) return null;
+
+  if (result?.passed) {
+    return (
+      <p style={{ margin: "8px 0 0", fontSize: 12.5, color: "var(--success)", fontWeight: 700 }}>
+        ✅ You got {result.correctCount}/{result.total} correct — chapter completed!
+      </p>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 8, padding: "10px 12px", background: "#fff", border: "1px solid var(--line)", borderRadius: 8 }}>
+      <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "var(--ink)" }}>📝 Chapter Quiz — {questions.length} question{questions.length > 1 ? "s" : ""}</p>
+      {questions.map((q, qi) => (
+        <div key={qi} style={{ marginBottom: 10 }}>
+          <p style={{ margin: "0 0 6px", fontSize: 12.5, fontWeight: 600, color: "var(--ink)" }}>{qi + 1}. {q.questionText}</p>
+          {q.options.map((opt, oi) => (
+            <label key={oi} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, marginBottom: 4, cursor: "pointer", color: "var(--body)" }}>
+              <input
+                type="radio" name={`cq-${chapterNo}-${qi}`}
+                checked={answers[qi] === oi}
+                onChange={() => setAnswers(a => ({ ...a, [qi]: oi }))}
+              />
+              {opt}
+            </label>
+          ))}
+        </div>
+      ))}
+
+      {result && !result.passed && (
+        <p style={{ margin: "0 0 8px", fontSize: 12.5, color: "var(--warning, #b45309)", fontWeight: 600 }}>
+          You got {result.correctCount}/{result.total} correct ({result.score}%) — need {passThreshold}% to pass. Try again.
+        </p>
+      )}
+      {submitError && <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--danger, #dc2626)" }}>{submitError}</p>}
+
+      <button
+        type="button" className="btn btn-sm btn-success fw-bold" style={{ fontSize: 12 }}
+        disabled={submitting}
+        onClick={result && !result.passed ? retry : submit}
+      >
+        {submitting ? "Submitting…" : result && !result.passed ? "Try Again" : "Submit Quiz"}
+      </button>
+    </div>
+  );
+}
+
+// ✅ Server-verified watch tracking — shared helpers/components ────
+const REQUIRED_WATCH_PERCENT = 90; // keep in sync with the backend
+const BEAT_MS = 5000;              // heartbeat interval while a video plays
+
+const fmtTime = (sec) => {
+  const s = Math.max(0, Math.round(sec));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
+
+// Parts of the video NOT yet verified as watched: [[start,end], ...]
+const computeGaps = (ranges, duration) => {
+  const gaps = [];
+  let cursor = 0;
+  [...(ranges || [])].sort((a, b) => a[0] - b[0]).forEach(([s, e]) => {
+    if (s - cursor > 2) gaps.push([cursor, s]);
+    cursor = Math.max(cursor, e);
+  });
+  if (duration - cursor > 2) gaps.push([cursor, duration]);
+  return gaps;
+};
+
+// Green = verified watched, grey = not watched yet.
+function WatchMap({ ranges, duration, percent, onJump }) {
+  if (!duration) return null;
+  const gaps = computeGaps(ranges, duration);
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ position: "relative", height: 8, borderRadius: 4, background: "var(--line)", overflow: "hidden" }}>
+        {(ranges || []).map(([s, e], i) => (
+          <div key={i} style={{ position: "absolute", top: 0, bottom: 0, left: `${(s / duration) * 100}%`, width: `${((e - s) / duration) * 100}%`, background: "var(--success)" }} />
+        ))}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 5, fontSize: 11, color: "var(--muted-2)", gap: 8, flexWrap: "wrap" }}>
+        <span>Verified watched: <b>{percent}%</b> (need {REQUIRED_WATCH_PERCENT}%)</span>
+        {gaps.length > 0 && percent < REQUIRED_WATCH_PERCENT && (
+          <button type="button" className="btn btn-sm btn-light" style={{ fontSize: 11 }} onClick={() => onJump(gaps[0][0])}>
+            Jump to unwatched part ({fmtTime(gaps[0][0])})
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Uploaded (Cloudinary) chapter video. Sends heartbeats while playing, pauses when the
+// tab is hidden, locks speed to 1x and resumes from the last saved position.
+function ChapterHtml5Player({ src, watched, initial, onBeat, onEnded, onApi }) {
+  const videoRef = useRef(null);
+  const watchedRef = useRef(watched); watchedRef.current = watched;
+  const beatRef = useRef(onBeat); beatRef.current = onBeat;
+  const endedRef = useRef(onEnded); endedRef.current = onEnded;
+  const initialRef = useRef(initial);
+
+  const snapshot = () => {
+    const v = videoRef.current;
+    if (!v || !v.duration || !isFinite(v.duration)) return null;
+    return { position: v.currentTime, duration: v.duration, playing: !v.paused && !v.ended, rate: v.playbackRate };
+  };
+  const flush = () => { if (watchedRef.current) return; const s = snapshot(); if (s) beatRef.current(s); };
+  // ✅ NEW — YouTube-style ▶️5 / ◀️5 seek buttons. Purely a convenience: skipped
+  // seconds still don't count as watched (same rule as dragging the seek bar).
+  const skip = (delta) => { const v = videoRef.current; if (v && v.duration) { v.currentTime = Math.min(Math.max(0, v.currentTime + delta), v.duration); flush(); } };
+
+  useEffect(() => {
+    onApi?.({ seekTo: (t) => { const v = videoRef.current; if (v) { v.currentTime = t; v.play().catch(() => {}); } } });
+    const id = setInterval(() => {
+      const s = snapshot();
+      if (s && s.playing && !document.hidden && !watchedRef.current) beatRef.current(s);
+    }, BEAT_MS);
+    const onVis = () => { if (document.hidden) videoRef.current?.pause(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", onVis); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <video
+        ref={videoRef}
+        src={src}
+        controls
+        controlsList="nodownload noplaybackrate"
+        disablePictureInPicture
+        onLoadedMetadata={(e) => {
+          const v = e.target, start = initialRef.current;
+          if (!watchedRef.current && start > 5 && start < v.duration - 10) v.currentTime = start; // resume
+        }}
+        onRateChange={(e) => { if (e.target.playbackRate !== 1) e.target.playbackRate = 1; }}
+        onPlay={flush}
+        onPause={flush}
+        onEnded={() => {
+          const v = videoRef.current;
+          if (!v || watchedRef.current) return;
+          endedRef.current({ position: v.duration, duration: v.duration, playing: true, rate: 1 });
+        }}
+        style={{ width: "100%", borderRadius: 8, display: "block" }}
+      />
+      <SkipButtons onSkip={skip} />
+    </div>
+  );
+}
+
+// YouTube chapter video — same rules as above using the IFrame Player API.
+function ChapterYouTubePlayer({ youtubeId, watched, initial, onBeat, onEnded, onApi }) {
+  const containerRef = useRef(null);
+  const playerRef = useRef(null);
+  const watchedRef = useRef(watched); watchedRef.current = watched;
+  const beatRef = useRef(onBeat); beatRef.current = onBeat;
+  const endedRef = useRef(onEnded); endedRef.current = onEnded;
+  const initialRef = useRef(initial);
+  // ✅ NEW — same ▶️5 / ◀️5 buttons as the uploaded-video player.
+  const skip = (delta) => {
+    const p = playerRef.current;
+    if (!p) return;
+    try { const d = p.getDuration(); if (d) p.seekTo(Math.min(Math.max(0, p.getCurrentTime() + delta), d), true); } catch (e) {}
+  };
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    let cancelled = false;
+    let beatId = null, rateId = null, YTapi = null;
+
+    const snapshot = () => {
+      const p = playerRef.current;
+      try {
+        const duration = p.getDuration();
+        if (!duration) return null;
+        return { position: p.getCurrentTime(), duration, playing: p.getPlayerState() === YTapi.PlayerState.PLAYING, rate: p.getPlaybackRate() };
+      } catch (e) { return null; }
+    };
+    const flush = () => { if (watchedRef.current) return; const s = snapshot(); if (s) beatRef.current(s); };
+    const onVis = () => { if (document.hidden) { try { playerRef.current?.pauseVideo(); } catch (e) {} } };
+    document.addEventListener("visibilitychange", onVis);
+
+    loadYouTubeApi().then((YT) => {
+      if (cancelled || !containerRef.current) return;
+      YTapi = YT;
+      playerRef.current = new YT.Player(containerRef.current, {
+        videoId: youtubeId,
+        playerVars: { rel: 0 },
+        events: {
+          onReady: () => {
+            const start = initialRef.current;
+            if (start > 5 && !watchedRef.current) playerRef.current.seekTo(start, true); // resume
+            onApi?.({ seekTo: (t) => { try { playerRef.current.seekTo(t, true); playerRef.current.playVideo(); } catch (e) {} } });
+            rateId = setInterval(() => {
+              try { if (playerRef.current.getPlaybackRate() !== 1) playerRef.current.setPlaybackRate(1); } catch (e) {}
+            }, 1000);
+            beatId = setInterval(() => {
+              const s = snapshot();
+              if (s && s.playing && !document.hidden && !watchedRef.current) beatRef.current(s);
+            }, BEAT_MS);
+          },
+          onStateChange: (e) => {
+            if (watchedRef.current) return;
+            if (e.data === YT.PlayerState.PLAYING || e.data === YT.PlayerState.PAUSED) flush();
+            if (e.data === YT.PlayerState.ENDED) {
+              const s = snapshot();
+              if (s) endedRef.current({ position: s.duration, duration: s.duration, playing: true, rate: 1 });
+            }
+          },
+        },
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      if (beatId) clearInterval(beatId);
+      if (rateId) clearInterval(rateId);
+      document.removeEventListener("visibilitychange", onVis);
+      playerRef.current?.destroy?.();
+      playerRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [youtubeId]);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={{ width: "100%", aspectRatio: "16/9", borderRadius: 8, overflow: "hidden" }}>
+        <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
+      </div>
+      <SkipButtons onSkip={skip} />
+    </div>
+  );
+}
+
+// ✅ NEW — ▶️5 / ◀️5 seek buttons, styled like YouTube's own double-tap skip.
+function SkipButtons({ onSkip }) {
+  const [flash, setFlash] = useState(null); // "back" | "fwd" | null — brief "±5" pulse
+  const hit = (dir) => {
+    onSkip(dir === "fwd" ? 5 : -5);
+    setFlash(dir);
+    setTimeout(() => setFlash(null), 450);
+  };
+  const btnStyle = {
+    position: "absolute", top: "50%", transform: "translateY(-50%)",
+    width: 34, height: 34, borderRadius: "50%", border: "none",
+    background: "rgba(17,17,17,.55)", color: "#fff", fontSize: 11, fontWeight: 700,
+    display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 2,
+  };
+  return (
+    <>
+      <button type="button" aria-label="Back 5 seconds" onClick={() => hit("back")} style={{ ...btnStyle, left: 8 }}>◀5</button>
+      <button type="button" aria-label="Forward 5 seconds" onClick={() => hit("fwd")} style={{ ...btnStyle, right: 8 }}>5▶</button>
+      {flash && (
+        <div style={{
+          position: "absolute", top: "50%", [flash === "fwd" ? "right" : "left"]: 50,
+          transform: "translateY(-50%)", background: "rgba(17,17,17,.7)", color: "#fff",
+          padding: "4px 9px", borderRadius: 14, fontSize: 12, fontWeight: 700, pointerEvents: "none",
+        }}>
+          {flash === "fwd" ? "+5" : "-5"}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1142,7 +1935,7 @@ export default function TrainingRoadmapEmployee() {
             </div>
           ) : (
             <div className="tr-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
-                                       {records.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} onViewDetails={setDetailsRecord} />)}
+                                       {records.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onViewDetails={setDetailsRecord} />)}
             </div>
           )
         )}
@@ -1156,7 +1949,7 @@ export default function TrainingRoadmapEmployee() {
             </div>
           ) : (
             <div className="tr-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
-                            {pending.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} />)}
+                            {pending.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onViewDetails={setDetailsRecord} />)}
             </div>
           )
         )}
@@ -1170,7 +1963,7 @@ export default function TrainingRoadmapEmployee() {
             </div>
           ) : (
             <div className="tr-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
-                                        {inProgress.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} onViewDetails={setDetailsRecord} />)}
+                                        {inProgress.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onViewDetails={setDetailsRecord} />)}
             </div>
           )
         )}
@@ -1198,7 +1991,7 @@ export default function TrainingRoadmapEmployee() {
                 </div>
               )}
               <div className="tr-cards-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
-                                             {completed.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onSubmit={handleSubmitForReview} onViewDetails={setDetailsRecord} />)}
+                                             {completed.map(r => <TrainingCard key={r._id} record={r} onStart={handleStart} onViewDetails={setDetailsRecord} />)}
               </div>
             </div>
           )

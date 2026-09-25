@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
+import { uploadVideoChunked, uploadPdfDirect } from "../../utils/cloudinaryChunkedUpload";
 import {
   BookOpen, Users, Target, Award, CheckCircle2, Clock,
   AlertTriangle, Plus, Pencil, X, Check, RefreshCw,
@@ -9,6 +10,26 @@ import {
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+// ── Video length helpers ─────────────────────────────────────────
+// Chapter length is auto-detected (Cloudinary upload response / first play),
+// never typed by HR. Program length = total of its chapters when all are known.
+const fmtVideoLen = (sec) => {
+  const mins = Math.max(1, Math.round(Number(sec) / 60));
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return h ? `${h} hr${m ? ` ${m} min` : ""}` : `${m} min`;
+};
+const parseVideoLen = (str) => {
+  const h = /(\d+)\s*hr/i.exec(str || ""), m = /(\d+)\s*min/i.exec(str || "");
+  return ((h ? +h[1] : 0) * 60 + (m ? +m[1] : 0)) * 60;
+};
+const programLength = (p) => {
+  if (p?.chapters?.length) {
+    const secs = p.chapters.map(c => parseVideoLen(c.duration));
+    return secs.every(x => x > 0) ? fmtVideoLen(secs.reduce((a, b) => a + b, 0)) : "";
+  }
+  return p?.duration || "";
+};
 
 // ─── Constants ────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -50,6 +71,92 @@ const TYPES       = ["induction","job_role","cross_functional","culture","refres
 
 const labelStyle = { fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4, display:"block" };
 
+// ─── Chapter Progress Helper ────────────────────────────────────
+// ✅ NEW — for a multi-chapter course record, boils down record.chapterProgress
+// + programId.chapters into one summary object: how many chapters are done,
+// where the employee currently is, whether they look "stuck", and how the
+// chapter-level quizzes (separate from the Final Test) are going. Returns
+// null for a non-chapter program so callers can just skip rendering.
+const STUCK_QUIZ_ATTEMPTS = 3;   // 3+ failed attempts on the current chapter's quiz
+const STUCK_IDLE_DAYS     = 5;   // no activity at all for 5+ days
+function getChapterInfo(record) {
+  const chapters = record.programId?.chapters || [];
+  const total = chapters.length;
+  if (!total) return null;
+
+  const sorted = [...chapters].sort((a, b) => a.chapterNo - b.chapterNo);
+  const cpByNo = new Map((record.chapterProgress || []).map(cp => [cp.chapterNo, cp]));
+  const completed = sorted.filter(c => cpByNo.get(c.chapterNo)?.watched).length;
+  const percent = Math.round((completed / total) * 100);
+
+  const currentChapter = sorted.find(c => !cpByNo.get(c.chapterNo)?.watched) || null;
+  const currentCp = currentChapter ? cpByNo.get(currentChapter.chapterNo) : null;
+  const currentHasQuiz = (currentChapter?.quizQuestions?.length || 0) > 0;
+  const currentAttempts = currentCp?.quizAttempts?.length || 0;
+  const currentBestScore = currentCp?.quizAttempts?.length
+    ? Math.max(...currentCp.quizAttempts.map(a => a.score || 0))
+    : null;
+
+  // Most recent activity anywhere in the course — used only for the
+  // "no progress in N days" stuck signal.
+  const activityDates = [];
+  (record.chapterProgress || []).forEach(cp => {
+    if (cp.watchedAt) activityDates.push(new Date(cp.watchedAt));
+    if (cp.contentDoneAt) activityDates.push(new Date(cp.contentDoneAt));
+    (cp.quizAttempts || []).forEach(a => { if (a.attemptedAt) activityDates.push(new Date(a.attemptedAt)); });
+  });
+  if (record.startedDate) activityDates.push(new Date(record.startedDate));
+  const lastActivity = activityDates.length ? new Date(Math.max(...activityDates.map(d => d.getTime()))) : null;
+  const daysSinceActivity = lastActivity ? Math.floor((Date.now() - lastActivity.getTime()) / 86400000) : null;
+
+  const stuckOnQuiz = currentHasQuiz && currentAttempts >= STUCK_QUIZ_ATTEMPTS;
+  const stuckOnIdle = daysSinceActivity !== null && daysSinceActivity >= STUCK_IDLE_DAYS;
+  const stuck = completed < total && (stuckOnQuiz || stuckOnIdle);
+
+  const quizChapters = sorted.filter(c => (c.quizQuestions?.length || 0) > 0);
+  const quizPassedCount = quizChapters.filter(c => cpByNo.get(c.chapterNo)?.watched).length;
+
+  return {
+    total, completed, percent, sorted, cpByNo,
+    currentChapter, currentCp, currentHasQuiz, currentAttempts, currentBestScore,
+    stuck, stuckOnQuiz, stuckOnIdle, daysSinceActivity,
+    quizChapterCount: quizChapters.length, quizPassedCount,
+  };
+}
+
+// Small colour/label lookup the chip and the modal both use, so a
+// program's progress always reads the same way everywhere in HR.
+function chapterInfoStyle(info) {
+  if (info.completed === 0) return { bg: "#f3f4f6", color: "#6b7280", label: "Not started" };
+  if (info.percent === 100) return { bg: "#d1fae5", color: "#059669", label: "All chapters done" };
+  if (info.stuck)           return { bg: "#ffedd5", color: "#c2410c", label: "Stuck" };
+  return { bg: "#dbeafe", color: "#2563eb", label: "In progress" };
+}
+
+// ─── Chapter Progress Chip ──────────────────────────────────────
+// ✅ NEW — compact "42/50 chapters" pill for the Records and Compliance
+// Log tables, so HR can spot a stuck employee at a glance without
+// opening every record. Renders nothing for non-chapter programs.
+function ChapterProgressChip({ record }) {
+  const info = getChapterInfo(record);
+  if (!info) return null;
+  const s = chapterInfoStyle(info);
+  const title = info.stuck
+    ? (info.stuckOnQuiz
+        ? `Stuck on Chapter ${info.currentChapter?.chapterNo} — quiz attempted ${info.currentAttempts} times`
+        : `No activity for ${info.daysSinceActivity}+ days`)
+    : `${info.completed} of ${info.total} chapters completed`;
+  return (
+    <span
+      title={title}
+      style={{ display: "inline-flex", alignItems: "center", gap: 4, background: s.bg, color: s.color, borderRadius: 20, padding: "2px 9px", fontSize: 10, fontWeight: 700, marginTop: 4 }}
+    >
+      {info.completed}/{info.total} chapters
+      {info.stuck && info.percent < 100 ? " · stuck" : ""}
+    </span>
+  );
+}
+
 // ─── Stat Card ────────────────────────────────────────────────
 function StatCard({ label, value, sub, color, bg, icon }) {
   return (
@@ -76,6 +183,7 @@ function AssignModal({ programs, employees, onClose, onSave }) {
   const [employeeIds, setEmpIds]= useState([]);
   const [programId, setProgId]  = useState("");
   const [dueDate, setDueDate]   = useState("");
+  const [dueAuto, setDueAuto]   = useState(false); // true while dueDate was auto-filled from the course end date
   const [notes, setNotes]       = useState("");
   const [saving, setSaving]     = useState(false);
   const [deptFilter, setDeptFilter] = useState("all");
@@ -126,7 +234,12 @@ const [modal, setModal] = useState(null);
             <div className="row g-3">
               <div className="col-md-6">
                 <label style={labelStyle}>Training Program *</label>
-                <select className="form-select form-select-sm" value={programId} onChange={e=>setProgId(e.target.value)}>
+                <select className="form-select form-select-sm" value={programId} onChange={e=>{
+                  const id = e.target.value;
+                  setProgId(id);
+                  const p = programs.find(x => x._id === id);
+                  if (p?.accessEndDate && (!dueDate || dueAuto)) { setDueDate(new Date(p.accessEndDate).toISOString().slice(0,10)); setDueAuto(true); }
+                }}>
                   <option value="">-- Select Program --</option>
                   {programs.map(p=>(
                     <option key={p._id} value={p._id}>{p.title} ({LEVEL_CONFIG[p.level]?.label || p.level})</option>
@@ -134,8 +247,13 @@ const [modal, setModal] = useState(null);
                 </select>
               </div>
               <div className="col-md-6">
-                <label style={labelStyle}>Due Date</label>
-                <input type="date" className="form-control form-control-sm" value={dueDate} onChange={e=>setDueDate(e.target.value)} />
+                <label style={labelStyle}>Due Date (deadline)</label>
+                <input type="date" className="form-control form-control-sm" value={dueDate}
+                  max={(() => { const p = programs.find(x => x._id === programId); return p?.accessEndDate ? new Date(p.accessEndDate).toISOString().slice(0,10) : undefined; })()}
+                  onChange={e=>{ setDueDate(e.target.value); setDueAuto(false); }} />
+                <div className="text-muted" style={{ fontSize: 10.5, marginTop: 3 }}>
+                  Employee shows as Overdue after this date. Auto-filled from the course end date; leave blank for no deadline.
+                </div>
               </div>
 
                {mode === "single" ? (
@@ -212,7 +330,9 @@ function UpdateRecordModal({ record, onClose, onSave }) {
   });
   const [saving, setSaving] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false); // ✅ NEW — collapsed by default
+  const [showChapters, setShowChapters] = useState(false); // ✅ NEW — full chapter list, collapsed by default
   const lastAttempt = record.quizAttempts?.[record.quizAttempts.length - 1]; // ✅ NEW — latest quiz submission, for HR context
+  const chapterInfo = getChapterInfo(record); // ✅ NEW — null for non-chapter programs
 
   return (
     <div className="modal show d-block" style={{ background:"rgba(15,23,42,.45)", zIndex:1055 }}>
@@ -229,6 +349,66 @@ function UpdateRecordModal({ record, onClose, onSave }) {
             <button className="btn-close" onClick={onClose} />
           </div>
           <div className="modal-body d-flex flex-column gap-3">
+            {/* ✅ NEW — Chapter Progress: multi-chapter courses only. Shows
+                exactly where the employee is in the 50-chapter course (not
+                just the Final Test result below) — how many chapters are
+                done, which one they're stuck on, and how the per-chapter
+                quizzes are going — without dumping all 50 rows by default. */}
+            {chapterInfo && (
+              <div style={{ background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:9, padding:"12px 14px" }}>
+                <div className="d-flex align-items-center justify-content-between mb-2">
+                  <p className="mb-0 fw-bold" style={{ fontSize:12.5 }}>Chapter Progress</p>
+                  <span className="badge" style={{ background: chapterInfoStyle(chapterInfo).bg, color: chapterInfoStyle(chapterInfo).color, fontSize:11 }}>
+                    {chapterInfo.completed}/{chapterInfo.total} · {chapterInfoStyle(chapterInfo).label}
+                  </span>
+                </div>
+                <div style={{ height:7, background:"#e5e7eb", borderRadius:5, overflow:"hidden", marginBottom:8 }}>
+                  <div style={{ height:"100%", width:`${chapterInfo.percent}%`, background: chapterInfo.percent===100 ? "#10b981" : chapterInfo.stuck ? "#f97316" : "#3b82f6", transition:"width .3s" }} />
+                </div>
+
+                {chapterInfo.currentChapter && (
+                  <p className="mb-1" style={{ fontSize:11.5, color: chapterInfo.stuck ? "#c2410c" : "#6b7280" }}>
+                    📍 Currently on Chapter {chapterInfo.currentChapter.chapterNo} — {chapterInfo.currentChapter.title}
+                    {chapterInfo.currentHasQuiz && chapterInfo.currentAttempts > 0
+                      ? ` · quiz attempted ${chapterInfo.currentAttempts} time${chapterInfo.currentAttempts > 1 ? "s" : ""}, best score ${chapterInfo.currentBestScore}% (needs 70%)`
+                      : ""}
+                    {chapterInfo.stuckOnIdle ? ` · no activity for ${chapterInfo.daysSinceActivity}+ days` : ""}
+                  </p>
+                )}
+
+                {chapterInfo.quizChapterCount > 0 && (
+                  <p className="mb-1 text-muted" style={{ fontSize:11 }}>
+                    {chapterInfo.quizChapterCount} chapter{chapterInfo.quizChapterCount > 1 ? "s have" : " has"} a quiz — {chapterInfo.quizPassedCount} passed, {chapterInfo.quizChapterCount - chapterInfo.quizPassedCount} pending
+                  </p>
+                )}
+
+                <button type="button" className="btn btn-sm btn-outline-secondary mt-1" style={{ fontSize:11 }}
+                  onClick={() => setShowChapters(v => !v)}>
+                  {showChapters ? "Hide" : "View"} full chapter list ({chapterInfo.total})
+                </button>
+
+                {showChapters && (
+                  <div className="mt-2" style={{ maxHeight:220, overflowY:"auto", border:"1px solid #e5e7eb", borderRadius:7, background:"#fff" }}>
+                    {chapterInfo.sorted.map(c => {
+                      const cp = chapterInfo.cpByNo.get(c.chapterNo);
+                      const hasQuiz = (c.quizQuestions?.length || 0) > 0;
+                      const watched = !!cp?.watched;
+                      return (
+                        <div key={c.chapterNo} className="d-flex align-items-center justify-content-between px-2 py-1" style={{ fontSize:11, borderBottom:"1px solid #f1f2f4" }}>
+                          <span>{watched ? "✅" : "⬜"} Ch.{c.chapterNo} — {c.title}</span>
+                          <span className="text-muted">
+                            {hasQuiz
+                              ? (cp?.lastScore != null ? `${cp.lastScore}% ${watched ? "(passed)" : "(pending)"}` : "quiz: not attempted")
+                              : (watched ? "watched" : "—")}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ✅ NEW — quiz result banner, shown when the employee has submitted the test */}
             {lastAttempt && (
               <div className="d-flex align-items-center gap-2" style={{
@@ -571,10 +751,206 @@ function QuizQuestionsManagerModal({ onClose, showMsg }) {
   );
 }
 
+// ─── Certificate Requests Panel (HR uploads certificate per employee) ──
+// ✅ NEW — lists every record where the employee has requested a
+// certificate (finished every chapter + passed quiz). HR picks a file
+// and uploads it here; the employee can download it right after.
+function CertificateRequestsPanel({ records, onUploaded }) {
+  const [uploadingId, setUploadingId] = useState(null);
+  const [fileFor, setFileFor] = useState({}); // recordId -> File
+
+  const handleUpload = async (recordId) => {
+    const file = fileFor[recordId];
+    if (!file) return;
+    setUploadingId(recordId);
+    try {
+      const fd = new FormData();
+      fd.append("certificate", file);
+      await axios.put(`${API_BASE}/api/training/records/${recordId}/certificate`, fd);
+      onUploaded?.();
+    } catch (e) {
+      alert(e?.response?.data?.message || "Failed to upload certificate");
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  if (records.length === 0) {
+    return <div className="text-center text-muted py-5" style={{ fontSize: 13 }}>No certificate requests yet.</div>;
+  }
+
+  return (
+    <div className="card border-0 shadow-sm" style={{ borderRadius: 12 }}>
+      <div className="table-responsive">
+        <table className="table table-sm align-middle mb-0">
+          <thead style={{ background: "#f9fafb" }}>
+            <tr>
+              <th style={{ fontSize: 11.5 }}>Employee</th>
+              <th style={{ fontSize: 11.5 }}>Training</th>
+              <th style={{ fontSize: 11.5 }}>Requested On</th>
+              <th style={{ fontSize: 11.5 }}>Status</th>
+              <th style={{ fontSize: 11.5 }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {records.map(r => (
+              <tr key={r._id}>
+                <td style={{ fontSize: 12.5, fontWeight: 600 }}>{r.employeeId?.name || "-"}</td>
+                <td style={{ fontSize: 12.5 }}>{r.programId?.title || "-"}</td>
+                <td style={{ fontSize: 12 }}>{r.certificateRequestedAt ? new Date(r.certificateRequestedAt).toLocaleDateString("en-IN") : "-"}</td>
+                <td>
+                  {r.certificateRequestStatus === "issued" ? (
+                    <span className="badge bg-success-subtle text-success" style={{ fontSize: 11 }}>Issued</span>
+                  ) : (
+                    <span className="badge bg-warning-subtle text-warning" style={{ fontSize: 11 }}>Pending</span>
+                  )}
+                </td>
+                <td>
+                  {r.certificateRequestStatus === "issued" ? (
+                    <a href={r.certificateUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-light" style={{ fontSize: 11 }}>View</a>
+                  ) : (
+                    <div className="d-flex align-items-center gap-2">
+                      <input
+                        type="file"
+                        accept="application/pdf,image/*"
+                        style={{ fontSize: 11, maxWidth: 160 }}
+                        className="form-control form-control-sm"
+                        onChange={e => setFileFor(prev => ({ ...prev, [r._id]: e.target.files[0] || null }))}
+                      />
+                      <button
+                        className="btn btn-sm btn-success"
+                        style={{ fontSize: 11 }}
+                        disabled={!fileFor[r._id] || uploadingId === r._id}
+                        onClick={() => handleUpload(r._id)}
+                      >
+                        {uploadingId === r._id ? "Uploading..." : "Upload"}
+                      </button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── Create Training Program Modal ────────────────────────────
 function CreateProgramModal({ onClose, onSave, editingProgram }) {
   const isEditing = !!editingProgram;
   const [title, setTitle]             = useState(editingProgram?.title || "");
+  // ✅ NEW — course-level description shown above the chapter list
+  const [description, setDescription] = useState(editingProgram?.description || "");
+  // ✅ NEW — multi-chapter course builder. Each chapter keeps its own
+  // title/description/video. `videoFile` (local, not sent as-is) holds
+  // a newly-picked File until submit, when it's collected into the
+  // chapterVideos[] FormData array and swapped for a fileIndex.
+  // Each chapter gets a stable `uid` (row index changes when chapters are removed) and an
+  // `upload` object: { status: queued|uploading|done|error, pct, fileName, url, publicId, duration }.
+  const uidRef = useRef(0);
+  const newUid = () => `c${Date.now()}-${uidRef.current++}`;
+  const [chapters, setChapters] = useState(
+    (editingProgram?.chapters || []).map(ch => ({ ...ch, contentType: ch.contentType || "video", videoFile: null, uid: newUid(), upload: null }))
+  );
+  const [useChapters, setUseChapters] = useState((editingProgram?.chapters || []).length > 0);
+  // ✅ NEW — HR-only access window (from date – to date) for chapter courses
+  const [accessStartDate, setAccessStartDate] = useState(
+    editingProgram?.accessStartDate ? new Date(editingProgram.accessStartDate).toISOString().slice(0,10) : ""
+  );
+  const [accessEndDate, setAccessEndDate] = useState(
+    editingProgram?.accessEndDate ? new Date(editingProgram.accessEndDate).toISOString().slice(0,10) : ""
+  );
+  const addChapter = () => setChapters(prev => [
+    ...prev,
+    { uid: newUid(), upload: null, chapterNo: prev.length + 1, title: "", description: "", contentType: "video", videoSource: "upload", videoUrl: "", videoFile: null, duration: "", quizQuestions: [] },
+  ]);
+  const removeChapter = (idx) => {
+    const uid = chapters[idx]?.uid;
+    if (uid) cancelUpload(uid);
+    setChapters(prev => prev.filter((_, i) => i !== idx).map((ch, i) => ({ ...ch, chapterNo: i + 1 })));
+  };
+  const updateChapter = (idx, patch) => setChapters(prev =>
+    prev.map((ch, i) => i === idx ? { ...ch, ...patch } : ch)
+  );
+
+  // ✅ NEW — optional per-chapter quiz builder. Stored on the chapter
+  // object as quizQuestions: [{questionText, options[4], correctOptionIndex}];
+  // `quizOpen` is a UI-only flag (collapsible section), never sent to
+  // the server — the chaptersMeta map below picks only the fields it wants.
+  const addQuizQuestion = (idx) => setChapters(prev => prev.map((ch, i) => i === idx
+    ? { ...ch, quizOpen: true, quizQuestions: [...(ch.quizQuestions || []), { questionText: "", options: ["", "", "", ""], correctOptionIndex: 0 }] }
+    : ch
+  ));
+  const updateQuizQuestion = (idx, qIdx, patch) => setChapters(prev => prev.map((ch, i) => i === idx
+    ? { ...ch, quizQuestions: ch.quizQuestions.map((q, j) => j === qIdx ? { ...q, ...patch } : q) }
+    : ch
+  ));
+  const updateQuizOption = (idx, qIdx, optIdx, value) => setChapters(prev => prev.map((ch, i) => i === idx
+    ? { ...ch, quizQuestions: ch.quizQuestions.map((q, j) => j === qIdx ? { ...q, options: q.options.map((o, k) => k === optIdx ? value : o) } : q) }
+    : ch
+  ));
+  const removeQuizQuestion = (idx, qIdx) => setChapters(prev => prev.map((ch, i) => i === idx
+    ? { ...ch, quizQuestions: ch.quizQuestions.filter((_, j) => j !== qIdx) }
+    : ch
+  ));
+
+  // ✅ Background uploads — a video starts uploading (chunked, straight to Cloudinary) the moment
+  // it is picked, 2 at a time, so "Create Program" only has to save URLs.
+  const MAX_PARALLEL_UPLOADS = 2;
+  const MAX_VIDEO_MB = 200; // per-video limit (raise it if your Cloudinary plan allows bigger files)
+  const MAX_PDF_MB = 20;    // per-PDF limit
+  const controllersRef = useRef({}); // uid -> AbortController
+  const queueRef = useRef([]);       // waiting upload jobs
+  const activeRef = useRef(0);       // running upload jobs
+  const patchByUid = (uid, patch) => setChapters(prev => prev.map(c => c.uid === uid ? { ...c, ...patch } : c));
+  const pumpQueue = () => {
+    while (activeRef.current < MAX_PARALLEL_UPLOADS && queueRef.current.length) {
+      const job = queueRef.current.shift();
+      activeRef.current++;
+      job().finally(() => { activeRef.current--; pumpQueue(); });
+    }
+  };
+  const startUpload = (uid, file, kind = "video") => {
+    controllersRef.current[uid]?.abort();
+    const ctrl = new AbortController();
+    controllersRef.current[uid] = ctrl;
+    patchByUid(uid, { videoFile: file, upload: { status: "queued", pct: 0, fileName: file.name, kind } });
+    queueRef.current.push(async () => {
+      if (ctrl.signal.aborted) return;
+      const set = (u) => { if (!ctrl.signal.aborted) patchByUid(uid, { upload: { fileName: file.name, kind, ...u } }); };
+      set({ status: "uploading", pct: 0 });
+      try {
+        const r = kind === "pdf"
+          ? await uploadPdfDirect(file, ctrl.signal)
+          : await uploadVideoChunked(file, pct => set({ status: "uploading", pct }), ctrl.signal);
+        set({ status: "done", pct: 100, url: r.url, publicId: r.publicId, duration: r.duration });
+      } catch (e) {
+        set({ status: "error", pct: 0, error: e.message });
+      }
+    });
+    pumpQueue();
+  };
+  const cancelUpload = (uid) => {
+    controllersRef.current[uid]?.abort();
+    delete controllersRef.current[uid];
+    patchByUid(uid, { videoFile: null, upload: null });
+  };
+  const abortAllUploads = () => Object.values(controllersRef.current).forEach(c => c.abort());
+  const uploadingCount = chapters.filter(c => c.upload && (c.upload.status === "uploading" || c.upload.status === "queued")).length;
+  useEffect(() => () => abortAllUploads(), []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!uploadingCount) return;
+    const warn = (e) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [uploadingCount]);
+  const requestClose = () => {
+    if (uploadingCount > 0 && !window.confirm(`${uploadingCount} video(s) are still uploading. Cancel them and close?`)) return;
+    abortAllUploads();
+    onClose();
+  };
   const [duration, setDuration]        = useState(editingProgram?.duration || "");
   const [conductedBy, setConductedBy]  = useState(editingProgram?.conductedBy || "");
   const [modulesText, setModulesText]  = useState((editingProgram?.modules || []).join(", "));
@@ -627,15 +1003,84 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
 
   const handleSubmit = async () => {
     if (!title.trim()) return setError("Title is required");
+    if (useChapters) {
+      const stillUploading = chapters.filter(c => (c.contentType === "pdf" || c.videoSource !== "youtube") && c.upload && (c.upload.status === "uploading" || c.upload.status === "queued")).length;
+      const failed = chapters.filter(c => (c.contentType === "pdf" || c.videoSource !== "youtube") && c.upload?.status === "error");
+      if (stillUploading) return setError(`${stillUploading} video(s) are still uploading — please wait until they finish.`);
+      if (failed.length) return setError(`Chapter ${failed[0].chapterNo}'s video failed to upload. Use Retry, or pick the file again.`);
+    }
     setError("");
     setSaving(true);
 
+    if (useChapters && chapters.some(ch => !ch.title.trim())) {
+      setSaving(false);
+      return setError("Every chapter needs a title");
+    }
+    // ✅ NEW — every chapter quiz question needs its text + all 4 options filled
+    if (useChapters) {
+      const badChapter = chapters.find(ch =>
+        (ch.quizQuestions || []).some(q => !q.questionText.trim() || q.options.some(o => !o.trim()))
+      );
+      if (badChapter) {
+        setSaving(false);
+        return setError(`Chapter ${badChapter.chapterNo}: every quiz question needs text and all 4 options filled in`);
+      }
+    }
+
     const fd = new FormData();
     fd.append("title", title.trim());
+    fd.append("description", description.trim());
     fd.append("department", department);
-    fd.append("duration", duration);
+    fd.append("duration", useChapters ? "" : duration); // chapter courses: length = total of chapters (auto)
     fd.append("certification", hasCertification ? certification.trim() : "");
     fd.append("conductedBy", conductedBy);
+
+    // ✅ NEW — chapters[] + chapterVideos[] + access window. Only sent
+    // when "Multi-chapter course" is on; otherwise the program behaves
+    // exactly like before (single video/PDF below).
+    if (useChapters) {
+      // Videos were already uploaded straight to Cloudinary when they were picked;
+      // here we only collect the finished results (URL + public id + length).
+      const uploaded = {}; // chapter index -> { url, publicId, duration }
+      chapters.forEach((ch, i) => {
+        if ((ch.contentType === "pdf" || ch.videoSource !== "youtube") && ch.upload?.status === "done") uploaded[i] = ch.upload;
+      });
+
+      const chaptersMeta = chapters.map((ch, i) => {
+        const out = { chapterNo: ch.chapterNo, title: ch.title.trim(), description: ch.description.trim(), contentType: ch.contentType || "video", duration: ch.duration, videoSource: ch.videoSource };
+        // ✅ NEW — optional per-chapter quiz, sent through untouched
+        out.quizQuestions = (ch.quizQuestions || []).map(q => ({
+          questionText: q.questionText.trim(),
+          options: q.options.map(o => o.trim()),
+          correctOptionIndex: q.correctOptionIndex,
+        }));
+        if (ch.contentType === "pdf") {
+          // PDF chapter: keep the existing PDF unless a new one finished uploading in this edit.
+          const orig = editingProgram?.chapters?.find(o => o.chapterNo === ch.chapterNo);
+          out.pdfUrl = uploaded[i]?.url || orig?.pdfUrl || "";
+          out.pdfPublicId = uploaded[i]?.publicId || orig?.pdfPublicId || "";
+          out.duration = "";
+        } else if (uploaded[i]) {
+          out.videoSource = "upload";
+          out.videoUrl = uploaded[i].url;
+          out.videoPublicId = uploaded[i].publicId;
+          out.duration = uploaded[i].duration ? fmtVideoLen(uploaded[i].duration) : "";
+        } else if (ch.videoSource === "youtube") {
+          out.videoUrl = ch.videoUrl.trim();
+          const orig = editingProgram?.chapters?.find(o => o.chapterNo === ch.chapterNo);
+          if (!orig || orig.videoUrl !== out.videoUrl) out.duration = ""; // new link → length refills on first play
+        } else {
+          out.videoUrl = ch.videoUrl || ""; // keep existing uploaded url when editing, unchanged
+          out.videoPublicId = ch.videoPublicId || "";
+        }
+        return out;
+      });
+      fd.append("chapters", JSON.stringify(chaptersMeta));
+      fd.append("accessStartDate", accessStartDate || "");
+      fd.append("accessEndDate", accessEndDate || "");
+    } else {
+      fd.append("chapters", JSON.stringify([]));
+    }
 
         const modules = modulesText.split(",").map(m => m.trim()).filter(Boolean);
     fd.append("modules", JSON.stringify(modules));
@@ -673,7 +1118,7 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
               {isEditing ? <Pencil size={16} color="#3b82f6" /> : <Plus size={18} color="#10b981" />}
               <p className="mb-0 fw-bold" style={{ fontSize: 14 }}>{isEditing ? "Edit Training Program" : "Create Training Program"}</p>
             </div>
-            <button className="btn-close" onClick={onClose} />
+            <button className="btn-close" onClick={requestClose} />
           </div>
 
           <div className="modal-body">
@@ -690,6 +1135,243 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
                   placeholder="e.g. Excel Training"
                 />
               </div>
+
+              {/* ✅ NEW — course-level description, shown above the chapter list on the employee side */}
+              <div className="col-12">
+                <label style={labelStyle}>Course Description</label>
+                <textarea
+                  className="form-control form-control-sm"
+                  rows="2"
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder="e.g. A complete sales team management program covering sales planning, target setting..."
+                />
+              </div>
+
+              {/* ✅ NEW — Multi-chapter course toggle */}
+              <div className="col-12">
+                <div className="form-check form-switch d-flex align-items-center gap-2" style={{ background: "#f9fafb", borderRadius: 8, padding: "8px 12px", border: "1px solid #e5e7eb" }}>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    checked={useChapters}
+                    onChange={e => { setUseChapters(e.target.checked); if (e.target.checked && chapters.length === 0) addChapter(); }}
+                    style={{ width: 34, height: 18 }}
+                  />
+                  <label className="form-check-label" style={{ fontSize: 12.5, fontWeight: 600 }}>
+                    Multi-chapter course (e.g. "66 video sessions" — each chapter unlocks only after the previous one is finished)
+                  </label>
+                </div>
+              </div>
+
+              {/* ✅ NEW — Chapter builder + HR access window, only when the toggle above is on */}
+              {useChapters && (
+                <div className="col-12">
+                  <div className="row g-2 mb-3">
+                    <div className="col-md-6">
+                      <label style={labelStyle}>Course Available From</label>
+                      <input type="date" className="form-control form-control-sm" value={accessStartDate} onChange={e => setAccessStartDate(e.target.value)} />
+                    </div>
+                    <div className="col-md-6">
+                      <label style={labelStyle}>Course Available Until</label>
+                      <input type="date" className="form-control form-control-sm" value={accessEndDate} onChange={e => setAccessEndDate(e.target.value)} />
+                    </div>
+                    <div className="col-12">
+                      <p className="mb-0" style={{ fontSize: 11, color: "#9ca3af" }}>
+                        Hard lock: outside these dates employees cannot open the course. Leave blank for no restriction. (The per-employee Due Date, set while assigning, only marks them Overdue.)
+                      </p>
+                    </div>
+                  </div>
+
+                  <label style={labelStyle}>Chapters ({chapters.length})</label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 420, overflowY: "auto", padding: 2 }}>
+                    {chapters.map((ch, idx) => (
+                      <div key={ch.uid || idx} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: 12, background: "#fafafa" }}>
+                        <div className="d-flex align-items-center justify-content-between mb-2">
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "#3b82f6" }}>Chapter {ch.chapterNo}</span>
+                          <button type="button" className="btn btn-sm btn-light text-danger" style={{ fontSize: 11, padding: "2px 8px" }} onClick={() => removeChapter(idx)}>Remove</button>
+                        </div>
+                        <input
+                          type="text" className="form-control form-control-sm mb-2"
+                          placeholder="Chapter title *"
+                          value={ch.title}
+                          onChange={e => updateChapter(idx, { title: e.target.value })}
+                        />
+                        <textarea
+                          className="form-control form-control-sm mb-2" rows="2"
+                          placeholder="Chapter description"
+                          value={ch.description}
+                          onChange={e => updateChapter(idx, { description: e.target.value })}
+                        />
+                        <div className="d-flex gap-2 mb-2">
+                          <button type="button" className={`btn btn-sm ${(ch.contentType || "video") === "video" ? "btn-dark" : "btn-light"}`} style={{ fontSize: 11 }}
+                            onClick={() => updateChapter(idx, { contentType: "video" })}>🎬 Video</button>
+                          <button type="button" className={`btn btn-sm ${ch.contentType === "pdf" ? "btn-dark" : "btn-light"}`} style={{ fontSize: 11 }}
+                            onClick={() => { cancelUpload(ch.uid); updateChapter(idx, { contentType: "pdf", fileError: "" }); }}>📄 PDF</button>
+                          {(ch.contentType || "video") === "video" && (
+                            <span className="text-muted align-self-center" style={{ fontSize: 11 }}>
+                              {ch.duration ? `⏱ ${ch.duration}` : "Length is detected automatically"}
+                            </span>
+                          )}
+                        </div>
+                        {ch.contentType === "pdf" ? (
+                          <>
+                            <input
+                              type="file" accept="application/pdf" className="form-control form-control-sm"
+                              onChange={e => {
+                                const f = e.target.files[0] || null;
+                                if (f && f.size > MAX_PDF_MB * 1024 * 1024) {
+                                  updateChapter(idx, { fileError: `"${f.name}" is ${(f.size / 1048576).toFixed(1)} MB — over the ${MAX_PDF_MB} MB limit.` });
+                                  e.target.value = "";
+                                  return;
+                                }
+                                updateChapter(idx, { fileError: "" });
+                                if (f) startUpload(ch.uid, f, "pdf");
+                              }}
+                              disabled={ch.upload?.status === "uploading"}
+                            />
+                            {ch.fileError && (
+                              <div className="alert alert-danger py-1 px-2 mb-0 mt-1" style={{ fontSize: 12, fontWeight: 600 }}>⚠ {ch.fileError}</div>
+                            )}
+                            {ch.upload?.status === "uploading" && <p className="text-muted mb-0 mt-1" style={{ fontSize: 11 }}>⏳ Uploading {ch.upload.fileName}…</p>}
+                            {ch.upload?.status === "done" && <p className="mb-0 mt-1" style={{ fontSize: 11, color: "#059669", fontWeight: 600 }}>✓ Uploaded — {ch.upload.fileName}</p>}
+                            {ch.upload?.status === "error" && (
+                              <p className="mb-0 mt-1 text-danger" style={{ fontSize: 11 }}>
+                                ✗ Upload failed: {ch.upload.error}{" "}
+                                <button type="button" className="btn btn-link btn-sm p-0" style={{ fontSize: 11 }} onClick={() => startUpload(ch.uid, ch.videoFile, "pdf")}>Retry</button>
+                              </p>
+                            )}
+                            {!ch.upload && ch.pdfUrl && <p className="text-muted mb-0 mt-1" style={{ fontSize: 11 }}>Current PDF attached (choose a new file to replace it)</p>}
+                          </>
+                        ) : ch.videoSource === "youtube" ? (
+                          <>
+                            <div className="d-flex gap-2 mb-2">
+                              <button type="button" className={`btn btn-sm ${ch.videoSource === "upload" ? "btn-primary" : "btn-light"}`} style={{ fontSize: 11 }} onClick={() => updateChapter(idx, { videoSource: "upload" })}>Upload Video</button>
+                              <button type="button" className={`btn btn-sm ${ch.videoSource === "youtube" ? "btn-primary" : "btn-light"}`} style={{ fontSize: 11 }} onClick={() => { cancelUpload(ch.uid); updateChapter(idx, { videoSource: "youtube" }); }}>YouTube Link</button>
+                            </div>
+                            <input
+                              type="text" className="form-control form-control-sm"
+                              placeholder="https://www.youtube.com/watch?v=..."
+                              value={ch.videoUrl}
+                              onChange={e => updateChapter(idx, { videoUrl: e.target.value })}
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <div className="d-flex gap-2 mb-2">
+                              <button type="button" className={`btn btn-sm ${ch.videoSource === "upload" ? "btn-primary" : "btn-light"}`} style={{ fontSize: 11 }} onClick={() => updateChapter(idx, { videoSource: "upload" })}>Upload Video</button>
+                              <button type="button" className={`btn btn-sm ${ch.videoSource === "youtube" ? "btn-primary" : "btn-light"}`} style={{ fontSize: 11 }} onClick={() => { cancelUpload(ch.uid); updateChapter(idx, { videoSource: "youtube" }); }}>YouTube Link</button>
+                            </div>
+                            <input
+                              type="file" accept="video/*" className="form-control form-control-sm"
+                              onChange={e => {
+                                const f = e.target.files[0] || null;
+                                if (f && f.size > MAX_VIDEO_MB * 1024 * 1024) {
+                                  // shown right under this chapter's file box (the top-of-modal banner is off-screen while scrolled)
+                                  updateChapter(idx, { fileError: `"${f.name}" is ${(f.size / 1048576).toFixed(0)} MB — over the ${MAX_VIDEO_MB} MB limit. Please compress it (e.g. 720p) and choose it again.` });
+                                  e.target.value = "";
+                                  return;
+                                }
+                                updateChapter(idx, { fileError: "" });
+                                if (f) startUpload(ch.uid, f); // uploads right away, in the background
+                              }}
+                              disabled={ch.upload?.status === "uploading"}
+                            />
+                            {ch.fileError && (
+                              <div className="alert alert-danger py-1 px-2 mb-0 mt-1" style={{ fontSize: 12, fontWeight: 600 }}>⚠ {ch.fileError}</div>
+                            )}
+                            {ch.upload?.status === "queued" && <p className="text-muted mb-0 mt-1" style={{ fontSize: 11 }}>⏳ Waiting to upload — {ch.upload.fileName}</p>}
+                            {ch.upload?.status === "uploading" && (
+                              <div className="mt-1">
+                                <div className="progress" style={{ height: 8 }}>
+                                  <div className={`progress-bar ${ch.upload.pct === 0 ? "progress-bar-striped progress-bar-animated" : ""}`} style={{ width: `${ch.upload.pct || 100}%` }} />
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center" style={{ fontSize: 11 }}>
+                                  <span className="text-muted">Uploading {ch.upload.fileName} — {ch.upload.pct}%</span>
+                                  <button type="button" className="btn btn-link btn-sm text-danger p-0" style={{ fontSize: 11 }} onClick={() => cancelUpload(ch.uid)}>Cancel</button>
+                                </div>
+                              </div>
+                            )}
+                            {ch.upload?.status === "done" && (
+                              <p className="mb-0 mt-1" style={{ fontSize: 11, color: "#059669", fontWeight: 600 }}>
+                                ✓ Uploaded — {ch.upload.fileName}{ch.upload.duration ? ` (${fmtVideoLen(ch.upload.duration)})` : ""}
+                              </p>
+                            )}
+                            {ch.upload?.status === "error" && (
+                              <p className="mb-0 mt-1 text-danger" style={{ fontSize: 11 }}>
+                                ✗ Upload failed: {ch.upload.error}{" "}
+                                <button type="button" className="btn btn-link btn-sm p-0" style={{ fontSize: 11 }} onClick={() => startUpload(ch.uid, ch.videoFile)}>Retry</button>
+                              </p>
+                            )}
+                            {!ch.upload && ch.videoUrl && <p className="text-muted mb-0 mt-1" style={{ fontSize: 11 }}>Current video attached (choose a new file to replace it)</p>}
+                          </>
+                        )}
+
+                        {/* ✅ NEW — optional per-chapter quiz ("understanding check"). Applies to
+                            video AND PDF chapters alike. Empty by default: if HR adds nothing here,
+                            this chapter behaves exactly as before (straight to Complete/Mark as Read). */}
+                        <div className="mt-2 pt-2" style={{ borderTop: "1px dashed #e5e7eb" }}>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-light w-100 d-flex justify-content-between align-items-center"
+                            style={{ fontSize: 11.5, fontWeight: 600 }}
+                            onClick={() => updateChapter(idx, { quizOpen: !ch.quizOpen })}
+                          >
+                            <span>
+                              📝 Chapter Quiz (optional)
+                              {(ch.quizQuestions?.length > 0) ? ` — ${ch.quizQuestions.length} question${ch.quizQuestions.length > 1 ? "s" : ""}` : ""}
+                            </span>
+                            <span>{ch.quizOpen ? "▲" : "▼"}</span>
+                          </button>
+                          {ch.quizOpen && (
+                            <div className="mt-2 d-flex flex-column gap-2">
+                              {(ch.quizQuestions || []).length === 0 && (
+                                <p className="text-muted mb-0" style={{ fontSize: 11 }}>
+                                  No questions yet — this chapter will complete straight after {ch.contentType === "pdf" ? '"Mark as Read"' : "the video"}, same as before.
+                                </p>
+                              )}
+                              {(ch.quizQuestions || []).map((q, qIdx) => (
+                                <div key={qIdx} style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 10, background: "#fff" }}>
+                                  <div className="d-flex justify-content-between align-items-start mb-1">
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280" }}>Q{qIdx + 1}</span>
+                                    <button type="button" className="btn btn-link btn-sm text-danger p-0" style={{ fontSize: 11 }} onClick={() => removeQuizQuestion(idx, qIdx)}>Remove</button>
+                                  </div>
+                                  <input
+                                    type="text" className="form-control form-control-sm mb-2"
+                                    placeholder="Question text *"
+                                    value={q.questionText}
+                                    onChange={e => updateQuizQuestion(idx, qIdx, { questionText: e.target.value })}
+                                  />
+                                  {q.options.map((opt, optIdx) => (
+                                    <div key={optIdx} className="d-flex align-items-center gap-2 mb-1">
+                                      <input
+                                        type="radio" name={`correct-${ch.uid}-${qIdx}`}
+                                        checked={q.correctOptionIndex === optIdx}
+                                        onChange={() => updateQuizQuestion(idx, qIdx, { correctOptionIndex: optIdx })}
+                                        title="Mark as the correct answer"
+                                      />
+                                      <input
+                                        type="text" className="form-control form-control-sm"
+                                        placeholder={`Option ${optIdx + 1} *`}
+                                        value={opt}
+                                        onChange={e => updateQuizOption(idx, qIdx, optIdx, e.target.value)}
+                                      />
+                                    </div>
+                                  ))}
+                                  <p className="text-muted mb-0" style={{ fontSize: 10 }}>Select the radio next to the correct option.</p>
+                                </div>
+                              ))}
+                              <button type="button" className="btn btn-sm btn-outline-primary" style={{ fontSize: 11 }} onClick={() => addQuizQuestion(idx)}>+ Add Question</button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button type="button" className="btn btn-sm btn-outline-primary mt-2" onClick={addChapter}>+ Add Chapter</button>
+                </div>
+              )}
 
                 <div className="col-12">
                 <label style={labelStyle}>Delivery Mode</label>
@@ -749,16 +1431,18 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
                 )}
               </div>
 
-              <div className="col-md-6">
-                <label style={labelStyle}>Duration</label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  value={duration}
-                  onChange={e => setDuration(e.target.value)}
-                  placeholder="e.g. 7 Days"
-                />
-              </div>
+              {!useChapters && (
+                <div className="col-md-6">
+                  <label style={labelStyle}>Duration</label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={duration}
+                    onChange={e => setDuration(e.target.value)}
+                    placeholder="e.g. 7 Days"
+                  />
+                </div>
+              )}
 
               {/* ── Certification (optional toggle) ── */}
               <div className="col-md-6">
@@ -809,7 +1493,7 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
                 />
               </div>
 
-                           {deliveryMode === "online" && (
+                           {deliveryMode === "online" && !useChapters && (
                 <>
                   <div className="col-12">
                     <label style={labelStyle}>Training Video</label>
@@ -865,9 +1549,9 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
           </div>
 
           <div className="modal-footer border-top">
-            <button className="btn btn-sm btn-light" onClick={onClose}>Cancel</button>
-            <button className="btn btn-sm btn-success fw-bold" onClick={handleSubmit} disabled={saving}>
-              {saving ? (isEditing ? "Saving..." : "Creating...") : (isEditing ? "Save Changes" : "Create Program")}
+            <button className="btn btn-sm btn-light" onClick={requestClose}>Cancel</button>
+            <button className="btn btn-sm btn-success fw-bold" onClick={handleSubmit} disabled={saving || uploadingCount > 0}>
+              {saving ? (isEditing ? "Saving..." : "Creating...") : uploadingCount > 0 ? `Uploading ${uploadingCount} video${uploadingCount > 1 ? "s" : ""}…` : (isEditing ? "Save Changes" : "Create Program")}
             </button>
           </div>
         </div>
@@ -888,14 +1572,16 @@ export default function TrainingRoadmapHR() {
   const [toast, setToast]         = useState(null);
   const [modal, setModal]         = useState(null); // "assign"|"update"|"quizQuestions"
   const [selectedRecord, setSelectedRecord] = useState(null);
-  const [activeTab, setActiveTab] = useState("roadmap"); // "roadmap"|"records"|"compliance"|"kpi"
+  const [activeTab, setActiveTab] = useState("roadmap"); // "roadmap"|"records"|"kpi"|"certificates"
   const [search, setSearch]       = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterDept, setFilterDept]     = useState("all");
   const [seeding, setSeeding]     = useState(false);
   const [deletingId, setDeletingId] = useState(null); // ✅ NEW — tracks which record is being deleted, for per-row spinner/disable
   const [deletingLogId, setDeletingLogId] = useState(null); // ✅ NEW — tracks which compliance log entry is being deleted
-  const [expandedEmp, setExpandedEmp] = useState(null); // ✅ NEW — which employee's compliance log group is expanded
+  // ✅ CHANGED — was "which employee's compliance log group is expanded" (separate tab).
+  // Now: which record's inline history row is expanded, inside the Records tab table.
+  const [expandedEmp, setExpandedEmp] = useState(null);
  const [editingProgram, setEditingProgram] = useState(null);
   const [deletingProgramId, setDeletingProgramId] = useState(null);
   const [unassigningId, setUnassigningId] = useState(null);
@@ -1013,8 +1699,8 @@ const handleMarkAllComplete = async (program) => {
   };
 
   // ✅ NEW — deletes a single compliance-log entry (row-level Delete
-  // button on the Compliance Log tab). Independent of training records —
-  // only removes the log line itself.
+  // button inside a Records row's expanded history). Independent of
+  // training records — only removes the log line itself.
   const handleDeleteLog = async (log) => {
     const name = log.employeeId?.name || "this entry";
     if (!window.confirm(`Delete this compliance log entry for "${name}" — ${log.programTitle || "—"}? This cannot be undone.`)) return;
@@ -1182,12 +1868,16 @@ const handleMarkAllComplete = async (program) => {
       )}
 
       {/* ── Tabs ── */}
+      {/* ✅ CHANGED — "Compliance Log" tab removed. Its data (compLog) and
+          delete action (handleDeleteLog) now live inline inside the
+          Records tab, as an expandable per-row history — see the Records
+          table below. Nothing about how compLog is fetched changed. */}
       <div className="d-flex gap-2 mb-3 flex-wrap">
         {[
           { key:"roadmap",    label:"Training Roadmap",       icon:<Layers size={13}/> },
           { key:"records",    label:`Records (${records.length})`, icon:<ClipboardList size={13}/> },
-          { key:"compliance", label:`Compliance Log (${new Set(compLog.map(l => l.employeeId?._id || "unknown")).size})`, icon:<FileText size={13}/> },
           { key:"kpi",        label:"KPI Dashboard",          icon:<BarChart2 size={13}/> },
+          { key:"certificates", label:`Certificate Requests (${records.filter(r => r.certificateRequestStatus === "requested").length})`, icon:<Award size={13}/> },
         ].map(tab=>(
           <button key={tab.key} onClick={()=>setActiveTab(tab.key)}
             className={`btn btn-sm d-flex align-items-center gap-1 ${activeTab===tab.key?"btn-primary":"btn-light"}`}
@@ -1307,7 +1997,7 @@ const handleMarkAllComplete = async (program) => {
                         )}
 
                         <div className="d-flex flex-wrap gap-2 mb-3" style={{ fontSize: 11, color: "#6b7280" }}>
-                          {p.duration && <span className="d-flex align-items-center gap-1"><Clock size={11} />{p.duration}</span>}
+                          {programLength(p) && <span className="d-flex align-items-center gap-1"><Clock size={11} />{programLength(p)}</span>}
                                                     {p.conductedBy && <span className="d-flex align-items-center gap-1"><UserCheck size={11} />{p.conductedBy}</span>}
                           {p.deliveryMode === "offline" && (
                             <span className="d-flex align-items-center gap-1" style={{ color:"#f97316", fontWeight:600 }}>
@@ -1357,9 +2047,19 @@ const handleMarkAllComplete = async (program) => {
         </div>
       )}
 
-      {/* ══ RECORDS TAB ══════════════════════════════════════════ */}
+      {/* ══ RECORDS TAB (now includes inline compliance history) ═══ */}
       {activeTab === "records" && (
         <div>
+          {/* ✅ CHANGED — moved here from the old standalone Compliance Log
+              tab, so the governance note still shows up somewhere once
+              that tab is gone. */}
+          <div className="alert d-flex align-items-start gap-2 mb-3" style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:10, fontSize:12 }}>
+            <Info size={14} color="#3b82f6" style={{ flexShrink:0, marginTop:1 }}/>
+            <p className="mb-0" style={{ color:"#1e40af" }}>
+              All trainings are tracked via RCA (Radnus Corporate Academy). Click the arrow next to any row to see its full history log. Managers must ensure 100% training compliance before confirming employee probation or promotion.
+            </p>
+          </div>
+
           {/* Filters */}
           <div className="card border-0 shadow-sm mb-3" style={{ borderRadius:10 }}>
             <div className="card-body py-2 px-3 d-flex gap-3 align-items-center flex-wrap">
@@ -1394,6 +2094,7 @@ const handleMarkAllComplete = async (program) => {
                 <table className="table table-hover align-middle mb-0" style={{ fontSize:13 }}>
                   <thead className="table-light">
                     <tr>
+                      <th style={{ width: 24 }}></th>
                       <th>Employee</th>
                       <th>Program</th>
                       <th>Level/Type</th>
@@ -1415,8 +2116,23 @@ const handleMarkAllComplete = async (program) => {
   return end < new Date();
 })() && r.status !== "completed";
                       const isDeleting = deletingId === r._id; // ✅ NEW
+                      // ✅ NEW — inline history (was the whole Compliance Log tab).
+                      // Same ComplianceLog data, filtered to this employee + this program.
+                      const isHistoryOpen = expandedEmp === r._id;
+                      const rowLogs = compLog.filter(l =>
+                        String(l.employeeId?._id || l.employeeId) === String(r.employeeId?._id) &&
+                        (!l.programId || String(l.programId) === String(r.programId?._id))
+                      );
                       return (
-                        <tr key={r._id}>
+                        <React.Fragment key={r._id}>
+                        <tr>
+                          <td style={{ cursor: rowLogs.length ? "pointer" : "default" }}
+                            onClick={() => rowLogs.length && setExpandedEmp(isHistoryOpen ? null : r._id)}>
+                            {rowLogs.length > 0 && (
+                              <ChevronRight size={14} color="#9ca3af"
+                                style={{ transform: isHistoryOpen ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
+                            )}
+                          </td>
                           <td>
                             <div className="d-flex align-items-center gap-2">
                               <div style={{ width:30, height:30, borderRadius:"50%", background:"#eff6ff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, color:"#3b82f6", fontSize:12, flexShrink:0 }}>
@@ -1430,7 +2146,7 @@ const handleMarkAllComplete = async (program) => {
                           </td>
                           <td>
                             <p className="mb-0 fw-semibold" style={{ fontSize:12 }}>{r.programId?.title}</p>
-                            <p className="mb-0 text-muted" style={{ fontSize:11 }}>{r.programId?.duration}</p>
+                            <p className="mb-0 text-muted" style={{ fontSize:11 }}>{programLength(r.programId)}</p>
                           </td>
                           <td>
                             <div className="d-flex flex-column gap-1">
@@ -1447,6 +2163,7 @@ const handleMarkAllComplete = async (program) => {
                                 Submitted by employee
                               </span>
                             )}
+                            <div><ChapterProgressChip record={r} /></div>
                           </td>
                           <td>
                             {r.assessmentScore !== null && r.assessmentScore !== undefined ? (
@@ -1468,14 +2185,14 @@ const handleMarkAllComplete = async (program) => {
                             ) : "—"}
                           </td>
                           <td>
-                            {/* ✅ CHANGED — Action cell now has Update + Unassign + Delete side by side */}
+                            {/* Action cell has Update + Unassign + Delete side by side */}
                             <div className="d-flex gap-1">
                               <button className="btn btn-sm btn-outline-primary py-0 px-2" style={{ fontSize:11 }}
                                 onClick={()=>{ setSelectedRecord(r); setModal("update"); }}
                                 disabled={isDeleting}>
                                 Update
                               </button>
-                              {/* ✅ NEW — Unassign: removes the assignment (no confirm), with a
+                              {/* Unassign: removes the assignment (no confirm), with a
                                   few-seconds "Undo" toast in case it was a mistake */}
                               <button className="btn btn-sm btn-outline-warning py-0 px-2 d-flex align-items-center gap-1" style={{ fontSize:11 }}
                                 onClick={()=>handleUnassign(r)}
@@ -1488,7 +2205,7 @@ const handleMarkAllComplete = async (program) => {
                                 )}
                                 Unassign
                               </button>
-                              {/* ✅ NEW — Delete button, confirms then calls DELETE /api/training/records/:id */}
+                              {/* Delete button, confirms then calls DELETE /api/training/records/:id */}
                               <button className="btn btn-sm btn-outline-danger py-0 px-2 d-flex align-items-center gap-1" style={{ fontSize:11 }}
                                 onClick={()=>handleDeleteRecord(r)}
                                 disabled={isDeleting}
@@ -1503,6 +2220,64 @@ const handleMarkAllComplete = async (program) => {
                             </div>
                           </td>
                         </tr>
+                        {/* ✅ NEW — inline history row, replaces the old separate
+                            Compliance Log tab. Same ComplianceLog entries, same
+                            Delete-per-entry action (handleDeleteLog), just shown
+                            right under the record it belongs to instead of in
+                            its own tab grouped by employee. */}
+                        {isHistoryOpen && (
+                          <tr>
+                            <td></td>
+                            <td colSpan={8} style={{ background: "#f9fafb", padding: 0 }}>
+                              {rowLogs.length === 0 ? (
+                                <p className="text-muted mb-0 p-3" style={{ fontSize: 12 }}>No history yet.</p>
+                              ) : (
+                                <table className="table table-sm mb-0" style={{ fontSize: 12 }}>
+                                  <thead>
+                                    <tr className="text-muted">
+                                      <th style={{ fontWeight: 600 }}>Date</th>
+                                      <th style={{ fontWeight: 600 }}>Action</th>
+                                      <th style={{ fontWeight: 600 }}>Note</th>
+                                      <th style={{ fontWeight: 600 }}>By</th>
+                                      <th></th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {rowLogs.map(l => {
+                                      const actionColor = {
+                                        assigned:"#3b82f6", started:"#f59e0b", completed:"#10b981",
+                                        overdue:"#ef4444", score_updated:"#8b5cf6", cert_issued:"#10b981",
+                                        waived:"#6b7280", needs_hr_review:"#dc2626", bulk_completed:"#10b981",
+                                      }[l.action] || "#6b7280";
+                                      return (
+                                        <tr key={l._id}>
+                                          <td className="text-muted" style={{ fontSize: 11 }}>{new Date(l.date).toLocaleDateString("en-IN")}</td>
+                                          <td><span className="badge" style={{ background:`${actionColor}20`, color:actionColor, fontSize:11 }}>{l.action?.replace("_"," ")}</span></td>
+                                          <td className="text-muted" style={{ fontSize: 11 }}>{l.note || "—"}</td>
+                                          <td className="text-muted" style={{ fontSize: 11 }}>{l.addedBy}</td>
+                                          <td>
+                                            <button className="btn btn-sm btn-outline-danger py-0 px-2 d-flex align-items-center gap-1" style={{ fontSize: 11 }}
+                                              onClick={() => handleDeleteLog(l)}
+                                              disabled={deletingLogId === l._id}
+                                              title="Delete this log entry">
+                                              {deletingLogId === l._id ? (
+                                                <span className="spinner-border spinner-border-sm" style={{ width: 11, height: 11 }} />
+                                              ) : (
+                                                <Trash2 size={11} />
+                                              )}
+                                              Delete
+                                            </button>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                        </React.Fragment>
                       );
                     })}
                   </tbody>
@@ -1513,149 +2288,15 @@ const handleMarkAllComplete = async (program) => {
         </div>
       )}
 
-      {/* ══ COMPLIANCE LOG TAB ═══════════════════════════════════ */}
-      {activeTab === "compliance" && (
-        <div>
-          <div className="d-flex align-items-center gap-2 mb-3">
-            <FileText size={16} color="#3b82f6" />
-            <p className="mb-0 fw-bold" style={{ fontSize:14 }}>Training Compliance Log (HRF–TR–01)</p>
-          </div>
-          <div className="alert d-flex align-items-start gap-2 mb-3" style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:10, fontSize:12 }}>
-            <Info size={14} color="#3b82f6" style={{ flexShrink:0, marginTop:1 }}/>
-            <p className="mb-0" style={{ color:"#1e40af" }}>
-              All trainings are tracked via RCA (Radnus Corporate Academy). HR will maintain this compliance log with completion reports. Managers must ensure 100% training compliance before confirming employee probation or promotion.
-            </p>
-          </div>
-          {compLog.length === 0 ? (
-            <div className="text-center py-5"><FileText size={36} className="text-muted mb-3"/><p className="text-muted">No compliance logs yet.</p></div>
-          ) : (
-            // ✅ CHANGED — one row per employee (was one row per log entry).
-            // compLog is already sorted newest-first by the backend, so the
-            // first log encountered per employee while grouping is their latest.
-            (() => {
-              const groups = [];
-              const byEmp = new Map();
-              compLog.forEach(l => {
-                const key = l.employeeId?._id || "unknown";
-                if (!byEmp.has(key)) {
-                  const g = { employee: l.employeeId, logs: [] };
-                  byEmp.set(key, g);
-                  groups.push(g);
-                }
-                byEmp.get(key).logs.push(l);
-              });
-
-              return (
-                <div className="card border-0 shadow-sm" style={{ borderRadius:12, overflow:"hidden" }}>
-                  <div className="table-responsive">
-                    <table className="table table-sm align-middle mb-0" style={{ fontSize:13 }}>
-                      <thead className="table-light">
-                        <tr><th></th><th>Employee</th><th>Program</th><th>Status</th><th>Latest Update</th><th>Last Activity</th><th></th></tr>
-                      </thead>
-                      <tbody>
-                        {groups.map((g) => {
-                          const empId = g.employee?._id;
-                          const isOpen = expandedEmp === empId;
-                          const latest = g.logs[0];
-                          // Live status comes from the actual training record when we can find
-                          // one for this employee — falls back to the latest log's action.
-                          const liveRecord = records.find(r => r.employeeId?._id === empId);
-                          const st = liveRecord ? (STATUS_CONFIG[liveRecord.status] || STATUS_CONFIG.pending) : null;
-                          return (
-                            <React.Fragment key={empId}>
-                              <tr style={{ cursor:"pointer" }} onClick={()=>setExpandedEmp(isOpen ? null : empId)}>
-                                <td style={{ width:24 }}>
-                                  <ChevronRight size={14} color="#9ca3af" style={{ transform: isOpen ? "rotate(90deg)" : "none", transition:"transform .15s" }} />
-                                </td>
-                                <td>
-                                  <p className="mb-0 fw-semibold" style={{ fontSize:13 }}>{g.employee?.name || "—"}</p>
-                                  <p className="mb-0 text-muted" style={{ fontSize:11 }}>{g.employee?.department}</p>
-                                </td>
-                                <td className="text-muted" style={{ fontSize:12 }}>{latest?.programTitle || "—"}</td>
-                                <td>
-                                  {st ? (
-                                    <span className="badge" style={{ background:st.bg, color:st.color, border:`1px solid ${st.color}33`, fontSize:11 }}>{st.label}</span>
-                                  ) : (
-                                    <span className="badge bg-light text-dark" style={{ fontSize:11 }}>{latest?.action?.replace("_"," ")}</span>
-                                  )}
-                                </td>
-                                <td className="text-muted" style={{ fontSize:11 }}>{latest?.note || "—"}</td>
-                                <td className="text-muted" style={{ fontSize:11 }}>{new Date(latest?.date).toLocaleDateString("en-IN")}</td>
-                                <td>
-                                  {/* ✅ NEW — click to open the same status dropdown used in Records tab.
-                                      This is how HR reviews a submitted quiz and marks it Completed. */}
-                                  {liveRecord && (
-                                    <button
-                                      className="btn btn-sm btn-outline-primary py-0 px-2"
-                                      style={{ fontSize:11 }}
-                                      onClick={(e) => { e.stopPropagation(); setSelectedRecord(liveRecord); setModal("update"); }}
-                                    >
-                                      Review
-                                    </button>
-                                  )}
-                                </td>
-                              </tr>
-                              {isOpen && (
-                                <tr>
-                                  <td></td>
-                                  <td colSpan={6} style={{ background:"#f9fafb", padding:0 }}>
-                                    <table className="table table-sm mb-0" style={{ fontSize:12 }}>
-                                      <thead>
-                                        <tr className="text-muted">
-                                          <th style={{ fontWeight:600 }}>Date</th>
-                                          <th style={{ fontWeight:600 }}>Action</th>
-                                          <th style={{ fontWeight:600 }}>Note</th>
-                                          <th style={{ fontWeight:600 }}>By</th>
-                                          <th></th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {g.logs.map((l) => {
-                                          const actionColor = {
-                                            assigned:"#3b82f6", started:"#f59e0b", completed:"#10b981",
-                                            overdue:"#ef4444", score_updated:"#8b5cf6", cert_issued:"#10b981", waived:"#6b7280", needs_hr_review:"#dc2626"
-                                          }[l.action] || "#6b7280";
-                                          return (
-                                            <tr key={l._id}>
-                                              <td className="text-muted" style={{ fontSize:11 }}>{new Date(l.date).toLocaleDateString("en-IN")}</td>
-                                              <td><span className="badge" style={{ background:`${actionColor}20`, color:actionColor, fontSize:11 }}>{l.action?.replace("_"," ")}</span></td>
-                                              <td className="text-muted" style={{ fontSize:11 }}>{l.note || "—"}</td>
-                                              <td className="text-muted" style={{ fontSize:11 }}>{l.addedBy}</td>
-                                              <td>
-                                                <button className="btn btn-sm btn-outline-danger py-0 px-2 d-flex align-items-center gap-1" style={{ fontSize:11 }}
-                                                  onClick={()=>handleDeleteLog(l)}
-                                                  disabled={deletingLogId === l._id}
-                                                  title="Delete this log entry">
-                                                  {deletingLogId === l._id ? (
-                                                    <span className="spinner-border spinner-border-sm" style={{ width:11, height:11 }} />
-                                                  ) : (
-                                                    <Trash2 size={11} />
-                                                  )}
-                                                  Delete
-                                                </button>
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
-                                  </td>
-                                </tr>
-                              )}
-                            </React.Fragment>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              );
-            })()
-          )}
-        </div>
+      {/* ══ KPI TAB ══════════════════════════════════════════════ */}
+      {/* ══ CERTIFICATE REQUESTS TAB ═══════════════════════════════ */}
+      {activeTab === "certificates" && (
+        <CertificateRequestsPanel
+          records={records.filter(r => r.certificateRequestStatus && r.certificateRequestStatus !== "none")}
+          onUploaded={fetchAll}
+        />
       )}
 
-      {/* ══ KPI TAB ══════════════════════════════════════════════ */}
       {activeTab === "kpi" && (
         <div>
           <p className="fw-bold mb-3" style={{ fontSize:14 }}>Performance Indicators (KPIs)</p>
