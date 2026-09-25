@@ -52,7 +52,7 @@ import Myclubs from "./pages/employee/Myclubs";
 import EmployeeLeadershipTrack from "./pages/employee/EmployeeLeadershipTrack";
 import EmployeeRetentionPlan from "./pages/employee/EmployeeRetentionPlan";
 import AlumniNetworkEmployee from "./pages/employee/Alumninetworkemployee";
-import TrainingRoadmapEmployee from "./pages/employee/Trainingroadmapemployee ";
+import TrainingRoadmapEmployee from "./pages/employee/Trainingroadmapemployee";
 import EmployeeAppraisal from "./pages/employee/EmployeeAppraisal";
 import MyIncentive from "./pages/employee/MyIncentive";
 import EmployeePolicies from "./pages/employee/EmployeePolicies";
