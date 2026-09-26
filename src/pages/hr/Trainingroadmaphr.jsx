@@ -899,7 +899,7 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
   // ✅ Background uploads — a video starts uploading (chunked, straight to Cloudinary) the moment
   // it is picked, 2 at a time, so "Create Program" only has to save URLs.
   const MAX_PARALLEL_UPLOADS = 2;
-  const MAX_VIDEO_MB = 200; // per-video limit (raise it if your Cloudinary plan allows bigger files)
+  const MAX_VIDEO_MB = 210; // per-video limit (raise it if your Cloudinary plan allows bigger files)
   const MAX_PDF_MB = 20;    // per-PDF limit
   const controllersRef = useRef({}); // uid -> AbortController
   const queueRef = useRef([]);       // waiting upload jobs

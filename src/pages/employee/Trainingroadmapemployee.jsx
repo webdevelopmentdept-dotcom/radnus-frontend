@@ -1091,8 +1091,7 @@ useEffect(() => {
     else setNotice(n => ({ ...n, [chapterNo]: `Only ${d?.percent ?? 0}% of this chapter is verified as watched (need ${REQUIRED_WATCH_PERCENT}%). Tap "Jump to unwatched part" and watch what you skipped.` }));
   };
 
-  const lastAttempt = record.quizAttempts?.[record.quizAttempts.length - 1];
-  const quizPassed = !!lastAttempt?.passed;
+    const lastAttempt = record.quizAttempts?.[record.quizAttempts.length - 1];
 
   return (
     <div style={{ marginTop: 16 }}>
@@ -1261,10 +1260,8 @@ useEffect(() => {
       <div style={{ marginTop: 18, padding: "13px 15px", borderRadius: "var(--radius-md)", background: allWatched ? "var(--brand-tint)" : "var(--bg-soft)", border: `1px solid ${allWatched ? "#c9dcfd" : "var(--line)"}` }}>
         {!allWatched ? (
           <p style={{ margin: 0, fontSize: 12.5, color: "var(--muted)" }}>Finish all {chapters.length} chapters above to unlock the test.</p>
-        ) : quizPassed ? (
-          <p style={{ margin: 0, fontSize: 12.5, color: "var(--success)", fontWeight: 600 }}>✅ You've passed the quiz — score {lastAttempt.score}%.</p>
-        ) : lastAttempt ? (
-          <p style={{ margin: 0, fontSize: 12.5, color: "var(--warning)", fontWeight: 600 }}>You attempted the quiz but didn't pass. Contact HR to retake.</p>
+              ) : lastAttempt ? (
+          <p style={{ margin: 0, fontSize: 12.5, color: "var(--success)", fontWeight: 600 }}>✅ Quiz submitted — score {lastAttempt.score}%. Waiting for HR review.</p>
         ) : hasProgramQuiz === false ? (
           <p style={{ margin: 0, fontSize: 12.5, color: "var(--muted)" }}>No quiz has been added for this course yet — check with HR.</p>
         ) : hasProgramQuiz === null ? (
@@ -1284,7 +1281,9 @@ useEffect(() => {
           specifically: if the employee failed the Final Test, the
           "didn't pass, contact HR" message above already covers it, so
           we don't also show a certificate box for a failed attempt. */}
-       <CertificateStatusBox record={record} />
+             {(lastAttempt || record.status === "completed" || record.certificateRequestStatus === "issued") && (
+        <CertificateStatusBox record={record} />
+      )}
     </div>
   );
 }
@@ -1757,16 +1756,19 @@ export default function TrainingRoadmapEmployee() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (opts = {}) => {
     if (!employeeId) { setError("session"); setLoading(false); return; }
-    setLoading(true); setError(null);
+    if (!opts.silent) setLoading(true);
+    setError(null);
     try {
       const res = await axios.get(`${API_BASE}/api/training/my/${employeeId}`);
-      setRecords(res.data.data || []);
+      const fresh = res.data.data || [];
+      setRecords(fresh);
       setStats(res.data.stats);
+      setDetailsRecord(prev => (prev ? (fresh.find(r => r._id === prev._id) || prev) : prev));
     } catch (e) {
       setError(e?.response?.data?.message || "Failed to load");
-    } finally { setLoading(false); }
+    } finally { if (!opts.silent) setLoading(false); }
   }, [employeeId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -1775,7 +1777,7 @@ export default function TrainingRoadmapEmployee() {
     try {
       await axios.put(`${API_BASE}/api/training/my/${recordId}/start`);
       showMsg("Training started! Good luck 🚀");
-      fetchData();
+      fetchData({ silent: true });
     } catch (e) { showMsg(e?.response?.data?.message || "Failed", "error"); }
   };
 
@@ -1783,7 +1785,7 @@ export default function TrainingRoadmapEmployee() {
     try {
       await axios.put(`${API_BASE}/api/training/my/${recordId}/submit`);
       showMsg("Submitted to HR for confirmation ✅");
-      fetchData();
+      fetchData({ silent: true });
     } catch (e) { showMsg(e?.response?.data?.message || "Failed", "error"); }
   };
 
@@ -2085,20 +2087,19 @@ export default function TrainingRoadmapEmployee() {
             --surface/--ink/etc. CSS variables defined on .tr-page. That
             made the modal background transparent and let the page behind
             it bleed through / overlap with the modal's own text. */}
-        {detailsRecord && (
+               {detailsRecord && (
           <TrainingDetailsModal
             record={detailsRecord}
-            onClose={() => { setDetailsRecord(null); fetchData(); }}
-            onRefresh={fetchData}
+            onClose={() => { setDetailsRecord(null); fetchData({ silent: true }); }}
+            onRefresh={() => fetchData({ silent: true })}
             onOpenQuiz={(record) => setQuizRecord(record)}
           />
         )}
-
         {quizRecord && (
           <QuizModal
             record={quizRecord}
-            onClose={() => { setQuizRecord(null); fetchData(); }}
-            onRefresh={fetchData}
+                        onClose={() => { setQuizRecord(null); fetchData({ silent: true }); }}
+            onRefresh={() => fetchData({ silent: true })}
           />
         )}
 
