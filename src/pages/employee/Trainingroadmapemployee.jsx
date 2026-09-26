@@ -106,6 +106,10 @@ const STYLES = `
     background: var(--page-bg);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--body);
+    /* ✅ NEW — real safety net: whatever accidentally goes wide inside
+       this page can no longer push the page itself sideways. */
+    overflow-x: hidden;
+    max-width: 100vw;
   }
   .tr-page * { box-sizing: border-box; }
   .tr-page ::selection { background: var(--brand-tint); color: var(--brand-dark); }
@@ -126,6 +130,12 @@ const STYLES = `
 
   .tr-quiz-option:hover { background: var(--bg-soft); }
 
+  /* ✅ NEW — media inside the page can never force horizontal scroll,
+     whatever size the underlying image/video/iframe actually is. */
+  .tr-page img, .tr-page video, .tr-page iframe {
+    max-width: 100%;
+  }
+
   /* ── Tablet ──────────────────────────────────────────────── */
   @media (max-width: 900px) {
     .tr-cards-grid { grid-template-columns: 1fr !important; }
@@ -142,7 +152,9 @@ const STYLES = `
     .tr-framework-banner > span { display: block; }
     .tr-stats-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 8px !important; }
     .tr-stats-grid p:first-child { font-size: 17px !important; }
-    .tr-tabs { flex-wrap: nowrap !important; overflow-x: auto !important; }
+    /* ✅ CHANGED — tabs now take the full available width on mobile;
+       only the tab bar itself scrolls internally, never the page. */
+    .tr-tabs { flex-wrap: nowrap !important; overflow-x: auto !important; width: 100% !important; }
     .tr-tab-btn { font-size: 11.5px !important; padding: 8px 12px !important; flex-shrink: 0; }
     .tr-cards-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
     .tr-roadmap-header { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
@@ -165,6 +177,22 @@ const STYLES = `
     .tr-card-footer { flex-direction: column !important; align-items: stretch !important; }
     .tr-card-footer > div:last-child { width: 100%; justify-content: stretch !important; }
     .tr-card-footer button { flex: 1; text-align: center; }
+  }
+
+  /* ✅ NEW — small phones (320px–360px class devices): tighter padding,
+     smaller gaps, stat boxes squeeze down to 2 columns comfortably. */
+  @media (max-width: 360px) {
+    .tr-page { padding: 10px !important; }
+    .tr-card { padding-left: 12px !important; padding-right: 12px !important; }
+    .tr-title { font-size: 15.5px !important; }
+    .tr-stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }
+    .tr-stats-grid > div { padding: 8px 6px !important; }
+    .tr-stats-grid p:first-child { font-size: 15px !important; }
+    .tr-tab-btn { font-size: 10.5px !important; padding: 7px 9px !important; }
+    .tr-cards-grid { gap: 10px !important; }
+    .tr-training-card { padding: 13px !important; }
+    .tr-chapter-item { padding: 8px 9px !important; }
+    .tr-modal-sheet > div { padding: 14px !important; }
   }
 `;
 
@@ -223,9 +251,12 @@ function TrainingCard({ record, onStart, onViewDetails }) {
   const now = new Date();
   const notYetOpen = !!(prog?.accessStartDate && now < new Date(prog.accessStartDate));
   const windowClosed = !!(prog?.accessEndDate && now > new Date(prog.accessEndDate));
+  const isLocked = !!record.isLocked; // ✅ NEW — locked by HR (manually, or automatically once dueDate passed)
 
   let action = null; // { label, disabled, hint, onClick }
-  if (isOffline) {
+  if (isLocked) {
+    action = { label: "Locked by HR", disabled: true }; // ✅ NEW
+  } else if (isOffline) {
     action = null; // handled by the "Attend session" pill below, unchanged
   } else if (record.status === "completed") {
     action = null; // CheckCircle2 below is enough
@@ -261,6 +292,11 @@ function TrainingCard({ record, onStart, onViewDetails }) {
           <span style={{ background: isOverdue ? "var(--danger-tint)" : st.bg, color: isOverdue ? "var(--danger)" : st.color, border: `1px solid ${isOverdue ? "var(--danger)" : st.color}33`, borderRadius: 20, padding: "2px 9px", fontSize: 10, fontWeight: 700 }}>
             {isOverdue ? "Overdue" : st.label}
           </span>
+          {isLocked && (
+            <span style={{ background: "#1f2937", color: "#fff", borderRadius: 20, padding: "2px 9px", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
+              🔒 Locked
+            </span>
+          )}
           {record.certificationIssued && (
             <span style={{ background: "var(--warning-tint)", color: "var(--warning)", border: "1px solid #fde3ad", borderRadius: 20, padding: "2px 9px", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
               <Award size={9} /> Certified
@@ -590,6 +626,33 @@ const refetchRecord = async () => {
     // silent — the optimistic update from the PUT response still stands
   }
 };
+
+  // ✅ NEW — locked (manually by HR, or auto-locked once the due date
+  // passed): show a locked notice instead of chapters/video/quiz, so the
+  // employee can't watch content while it's locked. "View Details" still
+  // opens (so they can see why), it just renders this instead of the course.
+  if (record.isLocked) {
+    return (
+      <div className="tr-modal-sheet" style={{ position: "fixed", inset: 0, background: "rgba(16,24,40,.55)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
+        <div style={{ background: "var(--surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-lg)", maxWidth: 440, width: "100%", padding: 24, textAlign: "center" }} onClick={e => e.stopPropagation()}>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={onClose} style={{ border: "none", background: "var(--bg-soft)", width: 30, height: 30, borderRadius: "50%", fontSize: 18, cursor: "pointer", color: "var(--muted)", lineHeight: 1 }}>×</button>
+          </div>
+          <div style={{ fontSize: 38, marginBottom: 8 }}>🔒</div>
+          <p className="tr-font-display" style={{ margin: 0, fontWeight: 800, fontSize: 16, color: "var(--ink)" }}>{prog?.title}</p>
+          <p style={{ marginTop: 12, fontSize: 13.5, color: "var(--body)", lineHeight: 1.5 }}>
+            {record.lockReason === "manual"
+              ? "This course has been locked by HR."
+              : "This course's due date has passed and it has been locked."}
+            {" "}Please contact HR to get it unlocked before you can continue.
+          </p>
+          <button onClick={onClose} className="tr-btn" style={{ marginTop: 16, padding: "7px 18px", border: "1.5px solid var(--brand)", borderRadius: "var(--radius-sm)", background: "#fff", color: "var(--brand)", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="tr-modal-sheet" style={{ position: "fixed", inset: 0, background: "rgba(16,24,40,.55)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>

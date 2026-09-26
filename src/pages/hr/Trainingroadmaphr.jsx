@@ -7,6 +7,8 @@ import {
   ChevronRight, BarChart2, Layers, FileText, Search,
   Filter, Download, TrendingUp, Star, Zap, Info,
   UserCheck, Calendar, GraduationCap, ClipboardList, Trash2,
+  Lock, Unlock, Eye, PlayCircle, FileType, HelpCircle, // ✅ NEW: Eye/PlayCircle/FileType/HelpCircle for preview modal
+  MoreVertical, // ✅ NEW — Records row actions dropdown (⋮)
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -147,43 +149,137 @@ function ChapterProgressChip({ record }) {
         : `No activity for ${info.daysSinceActivity}+ days`)
     : `${info.completed} of ${info.total} chapters completed`;
   return (
-    <span
-      title={title}
-      style={{ display: "inline-flex", alignItems: "center", gap: 4, background: s.bg, color: s.color, borderRadius: 20, padding: "2px 9px", fontSize: 10, fontWeight: 700, marginTop: 4 }}
-    >
-      {info.completed}/{info.total} chapters
-      {info.stuck && info.percent < 100 ? " · stuck" : ""}
-    </span>
+    <div title={title} style={{ display: "inline-flex", flexDirection: "column", gap: 3, minWidth: 74 }}>
+      <span
+        style={{ display: "inline-flex", alignItems: "center", gap: 4, background: s.bg, color: s.color, borderRadius: 20, padding: "2px 9px", fontSize: 10, fontWeight: 700, width: "fit-content" }}
+      >
+        {info.completed}/{info.total} chapters
+        {info.stuck && info.percent < 100 ? " · stuck" : ""}
+      </span>
+      {/* ✅ NEW — mini progress bar so chapter progress reads at a glance, not just as text */}
+      <div style={{ height: 4, width: "100%", background: "#e5e7eb", borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${info.percent}%`, background: s.color, transition: "width .3s" }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Row Actions Menu (✅ NEW) ───────────────────────────────────
+// Records table action cell: "Update" stays a visible primary button
+// (most common action); Unassign / Lock-Unlock / Delete move into a
+// compact ⋮ dropdown so the row doesn't overflow on narrower screens.
+function RowActionsMenu({ record, isDeleting, unassigningId, lockingId, onUpdate, onUnassign, onToggleLock, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+  const itemStyle = { fontSize: 12, border: "none", background: "transparent", padding: "8px 12px", width: "100%", textAlign: "left" };
+  return (
+    <div ref={ref} className="d-flex gap-1" style={{ position: "relative" }}>
+      <button className="btn btn-sm btn-outline-primary py-0 px-2" style={{ fontSize: 11 }}
+        onClick={onUpdate} disabled={isDeleting}>
+        Update
+      </button>
+      <button
+        className="btn btn-sm btn-light d-flex align-items-center justify-content-center"
+        style={{ fontSize: 11, width: 26, height: 26, border: "1px solid #e5e7eb" }}
+        onClick={() => setOpen(v => !v)}
+        disabled={isDeleting}
+        title="More actions"
+      >
+        <MoreVertical size={13} color="#6b7280" />
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 40,
+          background: "#fff", border: "1px solid #e5e7eb", borderRadius: 9,
+          boxShadow: "0 10px 24px rgba(16,24,40,.14)", minWidth: 160, overflow: "hidden",
+        }}>
+          <button className="hr-menu-item d-flex align-items-center gap-2" style={itemStyle}
+            onClick={() => { setOpen(false); onUnassign(); }} disabled={unassigningId}>
+            {unassigningId ? <span className="spinner-border spinner-border-sm" style={{ width: 11, height: 11 }} /> : <X size={12} color="#f59e0b" />}
+            Unassign
+          </button>
+          <button className="hr-menu-item d-flex align-items-center gap-2" style={itemStyle}
+            onClick={() => { setOpen(false); onToggleLock(); }} disabled={lockingId}>
+            {lockingId ? <span className="spinner-border spinner-border-sm" style={{ width: 11, height: 11 }} /> : record.isLocked ? <Unlock size={12} color="#111827" /> : <Lock size={12} color="#111827" />}
+            {record.isLocked ? "Unlock" : "Lock"}
+          </button>
+          <button className="hr-menu-item d-flex align-items-center gap-2" style={{ ...itemStyle, color: "#ef4444" }}
+            onClick={() => { setOpen(false); onDelete(); }}>
+            <Trash2 size={12} color="#ef4444" />
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
 // ─── Stat Card ────────────────────────────────────────────────
-function StatCard({ label, value, sub, color, bg, icon }) {
+// ✅ CHANGED — now optionally clickable. `onClick` present → the card
+// becomes a filter shortcut into the Records tab (cursor, hover lift,
+// and a highlighted ring when `active` is true so HR can see which
+// filter is currently applied from the stat strip).
+function StatCard({ label, value, sub, color, bg, icon, onClick, active }) {
+  const [hover, setHover] = useState(false);
+  const clickable = !!onClick;
   return (
-    <div className="card border-0 h-100" style={{ borderRadius: 14, border: "1px solid #f1f2f4", boxShadow: "0 1px 2px rgba(16,24,40,.04)" }}>
+    <div
+      className="card border-0 h-100"
+      onClick={onClick}
+      onMouseEnter={() => clickable && setHover(true)}
+      onMouseLeave={() => clickable && setHover(false)}
+      style={{
+        borderRadius: 14,
+        border: active ? `1.5px solid ${color}` : "1px solid #f1f2f4",
+        boxShadow: active
+          ? `0 0 0 3px ${color}1f, 0 4px 10px rgba(16,24,40,.08)`
+          : (hover ? "0 6px 14px rgba(16,24,40,.10)" : "0 1px 2px rgba(16,24,40,.04)"),
+        cursor: clickable ? "pointer" : "default",
+        transform: hover ? "translateY(-2px)" : "translateY(0)",
+        transition: "all .15s ease",
+      }}
+    >
       <div className="card-body" style={{ padding: "18px 18px" }}>
         <div className="d-flex justify-content-between align-items-start mb-2">
           <span style={{
             width: 40, height: 40, borderRadius: 10, background: bg,
             display: "flex", alignItems: "center", justifyContent: "center", color,
           }}>{icon}</span>
+          {active && (
+            <span className="badge" style={{ background: color, color: "#fff", fontSize: 9, fontWeight: 700 }}>Filtering</span>
+          )}
         </div>
         <p className="mb-1 fw-bold" style={{ fontSize: 24, color: "#111827", lineHeight: 1 }}>{value}</p>
         <p className="mb-0" style={{ fontSize: 11.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</p>
         {sub && <p className="mb-0 mt-1" style={{ fontSize: 11, color: "#9ca3af" }}>{sub}</p>}
+        {clickable && <p className="mb-0 mt-1" style={{ fontSize: 10, color: "#9ca3af" }}>Click to view in Records →</p>}
       </div>
     </div>
   );
 }
 
 // ─── Assign Modal ─────────────────────────────────────────────
-function AssignModal({ programs, employees, onClose, onSave }) {
+// ✅ CHANGED — accepts `initialProgramId` so the "Assign This Training"
+// quick button on a program card (0-assigned state) can jump straight
+// into this modal with that program already selected.
+function AssignModal({ programs, employees, onClose, onSave, initialProgramId }) {
   const [mode, setMode]         = useState("single"); // "single"|"bulk"
   const [employeeId, setEmpId]  = useState("");
   const [employeeIds, setEmpIds]= useState([]);
-  const [programId, setProgId]  = useState("");
-  const [dueDate, setDueDate]   = useState("");
-  const [dueAuto, setDueAuto]   = useState(false); // true while dueDate was auto-filled from the course end date
+  const [programId, setProgId]  = useState(initialProgramId || "");
+  const [dueDate, setDueDate]   = useState(() => {
+    if (initialProgramId) {
+      const p = programs.find(x => x._id === initialProgramId);
+      if (p?.accessEndDate) return new Date(p.accessEndDate).toISOString().slice(0,10);
+    }
+    return "";
+  });
+  const [dueAuto, setDueAuto]   = useState(!!initialProgramId); // true while dueDate was auto-filled from the course end date
   const [notes, setNotes]       = useState("");
   const [saving, setSaving]     = useState(false);
   const [deptFilter, setDeptFilter] = useState("all");
@@ -209,6 +305,8 @@ const [modal, setModal] = useState(null);
   const selectAllFiltered = () => setEmpIds(prev => [...new Set([...prev, ...filteredEmployees.map(e=>e._id)])]);
   const clearAllFiltered   = () => setEmpIds(prev => prev.filter(id => !filteredEmployees.some(e=>e._id===id)));
 
+  const preselectedProgram = initialProgramId ? programs.find(p => p._id === initialProgramId) : null;
+
   return (
     <div className="modal show d-block" style={{ background:"rgba(15,23,42,.45)", zIndex:1050 }}>
       <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -221,6 +319,13 @@ const [modal, setModal] = useState(null);
             <button className="btn-close" onClick={onClose} />
           </div>
           <div className="modal-body">
+            {/* ✅ NEW — quick-assign confirmation banner when opened from a program card */}
+            {preselectedProgram && (
+              <div className="d-flex align-items-center gap-2 mb-3" style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:9, padding:"8px 12px" }}>
+                <Zap size={13} color="#3b82f6" />
+                <span style={{ fontSize:12, color:"#1e40af" }}>Assigning <strong>{preselectedProgram.title}</strong> — pick employees below.</span>
+              </div>
+            )}
             {/* Mode toggle */}
             <div className="d-flex gap-2 mb-4">
               {["single","bulk"].map(m => (
@@ -349,11 +454,6 @@ function UpdateRecordModal({ record, onClose, onSave }) {
             <button className="btn-close" onClick={onClose} />
           </div>
           <div className="modal-body d-flex flex-column gap-3">
-            {/* ✅ NEW — Chapter Progress: multi-chapter courses only. Shows
-                exactly where the employee is in the 50-chapter course (not
-                just the Final Test result below) — how many chapters are
-                done, which one they're stuck on, and how the per-chapter
-                quizzes are going — without dumping all 50 rows by default. */}
             {chapterInfo && (
               <div style={{ background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:9, padding:"12px 14px" }}>
                 <div className="d-flex align-items-center justify-content-between mb-2">
@@ -409,7 +509,6 @@ function UpdateRecordModal({ record, onClose, onSave }) {
               </div>
             )}
 
-            {/* ✅ NEW — quiz result banner, shown when the employee has submitted the test */}
             {lastAttempt && (
               <div className="d-flex align-items-center gap-2" style={{
                 background: lastAttempt.passed ? "#ecfdf5" : "#fef2f2",
@@ -426,8 +525,6 @@ function UpdateRecordModal({ record, onClose, onSave }) {
               </div>
             )}
 
-            {/* ✅ NEW — question-by-question breakdown of what the employee
-                actually answered, so HR isn't just reviewing a bare score. */}
             {lastAttempt && (
               <div>
                 <button
@@ -441,7 +538,7 @@ function UpdateRecordModal({ record, onClose, onSave }) {
                 {showAnswers && (
                   <div className="d-flex flex-column gap-2 mt-2">
                     {(lastAttempt.answers || []).map((a, i) => {
-                      const q = a.questionId; // populated: { questionText, options, correctOptionIndex }
+                      const q = a.questionId;
                       if (!q || typeof q === "string") {
                         return (
                           <div key={i} className="border rounded p-2" style={{ borderRadius: 8, fontSize: 12, color: "#9ca3af" }}>
@@ -531,12 +628,8 @@ function UpdateRecordModal({ record, onClose, onSave }) {
 }
 
 // ─── Quiz Questions Manager Modal (HR) ─────────────────────────
-// HR picks a product OR a non-equipment program, then adds/edits/
-// deletes 4-option MCQ questions for it. Equipment quizzes are pooled
-// across every studied product; program quizzes belong to that one
-// program directly (e.g. "Excel training").
 function QuizQuestionsManagerModal({ onClose, showMsg }) {
-  const [mode, setMode]           = useState("product"); // "product" | "program"
+  const [mode, setMode]           = useState("product");
   const [products, setProducts]   = useState([]);
   const [programs, setPrograms]   = useState([]);
   const [productId, setProductId] = useState("");
@@ -544,7 +637,7 @@ function QuizQuestionsManagerModal({ onClose, showMsg }) {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [loadingQs, setLoadingQs] = useState(false);
-  const [editingId, setEditingId] = useState(null); // null = not editing, "new" = adding
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ questionText: "", options: ["", "", "", ""], correctOptionIndex: 0 });
   const [saving, setSaving]   = useState(false);
   const [deletingId, setDeletingId] = useState(null);
@@ -562,8 +655,6 @@ function QuizQuestionsManagerModal({ onClose, showMsg }) {
         ]);
         const prodData = await prodRes.json();
         if (prodData.success) setProducts(prodData.data || []);
-        // Only non-equipment programs get their own quiz here — equipment
-        // programs are quizzed per-product via the "Product" tab above.
         setPrograms((progRes.data.data || []).filter(p => p.type !== "equipment"));
       } catch (e) { /* silent */ }
       finally { setLoading(false); }
@@ -583,8 +674,6 @@ function QuizQuestionsManagerModal({ onClose, showMsg }) {
 
   useEffect(() => { loadQuestions(selectedId, mode); setEditingId(null); }, [selectedId, mode, loadQuestions]);
 
-  // Switching tabs clears the other tab's selection so we don't
-  // accidentally send both productId and programId together.
   const switchMode = (m) => {
     setMode(m);
     setProductId("");
@@ -643,7 +732,6 @@ function QuizQuestionsManagerModal({ onClose, showMsg }) {
             <button className="btn-close" onClick={onClose} />
           </div>
           <div className="modal-body">
-            {/* ✅ NEW — Product / Program tab toggle */}
             <div className="d-flex gap-2 mb-3">
               <button
                 className={`btn btn-sm flex-fill ${mode === "product" ? "btn-primary fw-bold" : "btn-outline-secondary"}`}
@@ -752,12 +840,9 @@ function QuizQuestionsManagerModal({ onClose, showMsg }) {
 }
 
 // ─── Certificate Requests Panel (HR uploads certificate per employee) ──
-// ✅ NEW — lists every record where the employee has requested a
-// certificate (finished every chapter + passed quiz). HR picks a file
-// and uploads it here; the employee can download it right after.
 function CertificateRequestsPanel({ records, onUploaded }) {
   const [uploadingId, setUploadingId] = useState(null);
-  const [fileFor, setFileFor] = useState({}); // recordId -> File
+  const [fileFor, setFileFor] = useState({});
 
   const handleUpload = async (recordId) => {
     const file = fileFor[recordId];
@@ -841,21 +926,13 @@ function CertificateRequestsPanel({ records, onUploaded }) {
 function CreateProgramModal({ onClose, onSave, editingProgram }) {
   const isEditing = !!editingProgram;
   const [title, setTitle]             = useState(editingProgram?.title || "");
-  // ✅ NEW — course-level description shown above the chapter list
   const [description, setDescription] = useState(editingProgram?.description || "");
-  // ✅ NEW — multi-chapter course builder. Each chapter keeps its own
-  // title/description/video. `videoFile` (local, not sent as-is) holds
-  // a newly-picked File until submit, when it's collected into the
-  // chapterVideos[] FormData array and swapped for a fileIndex.
-  // Each chapter gets a stable `uid` (row index changes when chapters are removed) and an
-  // `upload` object: { status: queued|uploading|done|error, pct, fileName, url, publicId, duration }.
   const uidRef = useRef(0);
   const newUid = () => `c${Date.now()}-${uidRef.current++}`;
   const [chapters, setChapters] = useState(
     (editingProgram?.chapters || []).map(ch => ({ ...ch, contentType: ch.contentType || "video", videoFile: null, uid: newUid(), upload: null }))
   );
   const [useChapters, setUseChapters] = useState((editingProgram?.chapters || []).length > 0);
-  // ✅ NEW — HR-only access window (from date – to date) for chapter courses
   const [accessStartDate, setAccessStartDate] = useState(
     editingProgram?.accessStartDate ? new Date(editingProgram.accessStartDate).toISOString().slice(0,10) : ""
   );
@@ -875,10 +952,6 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
     prev.map((ch, i) => i === idx ? { ...ch, ...patch } : ch)
   );
 
-  // ✅ NEW — optional per-chapter quiz builder. Stored on the chapter
-  // object as quizQuestions: [{questionText, options[4], correctOptionIndex}];
-  // `quizOpen` is a UI-only flag (collapsible section), never sent to
-  // the server — the chaptersMeta map below picks only the fields it wants.
   const addQuizQuestion = (idx) => setChapters(prev => prev.map((ch, i) => i === idx
     ? { ...ch, quizOpen: true, quizQuestions: [...(ch.quizQuestions || []), { questionText: "", options: ["", "", "", ""], correctOptionIndex: 0 }] }
     : ch
@@ -896,14 +969,12 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
     : ch
   ));
 
-  // ✅ Background uploads — a video starts uploading (chunked, straight to Cloudinary) the moment
-  // it is picked, 2 at a time, so "Create Program" only has to save URLs.
   const MAX_PARALLEL_UPLOADS = 2;
-  const MAX_VIDEO_MB = 210; // per-video limit (raise it if your Cloudinary plan allows bigger files)
-  const MAX_PDF_MB = 20;    // per-PDF limit
-  const controllersRef = useRef({}); // uid -> AbortController
-  const queueRef = useRef([]);       // waiting upload jobs
-  const activeRef = useRef(0);       // running upload jobs
+  const MAX_VIDEO_MB = 210;
+  const MAX_PDF_MB = 20;
+  const controllersRef = useRef({});
+  const queueRef = useRef([]);
+  const activeRef = useRef(0);
   const patchByUid = (uid, patch) => setChapters(prev => prev.map(c => c.uid === uid ? { ...c, ...patch } : c));
   const pumpQueue = () => {
     while (activeRef.current < MAX_PARALLEL_UPLOADS && queueRef.current.length) {
@@ -969,7 +1040,6 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
   const [hasCertification, setHasCertification] = useState(!!editingProgram?.certification);
   const [certification, setCertification]       = useState(editingProgram?.certification || "");
 
-  // ── Department: searchable dropdown ──
    const [departments, setDepartments] = useState([]);
   const [deptLoading, setDeptLoading] = useState(true);
   const [department, setDepartment]   = useState(editingProgram?.department || "all");
@@ -1016,7 +1086,6 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
       setSaving(false);
       return setError("Every chapter needs a title");
     }
-    // ✅ NEW — every chapter quiz question needs its text + all 4 options filled
     if (useChapters) {
       const badChapter = chapters.find(ch =>
         (ch.quizQuestions || []).some(q => !q.questionText.trim() || q.options.some(o => !o.trim()))
@@ -1031,31 +1100,24 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
     fd.append("title", title.trim());
     fd.append("description", description.trim());
     fd.append("department", department);
-    fd.append("duration", useChapters ? "" : duration); // chapter courses: length = total of chapters (auto)
+    fd.append("duration", useChapters ? "" : duration);
     fd.append("certification", hasCertification ? certification.trim() : "");
     fd.append("conductedBy", conductedBy);
 
-    // ✅ NEW — chapters[] + chapterVideos[] + access window. Only sent
-    // when "Multi-chapter course" is on; otherwise the program behaves
-    // exactly like before (single video/PDF below).
     if (useChapters) {
-      // Videos were already uploaded straight to Cloudinary when they were picked;
-      // here we only collect the finished results (URL + public id + length).
-      const uploaded = {}; // chapter index -> { url, publicId, duration }
+      const uploaded = {};
       chapters.forEach((ch, i) => {
         if ((ch.contentType === "pdf" || ch.videoSource !== "youtube") && ch.upload?.status === "done") uploaded[i] = ch.upload;
       });
 
       const chaptersMeta = chapters.map((ch, i) => {
         const out = { chapterNo: ch.chapterNo, title: ch.title.trim(), description: ch.description.trim(), contentType: ch.contentType || "video", duration: ch.duration, videoSource: ch.videoSource };
-        // ✅ NEW — optional per-chapter quiz, sent through untouched
         out.quizQuestions = (ch.quizQuestions || []).map(q => ({
           questionText: q.questionText.trim(),
           options: q.options.map(o => o.trim()),
           correctOptionIndex: q.correctOptionIndex,
         }));
         if (ch.contentType === "pdf") {
-          // PDF chapter: keep the existing PDF unless a new one finished uploading in this edit.
           const orig = editingProgram?.chapters?.find(o => o.chapterNo === ch.chapterNo);
           out.pdfUrl = uploaded[i]?.url || orig?.pdfUrl || "";
           out.pdfPublicId = uploaded[i]?.publicId || orig?.pdfPublicId || "";
@@ -1068,9 +1130,9 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
         } else if (ch.videoSource === "youtube") {
           out.videoUrl = ch.videoUrl.trim();
           const orig = editingProgram?.chapters?.find(o => o.chapterNo === ch.chapterNo);
-          if (!orig || orig.videoUrl !== out.videoUrl) out.duration = ""; // new link → length refills on first play
+          if (!orig || orig.videoUrl !== out.videoUrl) out.duration = "";
         } else {
-          out.videoUrl = ch.videoUrl || ""; // keep existing uploaded url when editing, unchanged
+          out.videoUrl = ch.videoUrl || "";
           out.videoPublicId = ch.videoPublicId || "";
         }
         return out;
@@ -1136,7 +1198,6 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
                 />
               </div>
 
-              {/* ✅ NEW — course-level description, shown above the chapter list on the employee side */}
               <div className="col-12">
                 <label style={labelStyle}>Course Description</label>
                 <textarea
@@ -1148,7 +1209,6 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
                 />
               </div>
 
-              {/* ✅ NEW — Multi-chapter course toggle */}
               <div className="col-12">
                 <div className="form-check form-switch d-flex align-items-center gap-2" style={{ background: "#f9fafb", borderRadius: 8, padding: "8px 12px", border: "1px solid #e5e7eb" }}>
                   <input
@@ -1165,7 +1225,6 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
                 </div>
               </div>
 
-              {/* ✅ NEW — Chapter builder + HR access window, only when the toggle above is on */}
               {useChapters && (
                 <div className="col-12">
                   <div className="row g-2 mb-3">
@@ -1268,13 +1327,12 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
                               onChange={e => {
                                 const f = e.target.files[0] || null;
                                 if (f && f.size > MAX_VIDEO_MB * 1024 * 1024) {
-                                  // shown right under this chapter's file box (the top-of-modal banner is off-screen while scrolled)
                                   updateChapter(idx, { fileError: `"${f.name}" is ${(f.size / 1048576).toFixed(0)} MB — over the ${MAX_VIDEO_MB} MB limit. Please compress it (e.g. 720p) and choose it again.` });
                                   e.target.value = "";
                                   return;
                                 }
                                 updateChapter(idx, { fileError: "" });
-                                if (f) startUpload(ch.uid, f); // uploads right away, in the background
+                                if (f) startUpload(ch.uid, f);
                               }}
                               disabled={ch.upload?.status === "uploading"}
                             />
@@ -1308,9 +1366,6 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
                           </>
                         )}
 
-                        {/* ✅ NEW — optional per-chapter quiz ("understanding check"). Applies to
-                            video AND PDF chapters alike. Empty by default: if HR adds nothing here,
-                            this chapter behaves exactly as before (straight to Complete/Mark as Read). */}
                         <div className="mt-2 pt-2" style={{ borderTop: "1px dashed #e5e7eb" }}>
                           <button
                             type="button"
@@ -1385,7 +1440,6 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
                 </div>
               </div>
 
-              {/* ── Searchable Department Dropdown ── */}
               <div className="col-12" style={{ position: "relative" }}>
                 <label style={labelStyle}>Department</label>
                 <input
@@ -1444,7 +1498,6 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
                 </div>
               )}
 
-              {/* ── Certification (optional toggle) ── */}
               <div className="col-md-6">
                 <label style={labelStyle}>Certification</label>
                 <div className="form-check form-switch d-flex align-items-center gap-2 mb-2" style={{ background: "#f9fafb", borderRadius: 8, padding: "8px 12px", border: "1px solid #e5e7eb" }}>
@@ -1560,6 +1613,156 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
   );
 }
 
+// ─── Program Preview Modal (✅ NEW) ─────────────────────────────
+// Read-only "View" for a program card's 🔍 icon: full description,
+// chapter list (content type / duration / quiz count), certification,
+// session info for offline programs. "Edit Program" jumps straight
+// into CreateProgramModal in edit mode.
+function ProgramPreviewModal({ program, onClose, onEdit }) {
+  const typ = TYPE_CONFIG[program.type] || TYPE_CONFIG.job_role;
+  const chapters = [...(program.chapters || [])].sort((a, b) => a.chapterNo - b.chapterNo);
+  const totalQuizQuestions = chapters.reduce((sum, c) => sum + (c.quizQuestions?.length || 0), 0);
+
+  return (
+    <div className="modal show d-block" style={{ background: "rgba(15,23,42,.45)", zIndex: 1052 }}>
+      <div className="modal-dialog modal-dialog-centered modal-lg">
+        <div className="modal-content border-0 shadow-lg" style={{ borderRadius: 14 }}>
+          <div className="modal-header border-bottom" style={{ background: "#f9fafb", borderRadius: "14px 14px 0 0" }}>
+            <div className="d-flex align-items-center gap-2">
+              <Eye size={17} color="#3b82f6" />
+              <div>
+                <p className="mb-0 fw-bold" style={{ fontSize: 14 }}>{program.title}</p>
+                <span className="badge mt-1" style={{ background: typ.bg, color: typ.color, fontSize: 10, fontWeight: 700 }}>{typ.label}</span>
+              </div>
+            </div>
+            <button className="btn-close" onClick={onClose} />
+          </div>
+
+          <div className="modal-body" style={{ maxHeight: "65vh", overflowY: "auto" }}>
+            {/* Quick facts row */}
+            <div className="d-flex flex-wrap gap-2 mb-3">
+              <span className="badge" style={{
+                background: program.deliveryMode === "offline" ? "#fff7ed" : "#eff6ff",
+                color: program.deliveryMode === "offline" ? "#f97316" : "#3b82f6",
+                border: `1px solid ${program.deliveryMode === "offline" ? "#fed7aa" : "#bfdbfe"}`,
+                fontSize: 11, fontWeight: 700, padding: "5px 10px",
+              }}>
+                {program.deliveryMode === "offline" ? "📍 Offline" : "💻 Online"}
+              </span>
+              {programLength(program) && (
+                <span className="badge bg-light text-dark border" style={{ fontSize: 11, fontWeight: 600 }}>
+                  <Clock size={11} className="me-1" />{programLength(program)}
+                </span>
+              )}
+              {program.department && (
+                <span className="badge bg-light text-dark border" style={{ fontSize: 11, fontWeight: 600 }}>
+                  {program.department === "all" ? "All Departments" : program.department}
+                </span>
+              )}
+              {chapters.length > 0 && (
+                <span className="badge bg-light text-dark border" style={{ fontSize: 11, fontWeight: 600 }}>
+                  <Layers size={11} className="me-1" />{chapters.length} chapters
+                </span>
+              )}
+              {totalQuizQuestions > 0 && (
+                <span className="badge bg-light text-dark border" style={{ fontSize: 11, fontWeight: 600 }}>
+                  <HelpCircle size={11} className="me-1" />{totalQuizQuestions} quiz questions
+                </span>
+              )}
+            </div>
+
+            {program.description && (
+              <div className="mb-3">
+                <label style={labelStyle}>Description</label>
+                <p className="mb-0" style={{ fontSize: 13, color: "#374151", lineHeight: 1.5 }}>{program.description}</p>
+              </div>
+            )}
+
+            {program.modules?.length > 0 && (
+              <div className="mb-3">
+                <label style={labelStyle}>Modules / Topics</label>
+                <div className="d-flex flex-wrap gap-2">
+                  {program.modules.map((m, i) => (
+                    <span key={i} className="badge bg-light text-dark border" style={{ fontSize: 11, fontWeight: 500 }}>{m}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {program.certification && (
+              <div className="d-flex align-items-center gap-2 mb-3" style={{ background: `${typ.color}0d`, borderRadius: 8, padding: "9px 12px" }}>
+                <Award size={14} color={typ.color} style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: typ.color, fontWeight: 600 }}>{program.certification}</span>
+              </div>
+            )}
+
+            {program.deliveryMode === "offline" && (
+              <div className="mb-3" style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 9, padding: "10px 12px" }}>
+                <p className="mb-1 fw-bold" style={{ fontSize: 12, color: "#c2410c" }}>Session Details</p>
+                <p className="mb-0" style={{ fontSize: 12, color: "#7c2d12" }}>
+                  {program.sessionDate ? new Date(program.sessionDate).toLocaleDateString("en-IN") : "Date TBD"}
+                  {program.sessionTime ? `, ${program.sessionTime}` : ""}{program.venue ? ` · ${program.venue}` : ""}
+                </p>
+              </div>
+            )}
+
+            {program.conductedBy && (
+              <p className="mb-3" style={{ fontSize: 12, color: "#6b7280" }}>
+                <UserCheck size={12} className="me-1" />Conducted by <strong>{program.conductedBy}</strong>
+              </p>
+            )}
+
+            {(program.accessStartDate || program.accessEndDate) && (
+              <p className="mb-3" style={{ fontSize: 11.5, color: "#9ca3af" }}>
+                <Calendar size={11} className="me-1" />
+                Access window: {program.accessStartDate ? new Date(program.accessStartDate).toLocaleDateString("en-IN") : "Anytime"}
+                {" – "}
+                {program.accessEndDate ? new Date(program.accessEndDate).toLocaleDateString("en-IN") : "No end date"}
+              </p>
+            )}
+
+            {chapters.length > 0 && (
+              <div>
+                <label style={labelStyle}>Chapters ({chapters.length})</label>
+                <div className="d-flex flex-column gap-2">
+                  {chapters.map(c => (
+                    <div key={c.chapterNo} className="d-flex align-items-start gap-2" style={{ border: "1px solid #e5e7eb", borderRadius: 9, padding: "9px 11px", background: "#fafafa" }}>
+                      <span style={{ flexShrink: 0, marginTop: 1, color: "#9ca3af" }}>
+                        {c.contentType === "pdf" ? <FileType size={15} /> : <PlayCircle size={15} />}
+                      </span>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <p className="mb-0 fw-semibold" style={{ fontSize: 12.5 }}>Ch.{c.chapterNo} — {c.title}</p>
+                        {c.description && <p className="mb-0 text-muted" style={{ fontSize: 11 }}>{c.description}</p>}
+                        <div className="d-flex flex-wrap gap-2 mt-1">
+                          {c.duration && <span className="text-muted" style={{ fontSize: 10.5 }}>⏱ {c.duration}</span>}
+                          {(c.quizQuestions?.length || 0) > 0 && (
+                            <span className="text-muted" style={{ fontSize: 10.5 }}>📝 {c.quizQuestions.length} quiz question{c.quizQuestions.length > 1 ? "s" : ""}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!program.description && !program.modules?.length && chapters.length === 0 && (
+              <p className="text-muted text-center py-3" style={{ fontSize: 12.5 }}>No further details added for this program yet.</p>
+            )}
+          </div>
+
+          <div className="modal-footer gap-2">
+            <button className="btn btn-light flex-fill" onClick={onClose}>Close</button>
+            <button className="btn btn-primary fw-bold flex-fill d-flex align-items-center justify-content-center gap-1" onClick={onEdit}>
+              <Pencil size={13} /> Edit Program
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main HR Component ────────────────────────────────────────
 export default function TrainingRoadmapHR() {
   const [programs, setPrograms]   = useState([]);
@@ -1570,23 +1773,35 @@ export default function TrainingRoadmapHR() {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
   const [toast, setToast]         = useState(null);
-  const [modal, setModal]         = useState(null); // "assign"|"update"|"quizQuestions"
+  const [modal, setModal]         = useState(null); // "assign"|"update"|"quizQuestions"|"createProgram"
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [activeTab, setActiveTab] = useState("roadmap"); // "roadmap"|"records"|"kpi"|"certificates"
   const [search, setSearch]       = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterDept, setFilterDept]     = useState("all");
   const [seeding, setSeeding]     = useState(false);
-  const [deletingId, setDeletingId] = useState(null); // ✅ NEW — tracks which record is being deleted, for per-row spinner/disable
-  const [deletingLogId, setDeletingLogId] = useState(null); // ✅ NEW — tracks which compliance log entry is being deleted
-  // ✅ CHANGED — was "which employee's compliance log group is expanded" (separate tab).
-  // Now: which record's inline history row is expanded, inside the Records tab table.
+  const [deletingId, setDeletingId] = useState(null);
+  const [deletingLogId, setDeletingLogId] = useState(null);
   const [expandedEmp, setExpandedEmp] = useState(null);
  const [editingProgram, setEditingProgram] = useState(null);
   const [deletingProgramId, setDeletingProgramId] = useState(null);
   const [unassigningId, setUnassigningId] = useState(null);
+  const [lockingId, setLockingId] = useState(null);
   const [unassignInfo, setUnassignInfo] = useState(null);
-  
+
+  // ✅ NEW — 🔍 read-only program preview (View button on a program card)
+  const [previewProgram, setPreviewProgram] = useState(null);
+  // ✅ NEW — quick-assign preset: set when "Assign This Training" is clicked
+  // on a 0-assigned program card, so AssignModal opens with that program
+  // already selected.
+  const [assignPresetId, setAssignPresetId] = useState(null);
+  // ✅ NEW — which stat card (if any) drove the current Records filter, so
+  // we can highlight that card and show a "Filtered from X" banner + Clear.
+  const [statFilterKey, setStatFilterKey] = useState(null); // 'in_progress'|'overdue'|'certified'|null
+  const [filterCertifiedOnly, setFilterCertifiedOnly] = useState(false);
+  // ✅ NEW — search box next to "Active Training Programs" (title/modules/conductedBy)
+  const [programSearch, setProgramSearch] = useState("");
+
   const showMsg = (msg, type="success") => {
     setToast({ msg, type });
     setTimeout(()=>setToast(null), 3000);
@@ -1595,10 +1810,6 @@ export default function TrainingRoadmapHR() {
   const fetchAll = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      // ✅ NEW — silent self-heal, runs on every load/refresh: ensures
-      // every product is linked to the single shared "Equipment Training"
-      // program (merges any stray per-product programs, fixes dangling
-      // links). No button, no confirm — just keeps things consistent.
       await axios.post(`${API_BASE}/api/training/consolidate-equipment`).catch(() => {});
 
       const params = {};
@@ -1624,17 +1835,13 @@ export default function TrainingRoadmapHR() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // ✅ CHANGED — was handleSeed (inserted 15 default dummy programs).
-  // Now permanently wipes ALL training programs from the DB so the
-  // roadmap only ever shows programs HR actually creates. fetchAll()
-  // right after will silently re-heal the shared equipment program.
   const handleClearAll = async () => {
     if (!window.confirm("Delete ALL training programs permanently? This cannot be undone.")) return;
     setSeeding(true);
     try {
       const res = await axios.delete(`${API_BASE}/api/training/programs`);
       showMsg(res.data.message);
-      fetchAll(); // re-links every product to the shared equipment program automatically
+      fetchAll();
     } catch(e) { showMsg(e?.response?.data?.message || "Clear failed","error"); }
     setSeeding(false);
   };
@@ -1649,12 +1856,18 @@ export default function TrainingRoadmapHR() {
         showMsg("Bulk assignment done!");
       }
       setModal(null);
+      setAssignPresetId(null);
       fetchAll();
     } catch(e) { showMsg(e?.response?.data?.message||"Failed","error"); }
   };
 
-  // ✅ NEW — "Finish Training" bulk action. Program-ku assign panna
-// (completed/waived illatha) ella employees-um "completed" ah maarum.
+  // ✅ NEW — opens the Assign modal pre-loaded with this program (from the
+  // "Assign This Training" quick button that shows on 0-assigned cards).
+  const openQuickAssign = (program) => {
+    setAssignPresetId(program._id);
+    setModal("assign");
+  };
+
 const [finishingProgId, setFinishingProgId] = useState(null);
 const handleMarkAllComplete = async (program) => {
   const progRecords = records.filter(r => r.programId?._id === program._id && !["completed","waived"].includes(r.status));
@@ -1679,9 +1892,6 @@ const handleMarkAllComplete = async (program) => {
     } catch(e) { showMsg(e?.response?.data?.message||"Failed","error"); }
   };
 
-  // ✅ NEW — deletes a single training record (the row-level Delete button
-  // in the Records table). Confirms first, shows a per-row loading state,
-  // then refreshes the list + stats.
   const handleDeleteRecord = async (record) => {
     const name = record.employeeId?.name || "this employee";
     const prog = record.programId?.title || "this program";
@@ -1698,9 +1908,6 @@ const handleMarkAllComplete = async (program) => {
     }
   };
 
-  // ✅ NEW — deletes a single compliance-log entry (row-level Delete
-  // button inside a Records row's expanded history). Independent of
-  // training records — only removes the log line itself.
   const handleDeleteLog = async (log) => {
     const name = log.employeeId?.name || "this entry";
     if (!window.confirm(`Delete this compliance log entry for "${name}" — ${log.programTitle || "—"}? This cannot be undone.`)) return;
@@ -1716,12 +1923,6 @@ const handleMarkAllComplete = async (program) => {
     }
   };
 
-
-    // ✅ NEW — "Unassign" — removes this training assignment from the
-  // employee (no confirm popup, quick action) and keeps enough info
-  // around for a few seconds so HR can "Undo" and re-assign it if it
-  // was a mistake. Undo re-creates the assignment fresh (pending),
-  // it does not restore any progress/quiz history the old record had.
   const handleUnassign = async (record) => {
     if (unassignInfo?.timer) clearTimeout(unassignInfo.timer);
     const empName   = record.employeeId?.name || "this employee";
@@ -1759,7 +1960,20 @@ const handleMarkAllComplete = async (program) => {
     }
   };
 
-  // Filter records
+  const handleToggleLock = async (record) => {
+    setLockingId(record._id);
+    try {
+      const action = record.isLocked ? "unlock" : "lock";
+      await axios.put(`${API_BASE}/api/training/records/${record._id}/${action}`, { addedBy: "HR" });
+      showMsg(record.isLocked ? "Training unlocked." : "Training locked.");
+      fetchAll();
+    } catch (e) {
+      showMsg(e?.response?.data?.message || "Failed", "error");
+    } finally {
+      setLockingId(null);
+    }
+  };
+
   const handleDeleteProgram = async (program) => {
     if (!window.confirm(`Delete the training program "${program.title}"? Employees already assigned to it will keep their existing records, but it will disappear from this list and can no longer be assigned to anyone new.`)) return;
     setDeletingProgramId(program._id);
@@ -1773,19 +1987,60 @@ const handleMarkAllComplete = async (program) => {
       setDeletingProgramId(null);
     }
   };
+
+  // ✅ NEW — stat-card → Records shortcut. `key` is a stable id used only
+  // to highlight the right card; the actual filtering reuses the existing
+  // filterStatus (server-side) or a client-side certified-only flag.
+  const handleStatClick = (key) => {
+    setActiveTab("records");
+    setStatFilterKey(key);
+    if (key === "in_progress") { setFilterStatus("in_progress"); setFilterCertifiedOnly(false); }
+    else if (key === "overdue") { setFilterStatus("overdue"); setFilterCertifiedOnly(false); }
+    else if (key === "certified") { setFilterStatus("all"); setFilterCertifiedOnly(true); }
+  };
+  const clearStatFilter = () => {
+    setStatFilterKey(null);
+    setFilterStatus("all");
+    setFilterCertifiedOnly(false);
+  };
+  const statFilterLabel = { in_progress: "In Progress", overdue: "Overdue", certified: "Certified" }[statFilterKey] || "";
+
   const filteredRecords = records.filter(r => {
     const matchSearch = !search.trim() ||
       r.employeeId?.name?.toLowerCase().includes(search.toLowerCase()) ||
       r.programId?.title?.toLowerCase().includes(search.toLowerCase());
-    return matchSearch;
+    const matchCertified = !filterCertifiedOnly || r.certificationIssued;
+    return matchSearch && matchCertified;
+  });
+
+  // ✅ NEW — search box next to "Active Training Programs" header
+  const visiblePrograms = programs.filter(p => p.isActive !== false);
+  const filteredPrograms = visiblePrograms.filter(p => {
+    if (!programSearch.trim()) return true;
+    const q = programSearch.toLowerCase();
+    return p.title?.toLowerCase().includes(q) ||
+      p.conductedBy?.toLowerCase().includes(q) ||
+      (p.modules || []).some(m => m.toLowerCase().includes(q));
   });
 
   return (
     <div className="container-fluid py-4" style={{ maxWidth:1400 }}>
+      {/* ✅ NEW — small stylesheet for the program-card hover lift + 2-line title clamp,
+          kept local to this component so nothing else on the page is affected. */}
+      <style>{`
+        .hr-program-card { transition: transform .18s ease, box-shadow .18s ease; }
+        .hr-program-card:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(16,24,40,.12); }
+        .hr-title-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .hr-menu-item:hover { background: #f9fafb; }
+        .hr-records-table > thead > tr > th { font-size: 11.5px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .03em; padding: 12px 10px; }
+        .hr-records-table > tbody > tr:not(.hr-history-row) { border-bottom: 1px solid #f1f2f4; }
+        .hr-records-table > tbody > tr:not(.hr-history-row) > td { padding: 14px 10px; vertical-align: middle; }
+        .hr-records-table > tbody > tr:not(.hr-history-row):nth-of-type(4n+1) { background: #fcfcfd; }
+        .hr-records-table > tbody > tr:not(.hr-history-row):hover { background: #f5f8ff !important; }
+      `}</style>
 
         {toast && <div className={`alert alert-${toast.type==="error"?"danger":"success"} position-fixed top-0 end-0 m-3`} style={{ zIndex:9999, fontSize:13 }}>{toast.msg}</div>}
 
-      {/* ✅ NEW — Undo toast after "Unassign". Auto-dismisses after 7s. */}
       {unassignInfo && (
         <div className="alert alert-warning position-fixed top-0 end-0 m-3 d-flex align-items-center gap-3 shadow-sm" style={{ zIndex:9999, fontSize:13 }}>
           <span>Unassigned "{unassignInfo.progTitle}" from {unassignInfo.empName}.</span>
@@ -1793,9 +2048,25 @@ const handleMarkAllComplete = async (program) => {
         </div>
       )}
 
-      {modal === "assign" && <AssignModal programs={programs} employees={employees} onClose={()=>setModal(null)} onSave={handleAssign} />}
+      {modal === "assign" && (
+        <AssignModal
+          programs={programs}
+          employees={employees}
+          initialProgramId={assignPresetId}
+          onClose={()=>{ setModal(null); setAssignPresetId(null); }}
+          onSave={handleAssign}
+        />
+      )}
       {modal === "update" && selectedRecord && <UpdateRecordModal record={selectedRecord} onClose={()=>{setModal(null);setSelectedRecord(null);}} onSave={handleUpdate} />}
       {modal === "quizQuestions" && <QuizQuestionsManagerModal onClose={()=>setModal(null)} showMsg={showMsg} />}
+      {/* ✅ NEW — read-only program preview, opened from the 🔍 icon on a program card */}
+      {previewProgram && (
+        <ProgramPreviewModal
+          program={previewProgram}
+          onClose={() => setPreviewProgram(null)}
+          onEdit={() => { setEditingProgram(previewProgram); setPreviewProgram(null); setModal("createProgram"); }}
+        />
+      )}
       {modal === "createProgram" && (
         <CreateProgramModal
           editingProgram={editingProgram}
@@ -1825,53 +2096,47 @@ const handleMarkAllComplete = async (program) => {
             <p className="mb-0 text-muted" style={{ fontSize:12 }}>Job-Role Based Mandatory Training (RCA)</p>
           </div>
         </div>
-        <div className="d-flex gap-2 flex-wrap">
-          {/* ✅ CHANGED — was the "Seed Default Programs" button (shown when
-              programs.length === 0). Now a "Clear All Programs" button,
-              shown when there ARE programs, so HR can wipe seeded/old data. */}
-          {programs.length > 0 && (
-            <button className="btn btn-sm btn-outline-danger fw-bold" onClick={handleClearAll} disabled={seeding}>
-              {seeding ? "Clearing..." : "🗑 Clear All Programs"}
+        <div className="d-flex align-items-center gap-2 flex-wrap">
+          <div className="d-flex gap-2 flex-wrap">
+            <button className="btn btn-sm btn-outline-primary d-flex align-items-center gap-2 fw-bold" onClick={()=>setModal("quizQuestions")}>
+              <ClipboardList size={14} /> Manage Quiz Questions
             </button>
+            <button className="btn btn-primary d-flex align-items-center gap-2 fw-bold" onClick={()=>{ setAssignPresetId(null); setModal("assign"); }}>
+              <Plus size={14} /> Assign Training
+            </button>
+            <button className="btn btn-sm btn-outline-success d-flex align-items-center gap-2 fw-bold" onClick={()=>{ setEditingProgram(null); setModal("createProgram"); }}>
+              <Plus size={14} /> Create Training
+            </button>
+          </div>
+          {/* ✅ CHANGED — "Clear All Programs" visually separated with a divider
+              so it doesn't sit at the same weight as Assign/Create and isn't
+              an easy accidental click next to the everyday-use buttons. */}
+          {programs.length > 0 && (
+            <div className="d-flex align-items-center" style={{ borderLeft: "1px solid #e5e7eb", paddingLeft: 12, marginLeft: 4 }}>
+              <button className="btn btn-sm btn-outline-danger fw-bold" onClick={handleClearAll} disabled={seeding}>
+                {seeding ? "Clearing..." : "🗑 Clear All Programs"}
+              </button>
+            </div>
           )}
-          {/* ✅ REMOVED — "Restore Equipment Programs" / "Merge Equipment
-              Programs" buttons. That work now happens silently inside
-              fetchAll() on every load/refresh — every product always ends
-              up linked to the one shared equipment program automatically,
-              no manual step needed. */}
-          {/* <button className="btn btn-sm btn-light d-flex align-items-center gap-1" onClick={fetchAll} disabled={loading}>
-            <RefreshCw size={13} /> Refresh
-          </button> */}
-          {/* ✅ NEW — HR authors the MCQ question bank used by the employee quiz */}
-          <button className="btn btn-sm btn-outline-primary d-flex align-items-center gap-2 fw-bold" onClick={()=>setModal("quizQuestions")}>
-            <ClipboardList size={14} /> Manage Quiz Questions
-          </button>
-          <button className="btn btn-primary d-flex align-items-center gap-2 fw-bold" onClick={()=>setModal("assign")}>
-            <Plus size={14} /> Assign Training
-          </button>
-          <button className="btn btn-sm btn-outline-success d-flex align-items-center gap-2 fw-bold" onClick={()=>{ setEditingProgram(null); setModal("createProgram"); }}>
-  <Plus size={14} /> Create Training
-</button>
         </div>
       </div>
 
       {/* ── Stats ── */}
+      {/* ✅ CHANGED — In Progress / Overdue / Certified are now clickable
+          shortcuts into the Records tab, pre-filtered. Total Assigned,
+          Completion Rate and Avg Score stay as plain summary cards. */}
       {stats && (
         <div className="row g-3 mb-4">
           <div className="col"><StatCard label="Total Assigned"    value={stats.total}          color="#111827" bg="#f3f4f6" icon={<BookOpen size={15}/>} /></div>
           <div className="col"><StatCard label="Completion Rate"   value={`${stats.completionRate}%`} sub={`Target ≥ 95%`} color={stats.completionRate>=95?"#10b981":"#ef4444"} bg={stats.completionRate>=95?"#ecfdf5":"#fef2f2"} icon={<CheckCircle2 size={15}/>} /></div>
-          <div className="col"><StatCard label="In Progress"       value={stats.inProgress}     color="#3b82f6" bg="#eff6ff" icon={<Clock size={15}/>} /></div>
-          <div className="col"><StatCard label="Overdue"           value={stats.overdue}        color="#ef4444" bg="#fef2f2" icon={<AlertTriangle size={15}/>} /></div>
+          <div className="col"><StatCard label="In Progress"       value={stats.inProgress}     color="#3b82f6" bg="#eff6ff" icon={<Clock size={15}/>} onClick={()=>handleStatClick("in_progress")} active={statFilterKey==="in_progress"} /></div>
+          <div className="col"><StatCard label="Overdue"           value={stats.overdue}        color="#ef4444" bg="#fef2f2" icon={<AlertTriangle size={15}/>} onClick={()=>handleStatClick("overdue")} active={statFilterKey==="overdue"} /></div>
           <div className="col"><StatCard label="Avg Score"         value={`${stats.avgScore}%`} sub="Target ≥ 80%" color={stats.avgScore>=80?"#10b981":"#f59e0b"} bg={stats.avgScore>=80?"#ecfdf5":"#fffbeb"} icon={<Target size={15}/>} /></div>
-          <div className="col"><StatCard label="Certified"         value={stats.certified}      color="#8b5cf6" bg="#f5f3ff" icon={<Award size={15}/>} /></div>
+          <div className="col"><StatCard label="Certified"         value={stats.certified}      color="#8b5cf6" bg="#f5f3ff" icon={<Award size={15}/>} onClick={()=>handleStatClick("certified")} active={statFilterKey==="certified"} /></div>
         </div>
       )}
 
       {/* ── Tabs ── */}
-      {/* ✅ CHANGED — "Compliance Log" tab removed. Its data (compLog) and
-          delete action (handleDeleteLog) now live inline inside the
-          Records tab, as an expandable per-row history — see the Records
-          table below. Nothing about how compLog is fetched changed. */}
       <div className="d-flex gap-2 mb-3 flex-wrap">
         {[
           { key:"roadmap",    label:"Training Roadmap",       icon:<Layers size={13}/> },
@@ -1921,36 +2186,67 @@ const handleMarkAllComplete = async (program) => {
             ))}
           </div>
 
-          {/* Active Training Programs — real data, no placeholder L1-L6 levels */}
-          <div className="d-flex align-items-center justify-content-between mb-3">
+          {/* Active Training Programs header + search */}
+          <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
             <p className="fw-bold mb-0" style={{ fontSize: 14 }}>Active Training Programs</p>
-            <span className="text-muted" style={{ fontSize: 12 }}>{programs.filter(p=>p.isActive!==false).length} program{programs.length===1?"":"s"}</span>
+            <div className="d-flex align-items-center gap-3">
+              {/* ✅ NEW — search programs by title / modules / conducted-by */}
+              <div className="input-group input-group-sm" style={{ maxWidth: 220 }}>
+                <span className="input-group-text border-end-0 bg-white"><Search size={13} color="#9ca3af"/></span>
+                <input
+                  className="form-control border-start-0"
+                  placeholder="Search programs..."
+                  value={programSearch}
+                  onChange={e=>setProgramSearch(e.target.value)}
+                />
+              </div>
+              <span className="text-muted" style={{ fontSize: 12, whiteSpace: "nowrap" }}>
+                {filteredPrograms.length} of {visiblePrograms.length} program{visiblePrograms.length===1?"":"s"}
+              </span>
+            </div>
           </div>
 
-          {programs.filter(p=>p.isActive!==false).length === 0 ? (
+          {visiblePrograms.length === 0 ? (
             <div className="card border-0 shadow-sm text-center py-5" style={{ borderRadius: 13 }}>
               <Layers size={36} className="text-muted mb-3 mx-auto" />
               <p className="text-muted mb-3">No training programs yet.</p>
-              <button className="btn btn-primary btn-sm mx-auto" style={{ width: "fit-content" }} onClick={()=>setModal("assign")}>
+              <button className="btn btn-primary btn-sm mx-auto" style={{ width: "fit-content" }} onClick={()=>{ setAssignPresetId(null); setModal("assign"); }}>
                 <Plus size={13} /> Assign Training
               </button>
             </div>
+          ) : filteredPrograms.length === 0 ? (
+            <div className="card border-0 shadow-sm text-center py-5" style={{ borderRadius: 13 }}>
+              <Search size={32} className="text-muted mb-3 mx-auto" />
+              <p className="text-muted mb-0">No programs match "{programSearch}".</p>
+            </div>
           ) : (
             <div className="row g-3">
-              {programs.filter(p=>p.isActive!==false).map(p => {
+              {filteredPrograms.map(p => {
                 const typ = TYPE_CONFIG[p.type] || TYPE_CONFIG.job_role;
                 const progRecords = records.filter(r => r.programId?._id === p._id);
                 const assignedCount = progRecords.length;
                 const completedCount = progRecords.filter(r => r.status === "completed").length;
                 const completionPct = assignedCount ? Math.round((completedCount / assignedCount) * 100) : 0;
+                const chapterCount = p.chapters?.length || 0;
                 return (
                   <div key={p._id} className="col-md-6 col-lg-4">
-                    <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 13, borderTop: `3px solid ${typ.color}` }}>
+                    {/* ✅ CHANGED — hover-lift class added */}
+                    <div className="card border-0 shadow-sm h-100 hr-program-card" style={{ borderRadius: 13, borderTop: `3px solid ${typ.color}` }}>
                       <div className="card-body d-flex flex-column">
                         <div className="d-flex align-items-start justify-content-between gap-2 mb-2">
-                          <p className="fw-bold mb-0" style={{ fontSize: 14, color: "#111827", lineHeight: 1.3 }}>{p.title}</p>
+                          {/* ✅ CHANGED — 2-line clamp + native tooltip on hover for the full title */}
+                          <p className="fw-bold mb-0 hr-title-clamp" title={p.title} style={{ fontSize: 14, color: "#111827", lineHeight: 1.3 }}>{p.title}</p>
                           <div className="d-flex align-items-center gap-1 flex-shrink-0">
                             <span className="badge" style={{ background: typ.bg, color: typ.color, fontSize: 10, fontWeight: 700 }}>{typ.label}</span>
+                            {/* ✅ NEW — 🔍 View: read-only ProgramPreviewModal */}
+                            <button
+                              className="btn btn-sm p-1 d-flex align-items-center justify-content-center"
+                              title="View program details"
+                              style={{ width: 22, height: 22, border: "1px solid #bfdbfe", borderRadius: 6, background: "#fff" }}
+                              onClick={() => setPreviewProgram(p)}
+                            >
+                              <Eye size={11} color="#3b82f6" />
+                            </button>
                             <button
                               className="btn btn-sm p-1 d-flex align-items-center justify-content-center"
                               title="Edit program"
@@ -1973,8 +2269,8 @@ const handleMarkAllComplete = async (program) => {
                           </div>
                         </div>
 
-                        {/* ✅ NEW — Offline / Online delivery mode tag */}
-                        <div className="mb-2">
+                        {/* Delivery mode + chapter-count badges */}
+                        <div className="mb-2 d-flex flex-wrap gap-2">
                           <span className="badge" style={{
                             background: p.deliveryMode === "offline" ? "#fff7ed" : "#eff6ff",
                             color: p.deliveryMode === "offline" ? "#f97316" : "#3b82f6",
@@ -1983,6 +2279,12 @@ const handleMarkAllComplete = async (program) => {
                           }}>
                             {p.deliveryMode === "offline" ? "📍 Offline" : "💻 Online"}
                           </span>
+                          {/* ✅ NEW — chapter count badge */}
+                          {chapterCount > 0 && (
+                            <span className="badge" style={{ background: "#f5f3ff", color: "#8b5cf6", border: "1px solid #ddd6fe", fontSize: 10, fontWeight: 700, padding: "3px 9px" }}>
+                              <Layers size={10} className="me-1" />{chapterCount} chapter{chapterCount > 1 ? "s" : ""}
+                            </span>
+                          )}
                         </div>
 
                         {p.modules?.length > 0 && (
@@ -2026,6 +2328,17 @@ const handleMarkAllComplete = async (program) => {
                           </div>
                         </div>
 
+                        {/* ✅ NEW — quick-assign button for a program nobody is on yet */}
+                        {assignedCount === 0 && (
+                          <button
+                            className="btn btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-1"
+                            style={{ background: "#eff6ff", color: "#3b82f6", border: "1px solid #bfdbfe", fontSize: 12, fontWeight: 700, borderRadius: 8 }}
+                            onClick={() => openQuickAssign(p)}
+                          >
+                            <Plus size={12} /> Assign This Training
+                          </button>
+                        )}
+
                         {p.deliveryMode === "offline" && assignedCount > completedCount && (
                           <button
                             className="btn btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-1"
@@ -2050,15 +2363,25 @@ const handleMarkAllComplete = async (program) => {
       {/* ══ RECORDS TAB (now includes inline compliance history) ═══ */}
       {activeTab === "records" && (
         <div>
-          {/* ✅ CHANGED — moved here from the old standalone Compliance Log
-              tab, so the governance note still shows up somewhere once
-              that tab is gone. */}
           <div className="alert d-flex align-items-start gap-2 mb-3" style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:10, fontSize:12 }}>
             <Info size={14} color="#3b82f6" style={{ flexShrink:0, marginTop:1 }}/>
             <p className="mb-0" style={{ color:"#1e40af" }}>
               All trainings are tracked via RCA (Radnus Corporate Academy). Click the arrow next to any row to see its full history log. Managers must ensure 100% training compliance before confirming employee probation or promotion.
             </p>
           </div>
+
+          {/* ✅ NEW — banner shown only when this list is filtered from a stat card click */}
+          {statFilterKey && (
+            <div className="alert d-flex align-items-center justify-content-between gap-2 mb-3" style={{ background:"#f5f3ff", border:"1px solid #ddd6fe", borderRadius:10, fontSize:12, padding:"8px 14px" }}>
+              <span style={{ color:"#6d28d9" }}>
+                <Filter size={13} className="me-1" />
+                Filtered from <strong>{statFilterLabel}</strong> stat card
+              </span>
+              <button className="btn btn-sm btn-outline-secondary" style={{ fontSize:11 }} onClick={clearStatFilter}>
+                <X size={11} className="me-1" />Clear filter
+              </button>
+            </div>
+          )}
 
           {/* Filters */}
           <div className="card border-0 shadow-sm mb-3" style={{ borderRadius:10 }}>
@@ -2067,7 +2390,7 @@ const handleMarkAllComplete = async (program) => {
                 <span className="input-group-text border-end-0 bg-white"><Search size={13} color="#9ca3af"/></span>
                 <input className="form-control border-start-0" placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)}/>
               </div>
-              <select className="form-select form-select-sm" style={{ maxWidth:150 }} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
+              <select className="form-select form-select-sm" style={{ maxWidth:150 }} value={filterStatus} onChange={e=>{ setFilterStatus(e.target.value); setStatFilterKey(null); }}>
                 <option value="all">All Status</option>
                 {Object.entries(STATUS_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
               </select>
@@ -2084,14 +2407,14 @@ const handleMarkAllComplete = async (program) => {
             <div className="text-center py-5">
               <BookOpen size={40} className="text-muted mb-3"/>
               <p className="text-muted">No training records found.</p>
-              <button className="btn btn-primary btn-sm mt-2" onClick={()=>setModal("assign")}>
+              <button className="btn btn-primary btn-sm mt-2" onClick={()=>{ setAssignPresetId(null); setModal("assign"); }}>
                 <Plus size={13}/> Assign First Training
               </button>
             </div>
           ) : (
             <div className="card border-0 shadow-sm" style={{ borderRadius:12, overflow:"hidden" }}>
               <div className="table-responsive">
-                <table className="table table-hover align-middle mb-0" style={{ fontSize:13 }}>
+                <table className="table align-middle mb-0 hr-records-table" style={{ fontSize:13 }}>
                   <thead className="table-light">
                     <tr>
                       <th style={{ width: 24 }}></th>
@@ -2115,9 +2438,7 @@ const handleMarkAllComplete = async (program) => {
   end.setHours(23, 59, 59, 999);
   return end < new Date();
 })() && r.status !== "completed";
-                      const isDeleting = deletingId === r._id; // ✅ NEW
-                      // ✅ NEW — inline history (was the whole Compliance Log tab).
-                      // Same ComplianceLog data, filtered to this employee + this program.
+                      const isDeleting = deletingId === r._id;
                       const isHistoryOpen = expandedEmp === r._id;
                       const rowLogs = compLog.filter(l =>
                         String(l.employeeId?._id || l.employeeId) === String(r.employeeId?._id) &&
@@ -2149,21 +2470,33 @@ const handleMarkAllComplete = async (program) => {
                             <p className="mb-0 text-muted" style={{ fontSize:11 }}>{programLength(r.programId)}</p>
                           </td>
                           <td>
-                            <div className="d-flex flex-column gap-1">
-                              {lvl && <span className="badge" style={{ background:lvl.color, fontSize:10 }}>{r.programId?.level}</span>}
-                              <span className="badge" style={{ background:typ.bg, color:typ.color, fontSize:10 }}>{typ.label}</span>
+                            <div className="d-flex flex-column gap-1 align-items-start">
+                              {/* ✅ CHANGED — "all" level hidden (not useful info), pills made compact/rounded */}
+                              {lvl && r.programId?.level !== "all" && (
+                                <span className="badge" style={{ background:lvl.color, color:"#fff", fontSize:10, fontWeight:600, borderRadius:20, padding:"3px 9px" }}>{r.programId?.level}</span>
+                              )}
+                              <span className="badge" style={{ background:typ.bg, color:typ.color, fontSize:10, fontWeight:600, borderRadius:20, padding:"3px 9px" }}>{typ.label}</span>
                             </div>
                           </td>
-                                                  <td>
-                            <span className="badge" style={{ background:st.bg, color:st.color, border:`1px solid ${st.color}33`, fontSize:11 }}>
-                              {isOverdue && r.status!=="completed" ? "Overdue" : st.label}
-                            </span>
+                          <td>
+                            {/* ✅ CHANGED — status badge + lock icon inline on one line instead of stacked blocks */}
+                            <div className="d-flex align-items-center gap-1 flex-wrap">
+                              <span className="badge" style={{ background:st.bg, color:st.color, border:`1px solid ${st.color}33`, fontSize:11, borderRadius:20, padding:"4px 10px" }}>
+                                {isOverdue && r.status!=="completed" ? "Overdue" : st.label}
+                              </span>
+                              {r.isLocked && (
+                                <span title={`Locked${r.lockReason==="auto_due_date" ? " (due date)" : ""}`}
+                                  style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", width:20, height:20, borderRadius:"50%", background:"#1f2937", color:"#fff", flexShrink:0 }}>
+                                  <Lock size={10} />
+                                </span>
+                              )}
+                            </div>
                             {r.submittedForReview && r.status !== "completed" && (
-                              <span className="badge" style={{ background:"#fffbeb", color:"#92400e", border:"1px solid #fde68a", fontSize:10, marginTop:4, display:"block" }}>
+                              <span className="badge d-block mt-1" style={{ background:"#fffbeb", color:"#92400e", border:"1px solid #fde68a", fontSize:10, width:"fit-content" }}>
                                 Submitted by employee
                               </span>
                             )}
-                            <div><ChapterProgressChip record={r} /></div>
+                            <div className="mt-1"><ChapterProgressChip record={r} /></div>
                           </td>
                           <td>
                             {r.assessmentScore !== null && r.assessmentScore !== undefined ? (
@@ -2185,48 +2518,22 @@ const handleMarkAllComplete = async (program) => {
                             ) : "—"}
                           </td>
                           <td>
-                            {/* Action cell has Update + Unassign + Delete side by side */}
-                            <div className="d-flex gap-1">
-                              <button className="btn btn-sm btn-outline-primary py-0 px-2" style={{ fontSize:11 }}
-                                onClick={()=>{ setSelectedRecord(r); setModal("update"); }}
-                                disabled={isDeleting}>
-                                Update
-                              </button>
-                              {/* Unassign: removes the assignment (no confirm), with a
-                                  few-seconds "Undo" toast in case it was a mistake */}
-                              <button className="btn btn-sm btn-outline-warning py-0 px-2 d-flex align-items-center gap-1" style={{ fontSize:11 }}
-                                onClick={()=>handleUnassign(r)}
-                                disabled={isDeleting || unassigningId === r._id}
-                                title="Unassign this training from the employee">
-                                {unassigningId === r._id ? (
-                                  <span className="spinner-border spinner-border-sm" style={{ width:11, height:11 }} />
-                                ) : (
-                                  <X size={11} />
-                                )}
-                                Unassign
-                              </button>
-                              {/* Delete button, confirms then calls DELETE /api/training/records/:id */}
-                              <button className="btn btn-sm btn-outline-danger py-0 px-2 d-flex align-items-center gap-1" style={{ fontSize:11 }}
-                                onClick={()=>handleDeleteRecord(r)}
-                                disabled={isDeleting}
-                                title="Delete this training record">
-                                {isDeleting ? (
-                                  <span className="spinner-border spinner-border-sm" style={{ width:11, height:11 }} />
-                                ) : (
-                                  <Trash2 size={11} />
-                                )}
-                                Delete
-                              </button>
-                            </div>
+                            {/* ✅ CHANGED — was 4 buttons crammed in a row (overflowed on narrow
+                                screens); now "Update" stays visible, the rest live in a ⋮ menu. */}
+                            <RowActionsMenu
+                              record={r}
+                              isDeleting={isDeleting}
+                              unassigningId={unassigningId === r._id}
+                              lockingId={lockingId === r._id}
+                              onUpdate={() => { setSelectedRecord(r); setModal("update"); }}
+                              onUnassign={() => handleUnassign(r)}
+                              onToggleLock={() => handleToggleLock(r)}
+                              onDelete={() => handleDeleteRecord(r)}
+                            />
                           </td>
                         </tr>
-                        {/* ✅ NEW — inline history row, replaces the old separate
-                            Compliance Log tab. Same ComplianceLog entries, same
-                            Delete-per-entry action (handleDeleteLog), just shown
-                            right under the record it belongs to instead of in
-                            its own tab grouped by employee. */}
                         {isHistoryOpen && (
-                          <tr>
+                          <tr className="hr-history-row">
                             <td></td>
                             <td colSpan={8} style={{ background: "#f9fafb", padding: 0 }}>
                               {rowLogs.length === 0 ? (
@@ -2288,7 +2595,6 @@ const handleMarkAllComplete = async (program) => {
         </div>
       )}
 
-      {/* ══ KPI TAB ══════════════════════════════════════════════ */}
       {/* ══ CERTIFICATE REQUESTS TAB ═══════════════════════════════ */}
       {activeTab === "certificates" && (
         <CertificateRequestsPanel
@@ -2297,6 +2603,7 @@ const handleMarkAllComplete = async (program) => {
         />
       )}
 
+      {/* ══ KPI TAB ══════════════════════════════════════════════ */}
       {activeTab === "kpi" && (
         <div>
           <p className="fw-bold mb-3" style={{ fontSize:14 }}>Performance Indicators (KPIs)</p>
@@ -2333,7 +2640,6 @@ const handleMarkAllComplete = async (program) => {
             ))}
           </div>
 
-          {/* Dept completion breakdown */}
           {stats?.byDept?.length > 0 && (
             <div className="card border-0 shadow-sm" style={{ borderRadius:12 }}>
               <div className="card-body">
