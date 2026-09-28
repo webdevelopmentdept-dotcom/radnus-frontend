@@ -267,71 +267,160 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
   };
 
   // ── EXCEL DOWNLOAD ──
+    // ── EXCEL DOWNLOAD ──
   const downloadLogsAsExcel = () => {
     if (!logs.length) return showToast("No logs to download", "error");
 
-    import("xlsx").then(XLSX => {
-      const rows = [];
+    import("xlsx-js-style").then(mod => {
+      const XLSX = mod.default || mod;
+
+      // ── styles ──
+      const thin = { style: "thin", color: { rgb: "D1D5DB" } };
+      const border = { top: thin, bottom: thin, left: thin, right: thin };
+      const S = {
+        title:   { font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1E40AF" } }, alignment: { vertical: "center" } },
+        label:   { font: { bold: true, color: { rgb: "374151" } } },
+        value:   { font: { color: { rgb: "111827" } } },
+        section: { font: { bold: true, sz: 13, color: { rgb: "1E40AF" } } },
+        head:    { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "2563EB" } }, alignment: { horizontal: "center", vertical: "center" }, border },
+        text:    { border, alignment: { vertical: "center" } },
+        num:     { border, alignment: { horizontal: "center", vertical: "center" } },
+      };
+      const zebra = (s, i) => (i % 2 ? { ...s, fill: { fgColor: { rgb: "F3F4F6" } } } : s);
+      const statusStyle = (pct) => {
+        if (pct === null) return { color: "374151", bg: "F3F4F6", text: "No target" };
+        if (pct >= 100) return { color: "166534", bg: "DCFCE7", text: `${pct}%  -  Achieved` };
+        if (pct >= 50)  return { color: "92400E", bg: "FEF3C7", text: `${pct}%  -  In Progress` };
+        return { color: "991B1B", bg: "FEE2E2", text: `${pct}%  -  Behind` };
+      };
+
+      // ── helpers ──
+      const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      const fmtDate = (str) => {
+        const [y, m, d] = String(str).split("-").map(Number);
+        const dt = new Date(y, m - 1, d);
+        return { date: `${String(d).padStart(2, "0")}-${MONTHS[m - 1]}-${y}`, day: DAYS[dt.getDay()] };
+      };
+      const prettify = (k) => ({
+        invoice_no: "Invoice No.", customer_name: "Customer Name", mobile_number: "Mobile Number",
+        price_type: "Price Type", price: "Price"
+      }[k] || k.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()));
+      const cell = (v, s = {}) => ({ v: v ?? "", t: typeof v === "number" ? "n" : "s", s });
+
+      // ── which optional columns are needed? (only if data exists) ──
       const sortedLogs = [...logs].sort((a, b) => b.log_date.localeCompare(a.log_date));
+      const hasPrograms = sortedLogs.some(l => l.program_values && Object.keys(l.program_values).length > 0);
+      const extraKeys = [];
+      sortedLogs.forEach(l => Object.entries(l.extra_fields || {}).forEach(([k, v]) => {
+        if (v !== "" && v !== null && v !== undefined && !extraKeys.includes(k)) extraKeys.push(k);
+      }));
 
-      sortedLogs.forEach(log => {
-        const kpiItem = form.items.find(i => i.kpi_item_id === log.kpi_item_id);
-        const hasPrograms = log.program_values && Object.keys(log.program_values).length > 0;
+      const headers = ["Date", "Day", "KPI", "Value", "Unit", "Note",
+        ...(hasPrograms ? ["Program-wise"] : []),
+        ...extraKeys.map(prettify)];
+      const totalCols = headers.length;
 
-        if (hasPrograms) {
-          Object.entries(log.program_values).forEach(([progId, val]) => {
-            const prog = kpiItem?.program_targets?.find(p => p.program_id === progId);
-            rows.push({
-              "Date": log.log_date,
-              "KPI Name": log.kpi_name,
-              "Program": prog?.program_name || progId,
-              "Value": val,
-              "Unit": log.unit,
-              "Note": log.note || ""
-            });
-          });
-          rows.push({
-            "Date": log.log_date,
-            "KPI Name": log.kpi_name,
-            "Program": "-- TOTAL --",
-            "Value": log.value,
-            "Unit": log.unit,
-            "Note": log.note || ""
-          });
-        } else {
-          rows.push({
-            "Date": log.log_date,
-            "Employee": employee?.name || "",
-            "Department": assignment?.template_id?.department || "",
-            "KPI Name": log.kpi_name,
-            "Invoice No.": log.extra_fields?.invoice_no || "",
-            "Customer Name": log.extra_fields?.customer_name || "",
-            "Mobile Number": log.extra_fields?.mobile_number || "",
-            "Price Type": log.extra_fields?.price_type || "",
-            "Price": log.extra_fields?.price || "",
-            "Value": log.value,
-            "Target": form.items.find(i => i.kpi_item_id === log.kpi_item_id)?.target || "",
-            "Unit": log.unit,
-            "%": form.items.find(i => i.kpi_item_id === log.kpi_item_id)?.target
-              ? Math.round((log.value / form.items.find(i => i.kpi_item_id === log.kpi_item_id).target) * 100)
-              : ""
-          });
-        }
+      const aoa = [];
+      const merges = [];
+      const rowHeights = [];
+      const blank = () => Array.from({ length: totalCols }, () => cell(""));
+      const mergeRow = (c1, c2) => merges.push({ s: { r: aoa.length - 1, c: c1 }, e: { r: aoa.length - 1, c: c2 } });
+
+      // ── 1. Title ──
+      let row = blank().map(() => cell("", S.title));
+      row[0] = cell(`Daily Work Log  -  ${assignment?.period || ""}`, S.title);
+      aoa.push(row); mergeRow(0, totalCols - 1); rowHeights[aoa.length - 1] = 30;
+
+      // ── 2. Employee info (shown once) ──
+      [
+        ["Employee", employee?.name || ""],
+        ["Department", assignment?.template_id?.department || ""],
+        ["Period", assignment?.period || ""],
+        ["Downloaded on", fmtDate(new Date().toISOString().split("T")[0]).date],
+      ].forEach(([label, val]) => {
+        row = blank();
+        row[0] = cell(label, S.label);
+        row[1] = cell(val, S.value);
+        aoa.push(row); mergeRow(1, 5);
+      });
+      aoa.push(blank());
+
+      // ── 3. KPI Summary ──
+      row = blank(); row[0] = cell("KPI Summary", S.section); aoa.push(row);
+
+      row = blank();
+      row[0] = cell("KPI", S.head); row[1] = cell("", S.head); row[2] = cell("", S.head);
+      row[3] = cell("Target", S.head); row[4] = cell("Achieved", S.head); row[5] = cell("Progress", S.head);
+      aoa.push(row); mergeRow(0, 2);
+
+      form.items.forEach((item, i) => {
+        const achieved = logs
+          .filter(l => l.kpi_item_id === item.kpi_item_id)
+          .reduce((sum, l) => sum + (Number(l.value) || 0), 0);
+        const target = Number(item.target) || 0;
+        const pct = target ? Math.round((achieved / target) * 100) : null;
+        const st = statusStyle(pct);
+
+        row = blank();
+        const name = `${item.kpi_name}${item.unit ? ` (${item.unit})` : ""}`;
+        row[0] = cell(name, zebra(S.text, i)); row[1] = cell("", zebra(S.text, i)); row[2] = cell("", zebra(S.text, i));
+        row[3] = cell(target || "", zebra(S.num, i));
+        row[4] = cell(achieved, zebra(S.num, i));
+        row[5] = cell(st.text, { border, alignment: { horizontal: "center", vertical: "center" }, font: { bold: true, color: { rgb: st.color } }, fill: { fgColor: { rgb: st.bg } } });
+        aoa.push(row); mergeRow(0, 2);
+      });
+      aoa.push(blank());
+
+      // ── 4. Daily log details ──
+      row = blank(); row[0] = cell("Daily Log Details", S.section); aoa.push(row);
+
+      const headerRowIdx = aoa.length;
+      aoa.push(headers.map(h => cell(h, S.head)));
+      rowHeights[headerRowIdx] = 22;
+
+      sortedLogs.forEach((log, i) => {
+        const { date, day } = fmtDate(log.log_date);
+        const kpiItem = form.items.find(it => it.kpi_item_id === log.kpi_item_id);
+        const programText = log.program_values && Object.keys(log.program_values).length
+          ? Object.entries(log.program_values)
+              .map(([pid, val]) => `${kpiItem?.program_targets?.find(p => p.program_id === pid)?.program_name || pid}: ${val}`)
+              .join(", ")
+          : "";
+
+        const r = [
+          cell(date, zebra(S.text, i)),
+          cell(day, zebra(S.num, i)),
+          cell(log.kpi_name, zebra(S.text, i)),
+          cell(Number(log.value) || 0, zebra(S.num, i)),      // 0 is kept and shown
+          cell(log.unit || "", zebra(S.num, i)),
+          cell(log.note || "", zebra(S.text, i)),
+        ];
+        if (hasPrograms) r.push(cell(programText, zebra(S.text, i)));
+        extraKeys.forEach(k => r.push(cell(log.extra_fields?.[k] ?? "", zebra(S.text, i))));
+        aoa.push(r);
       });
 
-      const ws = XLSX.utils.json_to_sheet(rows);
+      // ── build sheet ──
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws["!merges"] = merges;
       ws["!cols"] = [
-        { wch: 12 }, { wch: 18 }, { wch: 16 }, { wch: 22 },
-        { wch: 14 }, { wch: 20 }, { wch: 14 }, { wch: 16 },
-        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 6 }
+        { wch: 14 }, { wch: 8 }, { wch: 26 }, { wch: 12 }, { wch: 10 }, { wch: 36 },
+        ...Array.from({ length: Math.max(0, totalCols - 6) }, () => ({ wch: 20 }))
       ];
+      ws["!rows"] = aoa.map((_, idx) => (rowHeights[idx] ? { hpt: rowHeights[idx] } : {}));
+      ws["!autofilter"] = {
+        ref: XLSX.utils.encode_range({ s: { r: headerRowIdx, c: 0 }, e: { r: aoa.length - 1, c: totalCols - 1 } })
+      };
+
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Daily Logs");
       const fileName = `DailyLogs_${assignment?.period || "export"}_${new Date().toISOString().split("T")[0]}.xlsx`;
       XLSX.writeFile(wb, fileName);
       showToast("Excel downloaded!");
-    }).catch(() => {
-      showToast("xlsx package not found. Run: npm install xlsx", "error");
+    }).catch((err) => {
+      console.error(err);
+      showToast("Excel export failed. Run: npm install xlsx-js-style", "error");
     });
   };
 
