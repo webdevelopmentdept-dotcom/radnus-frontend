@@ -970,7 +970,7 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
   ));
 
   const MAX_PARALLEL_UPLOADS = 2;
-  const MAX_VIDEO_MB = 210;
+  const MAX_VIDEO_MB = 330;
   const MAX_PDF_MB = 20;
   const controllersRef = useRef({});
   const queueRef = useRef([]);
