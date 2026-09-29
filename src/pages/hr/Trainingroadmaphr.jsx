@@ -432,7 +432,9 @@ function UpdateRecordModal({ record, onClose, onSave }) {
     certificationIssued: record.certificationIssued || false,
     progressNote:        "",
     notes:               record.notes || "",
+    dueDate:             record.dueDate ? new Date(record.dueDate).toISOString().slice(0,10) : "", // ✅ NEW — editable due date
   });
+  const courseEndDate = record.programId?.accessEndDate ? new Date(record.programId.accessEndDate).toISOString().slice(0,10) : undefined; // ✅ NEW — due date can't go past course end date
   const [saving, setSaving] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false); // ✅ NEW — collapsed by default
   const [showChapters, setShowChapters] = useState(false); // ✅ NEW — full chapter list, collapsed by default
@@ -590,6 +592,19 @@ function UpdateRecordModal({ record, onClose, onSave }) {
                   Marks this person as not attended for the offline session. They'll be notified and can be re-assigned or rescheduled.
                 </p>
               )}
+            </div>
+            <div>
+              <label style={labelStyle}>Due Date (deadline)</label>
+              <input type="date" className="form-control form-control-sm"
+                value={form.dueDate}
+                max={courseEndDate}
+                onChange={e=>setForm(f=>({...f,dueDate:e.target.value}))} />
+              <p className="text-muted mt-1 mb-0" style={{ fontSize:11 }}>
+                {courseEndDate
+                  ? `Course ends on ${new Date(courseEndDate).toLocaleDateString("en-IN")} — due date can't be later than this. To go beyond, extend the course end date in the program first.`
+                  : "Leave blank for no deadline."}
+                {" "}If this course was auto-locked for being overdue, moving the date forward unlocks it.
+              </p>
             </div>
             <div>
               <label style={labelStyle}>Post-Training Assessment Score (%)</label>
