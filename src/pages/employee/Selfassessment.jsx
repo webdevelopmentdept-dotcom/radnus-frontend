@@ -53,6 +53,9 @@ export default function SelfAssessment() {
   const [employee, setEmployee] = useState(null);
   const [extraFieldValues, setExtraFieldValues] = useState({});
   const [completedReviews, setCompletedReviews] = useState([]);
+    const [allCompleted, setAllCompleted] = useState(false);
+  const [lastCompletedPeriod, setLastCompletedPeriod] = useState("");
+  
   const [showSpecialDropdown, setShowSpecialDropdown] = useState(false);
   const [specialFieldOptions, setSpecialFieldOptions] = useState([
     // Existing fields
@@ -104,6 +107,20 @@ export default function SelfAssessment() {
       r._id === existing?._id
     );
 
+      const completedNotice = (
+    <div style={{ background: "#fff", borderRadius: 16, padding: "60px 20px", textAlign: "center", border: "1px solid #e5e7eb" }}>
+      <CheckCircle size={52} color="#16a34a" style={{ marginBottom: 12 }} />
+      <h3 style={{ color: "#1f2937", marginBottom: 8 }}>
+        {lastCompletedPeriod ? `${lastCompletedPeriod} KPI Completed ✅` : "KPI Completed ✅"}
+      </h3>
+        <p style={{ color: "#6b7280", fontSize: 14, maxWidth: 420, margin: "0 auto" }}>
+        Your KPIs for the new month have not been assigned yet.
+        They will appear here once HR assigns them.
+        You can view your completed reviews in the <b>Done</b> tab.
+      </p>
+    </div>
+  );
+
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
@@ -113,13 +130,25 @@ export default function SelfAssessment() {
 
       const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/${employeeId}`);
       // const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/pending/${employeeId}`);
-
+         
+      
       // if (assignRes.data.success && assignRes.data.data) {
       //   const assign = assignRes.data.data;
       //   console.log("KPI Items:", assign.template_id?.kpi_items);
       //   setAssignment(assign);
       //   const kpiItems = assign.template_id?.kpi_items || [];
-
+      // ✅ NEW: ella KPI-um HR reviewed -> next month assign aagura varaikkum empty
+      if (assignRes.data.all_completed) {
+        setAllCompleted(true);
+        setLastCompletedPeriod(assignRes.data.last_completed_period || "");
+        setAssignment(null);
+        setLogs([]);
+        setLogTotals({});
+        setActiveTab("completed");
+        await fetchCompletedReviews();
+        return;   // finally block run aagi loading false aagidum
+      }
+      setAllCompleted(false);
 
       if (assignRes.data.success && assignRes.data.data) {
   const assign = assignRes.data.data;
@@ -662,7 +691,7 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
           </div>
         )}
 
-        {!assignment ? (
+                {!assignment && !allCompleted ? (
           <div style={{ background: "#fff", borderRadius: 16, padding: "60px 20px", textAlign: "center", border: "1px solid #e5e7eb" }}>
             <ClipboardList size={52} color="#d1d5db" style={{ marginBottom: 12 }} />
             <h3 style={{ color: "#1f2937", marginBottom: 8 }}>No KPIs Assigned Yet</h3>
@@ -674,8 +703,11 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
             <div className="sa-title-row">
               <div style={{ minWidth: 0, flex: 1 }}>
                 <h2 style={{ margin: 0, fontSize: isMobile ? 16 : 22, fontWeight: 800, color: "#1a1a2e" }}>My Work Tracker</h2>
-                <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 11, wordBreak: "break-word" }}>
-                  {assignment.period} · {assignment.template_id?.role} · {assignment.template_id?.department}
+              <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 11, wordBreak: "break-word" }}>
+                                  {allCompleted
+                    ? `No KPI assigned yet for the current month · Last completed: ${lastCompletedPeriod}`
+                    : `${assignment?.period} · ${assignment?.template_id?.role} · ${assignment?.template_id?.department}`}
+                
                 </p>
               </div>
               {submitted && (
@@ -706,7 +738,8 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
             {/* ═══════════════════════════════════
                 DAILY LOG TAB
             ═══════════════════════════════════ */}
-            {activeTab === "dailylog" && (
+                        {activeTab === "dailylog" && allCompleted && completedNotice}
+            {activeTab === "dailylog" && !allCompleted && (
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 320px", gap: 16, width: "100%", boxSizing: "border-box" }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ background: "#fff", borderRadius: 14, padding: isMobile ? 14 : 24, border: "1px solid #e5e7eb", marginBottom: 16 }}>
@@ -1230,7 +1263,8 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
             {/* ═══════════════════════════════════
                 SELF ASSESSMENT TAB
             ═══════════════════════════════════ */}
-            {activeTab === "assessment" && (
+                      {activeTab === "assessment" && allCompleted && completedNotice}
+            {activeTab === "assessment" && !allCompleted && (
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 300px", gap: 16, width: "100%", boxSizing: "border-box" }}>
                 <div style={{ minWidth: 0 }}>
                   <div className="sa-info-banner">

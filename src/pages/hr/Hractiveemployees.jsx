@@ -41,6 +41,8 @@ const HR_DOC_TYPES = [
   "Employment Contract",
   "Salary Structure Document",
   "HR Policy Document",
+   "Salary Revision Letter",   
+  "Promotion Letter",   
 ];
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -146,6 +148,13 @@ const getFileLabel = (url) => {
   if (/\.(jpg|jpeg|png)/i.test(url)) return "Image";
   return "Document";
 };
+
+// Word/Excel/PPT files browser-la display aagaadhu → Office viewer-la open pannu
+const getPreviewUrl = (url) =>
+  /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url || "")
+    ? `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`
+    : url;
+    
 const isImage = (url) => /\.(jpg|jpeg|png|gif|webp)/i.test(url || "");
 const isPDF = (url) => /\.pdf/i.test(url || "") || (url || "").toLowerCase().includes("pdf");
 
@@ -362,7 +371,7 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
                     headers: { Authorization: `Bearer ${token}` }
                   });
                   const data = await res.json();
-                  if (data.url) newTab.location.href = data.url;
+                                    if (data.url) newTab.location.href = getPreviewUrl(data.url);
                 }} title="Preview" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "1px solid #e5e7eb", borderRadius: 7, background: "#fff", color: "#374151", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                   <EyeIcon /> View
                 </button>

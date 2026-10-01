@@ -32,6 +32,7 @@ const NAV_ITEMS = [
   { href: "/employee/leadership-track", icon: TrendingUp, label: "Leadership Track" },
   { href: "/employee/retention", icon: User, label: "Retention Plan" },
   { href: "/employee/sops", icon: Wallet, label: "My SOPs" },
+  { href: "/employee/hr-induction", icon: FileText, label: "HR Induction" },
   { href: "/employee/policies", icon: FileText, label: "Policies" },
   { href: "/employee/announcements", icon: Bell, label: "Announcements" },
   { href: "/employee/raise-ticket", icon: LifeBuoy, label: "Raise Ticket" },

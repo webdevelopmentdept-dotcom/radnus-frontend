@@ -84,6 +84,10 @@ const BUSINESS_TYPE_OPTIONS = [
     "Aadhar Service Centre",
     "Pani Puri Manufacturing ",
     "Honey Spoon Manufacturing",
+    "Gold Manufacturing",
+    "Soap And Detergent Manufacturing",
+    "Diesel Generators Manufacturing",
+    "Manufacturing Of Steel Rack",
     // ── Agriculture & Allied Activities ──
     "Paddy Cultivation",
     "Vegetable Farming",
@@ -99,6 +103,7 @@ const BUSINESS_TYPE_OPTIONS = [
     "Floriculture",
     "Agro-Service Centers",
     "Fish Aquarium",
+    "Cotton Recycling",
     // ── Small Trade & Retail Stores ──
     "Grocery Store (Kirana Shop)",
     "Textile and Readymade Garment Shop",
@@ -144,6 +149,7 @@ const BUSINESS_TYPE_OPTIONS = [
     "Cane and Bamboo Furniture Making",
     "Candle and Camphor Making",
     "Coir Product Manufacturing",
+    "Wall Painting And Wall Art",
     // ── Professional Services ──
     "Medical Clinic",
     "Dental Clinic",

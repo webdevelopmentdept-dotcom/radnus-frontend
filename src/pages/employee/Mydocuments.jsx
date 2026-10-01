@@ -5,7 +5,7 @@ import {
   ShieldCheck, FileCheck, Upload,
   ClipboardList, FileIcon, Lock, PenLine, DollarSign, BookOpen,
   Building2, User, RefreshCw, CreditCard, GraduationCap,
-  Briefcase,
+  Briefcase, TrendingUp, Award,  
 } from "lucide-react";
 import EmployeeLayout from "./EmployeeLayout";
 
@@ -29,6 +29,8 @@ const HR_DOC_TYPES = [
   { type: "Employment Contract",       icon: <PenLine       size={28} />, desc: "Full employment contract" },
   { type: "Salary Structure Document", icon: <DollarSign    size={28} />, desc: "Detailed salary breakdown" },
   { type: "HR Policy Document",        icon: <BookOpen      size={28} />, desc: "Company HR policies & guidelines" },
+    { type: "Salary Revision Letter",     icon: <TrendingUp    size={28} />, desc: "Your salary revision / increment letter" },
+  { type: "Promotion Letter",           icon: <Award         size={28} />, desc: "Official promotion confirmation" }, 
 ];
 
 const MANDATORY_PERSONAL_DOCS = [
@@ -83,6 +85,12 @@ const getFileLabel = (url) => {
   if (/\.(jpg|jpeg|png)/i.test(url)) return "Image";
   return "Document";
 };
+
+// Word/Excel/PPT files browser-la display aagaadhu → Office viewer-la open pannu
+const getPreviewUrl = (url) =>
+  /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url || "")
+    ? `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`
+    : url;
 
 const SectionDivider = ({ title, icon, color = "#2563eb" }) => (
   <div className="col-12" style={{ marginTop: 8, marginBottom: 4 }}>
@@ -216,7 +224,7 @@ const handleView = async (docId) => {
     console.log('view-doc response:', data); // debug
     
     if (data.url) {
-      newTab.location.href = data.url;
+            newTab.location.href = getPreviewUrl(data.url);
     } else {
       newTab.document.write('<p style="font-family:sans-serif;padding:20px;color:red;">Error: ' + (data.message || 'Failed to load') + '</p>');
     }

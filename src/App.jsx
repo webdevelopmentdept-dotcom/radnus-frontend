@@ -67,13 +67,13 @@ import EmployeeFeedback from "./pages/employee/EmployeeFeedback";
 import MyAdvances from "./pages/employee/MyAdvances";
 import EmployeeProductManagement from "./pages/employee/EmployeeProductManagement";
 import LoanProcess from "./pages/employee/LoanProcess";
-
+import LoanProcessReport from "./pages/employee/LoanProcessReport";
+import EmployeeHrInduction from "./pages/employee/Employeehrinduction";
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
 import HrEmployees from "./pages/hr/HrEmployees";
 import KpiTemplates from "./pages/hr/KpiTemplates";
-// import HRActivationForm from "./pages/hr/HRActivationForm";
 import HRAttendancePage from "./pages/hr/Hrattendancepage";
 import HRLeaveRequests from "./pages/hr/Hrleaverequests";
 import HrSettings from "./pages/hr/HrSettings";
@@ -128,7 +128,7 @@ import AdvanceRequests from "./pages/hr/AdvanceRequests";
 import ProductManagement from "./pages/hr/Productmanagement";
 import LoanIncentivePayouts from "./pages/hr/LoanIncentivePayouts";
 import HrInternships from "./pages/hr/HrInternships";
-
+import HrInduction from "./pages/hr/HrInduction";
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -145,7 +145,6 @@ import AdminLoanProcess from "./components/admin/AdminLoanProcess";
 import AdminLoanAccess from "./components/admin/Adminloanaccess";
 import AdminPendingApprovals from "./components/admin/AdminPendingApprovals";
 import AdminLoanAnalytics from "./components/admin/AdminLoanAnalytics";
-import LoanProcessReport from "./pages/employee/LoanProcessReport";
 
 /* Channel */
 import ChannelDashboard from "./pages/Channel/ChannelDashboard";
@@ -257,6 +256,7 @@ function App() {
         <Route path="/employee/my-incentive" element={<MyIncentive />} />
         <Route path="/employee/policies" element={<EmployeePolicies />} />
         <Route path="/employee/sops" element={<EmployeeSOPView />} />
+        <Route path="/employee/hr-induction" element={<EmployeeHrInduction />} />
         <Route path="/employee/forgot-password" element={<ForgotPassword />} />
         <Route path="/employee/reset-password/:token" element={<ResetPassword />} />
         <Route path="/employee/announcements" element={<EmployeeAnnouncements />} />
@@ -288,6 +288,7 @@ function App() {
 
           <Route path="applicants" element={<HrApplicants />} />
           <Route path="job-postings" element={<JobPostings />} />
+         <Route path="hr-induction" element={<HrInduction />} />
           <Route path="employees" element={<HrEmployees />} />
           <Route path="internships" element={<HrInternships />} />
 
