@@ -1098,6 +1098,8 @@ useEffect(() => {
   const playerApis = useRef({});               // chapterNo -> { seekTo(sec) }
   const beatQueue = useRef(Promise.resolve()); // heartbeats are sent one at a time, in order
   const submittingRef = useRef(false);         // blocks duplicate "chapter complete" requests
+  const beatBusy = useRef(false);              // a heartbeat request is in flight
+  const beatAgain = useRef(null);              // newest beat that arrived meanwhile (only 1 kept)
 
   useEffect(() => {
     if (!prog?._id) return;
@@ -1112,10 +1114,22 @@ useEffect(() => {
   // Sends one heartbeat (position of the video). The SERVER decides how much of the
   // video counts as really watched — skipped / fast-forwarded parts earn nothing.
   const sendBeat = (chapterNo, snap) => {
+    const atEndNow = !!(snap.duration && snap.position >= snap.duration - 0.5);
+    // A request is already running → don't pile up more; keep just the newest one.
+    if (beatBusy.current && !atEndNow) {
+      beatAgain.current = { chapterNo, snap };
+      return Promise.resolve(null);
+    }
+    beatBusy.current = true;
     const job = beatQueue.current.then(async () => {
       try {
+        // Take the position at SEND time (not when it was queued), so a slow network
+        // can't make queued beats look like the video jumped ahead.
+        const live = playerApis.current[chapterNo]?.snapshot?.();
+        const atEnd = snap.duration && snap.position >= snap.duration - 0.5;
+        const s = atEnd ? snap : (live || snap);
         const res = await axios.put(`${API_BASE}/api/training/my/${record._id}/chapter/${chapterNo}/heartbeat`, {
-          position: snap.position, duration: snap.duration, playing: snap.playing, rate: snap.rate,
+          position: s.position, duration: s.duration, playing: s.playing, rate: s.rate,
         });
         const d = res.data.data;
         setTracking(t => ({ ...t, [chapterNo]: { percent: d.percent, ranges: d.ranges, duration: d.duration, lastPosition: d.lastPosition } }));
@@ -1123,7 +1137,14 @@ useEffect(() => {
         // seconds with 95%+ verified still completes the chapter.
         if (d.ready && !d.watched && snap.duration && snap.position >= snap.duration - 12) submitChapterWatched(chapterNo);
         return d;
-      } catch (e) { console.warn("Heartbeat failed", e?.response?.data || e.message); return null; }
+      } catch (e) {
+        console.warn("Heartbeat failed", e?.response?.data || e.message);
+        return null;
+      } finally {
+        beatBusy.current = false;
+        const next = beatAgain.current; beatAgain.current = null;
+        if (next) sendBeat(next.chapterNo, next.snap);   // one catch-up beat with the latest position
+      }
     });
     beatQueue.current = job.catch(() => {});
     return job;
@@ -1283,6 +1304,8 @@ useEffect(() => {
                           <>
                             <WatchMap
                               ranges={tr.ranges} duration={tr.duration} percent={tr.percent || 0}
+                              lastPosition={tr.lastPosition || 0}
+                              getLive={() => playerApis.current[ch.chapterNo]?.snapshot?.()}
                               onJump={(t) => playerApis.current[ch.chapterNo]?.seekTo(t)}
                             />
                             {notice[ch.chapterNo] && (
@@ -1484,18 +1507,37 @@ const computeGaps = (ranges, duration) => {
 };
 
 // Green = verified watched, grey = not watched yet.
-function WatchMap({ ranges, duration, percent, onJump }) {
+function WatchMap({ ranges, duration, percent, onJump, getLive, lastPosition = 0 }) {
+  const [, setTick] = useState(0);
+  const liveRef = useRef(getLive); liveRef.current = getLive;
+  // redraw every second so the bar follows playback while the server catches up
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+
   if (!duration) return null;
   const gaps = computeGaps(ranges, duration);
+
+  // Stretch being played right now that the server hasn't confirmed yet (display only).
+  const live = liveRef.current?.();
+  const pending =
+    live && live.playing && live.position > lastPosition && live.position - lastPosition <= 45
+      ? [lastPosition, live.position]
+      : null;
+
   return (
     <div style={{ marginTop: 8 }}>
       <div style={{ position: "relative", height: 8, borderRadius: 4, background: "var(--line)", overflow: "hidden" }}>
         {(ranges || []).map(([s, e], i) => (
           <div key={i} style={{ position: "absolute", top: 0, bottom: 0, left: `${(s / duration) * 100}%`, width: `${((e - s) / duration) * 100}%`, background: "var(--success)" }} />
         ))}
+        {pending && (
+          <div style={{ position: "absolute", top: 0, bottom: 0, left: `${(pending[0] / duration) * 100}%`, width: `${((pending[1] - pending[0]) / duration) * 100}%`, background: "var(--success)", opacity: 0.4 }} />
+        )}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 5, fontSize: 11, color: "var(--muted-2)", gap: 8, flexWrap: "wrap" }}>
-        <span>Verified watched: <b>{percent}%</b> (need {REQUIRED_WATCH_PERCENT}%)</span>
+        <span>Verified watched: <b>{percent}%</b> (need {REQUIRED_WATCH_PERCENT}%){pending ? " · syncing…" : ""}</span>
         {gaps.length > 0 && percent < REQUIRED_WATCH_PERCENT && (
           <button type="button" className="btn btn-sm btn-light" style={{ fontSize: 11 }} onClick={() => onJump(gaps[0][0])}>
             Jump to unwatched part ({fmtTime(gaps[0][0])})
@@ -1526,7 +1568,10 @@ function ChapterHtml5Player({ src, watched, initial, onBeat, onEnded, onApi }) {
   const skip = (delta) => { const v = videoRef.current; if (v && v.duration) { v.currentTime = Math.min(Math.max(0, v.currentTime + delta), v.duration); flush(); } };
 
   useEffect(() => {
-    onApi?.({ seekTo: (t) => { const v = videoRef.current; if (v) { v.currentTime = t; v.play().catch(() => {}); } } });
+    onApi?.({
+      seekTo: (t) => { const v = videoRef.current; if (v) { v.currentTime = t; v.play().catch(() => {}); } },
+      snapshot,
+    });
     const id = setInterval(() => {
       const s = snapshot();
       if (s && s.playing && !document.hidden && !watchedRef.current) beatRef.current(s);
@@ -1606,7 +1651,10 @@ function ChapterYouTubePlayer({ youtubeId, watched, initial, onBeat, onEnded, on
           onReady: () => {
             const start = initialRef.current;
             if (start > 5 && !watchedRef.current) playerRef.current.seekTo(start, true); // resume
-            onApi?.({ seekTo: (t) => { try { playerRef.current.seekTo(t, true); playerRef.current.playVideo(); } catch (e) {} } });
+            onApi?.({
+              seekTo: (t) => { try { playerRef.current.seekTo(t, true); playerRef.current.playVideo(); } catch (e) {} },
+              snapshot,
+            });
             rateId = setInterval(() => {
               try { if (playerRef.current.getPlaybackRate() !== 1) playerRef.current.setPlaybackRate(1); } catch (e) {}
             }, 1000);
