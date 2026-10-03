@@ -69,6 +69,7 @@ import EmployeeProductManagement from "./pages/employee/EmployeeProductManagemen
 import LoanProcess from "./pages/employee/LoanProcess";
 import LoanProcessReport from "./pages/employee/LoanProcessReport";
 import EmployeeHrInduction from "./pages/employee/Employeehrinduction";
+import MyTeamKpi from "./pages/employee/MyTeamKpi";
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
@@ -129,6 +130,7 @@ import ProductManagement from "./pages/hr/Productmanagement";
 import LoanIncentivePayouts from "./pages/hr/LoanIncentivePayouts";
 import HrInternships from "./pages/hr/HrInternships";
 import HrInduction from "./pages/hr/HrInduction";
+import KpiLeaderAccess from "./pages/hr/KpiLeaderAccess";
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -238,6 +240,7 @@ function App() {
 
         <Route path="/employee/performance" element={<MyPerformance />} />
         <Route path="/employee/self-assessment" element={<SelfAssessment />} />
+        <Route path="/employee/my-team-kpi" element={<MyTeamKpi />} />
         <Route path="/employee/my-applications" element={<MyApplications />} />
         <Route path="/employee/my-salary" element={<MyPackage />} />
         <Route path="/employee/my-documents" element={<MyDocuments />} />
@@ -265,7 +268,6 @@ function App() {
         <Route path="/employee/feedback" element={<EmployeeFeedback />} />
         <Route path="/employee/my-advance" element={<MyAdvances />} />
         <Route path="/employee/products" element={<EmployeeProtectedRoute> <EmployeeProductManagement />  </EmployeeProtectedRoute>
-
         }
         />
         <Route path="/employee/loan-process" element={<EmployeeProtectedRoute>  <LoanProcess /> </EmployeeProtectedRoute>
@@ -323,6 +325,8 @@ function App() {
           <Route path="performance/assign-kpi" element={<AssignKpi />} />
           <Route path="performance/reviews" element={<PerformanceReviews />} />
           <Route path="performance/reports" element={<PerformanceReports />} />
+          <Route path="performance/leader-access" element={<KpiLeaderAccess />} />
+          
           <Route path="performance/okr-dashboard" element={<OkrDashboard />} />
           <Route path="performance/okr-setup" element={<OkrSetup />} />
           <Route path="performance/variable-pay" element={<VariablePayDashboard />} />

@@ -125,6 +125,7 @@ const HR_MENU = [
     items: [
       { to: "/hr/dashboard/performance/kpi-templates", end: false, icon: Target01Icon, size: 18, label: "KPI Templates ✅", flow: "1", notif: false },
       { to: "/hr/dashboard/performance/assign-kpi", end: false, icon: Task01Icon, size: 18, label: "Assign KPIs ✅", flow: "2", notif: false },
+      { to: "/hr/dashboard/performance/leader-access", end: false, icon: Task01Icon, size: 18, label: "Leader Access", flow: "2a", notif: false },
       { to: "/hr/dashboard/performance/reviews", end: false, icon: StarIcon, size: 18, label: "Reviews ✅", flow: "3", notif: false },
       { to: "/hr/dashboard/performance/reports", end: false, icon: ChartAverageIcon, size: 18, label: "Performance Reports ✅", flow: "4", notif: false },
     ],

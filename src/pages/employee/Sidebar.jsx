@@ -5,7 +5,7 @@ import {
   LogOut, TrendingUp, ClipboardList, Wallet,
   Bell, Settings, CalendarCheck, X,
   ChevronRight, Sun, Moon, Sparkles, MessageCircle, Lock, LifeBuoy , MessageSquarePlus,
-  Package
+  Package, Users
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -58,6 +58,7 @@ const ALWAYS_ALLOWED_PATHS = [
 // ─────────────────────────────────────────────────────────────────────────────
 export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsOpen }) {
   const [unreadCount, setUnreadCount] = useState(0);
+    const [isKpiLeader, setIsKpiLeader] = useState(false);
   const [active, setActive] = useState(window.location.pathname);
   const [lockToast, setLockToast] = useState(false); // ✅ NEW — lock message toast
 
@@ -106,6 +107,14 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
   ];
 }
 
+  if (isKpiLeader) {
+    navItems = [
+      ...navItems.slice(0, -2),
+      { href: "/employee/my-team-kpi", icon: Users, label: "My Team KPI" },
+      ...navItems.slice(-2),
+    ];
+  }
+
   useEffect(() => {
     localStorage.setItem("esb-theme", dark ? "dark" : "light");
   }, [dark]);
@@ -119,6 +128,21 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
     }
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
+
+    // Show "My Team KPI" only if HR mapped this employee as a leader
+  useEffect(() => {
+    const checkLeader = async () => {
+      try {
+        const token = localStorage.getItem("employeeToken") || sessionStorage.getItem("employeeToken");
+        if (!token) return;
+        const res = await axios.get(`${API_BASE}/api/kpi-leader/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setIsKpiLeader(!!res.data?.isLeader);
+      } catch (e) { /* not a leader / no access */ }
+    };
+    checkLeader();
+  }, []);
 
   // ── Fetch unread notifications ───────────────────────────────────────────
   useEffect(() => {
