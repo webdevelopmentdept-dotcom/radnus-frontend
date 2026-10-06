@@ -33,6 +33,7 @@ const CHECKLIST_STAGES = [
 const INCENTIVE_LINKED_KEYS = ["applicationProcess", "courier"];
 
 const DATE_ENABLED_STAGES = ["documentPayment", "courier"]; // date field intha rendu stages ku mattum
+const AMOUNT_ENABLED_STAGES = ["documentPayment"]; // amount field Document Payment ku mattum // date field intha rendu stages ku mattum
 
 const SCHEME_OPTIONS = [
     { value: "PMEGP", label: "PMEGP - Prime Minister's Employment Generation Programme" },
@@ -672,6 +673,30 @@ export default function LoanProcess() {
             console.error("DATE SAVE ERROR", err);
         }
     };
+
+
+    const saveAmount = async (customerId, field, amountValue) => {
+        const current = customers.find((c) => c._id === customerId);
+        const oldVal = current?.checklistAmounts?.[field] ?? "";
+        if (String(oldVal) === String(amountValue)) return; // maaralana save venaam
+        const currentValue = !!current?.checklist?.[field];
+        try {
+            const res = await fetch(`${API}/api/loan-process/${customerId}/checklist`, {
+                method: "PATCH",
+                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                body: JSON.stringify({ field, value: currentValue, amount: amountValue }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setCustomers((prev) => prev.map((c) => (c._id === customerId ? data.customer : c)));
+            } else {
+                alert(data.message || "Amount save aagala");
+            }
+        } catch (err) {
+            console.error("AMOUNT SAVE ERROR", err);
+        }
+    };
+
 
     /* ------------------------ TAB 2 — CUSTOMER DATA (edit/delete) ------- */
     const startEdit = (customer) => {
@@ -1730,6 +1755,21 @@ export default function LoanProcess() {
                                                             </button>
                                                         )}
                                                     </div>
+
+                                                                                                        {AMOUNT_ENABLED_STAGES.includes(stage.key) && (
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            placeholder="Amount ₹"
+                                                            key={`${c._id}-${stage.key}-amt-${c.checklistAmounts?.[stage.key] ?? ""}`}
+                                                            defaultValue={c.checklistAmounts?.[stage.key] ?? ""}
+                                                            onBlur={(e) => saveAmount(c._id, stage.key, e.target.value)}
+                                                            style={{
+                                                                width: 110, padding: "4px 8px", border: "1px solid var(--lp-border)",
+                                                                borderRadius: 6, fontSize: 12, background: "var(--lp-surface)",
+                                                            }}
+                                                        />
+                                                    )}
 
                                                     {DATE_ENABLED_STAGES.includes(stage.key) && (
                                                         <input

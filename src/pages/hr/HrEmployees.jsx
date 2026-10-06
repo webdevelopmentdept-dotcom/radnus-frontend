@@ -131,6 +131,28 @@ export default function HrEmployees() {
     }
   };
 
+  // ── Reactivate Rejected → move back to Pending ────────────────
+  const handleReactivateRejected = async (id) => {
+    if (!window.confirm("Reactivate this employee? They will be moved back to Pending for review.")) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/hr/move-to-pending/${id}`, {
+        method: "PUT",
+      });
+      if (res.ok) {
+        setEmployees((prev) =>
+          prev.map((emp) =>
+            emp._id === id ? { ...emp, status: "pending", remarks: "" } : emp
+          )
+        );
+        alert("Employee moved back to Pending ✅");
+      } else {
+        alert("Failed to reactivate ❌");
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   // ── Resolve exit status (fallback to `status` field if exitType missing) ──
   const getExitType = (emp) => {
     if (emp.exitType === "relieved" || emp.exitType === "fired") return emp.exitType;
@@ -169,7 +191,8 @@ export default function HrEmployees() {
     .filter((emp) => {
       const exitStatus = getExitType(emp);
       if (filter === "all") return true;
-      if (filter === "active") return !exitStatus;
+      if (filter === "active") return emp.status === "active" && !exitStatus;
+      if (filter === "rejected") return emp.status === "rejected" && !exitStatus;
       if (filter === "relieved") return exitStatus === "relieved";
       if (filter === "fired") return exitStatus === "fired";
       if (filter === "access-pending")
@@ -234,6 +257,7 @@ export default function HrEmployees() {
         {[
           { key: "all", label: "All Employees" },
           { key: "active", label: "Active" },
+          { key: "rejected", label: "Rejected" },
           { key: "relieved", label: "Relieved" },
           { key: "fired", label: "Fired / Terminated" },
           { key: "access-pending", label: `⚠️ Access Pending (${pendingAccessCount})` },
@@ -250,10 +274,21 @@ export default function HrEmployees() {
 
       <div className="card shadow-sm">
         <div className="card-body table-responsive">
-          <table className="table table-hover align-middle">
+          <table
+            className="table table-hover align-middle"
+            style={{ tableLayout: "fixed", minWidth: 1100 }}
+          >
+            <colgroup>
+              <col style={{ width: "100px" }} />{/* Emp ID */}
+              <col style={{ width: "170px" }} />{/* Name */}
+              <col style={{ width: "240px" }} />{/* Email */}
+              <col style={{ width: "200px" }} />{/* Department */}
+              <col style={{ width: "180px" }} />{/* Status */}
+              <col style={{ width: "280px" }} />{/* Action */}
+            </colgroup>
             <thead>
               <tr>
-                <th>Emp ID</th>
+                <th className="text-nowrap">Emp ID</th>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Department</th>
@@ -271,19 +306,19 @@ export default function HrEmployees() {
               ) : (
                 filteredEmployees.map((emp) => (
                   <tr key={emp._id}>
-                    <td>{emp.employeeId}</td>
-                    <td>{emp.name}</td>
-                    <td>{emp.email}</td>
-                    <td>{emp.department}</td>
-                    <td>{getStatusBadge(emp)}</td>
+                    <td className="text-nowrap">{emp.employeeId}</td>
+                    <td className="text-truncate" title={emp.name}>{emp.name}</td>
+                    <td className="text-truncate" title={emp.email}>{emp.email}</td>
+                    <td className="text-truncate" title={emp.department}>{emp.department}</td>
+                    <td className="text-nowrap">{getStatusBadge(emp)}</td>
                     <td>
                       {(() => {
                         const exitStatus = getExitType(emp);
                         return (
-                          <div className="d-flex gap-1 flex-wrap">
+                          <div className="d-flex gap-1 align-items-center flex-nowrap text-nowrap">
 
                             {/* Active employees — Relieve / Fire */}
-                            {!exitStatus && (
+                            {emp.status === "active" && !exitStatus && (
                               <>
                                 <button className="btn btn-sm btn-outline-warning" onClick={() => handleRelieve(emp._id)}>
                                   Relieve
@@ -292,6 +327,16 @@ export default function HrEmployees() {
                                   Fire
                                 </button>
                               </>
+                            )}
+
+                            {/* Rejected employees — Reactivate (back to Pending) */}
+                            {emp.status === "rejected" && !exitStatus && (
+                              <button
+                                className="btn btn-sm btn-outline-success"
+                                onClick={() => handleReactivateRejected(emp._id)}
+                              >
+                                ♻️ Reactivate
+                              </button>
                             )}
 
                             {(exitStatus === "relieved" || exitStatus === "fired") &&
@@ -305,7 +350,7 @@ export default function HrEmployees() {
                               )}
 
                             {emp.accessDeactivated && (
-                              <span className="text-muted small">✔ Access removed</span>
+                              <span className="text-muted small text-nowrap">✔ Access removed</span>
                             )}
 
                             {exitStatus && (

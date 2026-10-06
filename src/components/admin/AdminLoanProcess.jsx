@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import LoanModeToggle, { useLoanMode } from "./LoanModeToggle";
 
 const CHECKLIST_STAGES = [
   { key: "cibilVerification", label: "CIBIL Verification" },
@@ -28,6 +29,8 @@ const DOC_FIELDS = [
 
 export default function AdminLoanProcess() {
   const API = import.meta.env.VITE_API_BASE_URL;
+  const [mode, setMode] = useLoanMode();
+  const staffLabel = mode === "marketing" ? "Executive" : "Telecaller";
 
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -49,7 +52,8 @@ export default function AdminLoanProcess() {
       const params = new URLSearchParams();
       if (search) params.append("search", search);
       if (statusFilter) params.append("status", statusFilter);
-      if (staffFilter) params.append("staffId", staffFilter);
+            if (staffFilter) params.append("staffId", staffFilter);
+      params.append("mode", mode);
 
       const res = await fetch(`${API}/api/admin-loan-process/all?${params.toString()}`);
       const data = await res.json();
@@ -63,7 +67,7 @@ export default function AdminLoanProcess() {
 
   const loadStaffList = async () => {
     try {
-      const res = await fetch(`${API}/api/admin-loan-process/meta/staff-list`);
+            const res = await fetch(`${API}/api/admin-loan-process/meta/staff-list?mode=${mode}`);
       const data = await res.json();
       if (data.success) setStaffList(data.data || []);
     } catch (err) {
@@ -71,17 +75,17 @@ export default function AdminLoanProcess() {
     }
   };
 
-  useEffect(() => {
-    loadCustomers();
+    useEffect(() => {
+    setStaffFilter("");
     loadStaffList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     const t = setTimeout(loadCustomers, 350); // debounce search
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, statusFilter, staffFilter]);
+  }, [search, statusFilter, staffFilter, mode]);
 
   const formatRupee = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
@@ -134,7 +138,8 @@ export default function AdminLoanProcess() {
     if (staffFilter) params.append("staffId", staffFilter);
     if (schemeFilter) params.append("scheme", schemeFilter);
     if (fromDate) params.append("fromDate", fromDate);
-    if (toDate) params.append("toDate", toDate);
+        if (toDate) params.append("toDate", toDate);
+    params.append("mode", mode);
 
     window.open(`${API}/api/admin-loan-process/export/excel?${params.toString()}`, "_blank");
   };
@@ -232,11 +237,15 @@ export default function AdminLoanProcess() {
         }
       `}</style>
 
+           <LoanModeToggle mode={mode} onChange={setMode} />
+
       <div className="alp-header-row">
         <div>
           <h4 style={{ fontWeight: 700, marginBottom: 2, fontSize: 16 }}>Loan Process — Admin View</h4>
           <p style={{ color: "var(--lp-text-muted)", fontSize: 12.5, marginBottom: 0 }}>
-            All telecallers' customers across the BDE department.
+            {mode === "marketing"
+              ? "All marketing executives' customers across the Marketing department."
+              : "All telecallers' customers across the BDE department."}
           </p>
         </div>
       </div>
@@ -248,7 +257,7 @@ export default function AdminLoanProcess() {
           onChange={(e) => setSearch(e.target.value)}
         />
         <select value={staffFilter} onChange={(e) => setStaffFilter(e.target.value)}>
-          <option value="">All Telecallers</option>
+                    <option value="">All {staffLabel}s</option>
           {staffList.map((s) => (
             <option key={s._id} value={s._id}>{s.name}</option>
           ))}
@@ -368,9 +377,14 @@ export default function AdminLoanProcess() {
                           📝 {c.checklistRemarks[stage.key]}
                         </div>
                       )}
-                      {c.checklistDates?.[stage.key] && (
+                                            {c.checklistDates?.[stage.key] && (
                         <div style={{ fontSize: 11, color: "var(--lp-text-muted)", marginLeft: 22, marginTop: -2 }}>
                           📅 {new Date(c.checklistDates[stage.key]).toLocaleDateString()}
+                        </div>
+                      )}
+                      {stage.key === "documentPayment" && c.checklistAmounts?.documentPayment != null && (
+                        <div style={{ fontSize: 11, color: "var(--lp-text-muted)", marginLeft: 22, marginTop: -2 }}>
+                          💰 ₹{Number(c.checklistAmounts.documentPayment).toLocaleString("en-IN")}
                         </div>
                       )}
                     </div>

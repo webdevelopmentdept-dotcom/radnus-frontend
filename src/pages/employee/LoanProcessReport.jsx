@@ -363,9 +363,14 @@ export default function LoanProcessReport() {
                             📝 {c.checklistRemarks[stage.key]}
                           </div>
                         )}
-                        {c.checklistDates?.[stage.key] && (
+                                                {c.checklistDates?.[stage.key] && (
                           <div style={{ fontSize: 11, color: "var(--lp-text-muted)", marginLeft: 22, marginTop: -2 }}>
                             📅 {new Date(c.checklistDates[stage.key]).toLocaleDateString()}
+                          </div>
+                        )}
+                        {stage.key === "documentPayment" && c.checklistAmounts?.documentPayment != null && (
+                          <div style={{ fontSize: 11, color: "var(--lp-text-muted)", marginLeft: 22, marginTop: -2 }}>
+                            💰 ₹{Number(c.checklistAmounts.documentPayment).toLocaleString("en-IN")}
                           </div>
                         )}
                       </div>

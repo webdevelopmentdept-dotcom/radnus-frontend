@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import LoanModeToggle, { useLoanMode } from "./LoanModeToggle";
 import {
   ResponsiveContainer,
   BarChart,
@@ -19,6 +20,8 @@ const PIE_COLORS = ["#2A3EB1", "#0F9D80", "#F5A623", "#E5484D", "#7C5CFC", "#0EA
 
 export default function AdminLoanAnalytics() {
   const API = import.meta.env.VITE_API_BASE_URL;
+  const [mode, setMode] = useLoanMode();
+  const staffLabel = mode === "marketing" ? "Executive" : "Telecaller";
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -31,8 +34,10 @@ export default function AdminLoanAnalytics() {
       const params = new URLSearchParams();
       if (fromDate) params.append("fromDate", fromDate);
       if (toDate) params.append("toDate", toDate);
+      params.append("mode", mode);
 
       const res = await fetch(`${API}/api/admin-loan-analytics/overview?${params.toString()}`);
+
       const json = await res.json();
       if (json.success) setData(json.data);
     } catch (err) {
@@ -45,7 +50,7 @@ export default function AdminLoanAnalytics() {
   useEffect(() => {
     loadOverview();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mode]);
 
   const formatRupee = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
@@ -148,12 +153,16 @@ export default function AdminLoanAnalytics() {
         .ala-badge.progress { background: var(--lp-primary-soft); color: var(--lp-primary); }
 
         .ala-empty { color: var(--lp-text-muted); font-size: 12.5px; padding: 12px 0; }
-      `}</style>
+           `}</style>
+
+      <LoanModeToggle mode={mode} onChange={setMode} />
 
       <div style={{ marginBottom: 12 }}>
         <h4 style={{ fontWeight: 700, marginBottom: 2, fontSize: 16 }}>Loan Analytics</h4>
         <p style={{ color: "var(--lp-text-muted)", fontSize: 12.5, marginBottom: 0 }}>
-          Overall performance, scheme mix and stage-wise bottlenecks across the BDE loan process.
+          {mode === "marketing"
+            ? "Overall performance, scheme mix and stage-wise bottlenecks across the Marketing loan process."
+            : "Overall performance, scheme mix and stage-wise bottlenecks across the BDE loan process."}
         </p>
       </div>
 
@@ -282,18 +291,19 @@ export default function AdminLoanAnalytics() {
           </div>
 
           {/* ── Telecaller leaderboard + Recent activity ── */}
+          {/* ── Staff leaderboard + Recent activity ── */}
           <div className="ala-grid-2">
             <div className="ala-panel">
-              <div className="ala-panel-title">Telecaller Leaderboard</div>
+              <div className="ala-panel-title">{staffLabel} Leaderboard</div>
               <div className="ala-panel-sub">Ranked by revenue</div>
               {data.staffBreakdown.length === 0 ? (
-                <div className="ala-empty">No telecaller data yet.</div>
+                <div className="ala-empty">No {staffLabel.toLowerCase()} data yet.</div>
               ) : (
                 <table className="ala-table">
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Telecaller</th>
+                      <th>{staffLabel}</th>
                       <th>Applications</th>
                       <th>Revenue</th>
                       <th>Completed</th>

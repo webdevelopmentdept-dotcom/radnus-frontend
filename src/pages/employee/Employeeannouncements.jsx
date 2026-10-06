@@ -197,7 +197,7 @@ export default function EmployeeAnnouncements() {
 
         .img-wrap { position:relative;overflow:hidden;background:#111;cursor:pointer; }
         .carousel-track { display:flex;transition:transform .32s cubic-bezier(.4,0,.2,1); }
-        .carousel-slide { min-width:100%;object-fit:cover; }
+        .carousel-slide { min-width:100%;object-fit:contain; }
         .c-arrow { position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.52);border:none;color:#fff;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;z-index:3;transition:background .15s; }
         .c-arrow:hover { background:rgba(0,0,0,.78); }
 
@@ -416,12 +416,12 @@ function FeedCard({ ann, idx, isMobile, employeeId, onRead, onLike, onLightbox, 
 
       {/* Image carousel */}
       {hasImages && (
-        <div className="img-wrap" style={{ height:isMobile?230:300 }}
+        <div className="img-wrap" style={{ height:isMobile?260:460 }}
           onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div className="carousel-track" style={{ transform:`translateX(-${imgIdx*100}%)`,height:"100%" }}>
             {ann.images.map((img,ii) => (
               <img key={ii} src={img.url} alt={img.caption||""} className="carousel-slide"
-                style={{ height:"100%",objectFit:"cover" }}
+                style={{ height:"100%",objectFit:"contain",background:"#111" }}
                 onClick={() => onLightbox({ images:ann.images, idx:ii })}/>
             ))}
           </div>

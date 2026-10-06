@@ -66,12 +66,14 @@ export default function HRAnnouncements() {
   const [filterType, setFilterType]       = useState("all");
   const [stats, setStats]                 = useState(null);
   const [departments, setDepartments]     = useState([]);
+  const [employees, setEmployees]         = useState([]);
+  const [empSearch, setEmpSearch]         = useState("");
   const [uploadingImg, setUploadingImg]   = useState(false);
   const [lightbox, setLightbox]           = useState(null); // { url, caption }
   const [isMobile, setIsMobile]           = useState(window.innerWidth < 768);
   const fileInputRef                      = useRef(null);
 
-  const hrId = localStorage.getItem("employeeId") || localStorage.getItem("hrId");
+const hrId = localStorage.getItem("hrId");
 
   useEffect(() => {
     const r = () => setIsMobile(window.innerWidth < 768);
@@ -79,7 +81,7 @@ export default function HRAnnouncements() {
     return () => window.removeEventListener("resize", r);
   }, []);
 
-  useEffect(() => { fetchAll(); fetchStats(); fetchDepts(); }, []);
+  useEffect(() => { fetchAll(); fetchStats(); fetchDepts(); fetchEmployees(); }, []);
 
   const fetchAll = async () => {
     try {
@@ -94,6 +96,16 @@ export default function HRAnnouncements() {
   const fetchDepts = async () => {
     try { const r = await axios.get(`${API_BASE}/api/departments`); setDepartments((r.data.data || r.data || []).filter(d => d.status === "active")); } catch {}
   };
+
+  const fetchEmployees = async () => {
+    try {
+      const r = await axios.get(`${API_BASE}/api/hr/employees`);
+      setEmployees((r.data || []).filter(e => e.status === "active" && !e.exitType));
+    } catch {}
+  };
+
+  // By Role: unique designations from active employees
+  const roles = [...new Set(employees.map(e => e.designation).filter(Boolean))].sort();
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -146,7 +158,7 @@ export default function HRAnnouncements() {
       priority: a.priority, target: a.target,
       target_departments: a.target_departments || [],
       target_roles: a.target_roles || [],
-      target_employees: a.target_employees || [],
+      target_employees: (a.target_employees || []).map(x => x?._id || x),
       is_pinned: a.is_pinned,
       expires_at: a.expires_at ? a.expires_at.substring(0, 10) : "",
       emoji: a.emoji || "",
@@ -158,9 +170,16 @@ export default function HRAnnouncements() {
   const handleSubmit = async () => {
     if (!form.title.trim() || !form.content.trim())
       return showToast("Title and content required", "error");
+    if (form.target === "department" && form.target_departments.length === 0)
+      return showToast("Select at least one department", "error");
+    if (form.target === "role" && form.target_roles.length === 0)
+      return showToast("Select at least one role", "error");
+    if (form.target === "individual" && form.target_employees.length === 0)
+      return showToast("Select at least one employee", "error");
     setSaving(true);
     try {
-      const payload = { ...form, created_by: hrId };
+      const isValidId = /^[a-f\d]{24}$/i.test(hrId || "");
+const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
       const res = editingId
         ? await axios.put(`${API_BASE}/api/announcements/${editingId}`, payload)
         : await axios.post(`${API_BASE}/api/announcements`, payload);
@@ -527,6 +546,56 @@ export default function HRAnnouncements() {
                           </span>
                         );
                       })}
+                    </div>
+                  </div>
+                )}
+
+                {form.target==="role" && (
+                  <div style={{ marginTop:10,padding:12,background:"#f8fafc",borderRadius:8,border:"1px solid #e5e7eb" }}>
+                    <p style={{ margin:"0 0 8px",fontSize:12,fontWeight:700,color:"#374151" }}>Select Roles</p>
+                    <div style={{ display:"flex",flexWrap:"wrap",gap:6 }}>
+                      {roles.length === 0 && <span style={{ fontSize:12,color:"#6b7280" }}>No roles found</span>}
+                      {roles.map(r => {
+                        const sel = form.target_roles.includes(r);
+                        return (
+                          <span key={r} onClick={() => setForm(f=>({ ...f, target_roles: sel ? f.target_roles.filter(x=>x!==r) : [...f.target_roles, r] }))}
+                            style={{ padding:"5px 12px",borderRadius:99,fontSize:12,fontWeight:600,cursor:"pointer",background:sel?"#2563eb":"#fff",color:sel?"#fff":"#374151",border:`1.5px solid ${sel?"#2563eb":"#d1d5db"}` }}>
+                            {sel?"✓ ":""}{r}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {form.target==="individual" && (
+                  <div style={{ marginTop:10,padding:12,background:"#f8fafc",borderRadius:8,border:"1px solid #e5e7eb" }}>
+                    <p style={{ margin:"0 0 8px",fontSize:12,fontWeight:700,color:"#374151" }}>
+                      Select Employees ({form.target_employees.length} selected)
+                    </p>
+                    <input
+                      value={empSearch}
+                      onChange={e => setEmpSearch(e.target.value)}
+                      placeholder="🔍 Search name / Emp ID / department"
+                      style={{ ...inp, marginBottom:8 }}
+                    />
+                    <div style={{ maxHeight:200,overflowY:"auto",display:"flex",flexDirection:"column",gap:4 }}>
+                      {employees
+                        .filter(e => {
+                          const q = empSearch.toLowerCase();
+                          return !q || e.name?.toLowerCase().includes(q) || e.employeeId?.toLowerCase().includes(q) || e.department?.toLowerCase().includes(q);
+                        })
+                        .map(e => {
+                          const sel = form.target_employees.includes(e._id);
+                          return (
+                            <label key={e._id} style={{ display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:6,cursor:"pointer",background:sel?"#eff6ff":"#fff",border:`1px solid ${sel?"#2563eb":"#e5e7eb"}`,fontSize:12 }}>
+                              <input type="checkbox" checked={sel}
+                                onChange={() => setForm(f=>({ ...f, target_employees: sel ? f.target_employees.filter(x=>x!==e._id) : [...f.target_employees, e._id] }))} />
+                              <strong>{e.name}</strong>
+                              <span style={{ color:"#6b7280" }}>{e.employeeId} · {e.department}</span>
+                            </label>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
