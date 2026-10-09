@@ -299,7 +299,8 @@ const [showEmpDropdown, setShowEmpDropdown] = useState(false);
       if (Array.isArray(empRes.data))
         setEmployees(empRes.data.filter(emp => emp.status === "active"));
       if (tplRes.data.success) setTemplates(tplRes.data.data);
-      if (assignRes.data.success) setAssignments(assignRes.data.data);
+      if (assignRes.data.success)
+  setAssignments(assignRes.data.data.filter(a => a.employee_id));
     } catch { showToast("Failed to load data", "error"); }
     finally { setLoading(false); }
   };
