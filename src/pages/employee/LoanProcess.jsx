@@ -708,7 +708,7 @@ export default function LoanProcess() {
             communicationAddress: customer.communicationAddress || "",
             unitAddress: customer.unitAddress || "",
             businessType: customer.businessType || "",
-                        businessSubType: customer.businessSubType || "",
+            businessSubType: customer.businessSubType || "",
 
             scheme: customer.scheme || "",
             loanValue: customer.loanValue ?? "",
@@ -1123,7 +1123,7 @@ export default function LoanProcess() {
                                     />
                                     {fieldErrors.mailId && <div className="lp-field-error">{fieldErrors.mailId}</div>}
                                 </div>
-                                                               <div className="lp-field">
+                                <div className="lp-field">
                                     <label>Business Type *</label>
                                     <SearchableSelect
                                         name="businessType"
@@ -1450,7 +1450,7 @@ export default function LoanProcess() {
                                                     />
                                                     {editFieldErrors.mailId && <div className="lp-field-error">{editFieldErrors.mailId}</div>}
                                                 </div>
-                                                                                                <div className="lp-field">
+                                                <div className="lp-field">
                                                     <label>Business Type *</label>
                                                     <SearchableSelect
                                                         name="businessType"
@@ -1473,7 +1473,7 @@ export default function LoanProcess() {
                                                         placeholder="e.g. Masala, Pani Puri"
                                                     />
                                                 </div>
-                                                
+
 
                                                 <div className="lp-field">
                                                     <label>Scheme *</label>
@@ -1701,6 +1701,7 @@ export default function LoanProcess() {
                                                             type="checkbox"
                                                             checked={!!c.checklist?.[stage.key]}
                                                             disabled={
+                                                                (c.followup?.status && c.followup.status !== "NONE") ||
                                                                 (stage.incentiveLinked && c.incentive?.eligibility === "Paid") ||
                                                                 (stage.incentiveLinked &&
                                                                     !c.checklist?.[stage.key] &&
@@ -1756,7 +1757,7 @@ export default function LoanProcess() {
                                                         )}
                                                     </div>
 
-                                                                                                        {AMOUNT_ENABLED_STAGES.includes(stage.key) && (
+                                                    {AMOUNT_ENABLED_STAGES.includes(stage.key) && (
                                                         <input
                                                             type="number"
                                                             min="0"
@@ -1838,6 +1839,14 @@ export default function LoanProcess() {
                                             </div>
                                         </div>
                                         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                                                                                        {c.followup?.status === "PENDING" && (
+                                                <span className="lp-badge" style={{ background: "#fff4d6", color: "#8a6100" }}>
+                                                    With Followup team
+                                                </span>
+                                            )}
+                                            {c.followup?.status === "COMPLETED" && (
+                                                <span className="lp-badge done">Loan Sanctioned</span>
+                                            )}
                                             <span className={`lp-badge ${c.status === "COMPLETED" ? "done" : "progress"}`}>
                                                 {c.status === "COMPLETED" ? "Completed" : `${pct}%`}
                                             </span>

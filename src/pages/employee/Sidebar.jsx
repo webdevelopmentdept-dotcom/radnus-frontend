@@ -99,6 +99,14 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
     ];
   }
 
+    if (employee?.canManageLoanFollowup) {
+    navItems = [
+      ...navItems.slice(0, -2),
+      { href: "/employee/loan-followup", icon: ClipboardList, label: "Loan Followup" },
+      ...navItems.slice(-2),
+    ];
+  }
+
   if (employee?.canApproveLoanIncentive) {
   navItems = [
     ...navItems.slice(0, -2),

@@ -70,6 +70,7 @@ import LoanProcess from "./pages/employee/LoanProcess";
 import LoanProcessReport from "./pages/employee/LoanProcessReport";
 import EmployeeHrInduction from "./pages/employee/Employeehrinduction";
 import MyTeamKpi from "./pages/employee/MyTeamKpi";
+import LoanFollowup from "./pages/employee/LoanFollowup";
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
@@ -276,9 +277,12 @@ function App() {
         <Route path="/employee/loan-process-report" element={<EmployeeProtectedRoute>  <LoanProcessReport /> </EmployeeProtectedRoute>
         }
         />
+        <Route path="/employee/loan-followup" element={<EmployeeProtectedRoute>  <LoanFollowup /> </EmployeeProtectedRoute>
+        }
+        />
         <Route path="/employee/loan-incentive-payouts" element={<EmployeeProtectedRoute>  <LoanIncentivePayouts /> </EmployeeProtectedRoute>
-}
-/>
+        }
+        />
 
 
 
@@ -290,7 +294,7 @@ function App() {
 
           <Route path="applicants" element={<HrApplicants />} />
           <Route path="job-postings" element={<JobPostings />} />
-         <Route path="hr-induction" element={<HrInduction />} />
+          <Route path="hr-induction" element={<HrInduction />} />
           <Route path="employees" element={<HrEmployees />} />
           <Route path="internships" element={<HrInternships />} />
 
@@ -326,7 +330,7 @@ function App() {
           <Route path="performance/reviews" element={<PerformanceReviews />} />
           <Route path="performance/reports" element={<PerformanceReports />} />
           <Route path="performance/leader-access" element={<KpiLeaderAccess />} />
-          
+
           <Route path="performance/okr-dashboard" element={<OkrDashboard />} />
           <Route path="performance/okr-setup" element={<OkrSetup />} />
           <Route path="performance/variable-pay" element={<VariablePayDashboard />} />

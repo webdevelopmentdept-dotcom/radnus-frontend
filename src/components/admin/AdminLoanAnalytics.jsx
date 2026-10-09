@@ -59,6 +59,19 @@ export default function AdminLoanAnalytics() {
     setToDate("");
   };
 
+  // ── Followup funnel: Total → Handed over → DIC → Bank → Sanctioned ──
+  const fu = data?.followup || {};
+  const totalApps = data?.summary?.totalApplications || 0;
+  const followupFunnel = data
+    ? [
+        { key: "total", label: "Total Applications", count: totalApps, base: null },
+        { key: "handed", label: `${staffLabel} Completed (Handed over)`, count: fu.handedOver || 0, base: totalApps },
+        { key: "dic", label: "DIC Office Completed", count: fu.dicCompleted || 0, base: fu.handedOver || 0 },
+        { key: "bank", label: "Bank Process Completed", count: fu.bankCompleted || 0, base: fu.handedOver || 0 },
+        { key: "sanctioned", label: "Loan Sanctioned", count: fu.sanctioned || 0, base: fu.handedOver || 0 },
+      ]
+    : [];
+
   return (
     <div className="ala-root">
       <style>{`
@@ -72,6 +85,8 @@ export default function AdminLoanAnalytics() {
           --lp-primary-soft: #EEF1FD;
           --lp-accent: #0F9D80;
           --lp-accent-soft: #E7F7F2;
+          --lp-warn: #B98900;
+          --lp-danger: #b91c1c;
           --lp-radius-lg: 16px;
           --lp-radius-md: 12px;
           --lp-radius-sm: 8px;
@@ -91,6 +106,10 @@ export default function AdminLoanAnalytics() {
         }
         .ala-reset-btn:hover { background: var(--lp-primary-soft); }
 
+        .ala-section-label {
+          font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+          color: var(--lp-text-muted); margin: 4px 0 8px;
+        }
         .ala-metrics-grid {
           display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
           gap: 10px; margin-bottom: 20px;
@@ -107,6 +126,8 @@ export default function AdminLoanAnalytics() {
         .ala-metric-value { font-size: 20px; font-weight: 800; color: var(--lp-text); line-height: 1.2; }
         .ala-metric-value.accent { color: var(--lp-accent); }
         .ala-metric-value.primary { color: var(--lp-primary); }
+        .ala-metric-value.warn { color: var(--lp-warn); }
+        .ala-metric-value.danger { color: var(--lp-danger); }
 
         .ala-grid-2 { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-bottom: 16px; }
         .ala-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
@@ -122,10 +143,12 @@ export default function AdminLoanAnalytics() {
 
         /* ── Funnel ── */
         .ala-funnel-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .ala-funnel-label { width: 170px; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+        .ala-funnel-label { width: 230px; font-size: 12px; font-weight: 600; flex-shrink: 0; }
         .ala-funnel-track { flex: 1; height: 18px; background: var(--lp-bg); border-radius: 20px; overflow: hidden; }
         .ala-funnel-fill { height: 100%; background: linear-gradient(90deg, var(--lp-primary), var(--lp-accent)); border-radius: 20px; }
+        .ala-funnel-fill.followup { background: linear-gradient(90deg, #F5A623, var(--lp-accent)); }
         .ala-funnel-count { width: 42px; text-align: right; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+        .ala-funnel-pct { width: 44px; text-align: right; font-size: 11px; color: var(--lp-text-muted); flex-shrink: 0; }
 
         /* ── Tables ── */
         .ala-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
@@ -153,7 +176,7 @@ export default function AdminLoanAnalytics() {
         .ala-badge.progress { background: var(--lp-primary-soft); color: var(--lp-primary); }
 
         .ala-empty { color: var(--lp-text-muted); font-size: 12.5px; padding: 12px 0; }
-           `}</style>
+      `}</style>
 
       <LoanModeToggle mode={mode} onChange={setMode} />
 
@@ -184,7 +207,8 @@ export default function AdminLoanAnalytics() {
       {data && (
         <>
           {/* ── Summary cards ── */}
-          <div className="ala-metrics-grid">
+          <div className="ala-section-label">Overall</div>
+          <div className="ala-metrics-grid" style={{ marginBottom: 14 }}>
             <div className="ala-metric-card">
               <div className="ala-metric-label">Total Applications</div>
               <div className="ala-metric-value">{data.summary.totalApplications}</div>
@@ -194,11 +218,11 @@ export default function AdminLoanAnalytics() {
               <div className="ala-metric-value">{formatRupee(data.summary.totalRevenue)}</div>
             </div>
             <div className="ala-metric-card">
-              <div className="ala-metric-label">Completed Revenue</div>
+              <div className="ala-metric-label">{staffLabel} Completed Revenue</div>
               <div className="ala-metric-value accent">{formatRupee(data.summary.completedRevenue)}</div>
             </div>
             <div className="ala-metric-card">
-              <div className="ala-metric-label">Completed</div>
+              <div className="ala-metric-label">{staffLabel} Completed</div>
               <div className="ala-metric-value accent">{data.summary.completedCount}</div>
             </div>
             <div className="ala-metric-card">
@@ -212,6 +236,31 @@ export default function AdminLoanAnalytics() {
             <div className="ala-metric-card">
               <div className="ala-metric-label">Pending Cases</div>
               <div className="ala-metric-value">{data.summary.pendingCount}</div>
+            </div>
+          </div>
+
+          {/* ── Followup & Sanction cards ── */}
+          <div className="ala-section-label">Followup & Sanction</div>
+          <div className="ala-metrics-grid">
+            <div className="ala-metric-card">
+              <div className="ala-metric-label">With Followup</div>
+              <div className="ala-metric-value warn">{fu.pending || 0}</div>
+            </div>
+            <div className="ala-metric-card">
+              <div className="ala-metric-label">Sanctioned</div>
+              <div className="ala-metric-value accent">{fu.sanctioned || 0}</div>
+            </div>
+            <div className="ala-metric-card">
+              <div className="ala-metric-label">Not Sanctioned</div>
+              <div className="ala-metric-value danger">{fu.notSanctioned || 0}</div>
+            </div>
+            <div className="ala-metric-card">
+              <div className="ala-metric-label">Sanction Rate</div>
+              <div className="ala-metric-value primary">{fu.sanctionRate || 0}%</div>
+            </div>
+            <div className="ala-metric-card">
+              <div className="ala-metric-label">Sanctioned Revenue</div>
+              <div className="ala-metric-value accent">{formatRupee(fu.sanctionedRevenue)}</div>
             </div>
           </div>
 
@@ -280,7 +329,7 @@ export default function AdminLoanAnalytics() {
               const pct = Math.round((stage.count / max) * 100);
               return (
                 <div className="ala-funnel-row" key={stage.key}>
-                  <div className="ala-funnel-label">{stage.label}</div>
+                  <div className="ala-funnel-label" style={{ width: 170 }}>{stage.label}</div>
                   <div className="ala-funnel-track">
                     <div className="ala-funnel-fill" style={{ width: `${pct}%` }} />
                   </div>
@@ -290,8 +339,30 @@ export default function AdminLoanAnalytics() {
             })}
           </div>
 
+          {/* ── Followup funnel ── */}
+          <div className="ala-panel" style={{ marginBottom: 16 }}>
+            <div className="ala-panel-title">Followup Funnel</div>
+            <div className="ala-panel-sub">
+              After the {staffLabel.toLowerCase()} finishes — how many reached DIC, Bank and Loan Sanction.
+              % = share of Total (Handed over row) / share of Handed over (other rows)
+            </div>
+            {followupFunnel.map((step) => {
+              const barPct = totalApps ? Math.round((step.count / totalApps) * 100) : 0;
+              const sharePct = step.base ? Math.round((step.count / step.base) * 100) : null;
+              return (
+                <div className="ala-funnel-row" key={step.key}>
+                  <div className="ala-funnel-label">{step.label}</div>
+                  <div className="ala-funnel-track">
+                    <div className="ala-funnel-fill followup" style={{ width: `${barPct}%` }} />
+                  </div>
+                  <div className="ala-funnel-count">{step.count}</div>
+                  <div className="ala-funnel-pct">{sharePct === null ? "" : `${sharePct}%`}</div>
+                </div>
+              );
+            })}
+          </div>
+
           {/* ── Telecaller leaderboard + Recent activity ── */}
-          {/* ── Staff leaderboard + Recent activity ── */}
           <div className="ala-grid-2">
             <div className="ala-panel">
               <div className="ala-panel-title">{staffLabel} Leaderboard</div>
