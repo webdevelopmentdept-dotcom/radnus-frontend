@@ -430,7 +430,7 @@ export default function LoanFollowup() {
                         </div>
                       )}
                       {canEdit && (
-                        <div className="lf-note">DIC Office & Bank both Completed aana piragu thaan "Yes" kudukka mudiyum.</div>
+                        <div className="lf-note">You can mark "Yes" only after both DIC Office and Bank Process are Completed.</div>
                       )}
                     </div>
                   </div>
