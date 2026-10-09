@@ -54,6 +54,44 @@ const sanctionDotClass = (value) =>
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-IN") : "—");
 
+// Timeline of everything the Followup team did on a lead (latest value per step).
+const buildTimeline = (fu) => {
+  const ev = [];
+  const push = (date, icon, text, sub) => {
+    if (date) ev.push({ date: new Date(date), icon, text, sub: sub || "" });
+  };
+
+  push(fu.handedOverAt, "📤", "Handed over to Followup team");
+
+  if (fu.assignedTo?.employeeId) {
+    push(fu.assignedTo.assignedAt, "🎯", `Taken by ${fu.assignedTo.name || "employee"}`);
+  }
+
+  [
+    { label: "DIC Office", s: fu.dicOffice },
+    { label: "Bank Process", s: fu.bank },
+  ].forEach(({ label, s }) => {
+    if (!s?.state) return;
+    push(
+      s.updatedAt,
+      s.state === "COMPLETED" ? "✅" : "❌",
+      `${label}: ${STEP_TEXT[s.state]}`,
+      `${s.updatedByName || ""}${s.state === "NOT_COMPLETED" && s.reason ? ` — ${s.reason}` : ""}`
+    );
+  });
+
+  if (fu.loanSanctioned?.value) {
+    push(
+      fu.loanSanctioned.updatedAt,
+      fu.loanSanctioned.value === "YES" ? "🏁" : "❌",
+      `Loan Sanctioned: ${fu.loanSanctioned.value === "YES" ? "Yes" : "No"}`,
+      fu.loanSanctioned.updatedByName || ""
+    );
+  }
+
+  return ev.sort((a, b) => a.date - b.date);
+};
+
 export default function AdminLoanProcess() {
   const API = import.meta.env.VITE_API_BASE_URL;
   const [mode, setMode] = useLoanMode();
@@ -66,6 +104,13 @@ export default function AdminLoanProcess() {
   const [staffFilter, setStaffFilter] = useState("");
   const [staffList, setStaffList] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
+
+  // ── Followup employees (for reassign + filter) ──
+  const [followupStaff, setFollowupStaff] = useState([]);
+  // "" = all | "UNASSIGNED" | <employeeId>   (can be pre-set from Analytics via ?followupStaff=<id>)
+  const [followupStaffFilter, setFollowupStaffFilter] = useState(
+    () => new URLSearchParams(window.location.search).get("followupStaff") || ""
+  );
 
   // ── New filters: date range, scheme, sort ───────────────────────────────
   const [fromDate, setFromDate] = useState("");
@@ -105,9 +150,43 @@ export default function AdminLoanProcess() {
     }
   };
 
+  const loadFollowupStaff = async () => {
+    try {
+      const res = await fetch(`${API}/api/admin-loan-process/meta/followup-staff`);
+      const data = await res.json();
+      if (data.success) setFollowupStaff(data.data || []);
+    } catch (err) {
+      console.error("FOLLOWUP STAFF ERROR", err);
+    }
+  };
+
+  const reassignFollowup = async (customerId, employeeId) => {
+    try {
+      const res = await fetch(`${API}/api/admin-loan-process/${customerId}/followup-assign`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employeeId }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.message || "Couldn't reassign.");
+        return;
+      }
+      setCustomers((prev) =>
+        prev.map((x) =>
+          x._id === customerId ? { ...x, followup: { ...x.followup, assignedTo: data.assignedTo } } : x
+        )
+      );
+    } catch (err) {
+      console.error("FOLLOWUP ASSIGN ERROR", err);
+      alert("Network error — please try again.");
+    }
+  };
+
   useEffect(() => {
     setStaffFilter("");
     loadStaffList();
+    loadFollowupStaff();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
@@ -124,8 +203,15 @@ export default function AdminLoanProcess() {
     new Set(customers.map((c) => c.scheme).filter(Boolean))
   ).sort();
 
-  // ── Apply date range + scheme filter + sort on top of server-filtered list ──
+  // ── Apply followup employee + date range + scheme filter + sort on top of server-filtered list ──
   const baseCustomers = customers
+    .filter((c) => {
+      if (!followupStaffFilter) return true;
+      const inFollowup = c.followup?.status && c.followup.status !== "NONE";
+      const ownerId = c.followup?.assignedTo?.employeeId;
+      if (followupStaffFilter === "UNASSIGNED") return inFollowup && !ownerId;
+      return String(ownerId || "") === followupStaffFilter;
+    })
     .filter((c) => {
       if (!fromDate && !toDate) return true;
       if (!c.loanDate) return false;
@@ -163,10 +249,37 @@ export default function AdminLoanProcess() {
     ? baseCustomers.filter((c) => getStageKey(c) === stageFilter)
     : baseCustomers;
 
+  // ── Workload summary of the selected followup employee ──
+  const selectedFollowupEmp =
+    followupStaffFilter && followupStaffFilter !== "UNASSIGNED"
+      ? followupStaff.find((s) => s._id === followupStaffFilter)
+      : null;
+
+  const workload = selectedFollowupEmp
+    ? baseCustomers.reduce(
+        (w, c) => {
+          const st = getStageKey(c);
+          w.taken += 1;
+          if (st === "SANCTIONED") {
+            w.sanctioned += 1;
+            w.sanctionedValue += Number(c.loanValue || 0);
+          } else {
+            w.pending += 1;
+            if (st === "NOT_SANCTIONED") w.notSanctioned += 1;
+            if (c.followup?.dicOffice?.state !== "COMPLETED") w.dicPending += 1;
+            if (c.followup?.bank?.state !== "COMPLETED") w.bankPending += 1;
+          }
+          return w;
+        },
+        { taken: 0, pending: 0, sanctioned: 0, notSanctioned: 0, dicPending: 0, bankPending: 0, sanctionedValue: 0 }
+      )
+    : null;
+
   const clearAllFilters = () => {
     setSearch("");
     setStatusFilter("");
     setStaffFilter("");
+    setFollowupStaffFilter("");
     setFromDate("");
     setToDate("");
     setSchemeFilter("");
@@ -238,6 +351,22 @@ export default function AdminLoanProcess() {
         }
         .alp-export-btn:hover { background: var(--lp-accent); color: #fff; }
 
+        /* ── Selected followup employee workload ───────────────────────── */
+        .alp-workload {
+          background: var(--lp-surface); border: 1px solid var(--lp-border);
+          border-left: 4px solid var(--lp-primary); border-radius: var(--lp-radius-md);
+          padding: 12px 14px; margin-bottom: 14px;
+        }
+        .alp-workload-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+        .alp-workload-title span { font-weight: 500; color: var(--lp-text-muted); font-size: 12px; }
+        .alp-workload-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+        .alp-wl-item { background: var(--lp-bg); border-radius: 8px; padding: 8px 10px; }
+        .alp-wl-item b { display: block; font-size: 17px; line-height: 1.2; }
+        .alp-wl-item span { font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--lp-text-muted); }
+        .alp-wl-item.ok b { color: var(--lp-accent); }
+        .alp-wl-item.warn b { color: var(--lp-warn); }
+        .alp-wl-item.bad b { color: var(--lp-danger); }
+
         /* ── Stage chips ───────────────────────────────────────────────── */
         .alp-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
         .alp-chip {
@@ -274,10 +403,16 @@ export default function AdminLoanProcess() {
         .alp-badge.done { background: var(--lp-accent-soft); color: var(--lp-accent); }
         .alp-badge.progress { background: var(--lp-primary-soft); color: var(--lp-primary); }
         .alp-badge.followup { background: var(--lp-warn-soft); color: var(--lp-warn); }
-                .alp-badge.rejected { background: var(--lp-danger-soft); color: var(--lp-danger); }
+        .alp-badge.rejected { background: var(--lp-danger-soft); color: var(--lp-danger); }
 
         .alp-stage-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
         .alp-stage-by { font-size: 10.5px; font-weight: 600; color: var(--lp-text-muted); white-space: nowrap; }
+
+        .alp-assign-chip { display: inline-block; margin-top: 3px; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #EEF1F6; color: var(--lp-text-muted); }
+        .alp-assign-chip.on { background: var(--lp-accent-soft); color: var(--lp-accent); }
+        .alp-fu-assign { display: flex; align-items: center; gap: 8px; font-size: 12.5px; margin-bottom: 10px; }
+        .alp-fu-assign b { font-size: 11px; text-transform: uppercase; color: var(--lp-text-muted); }
+        .alp-fu-assign select { padding: 5px 10px; border: 1px solid var(--lp-border); border-radius: var(--lp-radius-sm); font-size: 12.5px; background: var(--lp-surface); }
 
         /* ── Followup dots (DIC / Bank / Sanction) ─────────────────────── */
         .alp-dots { display: flex; gap: 10px; align-items: center; font-size: 10.5px; font-weight: 700; color: var(--lp-text-muted); }
@@ -308,6 +443,15 @@ export default function AdminLoanProcess() {
         .alp-fu-value.na { color: var(--lp-text-muted); }
         .alp-fu-reason { font-size: 12px; margin-top: 4px; }
         .alp-fu-by { font-size: 11px; color: var(--lp-text-muted); margin-top: 4px; }
+
+        /* ── Followup timeline ─────────────────────────────────────────── */
+        .alp-timeline { background: var(--lp-surface); border: 1px solid var(--lp-border); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; }
+        .alp-tl-item { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--lp-border); font-size: 12.5px; }
+        .alp-tl-item:last-child { border-bottom: none; }
+        .alp-tl-icon { width: 22px; flex-shrink: 0; text-align: center; }
+        .alp-tl-main { flex: 1; font-weight: 600; }
+        .alp-tl-sub { font-size: 11.5px; color: var(--lp-text-muted); font-weight: 500; margin-top: 1px; }
+        .alp-tl-date { font-size: 11px; color: var(--lp-text-muted); white-space: nowrap; }
 
         .alp-checklist-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px 10px; }
         .alp-stage-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; font-size: 12.5px; border-radius: 6px; }
@@ -368,6 +512,15 @@ export default function AdminLoanProcess() {
           <option value="COMPLETED">Completed</option>
         </select>
 
+        {/* ── Followup employee filter ── */}
+        <select value={followupStaffFilter} onChange={(e) => setFollowupStaffFilter(e.target.value)}>
+          <option value="">All Followup Employees</option>
+          <option value="UNASSIGNED">Unassigned (Followup)</option>
+          {followupStaff.map((s) => (
+            <option key={s._id} value={s._id}>{s.name}</option>
+          ))}
+        </select>
+
         {/* ── Date range filter ── */}
         <input
           type="date"
@@ -409,6 +562,24 @@ export default function AdminLoanProcess() {
         </button>
       </div>
 
+      {/* ── Selected followup employee: workload summary ── */}
+      {workload && (
+        <div className="alp-workload">
+          <div className="alp-workload-title">
+            🎯 {selectedFollowupEmp.name} <span>— Followup workload (for the filters applied)</span>
+          </div>
+          <div className="alp-workload-grid">
+            <div className="alp-wl-item"><b>{workload.taken}</b><span>Leads Taken</span></div>
+            <div className="alp-wl-item warn"><b>{workload.pending}</b><span>Pending</span></div>
+            <div className="alp-wl-item warn"><b>{workload.dicPending}</b><span>DIC Pending</span></div>
+            <div className="alp-wl-item warn"><b>{workload.bankPending}</b><span>Bank Pending</span></div>
+            <div className="alp-wl-item ok"><b>{workload.sanctioned}</b><span>Sanctioned</span></div>
+            <div className="alp-wl-item bad"><b>{workload.notSanctioned}</b><span>Not Sanctioned</span></div>
+            <div className="alp-wl-item ok"><b>{formatRupee(workload.sanctionedValue)}</b><span>Sanctioned Value</span></div>
+          </div>
+        </div>
+      )}
+
       {/* ── Stage summary chips ── */}
       <div className="alp-chips">
         {CHIPS.map((chip) => (
@@ -440,6 +611,7 @@ export default function AdminLoanProcess() {
         const dic = fu.dicOffice || {};
         const bank = fu.bank || {};
         const sanc = fu.loanSanctioned || {};
+        const owner = fu.assignedTo || {};
 
         const badgeClass =
           stageKey === "SANCTIONED" ? "done"
@@ -457,6 +629,13 @@ export default function AdminLoanProcess() {
               <div>
                 <div className="alp-name">{c.customerName}</div>
                 <div className="alp-sub">{c.contactNo} {c.mailId ? `· ${c.mailId}` : ""}</div>
+                {hasFollowup && (
+                  <div className={`alp-assign-chip ${owner.employeeId ? "on" : ""}`}>
+                    {owner.employeeId
+                      ? `🎯 Handled by ${owner.name}${owner.assignedAt ? ` · ${fmtDate(owner.assignedAt)}` : ""}`
+                      : "Unassigned"}
+                  </div>
+                )}
               </div>
               <div className="alp-date-col">
                 📅 {c.loanDate ? new Date(c.loanDate).toLocaleDateString() : "—"}
@@ -485,8 +664,7 @@ export default function AdminLoanProcess() {
                 )}
               </div>
 
-              
-                            {/* One stage badge + who updated it */}
+              {/* One stage badge + who updated it */}
               <div className="alp-stage-wrap">
                 <span className={`alp-badge ${badgeClass}`}>
                   {hasFollowup ? STAGE_LABEL[stageKey] : `${pct}%`}
@@ -517,16 +695,35 @@ export default function AdminLoanProcess() {
                   <div className="alp-info-item"><b>Unit Address</b>{c.unitAddress || "—"}</div>
                 </div>
 
-                {/* ── Followup Status (DIC / Bank / Sanction) ── */}
+                {/* ── Followup Status (who / DIC / Bank / Sanction / timeline) ── */}
                 {hasFollowup && (
                   <>
                     <div className="alp-fu-head">
                       <div className="alp-section-title">Followup Status</div>
                       <div className="alp-fu-meta">
                         Handed over: {fmtDate(fu.handedOverAt)}
+                        {owner.assignedAt ? ` · Taken: ${fmtDate(owner.assignedAt)}` : ""}
                         {fu.completedAt ? ` · Completed: ${fmtDate(fu.completedAt)}` : ""}
                       </div>
                     </div>
+
+                    <div className="alp-fu-assign">
+                      <b>Handled by:</b>
+                      {fu.status === "COMPLETED" ? (
+                        <span>{owner.name || "—"}</span>
+                      ) : (
+                        <select
+                          value={owner.employeeId || ""}
+                          onChange={(e) => reassignFollowup(c._id, e.target.value)}
+                        >
+                          <option value="">Unassigned</option>
+                          {followupStaff.map((s) => (
+                            <option key={s._id} value={s._id}>{s.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
                     <div className="alp-fu-grid">
                       {[
                         { title: "1. DIC Office", s: dic },
@@ -555,6 +752,20 @@ export default function AdminLoanProcess() {
                           <div className="alp-fu-by">{sanc.updatedByName} · {fmtDate(sanc.updatedAt)}</div>
                         )}
                       </div>
+                    </div>
+
+                    <div className="alp-section-title">Followup Timeline</div>
+                    <div className="alp-timeline">
+                      {buildTimeline(fu).map((e, i) => (
+                        <div className="alp-tl-item" key={i}>
+                          <div className="alp-tl-icon">{e.icon}</div>
+                          <div className="alp-tl-main">
+                            {e.text}
+                            {e.sub && <div className="alp-tl-sub">{e.sub}</div>}
+                          </div>
+                          <div className="alp-tl-date">{e.date.toLocaleDateString("en-IN")}</div>
+                        </div>
+                      ))}
                     </div>
                   </>
                 )}

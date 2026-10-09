@@ -61,6 +61,7 @@ export default function AdminLoanAnalytics() {
 
   // ── Followup funnel: Total → Handed over → DIC → Bank → Sanctioned ──
   const fu = data?.followup || {};
+  const followupStaff = data?.followupStaff || [];
   const totalApps = data?.summary?.totalApplications || 0;
   const followupFunnel = data
     ? [
@@ -151,13 +152,15 @@ export default function AdminLoanAnalytics() {
         .ala-funnel-pct { width: 44px; text-align: right; font-size: 11px; color: var(--lp-text-muted); flex-shrink: 0; }
 
         /* ── Tables ── */
+        .ala-table-wrap { overflow-x: auto; }
         .ala-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
         .ala-table th {
           text-align: left; padding: 8px 10px; background: var(--lp-bg);
           font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;
           color: var(--lp-text-muted); font-weight: 700; border-bottom: 1px solid var(--lp-border);
+          white-space: nowrap;
         }
-        .ala-table td { padding: 8px 10px; border-bottom: 1px solid var(--lp-border); }
+        .ala-table td { padding: 8px 10px; border-bottom: 1px solid var(--lp-border); white-space: nowrap; }
         .ala-table tr:last-child td { border-bottom: none; }
         .ala-rank-badge {
           display: inline-flex; align-items: center; justify-content: center;
@@ -165,6 +168,13 @@ export default function AdminLoanAnalytics() {
           background: var(--lp-primary-soft); color: var(--lp-primary);
         }
         .ala-rank-badge.gold { background: #FFF4D6; color: #B98900; }
+        .ala-link { color: var(--lp-primary); font-weight: 700; text-decoration: none; font-size: 12px; }
+        .ala-link:hover { text-decoration: underline; }
+        .ala-pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+        .ala-pill.ok { background: var(--lp-accent-soft); color: var(--lp-accent); }
+        .ala-pill.warn { background: #fff4d6; color: #8a6100; }
+        .ala-pill.bad { background: #fee2e2; color: var(--lp-danger); }
+        .ala-pill.mute { background: #EEF1F6; color: var(--lp-text-muted); }
 
         /* ── Recent activity ── */
         .ala-activity-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--lp-border); font-size: 12.5px; }
@@ -245,6 +255,10 @@ export default function AdminLoanAnalytics() {
             <div className="ala-metric-card">
               <div className="ala-metric-label">With Followup</div>
               <div className="ala-metric-value warn">{fu.pending || 0}</div>
+            </div>
+            <div className="ala-metric-card">
+              <div className="ala-metric-label">Unassigned Leads</div>
+              <div className="ala-metric-value">{fu.unassigned || 0}</div>
             </div>
             <div className="ala-metric-card">
               <div className="ala-metric-label">Sanctioned</div>
@@ -360,6 +374,63 @@ export default function AdminLoanAnalytics() {
                 </div>
               );
             })}
+          </div>
+
+          {/* ── Followup team performance (employee-wise) ── */}
+          <div className="ala-panel" style={{ marginBottom: 16 }}>
+            <div className="ala-panel-title">Followup Team Performance</div>
+            <div className="ala-panel-sub">
+              Who took how many leads, and how many reached DIC, Bank and Loan Sanction. Click “View leads” to see every lead of that employee.
+            </div>
+            {followupStaff.length === 0 ? (
+              <div className="ala-empty">
+                No leads have been taken by the Followup team yet.
+                {fu.unassigned ? ` ${fu.unassigned} lead(s) are waiting to be taken.` : ""}
+              </div>
+            ) : (
+              <div className="ala-table-wrap">
+                <table className="ala-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Employee</th>
+                      <th>Leads Taken</th>
+                      <th>Pending</th>
+                      <th>DIC Done</th>
+                      <th>Bank Done</th>
+                      <th>Sanctioned</th>
+                      <th>Not Sanctioned</th>
+                      <th>Sanction %</th>
+                      <th>Sanctioned Revenue</th>
+                      <th>Avg Days to Sanction</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {followupStaff.map((s, i) => (
+                      <tr key={s.employeeId}>
+                        <td><span className={`ala-rank-badge ${i === 0 ? "gold" : ""}`}>{i + 1}</span></td>
+                        <td style={{ fontWeight: 600 }}>{s.name}</td>
+                        <td><b>{s.taken}</b></td>
+                        <td><span className="ala-pill warn">{s.pending}</span></td>
+                        <td>{s.dicCompleted}</td>
+                        <td>{s.bankCompleted}</td>
+                        <td><span className="ala-pill ok">{s.sanctioned}</span></td>
+                        <td>{s.notSanctioned ? <span className="ala-pill bad">{s.notSanctioned}</span> : <span className="ala-pill mute">0</span>}</td>
+                        <td>{s.sanctionRate}%</td>
+                        <td>{formatRupee(s.sanctionedRevenue)}</td>
+                        <td>{s.avgDaysToSanction === null ? "—" : `${s.avgDaysToSanction} d`}</td>
+                        <td>
+                          <a className="ala-link" href={`/admin/loan-process?followupStaff=${s.employeeId}`}>
+                            View leads →
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* ── Telecaller leaderboard + Recent activity ── */}
