@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { getSecureUrl } from "../../utils/secureDoc";
+import MachineStaffModal from "./MachineStaffModal";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -1085,10 +1086,32 @@ const DocStatusBadge = ({ uploaded, total }) => {
 };
 
 // ─── Required-docs helper (used for the table quick-glance badge too) ─────────
+// const REQUIRED_PERSONAL_DOCS = ALL_EMPLOYEE_DOC_TYPES.filter(d => d.required);
+// const getPersonalDocsStatus = (emp) => {
+//   const docs = emp.documents || [];
+//   const has = (type) => docs.some(d => d.docType?.trim().toLowerCase() === type.trim().toLowerCase());
+//   const uploaded = REQUIRED_PERSONAL_DOCS.filter(d => has(d.type)).length;
+//   return { uploaded, total: REQUIRED_PERSONAL_DOCS.length };
+// };
+
+const MACHINE_STAFF_REQUIRED = [
+  { anyOf: ["Aadhaar"] },
+  { anyOf: ["PAN"] },
+  { anyOf: ["Passport Photo"] },
+  { anyOf: ["Bank Passbook"] },
+  { anyOf: ["Gas Book", "Ration Card Front"] },   // edhavadhu onnu
+  { anyOf: ["Reference Number 1"] },
+  { anyOf: ["Reference Number 2"] },
+];
+
 const REQUIRED_PERSONAL_DOCS = ALL_EMPLOYEE_DOC_TYPES.filter(d => d.required);
 const getPersonalDocsStatus = (emp) => {
   const docs = emp.documents || [];
   const has = (type) => docs.some(d => d.docType?.trim().toLowerCase() === type.trim().toLowerCase());
+  if (emp.staffType === "machine_staff") {
+    const uploaded = MACHINE_STAFF_REQUIRED.filter(r => r.anyOf.some(has)).length;
+    return { uploaded, total: MACHINE_STAFF_REQUIRED.length };
+  }
   const uploaded = REQUIRED_PERSONAL_DOCS.filter(d => has(d.type)).length;
   return { uploaded, total: REQUIRED_PERSONAL_DOCS.length };
 };
@@ -1156,8 +1179,11 @@ const EmployeeDetailsPanel = ({ employee, onClose, onViewDocs }) => {
 
   const getDoc = (type) => allDocs.find(d => d.docType?.trim().toLowerCase() === type?.trim().toLowerCase()) || null;
   const getHrDoc = (type) => hrDocs.find(d => d.docType === type) || null;
-
-  const personalReqUploaded = REQUIRED_PERSONAL_DOCS.filter(d => getDoc(d.type)).length;
+  const isStaff = employee.staffType === "machine_staff";
+  const personalReqUploaded = isStaff
+    ? MACHINE_STAFF_REQUIRED.filter(r => r.anyOf.some(t => getDoc(t))).length
+    : REQUIRED_PERSONAL_DOCS.filter(d => getDoc(d.type)).length;
+  const personalReqTotal = isStaff ? MACHINE_STAFF_REQUIRED.length : REQUIRED_PERSONAL_DOCS.length;
   const hrUploaded = HR_DOC_TYPES.filter(t => getHrDoc(t)).length;
 
   const emp = activation?.employment || {};
@@ -1339,7 +1365,7 @@ const EmployeeDetailsPanel = ({ employee, onClose, onViewDocs }) => {
                       <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: "#1a1a2e" }}>Personal Documents</p>
                       <p style={{ margin: "2px 0 0", fontSize: 11, color: "#9ca3af" }}>Required docs uploaded by employee</p>
                     </div>
-                    <DocStatusBadge uploaded={personalReqUploaded} total={REQUIRED_PERSONAL_DOCS.length} />
+                    <DocStatusBadge uploaded={personalReqUploaded} total={personalReqTotal} />
                   </div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 14px" }}>
                     <div>
@@ -1375,6 +1401,7 @@ export default function HrActiveEmployees() {
   const [deleting, setDeleting] = useState(false);
   const [docsModal, setDocsModal] = useState(null);
   const [detailsEmp, setDetailsEmp] = useState(null);
+    const [showStaffModal, setShowStaffModal] = useState(false);
 
   useEffect(() => { fetchActive(); }, []);
 
@@ -1467,6 +1494,22 @@ export default function HrActiveEmployees() {
         </div>
       )}
 
+            {showStaffModal && (
+        <MachineStaffModal
+          departments={departments.filter(d => d !== "All")}
+          onClose={() => setShowStaffModal(false)}
+          onSaved={(data, failed) => {
+            setShowStaffModal(false);
+            fetchActive();
+            showToast(
+              failed.length
+                ? `Staff added. ${failed.join(", ")} upload aagala, View Docs-la thirumba upload pannunga`
+                : `Staff added · ${data.migrated_days || 0} days old attendance migrate aachu`
+            );
+          }}
+        />
+      )}
+
       {docsModal && (
         <EmployeeDocsModal
           employee={docsModal}
@@ -1487,9 +1530,14 @@ export default function HrActiveEmployees() {
         <div>
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: "#1a1a2e" }}>Active Employees</h2>
           <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 13 }}>
+           
             {loading ? "Loading..." : `${filtered.length} of ${employees.length} active employee${employees.length !== 1 ? "s" : ""}`}
           </p>
         </div>
+          <button onClick={() => setShowStaffModal(true)}
+          style={{ background: "#16a34a", color: "#fff", border: "none", borderRadius: 8, padding: "10px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          + Add Staff (Non-HRMS)
+        </button>
         {!loading && (
           <div className="stats-row" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {[
@@ -1558,6 +1606,11 @@ export default function HrActiveEmployees() {
                             {emp.name?.charAt(0)?.toUpperCase() || "?"}
                           </div>
                           <p style={{ margin: 0, fontWeight: 600, color: "#1a1a2e", fontSize: 13 }}>{emp.name}</p>
+                        {emp.staffType === "machine_staff" && (
+  <span style={{ background: "#fef3c7", color: "#b45309", border: "1px solid #fde68a", borderRadius: 99, padding: "2px 8px", fontSize: 10, fontWeight: 700 }}>
+    Non-HRMS
+  </span>
+)}
                         </div>
                       </td>
                       <td style={{ padding: "12px 16px", color: "#6b7280", fontSize: 12 }}>{emp.email}</td>
@@ -1595,6 +1648,11 @@ export default function HrActiveEmployees() {
                       </div>
                       <div>
                         <p style={{ margin: 0, fontWeight: 700, color: "#1a1a2e", fontSize: 14 }}>{emp.name}</p>
+                        {emp.staffType === "machine_staff" && (
+  <span style={{ background: "#fef3c7", color: "#b45309", border: "1px solid #fde68a", borderRadius: 99, padding: "2px 8px", fontSize: 10, fontWeight: 700 }}>
+    Non-HRMS
+  </span>
+)}
                         <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>{emp.email}</p>
                       </div>
                     </div>
