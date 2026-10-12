@@ -13,6 +13,15 @@ import EmployeeLayout from "./EmployeeLayout";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const today = new Date().toISOString().split("T")[0];
 
+const monthRange = (period) => {
+  const d = new Date(`1 ${period}`);
+  if (isNaN(d)) return {};
+  const pad = n => String(n).padStart(2, "0");
+  const y = d.getFullYear(), m = d.getMonth();
+  const last = new Date(y, m + 1, 0).getDate();
+  return { min: `${y}-${pad(m + 1)}-01`, max: `${y}-${pad(m + 1)}-${pad(last)}` };
+};
+
 // ── owner_role helpers ──────────────────────────────────────────
 const isLockedByRole = (item) => {
   const role = item.owner_role || "self";
@@ -53,9 +62,13 @@ export default function SelfAssessment() {
   const [employee, setEmployee] = useState(null);
   const [extraFieldValues, setExtraFieldValues] = useState({});
   const [completedReviews, setCompletedReviews] = useState([]);
-    const [allCompleted, setAllCompleted] = useState(false);
+  const [allCompleted, setAllCompleted] = useState(false);
   const [lastCompletedPeriod, setLastCompletedPeriod] = useState("");
-  
+  const [logOpen, setLogOpen] = useState(true);
+  const [logDeadline, setLogDeadline] = useState(null);
+  const [pendingPrevious, setPendingPrevious] = useState([]);
+  const [viewingOld, setViewingOld] = useState(false);
+
   const [showSpecialDropdown, setShowSpecialDropdown] = useState(false);
   const [specialFieldOptions, setSpecialFieldOptions] = useState([
     // Existing fields
@@ -107,13 +120,13 @@ export default function SelfAssessment() {
       r._id === existing?._id
     );
 
-      const completedNotice = (
+  const completedNotice = (
     <div style={{ background: "#fff", borderRadius: 16, padding: "60px 20px", textAlign: "center", border: "1px solid #e5e7eb" }}>
       <CheckCircle size={52} color="#16a34a" style={{ marginBottom: 12 }} />
       <h3 style={{ color: "#1f2937", marginBottom: 8 }}>
         {lastCompletedPeriod ? `${lastCompletedPeriod} KPI Completed ✅` : "KPI Completed ✅"}
       </h3>
-        <p style={{ color: "#6b7280", fontSize: 14, maxWidth: 420, margin: "0 auto" }}>
+      <p style={{ color: "#6b7280", fontSize: 14, maxWidth: 420, margin: "0 auto" }}>
         Your KPIs for the new month have not been assigned yet.
         They will appear here once HR assigns them.
         You can view your completed reviews in the <b>Done</b> tab.
@@ -123,15 +136,19 @@ export default function SelfAssessment() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (pickId = null) => {
     try {
       const empRes = await axios.get(`${API_BASE}/api/employee/me/${employeeId}`);
       setEmployee(empRes.data);
 
-      const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/${employeeId}`);
-      // const assignRes = await axios.get(`${API_BASE}/api/kpi-assignments/pending/${employeeId}`);
-         
-      
+      const assignRes = await axios.get(
+        `${API_BASE}/api/kpi-assignments/${employeeId}${pickId ? `?assignment_id=${pickId}` : ""}`
+      );
+      setViewingOld(!!pickId);
+      setExisting(null);
+      setSubmitted(false);
+
+
       // if (assignRes.data.success && assignRes.data.data) {
       //   const assign = assignRes.data.data;
       //   console.log("KPI Items:", assign.template_id?.kpi_items);
@@ -149,12 +166,20 @@ export default function SelfAssessment() {
         return;   // finally block run aagi loading false aagidum
       }
       setAllCompleted(false);
+      setLogOpen(assignRes.data.log_open !== false);
+      setLogDeadline(assignRes.data.log_deadline || null);
+      setPendingPrevious(assignRes.data.pending_previous || []);
 
       if (assignRes.data.success && assignRes.data.data) {
-  const assign = assignRes.data.data;
- const kpiItems = assign.month_version_id?.kpi_items || assign.template_id?.kpi_items || [];
-console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "month_version" : "template_default");
-  setAssignment(assign);
+        const assign = assignRes.data.data;
+        const kpiItems = assign.month_version_id?.kpi_items || assign.template_id?.kpi_items || [];
+        console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "month_version" : "template_default");
+        setAssignment(assign);
+
+        const rng = monthRange(assign.period);
+        if (rng.min && (today < rng.min || today > rng.max)) {
+          setLogForm(f => ({ ...f, log_date: rng.max }));
+        }
 
         // ── CHANGE 1: owner_role include பண்றோம் ──
         const initItems = kpiItems.map(item => ({
@@ -163,7 +188,7 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
           target: item.target,
           unit: item.unit,
           weight: item.weight || 0,
-            notes: item.notes || "",
+          notes: item.notes || "",
           is_admission_kpi: item.is_admission_kpi || false,
           program_targets: item.program_targets || [],
           owner_role: item.owner_role || "self",   // ← NEW
@@ -296,7 +321,7 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
   };
 
   // ── EXCEL DOWNLOAD ──
-    // ── EXCEL DOWNLOAD ──
+  // ── EXCEL DOWNLOAD ──
   const downloadLogsAsExcel = () => {
     if (!logs.length) return showToast("No logs to download", "error");
 
@@ -307,25 +332,25 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
       const thin = { style: "thin", color: { rgb: "D1D5DB" } };
       const border = { top: thin, bottom: thin, left: thin, right: thin };
       const S = {
-        title:   { font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1E40AF" } }, alignment: { vertical: "center" } },
-        label:   { font: { bold: true, color: { rgb: "374151" } } },
-        value:   { font: { color: { rgb: "111827" } } },
+        title: { font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1E40AF" } }, alignment: { vertical: "center" } },
+        label: { font: { bold: true, color: { rgb: "374151" } } },
+        value: { font: { color: { rgb: "111827" } } },
         section: { font: { bold: true, sz: 13, color: { rgb: "1E40AF" } } },
-        head:    { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "2563EB" } }, alignment: { horizontal: "center", vertical: "center" }, border },
-        text:    { border, alignment: { vertical: "center" } },
-        num:     { border, alignment: { horizontal: "center", vertical: "center" } },
+        head: { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "2563EB" } }, alignment: { horizontal: "center", vertical: "center" }, border },
+        text: { border, alignment: { vertical: "center" } },
+        num: { border, alignment: { horizontal: "center", vertical: "center" } },
       };
       const zebra = (s, i) => (i % 2 ? { ...s, fill: { fgColor: { rgb: "F3F4F6" } } } : s);
       const statusStyle = (pct) => {
         if (pct === null) return { color: "374151", bg: "F3F4F6", text: "No target" };
         if (pct >= 100) return { color: "166534", bg: "DCFCE7", text: `${pct}%  -  Achieved` };
-        if (pct >= 50)  return { color: "92400E", bg: "FEF3C7", text: `${pct}%  -  In Progress` };
+        if (pct >= 50) return { color: "92400E", bg: "FEF3C7", text: `${pct}%  -  In Progress` };
         return { color: "991B1B", bg: "FEE2E2", text: `${pct}%  -  Behind` };
       };
 
       // ── helpers ──
-      const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const fmtDate = (str) => {
         const [y, m, d] = String(str).split("-").map(Number);
         const dt = new Date(y, m - 1, d);
@@ -413,8 +438,8 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
         const kpiItem = form.items.find(it => it.kpi_item_id === log.kpi_item_id);
         const programText = log.program_values && Object.keys(log.program_values).length
           ? Object.entries(log.program_values)
-              .map(([pid, val]) => `${kpiItem?.program_targets?.find(p => p.program_id === pid)?.program_name || pid}: ${val}`)
-              .join(", ")
+            .map(([pid, val]) => `${kpiItem?.program_targets?.find(p => p.program_id === pid)?.program_name || pid}: ${val}`)
+            .join(", ")
           : "";
 
         const r = [
@@ -487,22 +512,23 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
               .map(([k, v]) => [k, Number(v)])
           )
           : {},
-        extra_fields: extraFieldValues   // ← சரியான இடத்துல
+        extra_fields: extraFieldValues
       };
       const res = await axios.post(`${API_BASE}/api/daily-logs`, payload);
       if (res.data.success) {
         showToast("Progress logged!");
-        setLogForm({ kpi_item_id: "", value: "", note: "", log_date: today });
+        const rng = monthRange(assignment.period);
+        setLogForm({ kpi_item_id: "", value: "", note: "", log_date: (rng.min && (today < rng.min || today > rng.max)) ? rng.max : today });
         setProgramValues({});
         setExtraFieldValues({});
         setSelectedSpecialFields([]);
         await fetchLogs(assignment._id);
       }
     } catch (err) {
-  showToast(err.response?.data?.message || "Failed to save log", "error");
-  console.error("Daily log save error:", err.response?.data || err.message);
-}
-     finally {
+      showToast(err.response?.data?.message || "Failed to save log", "error");
+      console.error("Daily log save error:", err.response?.data || err.message);
+    }
+    finally {
       setSavingLog(false);
     }
   };
@@ -691,7 +717,7 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
           </div>
         )}
 
-                {!assignment && !allCompleted ? (
+        {!assignment && !allCompleted ? (
           <div style={{ background: "#fff", borderRadius: 16, padding: "60px 20px", textAlign: "center", border: "1px solid #e5e7eb" }}>
             <ClipboardList size={52} color="#d1d5db" style={{ marginBottom: 12 }} />
             <h3 style={{ color: "#1f2937", marginBottom: 8 }}>No KPIs Assigned Yet</h3>
@@ -703,11 +729,11 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
             <div className="sa-title-row">
               <div style={{ minWidth: 0, flex: 1 }}>
                 <h2 style={{ margin: 0, fontSize: isMobile ? 16 : 22, fontWeight: 800, color: "#1a1a2e" }}>My Work Tracker</h2>
-              <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 11, wordBreak: "break-word" }}>
-                                  {allCompleted
+                <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 11, wordBreak: "break-word" }}>
+                  {allCompleted
                     ? `No KPI assigned yet for the current month · Last completed: ${lastCompletedPeriod}`
                     : `${assignment?.period} · ${assignment?.template_id?.role} · ${assignment?.template_id?.department}`}
-                
+
                 </p>
               </div>
               {submitted && (
@@ -738,7 +764,39 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
             {/* ═══════════════════════════════════
                 DAILY LOG TAB
             ═══════════════════════════════════ */}
-                        {activeTab === "dailylog" && allCompleted && completedNotice}
+            {activeTab === "dailylog" && allCompleted && completedNotice}
+            {viewingOld && (
+              <div style={{ background: "#dbeafe", padding: 12, borderRadius: 10, marginBottom: 12, fontSize: 13 }}>
+                📅 You are viewing your {assignment?.period} KPI.
+                <button
+                  onClick={() => { setLoading(true); fetchData(); }}
+                  style={{ marginLeft: 10, padding: "4px 10px", border: "none", borderRadius: 6, background: "#2563eb", color: "#fff", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>
+                  ← Back to current month
+                </button>
+              </div>
+            )}
+            {activeTab === "dailylog" && !allCompleted && pendingPrevious.length > 0 && (
+              <div style={{ background: "#fef3c7", border: "1px solid #fcd34d", padding: 12, borderRadius: 10, marginBottom: 12, fontSize: 13 }}>
+                {pendingPrevious.map(p => (
+                  <div key={p._id}>
+                    ⚠️ Your {p.period} KPI has not been finalized yet.{" "}
+                    {p.log_open
+                      ? `You can add logs until ${new Date(p.log_deadline).toLocaleDateString("en-GB")}.`
+                      : "Logging is closed. Please finalize it now."}
+                    <button
+                      onClick={() => { setLoading(true); setActiveTab("assessment"); fetchData(p._id); }}
+                      style={{ marginLeft: 10, padding: "4px 10px", border: "none", borderRadius: 6, background: "#2563eb", color: "#fff", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>
+                      Finalize {p.period}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {activeTab === "dailylog" && !allCompleted && !logOpen && (
+              <div style={{ background: "#fee2e2", padding: 12, borderRadius: 10, marginBottom: 12, fontSize: 13 }}>
+                🔒 Logging is closed for {assignment?.period}. Please finalize your KPI.
+              </div>
+            )}
             {activeTab === "dailylog" && !allCompleted && (
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 320px", gap: 16, width: "100%", boxSizing: "border-box" }}>
                 <div style={{ minWidth: 0 }}>
@@ -780,7 +838,9 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
                       </div>
                       <div>
                         <label style={labelStyle}>Date *</label>
-                        <input type="date" value={logForm.log_date} onChange={e => setLogForm(f => ({ ...f, log_date: e.target.value }))} style={inputStyle} />
+                        <input type="date" value={logForm.log_date}
+                          min={monthRange(assignment.period).min} max={monthRange(assignment.period).max}
+                          onChange={e => setLogForm(f => ({ ...f, log_date: e.target.value }))} style={inputStyle} />
                       </div>
                     </div>
 
@@ -989,60 +1049,7 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
                       </div>
                     )}
 
-                    {/* ── Extra Fields for this KPI ── */}
-                    {/* {!isAdmissionLogKpi && selectedLogKpi?.log_fields?.length > 0 && (
-  <div style={{
-    background: "#f8fafc", border: "1px solid #e5e7eb",
-    borderRadius: 10, padding: 14, marginBottom: 14
-  }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-      <FileText size={13} color="#6b7280" />
-      <span style={{ fontSize: 12, fontWeight: 700, color: "#6b7280" }}>
-        Additional Details
-      </span>
-    </div>
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-      gap: 10
-    }}>
-      {selectedLogKpi.log_fields.map(field => (
-        <div key={field.name}>
-          <label style={labelStyle}>
-            {field.label}
-            {field.required && <span style={{ color: "#ef4444" }}> *</span>}
-          </label>
-          {field.type === "select" ? (
-            <select
-              value={extraFieldValues[field.name] || ""}
-              onChange={e => setExtraFieldValues(p => ({
-                ...p, [field.name]: e.target.value
-              }))}
-              style={inputStyle}
-            >
-              <option value="">-- Select --</option>
-              {field.options?.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          ) : (
-            <input
-              type={field.type === "number" ? "number" : "text"}
-              value={extraFieldValues[field.name] || ""}
-              onChange={e => setExtraFieldValues(p => ({
-                ...p, [field.name]: e.target.value
-              }))}
-              placeholder={`Enter ${field.label.toLowerCase()}`}
-              style={inputStyle}
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  </div>
-)} */}
-
-                    <button onClick={handleAddLog} disabled={savingLog}
+                    <button onClick={handleAddLog} disabled={savingLog || !logOpen}
                       style={{ background: savingLog ? "#93c5fd" : "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 700, fontSize: 14, cursor: savingLog ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8, width: isMobile ? "100%" : "auto", justifyContent: "center" }}>
                       <Plus size={16} /> {savingLog ? "Saving..." : "Add Log Entry"}
                     </button>
@@ -1263,7 +1270,7 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
             {/* ═══════════════════════════════════
                 SELF ASSESSMENT TAB
             ═══════════════════════════════════ */}
-                      {activeTab === "assessment" && allCompleted && completedNotice}
+            {activeTab === "assessment" && allCompleted && completedNotice}
             {activeTab === "assessment" && !allCompleted && (
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 300px", gap: 16, width: "100%", boxSizing: "border-box" }}>
                 <div style={{ minWidth: 0 }}>
@@ -1353,8 +1360,8 @@ console.log("KPI Items:", kpiItems, "| source:", assign.month_version_id ? "mont
                                 {logTotal !== undefined && <span style={{ color: "#2563eb", marginLeft: 6 }}>· Logged: {logTotal}</span>}
                               </p>
                               {item.notes && (
-  <p style={{ margin: "3px 0 0", fontSize: 11, color: "#9ca3af" }}>ℹ️ {item.notes}</p>
-)}
+                                <p style={{ margin: "3px 0 0", fontSize: 11, color: "#9ca3af" }}>ℹ️ {item.notes}</p>
+                              )}
                               {item.is_admission_kpi && item.program_targets?.length > 0 && (
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 5 }}>
                                   {item.program_targets.map((pt, pi) => (

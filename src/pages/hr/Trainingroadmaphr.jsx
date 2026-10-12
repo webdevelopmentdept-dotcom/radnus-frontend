@@ -1048,7 +1048,7 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
   const [error, setError]              = useState("");
 
    const [deliveryMode, setDeliveryMode] = useState(editingProgram?.deliveryMode || "online");
-  const [sessionDate, setSessionDate]   = useState(editingProgram?.sessionDate ? new Date(editingProgram.sessionDate).toISOString().slice(0,10) : "");
+   const [sessionDate, setSessionDate]   = useState(editingProgram?.sessionDate ? new Date(editingProgram.sessionDate).toISOString().slice(0,10) : "");
   const [sessionTime, setSessionTime]   = useState(editingProgram?.sessionTime || "");
   const [venue, setVenue]               = useState(editingProgram?.venue || "");
 
@@ -1162,7 +1162,7 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
         const modules = modulesText.split(",").map(m => m.trim()).filter(Boolean);
     fd.append("modules", JSON.stringify(modules));
 
-    fd.append("deliveryMode", deliveryMode);
+        fd.append("deliveryMode", deliveryMode);
 
     if (deliveryMode === "offline") {
       if (sessionDate) fd.append("sessionDate", sessionDate);
@@ -1897,6 +1897,22 @@ const handleMarkAllComplete = async (program) => {
   finally { setFinishingProgId(null); }
 };
 
+  // ✅ NEW — quick "No Test" toggle straight from the program card
+  const [togglingNoTestId, setTogglingNoTestId] = useState(null);
+  const handleToggleNoTest = async (program) => {
+    const next = !program.noTest;
+    setTogglingNoTestId(program._id);
+    try {
+      await axios.put(`${API_BASE}/api/training/programs/${program._id}`, { noTest: next });
+      showMsg(next ? "No Test turned ON — employees will submit for review after the chapters." : "No Test turned OFF — Final Test is required.");
+      fetchAll();
+    } catch (e) {
+      showMsg(e?.response?.data?.message || "Failed to update", "error");
+    } finally {
+      setTogglingNoTestId(null);
+    }
+  };
+
   const handleUpdate = async (id, data) => {
     try {
       await axios.put(`${API_BASE}/api/training/records/${id}`, data);
@@ -2324,6 +2340,30 @@ const handleMarkAllComplete = async (program) => {
                           )}
                           {p.frequency && p.frequency !== "once" && <span className="d-flex align-items-center gap-1"><RefreshCw size={11} />{p.frequency.replace("_"," ")}</span>}
                         </div>
+
+                        {/* ✅ NEW — No Test quick toggle (chapter courses only) */}
+                        {chapterCount > 0 && (
+                          <div className="d-flex align-items-center justify-content-between mb-3"
+                            style={{ background: p.noTest ? "#ecfdf5" : "#f9fafb", border: `1px solid ${p.noTest ? "#a7f3d0" : "#e5e7eb"}`, borderRadius: 8, padding: "7px 10px" }}>
+                            <div>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: p.noTest ? "#059669" : "#374151" }}>No Test</span>
+                              <span style={{ display: "block", fontSize: 10, color: "#9ca3af" }}>
+                                {p.noTest ? "Submit for HR review only" : "Final Test required"}
+                              </span>
+                            </div>
+                            <div className="form-check form-switch m-0">
+                              <input
+                                className="form-check-input"
+                                type="checkbox"
+                                role="switch"
+                                style={{ cursor: "pointer" }}
+                                checked={!!p.noTest}
+                                disabled={togglingNoTestId === p._id}
+                                onChange={() => handleToggleNoTest(p)}
+                              />
+                            </div>
+                          </div>
+                        )}
 
                         {p.certification && (
                           <div className="d-flex align-items-center gap-2 mb-3" style={{ background: `${typ.color}0d`, borderRadius: 8, padding: "7px 10px" }}>

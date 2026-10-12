@@ -272,7 +272,7 @@ function TrainingCard({ record, onStart, onViewDetails }) {
       onClick: () => { if (record.status === "pending") onStart(record._id); onViewDetails(record); },
     };
   } else if (hasChapters && completedChapters === chapters.length) {
-    action = { label: "Take Test", onClick: () => onViewDetails(record) };
+        action = { label: prog.noTest ? "Submit for Review" : "Take Test", onClick: () => onViewDetails(record) };
   } else if (record.status === "pending") {
     action = { label: "Start Course", onClick: () => { onStart(record._id); onViewDetails(record); } };
   } else if (record.status === "in_progress") {
@@ -1084,7 +1084,19 @@ useEffect(() => {
   }
 }, [nextUnlocked, chapters.length]);
 
-  const [marking, setMarking] = useState(null);
+    const [marking, setMarking] = useState(null);
+  const [submittingNoTest, setSubmittingNoTest] = useState(false);
+  const handleNoTestSubmit = async () => {
+    setSubmittingNoTest(true);
+    try {
+      const res = await axios.put(`${API_BASE}/api/training/my/${record._id}/complete`);
+      onRecordUpdate?.(res.data.data);
+    } catch (e) {
+      alert(e?.response?.data?.message || "Could not submit — please try again.");
+    } finally {
+      setSubmittingNoTest(false);
+    }
+  };
   const [hasProgramQuiz, setHasProgramQuiz] = useState(null);
   // ✅ Server-verified watch tracking (heartbeats). chapterNo -> { percent, ranges, duration, lastPosition }
   const [tracking, setTracking] = useState(() => {
@@ -1343,10 +1355,23 @@ useEffect(() => {
         })}
       </div>
 
-      <div style={{ marginTop: 18, padding: "13px 15px", borderRadius: "var(--radius-md)", background: allWatched ? "var(--brand-tint)" : "var(--bg-soft)", border: `1px solid ${allWatched ? "#c9dcfd" : "var(--line)"}` }}>
+          <div style={{ marginTop: 18, padding: "13px 15px", borderRadius: "var(--radius-md)", background: allWatched ? "var(--brand-tint)" : "var(--bg-soft)", border: `1px solid ${allWatched ? "#c9dcfd" : "var(--line)"}` }}>
         {!allWatched ? (
-          <p style={{ margin: 0, fontSize: 12.5, color: "var(--muted)" }}>Finish all {chapters.length} chapters above to unlock the test.</p>
-              ) : lastAttempt ? (
+          <p style={{ margin: 0, fontSize: 12.5, color: "var(--muted)" }}>
+            Finish all {chapters.length} chapters above to {prog.noTest ? "submit this course" : "unlock the test"}.
+          </p>
+        ) : prog.noTest ? (
+          record.status === "pending_review" || record.status === "completed" ? (
+            <p style={{ margin: 0, fontSize: 12.5, color: "var(--success)", fontWeight: 600 }}>✅ Submitted — waiting for HR review.</p>
+          ) : (
+            <>
+              <p style={{ margin: "0 0 9px", fontSize: 12.5, color: "var(--brand)" }}>All chapters done! There is no test for this course. Submit it to HR for review.</p>
+              <button className="tr-btn" onClick={handleNoTestSubmit} disabled={submittingNoTest} style={{ padding: "9px 16px", border: "none", borderRadius: "var(--radius-sm)", fontSize: 12.5, fontWeight: 700, background: "var(--brand)", color: "#fff", cursor: "pointer", width: "100%" }}>
+                {submittingNoTest ? "Submitting…" : "Submit for Review"}
+              </button>
+            </>
+          )
+        ) : lastAttempt ? (
           <p style={{ margin: 0, fontSize: 12.5, color: "var(--success)", fontWeight: 600 }}>✅ Quiz submitted — score {lastAttempt.score}%. Waiting for HR review.</p>
         ) : hasProgramQuiz === false ? (
           <p style={{ margin: 0, fontSize: 12.5, color: "var(--muted)" }}>No quiz has been added for this course yet — check with HR.</p>
@@ -1367,7 +1392,7 @@ useEffect(() => {
           specifically: if the employee failed the Final Test, the
           "didn't pass, contact HR" message above already covers it, so
           we don't also show a certificate box for a failed attempt. */}
-             {(lastAttempt || record.status === "completed" || record.certificateRequestStatus === "issued") && (
+            {(lastAttempt || record.status === "completed" || record.certificateRequestStatus === "issued" || (prog.noTest && record.status === "pending_review")) && (
         <CertificateStatusBox record={record} />
       )}
     </div>
