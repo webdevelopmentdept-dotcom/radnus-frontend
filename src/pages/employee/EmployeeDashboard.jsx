@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import EmployeeLayout from "./EmployeeLayout";
 import CareerPathModal from "./CareerPathModal";
+import TeamLeadCard, { useTeamRole, TeamLeadBadge } from "./TeamLeadCard";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -788,6 +789,8 @@ export default function EmployeeDashboard() {
   const handleDocChange = (i, f, v) => { const d = [...editData.documents]; d[i] = { ...d[i], [f]: v }; setEditData(p => ({ ...p, documents: d })); };
   const handleAddDoc = () => setEditData(p => ({ ...p, documents: [...p.documents, { docType: "New Document", fileUrl: "" }] }));
 
+  const teamRole = useTeamRole();
+
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "#f7f8fc" }}>
       <div style={{ width: 32, height: 32, border: "3px solid #eef0f4", borderTopColor: "#4f8ef7", borderRadius: "50%", animation: "s .7s linear infinite" }} />
@@ -1055,7 +1058,7 @@ export default function EmployeeDashboard() {
             </div>
             <div style={{ minWidth: 0, overflow: "hidden" }}>
               <p className="ed-topbar-name">{employee.name}</p>
-              <p className="ed-topbar-sub">{employee.designation}</p>
+             <p className="ed-topbar-sub">{employee.designation}<TeamLeadBadge role={teamRole} /></p>
             </div>
           </div>
           <div className="ed-topbar-right">
@@ -1117,7 +1120,8 @@ export default function EmployeeDashboard() {
               ) : (
                 <>
                   <p className="ed-hero-name">{employee.name}</p>
-                  <p className="ed-hero-role">{employee.designation} · {employee.department}</p>
+              <p className="ed-hero-role">{employee.designation} · {employee.department}</p>
+<TeamLeadBadge role={teamRole} dark block />
                 </>
               )}
             </div>
@@ -1164,6 +1168,7 @@ export default function EmployeeDashboard() {
 
         {/* Main */}
         <div className="ed-main">
+            <TeamLeadCard role={teamRole} />
           <div className="ed-grid-2">
 
             {/* Score Card */}

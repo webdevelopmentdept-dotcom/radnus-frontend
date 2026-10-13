@@ -5,34 +5,37 @@ import EmployeeLayout from "./EmployeeLayout";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TYPE_META = {
-  hr:           { label: "HR",           color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe", icon: "🏢" },
+  hr: { label: "HR", color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe", icon: "🏢" },
   // ✅ NEW — hr_message type added so HR-sent messages show correct badge/color
-  hr_message:   { label: "HR Message",   color: "#047857", bg: "#f0fdf4", border: "#bbf7d0", icon: "💬" },
-  attendance:   { label: "Attendance",   color: "#b45309", bg: "#fffbeb", border: "#fde68a", icon: "📅" },
-  leave:        { label: "Leave",        color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff", icon: "🌴" },
-  leave_approved: { label: "Leave",      color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff", icon: "🌴" },
-  leave_rejected: { label: "Leave",      color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff", icon: "🌴" },
-  salary:       { label: "Salary",       color: "#059669", bg: "#f0fdf4", border: "#bbf7d0", icon: "💰" },
-  system:       { label: "System",       color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb", icon: "⚙️" },
+  hr_message: { label: "HR Message", color: "#047857", bg: "#f0fdf4", border: "#bbf7d0", icon: "💬" },
+  attendance: { label: "Attendance", color: "#b45309", bg: "#fffbeb", border: "#fde68a", icon: "📅" },
+  leave: { label: "Leave", color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff", icon: "🌴" },
+  leave_approved: { label: "Leave", color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff", icon: "🌴" },
+  leave_rejected: { label: "Leave", color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff", icon: "🌴" },
+    leave_tl_review:   { label: "Leave", color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff", icon: "🌴" },
+  leave_tl_decision: { label: "Leave", color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff", icon: "🌴" },
+  team_assigned:     { label: "Team",  color: "#3730a3", bg: "#eef2ff", border: "#c7d2fe", icon: "👥" },
+  salary: { label: "Salary", color: "#059669", bg: "#f0fdf4", border: "#bbf7d0", icon: "💰" },
+  system: { label: "System", color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb", icon: "⚙️" },
   announcement: { label: "Announcement", color: "#be185d", bg: "#fdf2f8", border: "#f9a8d4", icon: "📢" },
   // ✅ Incentive-related types — all grouped under one "Incentive" chip
   incentive_assigned: { label: "Incentive", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", icon: "🎯" },
-  incentive_review:   { label: "Incentive", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", icon: "🎯" },
+  incentive_review: { label: "Incentive", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", icon: "🎯" },
   incentive_approved: { label: "Incentive", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", icon: "🎯" },
   incentive_rejected: { label: "Incentive", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", icon: "🎯" },
-  incentive_paid:     { label: "Incentive", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", icon: "🎯" },
+  incentive_paid: { label: "Incentive", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa", icon: "🎯" },
   // ✅ Performance-related types — grouped under one "Performance" chip
   kpi_assigned: { label: "Performance", color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd", icon: "📈" },
-  review_done:  { label: "Performance", color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd", icon: "📈" },
-  general:      { label: "General",     color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb", icon: "🔔" },
+  review_done: { label: "Performance", color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd", icon: "📈" },
+  general: { label: "General", color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb", icon: "🔔" },
 };
 
 const DEFAULT_META = { label: "General", color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb", icon: "🔔" };
 
 function timeAgo(dateStr) {
   const diff = (Date.now() - new Date(dateStr)) / 1000;
-  if (diff < 60)    return "Just now";
-  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 60) return "Just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
   return new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
@@ -40,9 +43,9 @@ function timeAgo(dateStr) {
 
 export default function EmployeeNotifications() {
   const [notifications, setNotifications] = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [filter,        setFilter]        = useState("all");
-  const [markingAll,    setMarkingAll]    = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [markingAll, setMarkingAll] = useState(false);
 
   const empId = localStorage.getItem("employeeId");
 
@@ -256,9 +259,9 @@ export default function EmployeeNotifications() {
           {/* Summary cards */}
           <div className="notif-summary">
             {[
-              { val: notifications.length,               lbl: "Total",  color: "#111827" },
-              { val: unreadCount,                        lbl: "Unread", color: "#2563eb" },
-              { val: notifications.length - unreadCount, lbl: "Read",   color: "#16a34a" },
+              { val: notifications.length, lbl: "Total", color: "#111827" },
+              { val: unreadCount, lbl: "Unread", color: "#2563eb" },
+              { val: notifications.length - unreadCount, lbl: "Read", color: "#16a34a" },
             ].map((s, i) => (
               <div key={i} className="notif-sum-card">
                 <div className="val" style={{ color: s.color }}>{s.val}</div>

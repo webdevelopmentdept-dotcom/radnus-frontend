@@ -59,6 +59,7 @@ const ALWAYS_ALLOWED_PATHS = [
 export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsOpen }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isKpiLeader, setIsKpiLeader] = useState(false);
+  const [isTeamLead, setIsTeamLead] = useState(false);
   const [isLeaveApprover, setIsLeaveApprover] = useState(false);
   const [active, setActive] = useState(window.location.pathname);
   const [lockToast, setLockToast] = useState(false); // ✅ NEW — lock message toast
@@ -155,6 +156,7 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
           headers: { Authorization: `Bearer ${token}` },
         });
         setIsKpiLeader(res.data?.kpiAccess ?? !!res.data?.isLeader);
+        setIsTeamLead(!!res.data?.isLeader);
         setIsLeaveApprover(!!res.data?.leaveAccess);
       } catch (e) { /* not a leader / no access */ }
     };
@@ -674,9 +676,9 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
               </div>
               <div className="esb-profile-info">
                 <div className="esb-profile-name">{employee.name}</div>
-                <div className="esb-profile-role">
-                  {employee.department || employee.designation || "Employee"}
-                </div>
+               <div className="esb-profile-role">
+  {isTeamLead ? "Team Lead · " : ""}{employee.department || employee.designation || "Employee"}
+</div>
               </div>
               {/* ✅ CHANGED — Active badge only when approved, else Pending badge */}
               {isApproved ? (
