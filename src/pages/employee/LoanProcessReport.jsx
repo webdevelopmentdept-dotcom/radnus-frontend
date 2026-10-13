@@ -235,11 +235,13 @@ export default function LoanProcessReport() {
                   <th>Revenue</th>
                   <th>Completed</th>
                   <th>Conv. %</th>
+                  <th>Doc Payments</th>
+                  <th>Doc Payment Total</th>
                 </tr>
               </thead>
               <tbody>
                 {staffBreakdown.length === 0 && (
-                  <tr><td colSpan={6} style={{ color: "var(--lp-text-muted)" }}>No data yet.</td></tr>
+                  <tr><td colSpan={8} style={{ color: "var(--lp-text-muted)" }}>No data yet.</td></tr>
                 )}
                 {staffBreakdown.map((s, i) => {
                   const conv = s.conversionRate ?? (s.applications ? Math.round((s.completedCount / s.applications) * 100) : 0);
@@ -251,6 +253,8 @@ export default function LoanProcessReport() {
                       <td>{formatRupee(s.revenue)}</td>
                       <td>{s.completedCount}</td>
                       <td>{conv}%</td>
+                      <td>{s.docPaymentCount || 0}</td>
+                      <td>{formatRupee(s.docPaymentTotal || 0)}</td>
                     </tr>
                   );
                 })}
