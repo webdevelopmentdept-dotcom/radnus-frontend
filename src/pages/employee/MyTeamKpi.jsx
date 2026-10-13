@@ -49,6 +49,8 @@ export default function MyTeamKpi() {
   };
 
   const shown = rows.filter(r => tab === "all" || r.status === "active");
+  // show department in the dropdown only when the team spans more than one department
+  const multiDept = new Set(members.map(m => m.department)).size > 1;
 
   const th = { textAlign: "left", padding: "12px", fontSize: 12, color: "#6b7280", textTransform: "uppercase" };
   const td = { padding: "12px", borderTop: "1px solid #f1f5f9", fontSize: 14 };
@@ -75,7 +77,18 @@ export default function MyTeamKpi() {
 
   return (
     <EmployeeLayout>
-      <div style={{ padding: 24 }}>
+      <style>{`
+        .tk-page { padding: 24px; min-width: 0; max-width: 100%; box-sizing: border-box; }
+        .tk-page * { box-sizing: border-box; }
+        @media (max-width: 767px) {
+          .tk-page { padding: 14px; width: 100%; max-width: 100vw; overflow-x: hidden; }
+          .tk-mobile, .tk-mobile * { overflow-wrap: anywhere; min-width: 0; }
+          .tk-desktop { display: none !important; }
+          .tk-modal { padding: 14px !important; }
+        }
+        @media (min-width: 768px) { .tk-mobile { display: none !important; } }
+      `}</style>
+      <div className="tk-page">
         <h2 style={{ margin: 0 }}>My Team KPI</h2>
         <p style={{ color: "#6b7280" }}>KPI assignments, daily logs and progress of your team members (view only).</p>
 
@@ -83,10 +96,10 @@ export default function MyTeamKpi() {
           <select
             value={empId}
             onChange={e => { setEmpId(e.target.value); load(e.target.value); }}
-            style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #d1d5db", minWidth: 240 }}
+            style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #d1d5db", flex: "1 1 220px", minWidth: 0, maxWidth: "100%" }}
           >
             <option value="">All team members ({members.length})</option>
-            {members.map(m => <option key={m._id} value={m._id}>{m.name} · {m.department}</option>)}
+            {members.map(m => <option key={m._id} value={m._id}>{m.name}{multiDept ? ` · ${m.department}` : ""}</option>)}
           </select>
           {["all", "active"].map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
@@ -101,7 +114,8 @@ export default function MyTeamKpi() {
             : error ? <div style={{ padding: 20, color: "#dc2626" }}>{error}</div>
             : shown.length === 0 ? <div style={{ padding: 20, color: "#6b7280" }}>No assignments found.</div>
             : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <>
+              <div className="tk-desktop" style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
                     <th style={th}>S.No</th><th style={th}>Employee</th><th style={th}>Department</th>
@@ -123,17 +137,43 @@ export default function MyTeamKpi() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
+              <div className="tk-mobile" style={{ padding: 10, display: "flex", flexDirection: "column", gap: 10 }}>
+                {shown.map((r, i) => (
+                  <div key={r._id} style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, background: "#fff" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{i + 1}. {r.employee_id?.name}</div>
+                        <div style={{ fontSize: 12, color: "#6b7280", wordBreak: "break-all" }}>{r.employee_id?.email}</div>
+                      </div>
+                      <span style={{
+                        fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, height: "fit-content",
+                        background: r.status === "active" ? "#ecfdf5" : "#f3f4f6",
+                        color: r.status === "active" ? "#047857" : "#6b7280",
+                      }}>{r.status}</span>
+                    </div>
+                    <div style={{ marginTop: 8, fontSize: 12, color: "#374151" }}>{r.employee_id?.department}</div>
+                    <div style={{ fontSize: 12, color: "#6b7280" }}>
+                      {r.template_id?.template_name}{r.template_id?.role ? ` · ${r.template_id.role}` : ""}
+                    </div>
+                    <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 12, color: "#6b7280" }}>{r.period}</span>
+                      <button onClick={() => openView(r)} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", cursor: "pointer" }}>View</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
             )}
         </div>
 
         {view && (
           <div onClick={() => setView(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 24, width: "min(980px, 94vw)", maxHeight: "90vh", overflowY: "auto" }}>
+            <div className="tk-modal" onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 24, width: "min(980px, 94vw)", maxHeight: "90vh", overflowY: "auto" }}>
               <h3 style={{ marginTop: 0 }}>{view.employee_id?.name} · {view.period}</h3>
 
               {/* KPI targets */}
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead><tr><th style={th}>KPI</th><th style={th}>Target</th><th style={th}>Weight</th><th style={th}>Frequency</th></tr></thead>
                 <tbody>
                   {kpiItems.map((k, i) => (
@@ -145,12 +185,12 @@ export default function MyTeamKpi() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
 
               {/* Date filter */}
               <div style={{ marginTop: 22, paddingTop: 16, borderTop: "1px solid #e5e7eb" }}>
                 <b style={{ fontSize: 14 }}>Filter logs by date</b>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 12, marginTop: 8, alignItems: "end" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, marginTop: 8, alignItems: "end" }}>
                   <div>
                     <label style={{ fontSize: 12, color: "#6b7280" }}>From</label>
                     <input type="date" style={dateInput} value={logFrom} onChange={e => setLogFrom(e.target.value)} />
@@ -166,7 +206,7 @@ export default function MyTeamKpi() {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20, marginTop: 18 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: 20, marginTop: 18 }}>
                 {/* Running totals */}
                 <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 18, alignSelf: "start" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
@@ -225,7 +265,7 @@ export default function MyTeamKpi() {
                         <span style={{ fontWeight: 400, color: "#9ca3af" }}> — {logsByDate[date].length} {logsByDate[date].length === 1 ? "entry" : "entries"}</span>
                       </div>
                       {logsByDate[date].map(log => (
-                        <div key={log._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, padding: "10px 14px", background: "#f8fafc", borderRadius: 8, marginBottom: 6, border: "1px solid #e5e7eb", opacity: log.isDeleted ? 0.7 : 1 }}>
+                        <div key={log._id} style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 10, padding: "10px 14px", background: "#f8fafc", borderRadius: 8, marginBottom: 6, border: "1px solid #e5e7eb", opacity: log.isDeleted ? 0.7 : 1 }}>
                           <div style={{ display: "flex", gap: 10 }}>
                             <div style={{ width: 36, height: 36, borderRadius: 8, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#2563eb", fontSize: 13, flexShrink: 0 }}>{log.value}</div>
                             <div>

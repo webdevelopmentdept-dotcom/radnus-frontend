@@ -52,7 +52,15 @@ export default function TeamLeaveRequests() {
 
   return (
     <EmployeeLayout>
-      <div style={{ padding: 24, maxWidth: 820 }}>
+      <style>{`
+        .tl-page { padding: 24px; max-width: 820px; width: 100%; box-sizing: border-box; min-width: 0; }
+        .tl-page * { box-sizing: border-box; }
+        @media (max-width: 767px) {
+          .tl-page { padding: 14px; max-width: 100vw; overflow-x: hidden; }
+          .tl-page, .tl-page * { overflow-wrap: anywhere; }
+        }
+      `}</style>
+      <div className="tl-page">
         <h2 style={{ margin: 0 }}>Team Leave Requests</h2>
         <p style={{ color: "#888", fontSize: 13, marginTop: 4 }}>
           Your decision goes to HR for the final approval.
