@@ -94,6 +94,7 @@ const HR_MENU = [
       { to: "/hr/dashboard/hr-approved", end: false, icon: CheckmarkCircle01Icon, size: 20, label: "Approved ✅", flow: null, notif: false },
       { to: "/hr/dashboard/hr-reject", end: false, icon: CancelCircleIcon, size: 20, label: "Rejected ✅", flow: null, notif: false },
       { to: "/hr/dashboard/active-employees", end: false, icon: BarChartIcon, size: 20, label: "Activated Employees ✅", flow: null, notif: false },
+   { to: "/hr/dashboard/team-leaders", end: false, icon: UserMultiple02Icon, size: 20, label: "Team Leaders", flow: null, notif: false },
     ],
   },
   {
@@ -125,7 +126,6 @@ const HR_MENU = [
     items: [
       { to: "/hr/dashboard/performance/kpi-templates", end: false, icon: Target01Icon, size: 18, label: "KPI Templates ✅", flow: "1", notif: false },
       { to: "/hr/dashboard/performance/assign-kpi", end: false, icon: Task01Icon, size: 18, label: "Assign KPIs ✅", flow: "2", notif: false },
-      { to: "/hr/dashboard/performance/leader-access", end: false, icon: Task01Icon, size: 18, label: "Leader Access", flow: "2a", notif: false },
       { to: "/hr/dashboard/performance/reviews", end: false, icon: StarIcon, size: 18, label: "Reviews ✅", flow: "3", notif: false },
       { to: "/hr/dashboard/performance/reports", end: false, icon: ChartAverageIcon, size: 18, label: "Performance Reports ✅", flow: "4", notif: false },
     ],

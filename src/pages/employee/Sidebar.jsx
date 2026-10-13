@@ -4,7 +4,7 @@ import {
   FileText, Building2, LayoutDashboard, User,
   LogOut, TrendingUp, ClipboardList, Wallet,
   Bell, Settings, CalendarCheck, X,
-  ChevronRight, Sun, Moon, Sparkles, MessageCircle, Lock, LifeBuoy , MessageSquarePlus,
+  ChevronRight, Sun, Moon, Sparkles, MessageCircle, Lock, LifeBuoy, MessageSquarePlus,
   Package, Users
 } from "lucide-react";
 
@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { href: "/employee/my-applications", icon: FileText, label: "My Applications" },
   { href: "/employee/my-salary", icon: Wallet, label: "My Salary" },
   { href: "/employee/my-payslips", icon: Wallet, label: "My Payslips" },
-   { href: "/employee/my-advance", icon: Wallet, label: "Salary Advance" },
+  { href: "/employee/my-advance", icon: Wallet, label: "Salary Advance" },
   { href: "/employee/appraisal", icon: TrendingUp, label: "My Appraisals" },
   { href: "/employee/my-incentive", icon: Wallet, label: "My Incentive" },
   { href: "/employee/dashboard/impact-bonus", icon: Sparkles, label: "Impact Bonus" },
@@ -36,7 +36,7 @@ const NAV_ITEMS = [
   { href: "/employee/policies", icon: FileText, label: "Policies" },
   { href: "/employee/announcements", icon: Bell, label: "Announcements" },
   { href: "/employee/raise-ticket", icon: LifeBuoy, label: "Raise Ticket" },
-   { href: "/employee/feedback", icon: MessageSquarePlus, label: "Feedback" },
+  { href: "/employee/feedback", icon: MessageSquarePlus, label: "Feedback" },
   { href: "/employee/notifications", icon: Bell, label: "Notifications", badge: true },
   { href: "/employee/settings", icon: Settings, label: "Settings" },
 ];
@@ -58,7 +58,8 @@ const ALWAYS_ALLOWED_PATHS = [
 // ─────────────────────────────────────────────────────────────────────────────
 export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsOpen }) {
   const [unreadCount, setUnreadCount] = useState(0);
-    const [isKpiLeader, setIsKpiLeader] = useState(false);
+  const [isKpiLeader, setIsKpiLeader] = useState(false);
+  const [isLeaveApprover, setIsLeaveApprover] = useState(false);
   const [active, setActive] = useState(window.location.pathname);
   const [lockToast, setLockToast] = useState(false); // ✅ NEW — lock message toast
 
@@ -72,10 +73,10 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
   // work items rather than tacked on at the very end.
   let navItems = employee?.canManageProducts
     ? [
-        ...NAV_ITEMS.slice(0, -2),
-        { href: "/employee/products", icon: Package, label: "Product Management" },
-        ...NAV_ITEMS.slice(-2),
-      ]
+      ...NAV_ITEMS.slice(0, -2),
+      { href: "/employee/products", icon: Package, label: "Product Management" },
+      ...NAV_ITEMS.slice(-2),
+    ]
     : NAV_ITEMS;
 
   // ✅ RESTORED — this block was accidentally deleted while fixing the
@@ -90,7 +91,7 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
     ];
   }
 
-  
+
   if (employee?.loanProcessReportAccess) {
     navItems = [
       ...navItems.slice(0, -2),
@@ -99,7 +100,7 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
     ];
   }
 
-    if (employee?.canManageLoanFollowup) {
+  if (employee?.canManageLoanFollowup) {
     navItems = [
       ...navItems.slice(0, -2),
       { href: "/employee/loan-followup", icon: ClipboardList, label: "Loan Followup" },
@@ -108,17 +109,24 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
   }
 
   if (employee?.canApproveLoanIncentive) {
-  navItems = [
-    ...navItems.slice(0, -2),
-    { href: "/employee/loan-incentive-payouts", icon: Wallet, label: "Loan Incentive" },
-    ...navItems.slice(-2),
-  ];
-}
+    navItems = [
+      ...navItems.slice(0, -2),
+      { href: "/employee/loan-incentive-payouts", icon: Wallet, label: "Loan Incentive" },
+      ...navItems.slice(-2),
+    ];
+  }
 
   if (isKpiLeader) {
     navItems = [
       ...navItems.slice(0, -2),
       { href: "/employee/my-team-kpi", icon: Users, label: "My Team KPI" },
+      ...navItems.slice(-2),
+    ];
+  }
+  if (isLeaveApprover) {
+    navItems = [
+      ...navItems.slice(0, -2),
+      { href: "/employee/team-leave", icon: CalendarCheck, label: "Team Leave Requests" },
       ...navItems.slice(-2),
     ];
   }
@@ -137,7 +145,7 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
-    // Show "My Team KPI" only if HR mapped this employee as a leader
+  // Show "My Team KPI" only if HR mapped this employee as a leader
   useEffect(() => {
     const checkLeader = async () => {
       try {
@@ -146,7 +154,8 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
         const res = await axios.get(`${API_BASE}/api/kpi-leader/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setIsKpiLeader(!!res.data?.isLeader);
+        setIsKpiLeader(res.data?.kpiAccess ?? !!res.data?.isLeader);
+        setIsLeaveApprover(!!res.data?.leaveAccess);
       } catch (e) { /* not a leader / no access */ }
     };
     checkLeader();

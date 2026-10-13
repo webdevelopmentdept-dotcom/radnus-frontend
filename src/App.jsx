@@ -71,6 +71,7 @@ import LoanProcessReport from "./pages/employee/LoanProcessReport";
 import EmployeeHrInduction from "./pages/employee/Employeehrinduction";
 import MyTeamKpi from "./pages/employee/MyTeamKpi";
 import LoanFollowup from "./pages/employee/LoanFollowup";
+import TeamLeaveRequests from "./pages/employee/TeamLeaveRequests";
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
@@ -243,6 +244,7 @@ function App() {
         <Route path="/employee/self-assessment" element={<SelfAssessment />} />
         <Route path="/employee/my-team-kpi" element={<MyTeamKpi />} />
         <Route path="/employee/my-applications" element={<MyApplications />} />
+        <Route path="/employee/team-leave" element={<TeamLeaveRequests />} />
         <Route path="/employee/my-salary" element={<MyPackage />} />
         <Route path="/employee/my-documents" element={<MyDocuments />} />
         <Route path="/employee/attendance" element={<EmployeeAttendance />} />
@@ -330,6 +332,7 @@ function App() {
           <Route path="performance/reviews" element={<PerformanceReviews />} />
           <Route path="performance/reports" element={<PerformanceReports />} />
           <Route path="performance/leader-access" element={<KpiLeaderAccess />} />
+          <Route path="team-leaders" element={<KpiLeaderAccess />} />
 
           <Route path="performance/okr-dashboard" element={<OkrDashboard />} />
           <Route path="performance/okr-setup" element={<OkrSetup />} />

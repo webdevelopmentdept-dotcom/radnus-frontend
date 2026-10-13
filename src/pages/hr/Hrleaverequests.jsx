@@ -61,7 +61,7 @@ const STYLES = `
 
   /* ── Stat cards ── */
   .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
-  @media (min-width: 640px) { .stat-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (min-width: 640px) { .stat-grid { grid-template-columns: repeat(5, 1fr); } }
 
   .stat-card {
     background: #fff;
@@ -267,6 +267,7 @@ const STYLES = `
 /* ─── Stat Config ─── */
 const STAT_CONFIG = [
   { key: "pending",  label: "Pending",  color: "#d97706", bg: "#fef9c3", border: "#fde68a", Icon: Hourglass },
+  { key: "awaiting_tl", label: "With Team Lead", color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd", Icon: Clock },
   { key: "approved", label: "Approved", color: "#16a34a", bg: "#dcfce7", border: "#bbf7d0", Icon: BadgeCheck },
   { key: "rejected", label: "Rejected", color: "#dc2626", bg: "#fee2e2", border: "#fecaca", Icon: Ban },
   { key: "all",      label: "Total",    color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe", Icon: Users },
@@ -277,6 +278,23 @@ const statusMeta = (status) => {
   if (status === "rejected") return { color: "#dc2626", bg: "#fee2e2" };
   return { color: "#d97706", bg: "#fef9c3" };
 };
+
+/* ─── Team Lead flow helpers ─── */
+const awaitingTL = (l) => l.status === "pending" && l.current_stage === "team_lead";
+const awaitingHR = (l) => l.status === "pending" && l.current_stage !== "team_lead";
+const pillLabel = (l) =>
+  awaitingTL(l) ? "WITH TEAM LEAD" : (l.status || "pending").toUpperCase();
+const pillMeta = (l) =>
+  awaitingTL(l) ? { color: "#0369a1", bg: "#f0f9ff" } : statusMeta(l.status);
+const TlBlock = ({ l }) =>
+  l.tl_status && l.tl_status !== "not_required" ? (
+    <div className="hr-note" style={{ background: "#f0f9ff", color: "#0369a1" }}>
+      <Info size={11} style={{ flexShrink: 0, marginTop: 2 }} />
+      Team Lead{l.tl_approver_id?.name ? ` (${l.tl_approver_id.name})` : ""}:{" "}
+      {l.tl_status === "pending" ? "yet to review" : l.tl_status.toUpperCase()}
+      {l.tl_remark ? ` — ${l.tl_remark}` : ""}
+    </div>
+  ) : null;
 
 /* ─── Export CSV ─── */
 function exportCSV(leaves) {
@@ -306,8 +324,14 @@ function exportCSV(leaves) {
 function LeaveModal({ leave, onAction, onClose }) {
   const [remark, setRemark] = useState(leave.hr_remark || "");
   const [loading, setLoading] = useState(null);
+  const [err, setErr] = useState("");
 
   const handle = async (action) => {
+    if (action === "reject" && !remark.trim()) {
+      setErr("Please enter a reason for rejection");
+      return;
+    }
+    setErr("");
     setLoading(action);
     try {
       await axios.put(
@@ -323,7 +347,7 @@ function LeaveModal({ leave, onAction, onClose }) {
 
   // FIX 2: half day check in modal
   const days = leave.is_half_day ? 0.5 : Math.floor((new Date(leave.to_date) - new Date(leave.from_date)) / 86400000) + 1;
-  const { color: sc, bg: sb } = statusMeta(leave.status);
+  const { color: sc, bg: sb } = pillMeta(leave);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -342,7 +366,7 @@ function LeaveModal({ leave, onAction, onClose }) {
               <div style={{ fontWeight: 800, fontSize: 13, color: "#0a0a0a" }}>{leave.employee_name}</div>
               <div style={{ fontSize: 11, color: "#9ca3af" }}>{leave.department}</div>
             </div>
-            <span className="status-pill" style={{ background: sb, color: sc }}>{leave.status?.toUpperCase() || "PENDING"}</span>
+            <span className="status-pill" style={{ background: sb, color: sc }}>{pillLabel(leave)}</span>
           </div>
 
           {[
@@ -360,6 +384,8 @@ function LeaveModal({ leave, onAction, onClose }) {
             </div>
           ))}
 
+          <div style={{ marginTop: 10 }}><TlBlock l={leave} /></div>
+
           {leave.hr_remark && (
             <div style={{ background: "#eff6ff", borderRadius: 8, padding: "10px 12px", marginTop: 10, fontSize: 13, color: "#2563eb", fontWeight: 600, display: "flex", alignItems: "flex-start", gap: 7 }}>
               <Info size={13} style={{ flexShrink: 0, marginTop: 1 }} />
@@ -368,9 +394,9 @@ function LeaveModal({ leave, onAction, onClose }) {
           )}
         </div>
 
-        {(leave.status === "pending" || leave.status === "rejected") && (
+        {((leave.status === "pending" && leave.current_stage !== "team_lead") || leave.status === "rejected") && (
           <div className="modal-footer">
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.4 }}>HR Remark (optional)</label>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.4 }}>HR Remark <span style={{ color: "#dc2626", textTransform: "none" }}>(required for reject)</span></label>
             <textarea
               rows={2}
               placeholder="Add a note..."
@@ -378,6 +404,7 @@ function LeaveModal({ leave, onAction, onClose }) {
               onChange={e => setRemark(e.target.value)}
               className="remark-textarea"
             />
+            {err && <div style={{ color: "#dc2626", fontSize: 12, fontWeight: 600, marginTop: -6, marginBottom: 10 }}>{err}</div>}
             <div className="modal-actions">
               <button
                 className="btn btn-red"
@@ -545,14 +572,20 @@ export default function HRLeaveRequests() {
   };
 
   const counts = {
-    pending:  leaves.filter(l => l.status === "pending").length,
+    pending:  leaves.filter(awaitingHR).length,
+    awaiting_tl: leaves.filter(awaitingTL).length,
     approved: leaves.filter(l => l.status === "approved").length,
     rejected: leaves.filter(l => l.status === "rejected").length,
     all:      leaves.length,
   };
 
   const filtered = leaves
-    .filter(l => filter === "all" || l.status === filter)
+    .filter(l =>
+      filter === "all" ? true :
+      filter === "pending" ? awaitingHR(l) :
+      filter === "awaiting_tl" ? awaitingTL(l) :
+      l.status === filter
+    )
     .filter(l => {
       if (!search.trim()) return true;
       const q = search.toLowerCase();
@@ -568,6 +601,7 @@ export default function HRLeaveRequests() {
     });
 
   const toggleSort = () => setSort(s => s === "newest" ? "oldest" : "newest");
+  const filterLabel = filter === "awaiting_tl" ? "with team lead" : filter;
 
   return (
     <div className="hr-root">
@@ -670,7 +704,7 @@ export default function HRLeaveRequests() {
 
       {/* Results label */}
       <div className="section-label">
-        {filtered.length} {filter !== "all" ? filter : ""} request{filtered.length !== 1 ? "s" : ""}
+        {filtered.length} {filter !== "all" ? filterLabel : ""} request{filtered.length !== 1 ? "s" : ""}
         {search && ` matching "${search}"`}
       </div>
 
@@ -685,13 +719,13 @@ export default function HRLeaveRequests() {
             <Palmtree size={36} color="#e5e7eb" />
           </div>
           <div className="empty-text">
-            {search ? `No results for "${search}"` : `No ${filter !== "all" ? filter : ""} leave requests`}
+            {search ? `No results for "${search}"` : `No ${filter !== "all" ? filterLabel : ""} leave requests`}
           </div>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {filtered.map((l, i) => {
-            const { color: sc, bg: sb } = statusMeta(l.status);
+            const { color: sc, bg: sb } = pillMeta(l);
             // FIX 1: half day check in leave card
             const days = l.is_half_day ? 0.5 : Math.floor((new Date(l.to_date) - new Date(l.from_date)) / 86400000) + 1;
 
@@ -704,7 +738,7 @@ export default function HRLeaveRequests() {
                     <div className="emp-dept">{l.department || "—"}</div>
                   </div>
                   <span className="status-pill" style={{ background: sb, color: sc }}>
-                    {l.status?.toUpperCase() || "PENDING"}
+                    {pillLabel(l)}
                   </span>
                 </div>
 
@@ -727,6 +761,8 @@ export default function HRLeaveRequests() {
                   </div>
                 )}
 
+                <TlBlock l={l} />
+
                 {l.hr_remark && (
                   <div className="hr-note">
                     <Info size={11} style={{ flexShrink: 0, marginTop: 2 }} />
@@ -740,7 +776,7 @@ export default function HRLeaveRequests() {
                     <button className="btn btn-outline btn-sm" onClick={() => setModal(l)}>
                       <Eye size={11} /> View
                     </button>
-                    {l.status === "pending" && (
+                    {awaitingHR(l) && (
   <>
     <button
       className="btn btn-green btn-sm"
@@ -750,7 +786,8 @@ export default function HRLeaveRequests() {
     </button>
     <button
       className="btn btn-red btn-sm"
-      onClick={() => quickAction(l._id, "reject", l.employee_name)}
+      onClick={() => setModal(l)}
+      title="Opens details to enter the rejection reason"
     >
       <XCircle size={11} /> Reject
     </button>

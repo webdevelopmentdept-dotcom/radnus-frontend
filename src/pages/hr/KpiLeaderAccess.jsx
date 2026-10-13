@@ -34,6 +34,8 @@ export default function KpiLeaderAccess() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [permKpi, setPermKpi] = useState(true);
+  const [permLeave, setPermLeave] = useState(true);
 
   const load = async () => {
     setLoading(true);
@@ -91,6 +93,7 @@ export default function KpiLeaderAccess() {
     setLeaderId(preLeader?._id || "");
     setLeaderDept(preLeader?.department || "");
     setMemberDept(""); setSearch(""); setSelected([]);
+    setPermKpi(true); setPermLeave(true);
     setOpen(true);
   };
   const openEdit = (m) => {
@@ -99,6 +102,8 @@ export default function KpiLeaderAccess() {
     setLeaderDept(m.leader_id.department || "");
     setMemberDept(""); setSearch("");
     setSelected(m.member_ids.map(x => x._id));
+    setPermKpi(m.permissions?.kpi_view !== false);
+    setPermLeave(m.permissions?.leave_approval !== false);
     setOpen(true);
   };
 
@@ -112,12 +117,14 @@ export default function KpiLeaderAccess() {
   const save = async () => {
     if (!leaderId) return alert("Select a leader");
     if (!selected.length) return alert("Select at least 1 team member");
+    if (!permKpi && !permLeave) return alert("Select at least one access (KPI view / Leave approval)");
+    const permissions = { kpi_view: permKpi, leave_approval: permLeave };
     setSaving(true);
     try {
       if (editId) {
-        await axios.put(`${API_BASE}/api/kpi-leader/${editId}`, { member_ids: selected }, authHeader());
+        await axios.put(`${API_BASE}/api/kpi-leader/${editId}`, { member_ids: selected, permissions }, authHeader());
       } else {
-        await axios.post(`${API_BASE}/api/kpi-leader`, { leader_id: leaderId, member_ids: selected }, authHeader());
+        await axios.post(`${API_BASE}/api/kpi-leader`, { leader_id: leaderId, member_ids: selected, permissions }, authHeader());
       }
       setOpen(false);
       await load();
@@ -128,7 +135,7 @@ export default function KpiLeaderAccess() {
   };
 
   const remove = async (m) => {
-    if (!window.confirm(`Remove ${m.leader_id?.name}'s team access?`)) return;
+    if (!window.confirm(`Remove ${m.leader_id?.name}'s team? Leave requests waiting for this Team Lead will be forwarded to HR.`)) return;
     try {
       await axios.delete(`${API_BASE}/api/kpi-leader/${m._id}`, authHeader());
       load();
@@ -139,12 +146,12 @@ export default function KpiLeaderAccess() {
     <div style={S.page}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div>
-          <h2 style={{ margin: 0 }}>KPI Leader Access</h2>
+          <h2 style={{ margin: 0 }}>Team Leaders &amp; Members</h2>
           <p style={{ margin: "4px 0 0", color: "#6b7280" }}>
-            Team leader-ku avanga team members-oda KPI paaka access kudukkalam (view only).
+            Assign team members to a team leader (from any department) and choose what the leader can access: KPI view and Leave approval.
           </p>
         </div>
-        <button style={S.btn} onClick={() => openCreate(null)}>+ Add Leader Team</button>
+        <button style={S.btn} onClick={() => openCreate(null)}>+ Add Team Leader</button>
       </div>
 
       {suggested.length > 0 && (
@@ -169,7 +176,7 @@ export default function KpiLeaderAccess() {
               <thead>
                 <tr>
                   <th style={S.th}>Leader</th><th style={S.th}>Department</th>
-                  <th style={S.th}>Team</th><th style={S.th}>Members</th><th style={S.th}>Action</th>
+                  <th style={S.th}>Team</th><th style={S.th}>Members</th><th style={S.th}>Access</th><th style={S.th}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -179,6 +186,10 @@ export default function KpiLeaderAccess() {
                     <td style={S.td}>{m.leader_id?.department}</td>
                     <td style={S.td}>{m.member_ids.length}</td>
                     <td style={S.td}>{m.member_ids.map(x => <span key={x._id} style={S.chip}>{x.name}</span>)}</td>
+                    <td style={S.td}>
+                      {m.permissions?.kpi_view !== false && <span style={{ ...S.chip, background: "#ecfdf5", color: "#047857" }}>KPI view</span>}
+                      {m.permissions?.leave_approval !== false && <span style={{ ...S.chip, background: "#eff6ff", color: "#1d4ed8" }}>Leave approval</span>}
+                    </td>
                     <td style={S.td}>
                       <button style={S.btnGhost} onClick={() => openEdit(m)}>Edit</button>{" "}
                       <button style={{ ...S.btnGhost, color: "#dc2626" }} onClick={() => remove(m)}>Remove</button>
@@ -194,7 +205,7 @@ export default function KpiLeaderAccess() {
       {open && (
         <div style={S.overlay} onClick={() => setOpen(false)}>
           <div style={S.modal} onClick={e => e.stopPropagation()}>
-            <h3 style={{ marginTop: 0 }}>{editId ? "Edit Team" : "Add Leader Team"}</h3>
+            <h3 style={{ marginTop: 0 }}>{editId ? "Edit Team" : "Add Team Leader"}</h3>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
               <div>
@@ -245,6 +256,18 @@ export default function KpiLeaderAccess() {
                 );
               })}
               {memberList.length === 0 && <div style={{ padding: 16, color: "#6b7280" }}>No employees</div>}
+            </div>
+
+            <div style={{ marginTop: 16, padding: 12, border: "1px solid #e5e7eb", borderRadius: 10, background: "#f9fafb" }}>
+              <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>4. Leader access for this team</label>
+              <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4, cursor: "pointer" }}>
+                <input type="checkbox" checked={permKpi} onChange={e => setPermKpi(e.target.checked)} />
+                KPI view <span style={{ color: "#6b7280", fontSize: 12 }}>(My Team KPI - view only)</span>
+              </label>
+              <label style={{ display: "flex", gap: 8, alignItems: "center", cursor: "pointer" }}>
+                <input type="checkbox" checked={permLeave} onChange={e => setPermLeave(e.target.checked)} />
+                Leave approval <span style={{ color: "#6b7280", fontSize: 12 }}>(member leave goes to leader first, then HR)</span>
+              </label>
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>

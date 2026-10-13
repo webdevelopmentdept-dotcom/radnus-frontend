@@ -9,6 +9,17 @@ const getToken = () =>
 const pad = (n) => String(n).padStart(2, "0");
 const fmt = (d) => d ? new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "—";
 const fmtD = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+
+const leaveStage = (l) => {
+  if (l.status === "approved") return { t: "APPROVED", c: "#16a34a", b: "#f0fdf4", bd: "#bbf7d0" };
+  if (l.status === "rejected") return { t: "REJECTED", c: "#dc2626", b: "#fef2f2", bd: "#fecaca" };
+  if (l.current_stage === "team_lead") return { t: "PENDING – TEAM LEAD", c: "#b45309", b: "#fffbeb", bd: "#fde68a" };
+  if (l.tl_status === "approved") return { t: "TL APPROVED – AWAITING HR", c: "#1d4ed8", b: "#eff6ff", bd: "#bfdbfe" };
+  if (l.tl_status === "rejected") return { t: "TL REJECTED – AWAITING HR", c: "#c2410c", b: "#fff7ed", bd: "#fed7aa" };
+  return { t: "PENDING – HR", c: "#b45309", b: "#fffbeb", bd: "#fde68a" };
+};
+
+
 const todayStr = () => new Date().toISOString().split("T")[0];
 
 const DEFAULT_SHIFT_START = 10 * 60;
@@ -1239,11 +1250,13 @@ export default function EmployeeAttendance() {
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {[...leaves].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((l, i) => {
-                    const isApproved = l.status === "approved";
-                    const isRejected = l.status === "rejected";
-                    const sc = isApproved ? "#16a34a" : isRejected ? "#dc2626" : "#b45309";
-                    const sb = isApproved ? "#f0fdf4" : isRejected ? "#fef2f2" : "#fffbeb";
-                    const sborder = isApproved ? "#bbf7d0" : isRejected ? "#fecaca" : "#fde68a";
+                    // const isApproved = l.status === "approved";
+                    // const isRejected = l.status === "rejected";
+                    // const sc = isApproved ? "#16a34a" : isRejected ? "#dc2626" : "#b45309";
+                    // const sb = isApproved ? "#f0fdf4" : isRejected ? "#fef2f2" : "#fffbeb";
+                    // const sborder = isApproved ? "#bbf7d0" : isRejected ? "#fecaca" : "#fde68a";
+                    const st = leaveStage(l);
+const sc = st.c, sb = st.b, sborder = st.bd;
                     const days = l.is_half_day ? 0.5 : Math.floor((new Date(l.to_date) - new Date(l.from_date)) / 86400000) + 1;
                     return (
                       <div key={i} className="ea-card" style={{ padding: "14px 16px" }}>
@@ -1252,7 +1265,7 @@ export default function EmployeeAttendance() {
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                               <span style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>{l.leave_type}</span>
                               <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: sb, color: sc, border: `1px solid ${sborder}`, letterSpacing: 0.5 }}>
-                                {(l.status || "pending").toUpperCase()}
+                                {st.t}
                               </span>
                             </div>
                             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 12, color: "#9ca3af", fontWeight: 500 }}>
@@ -1260,6 +1273,15 @@ export default function EmployeeAttendance() {
                               <span style={{ fontWeight: 600, color: "#374151" }}>{days} day{days !== 1 ? "s" : ""}</span>
                             </div>
                             <div style={{ fontSize: 12, color: "#6b7280", marginTop: 5 }}>{l.reason}</div>
+                            {l.tl_status && l.tl_status !== "not_required" && (
+  <div style={{ marginTop: 7, fontSize: 12, color: "#6b7280" }}>
+    Team Lead{l.tl_approver_id?.name ? ` (${l.tl_approver_id.name})` : ""}:{" "}
+    <b>{l.tl_status === "pending" ? "pending ⏳" : l.tl_status}</b>
+    {l.tl_remark && ` — "${l.tl_remark}"`}
+    {" → HR: "}
+    <b>{l.status === "pending" ? "pending ⏳" : l.status}</b>
+  </div>
+)}
                             {l.hr_remark && <div style={{ marginTop: 7, fontSize: 12, color: "#0369a1", fontWeight: 500 }}>HR Note: {l.hr_remark}</div>}
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
