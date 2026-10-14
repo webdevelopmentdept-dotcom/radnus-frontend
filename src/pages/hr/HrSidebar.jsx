@@ -2,6 +2,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { unsubscribeFromPush } from "../../utils/pushNotifications";
 import {
   Home01Icon,
   UserMultiple02Icon,
@@ -371,7 +372,8 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, []);
 
-  const logout = () => {
+    const logout = async () => {
+    await unsubscribeFromPush("hr", localStorage.getItem("hrId"));
     localStorage.clear();
     navigate("/login");
   };

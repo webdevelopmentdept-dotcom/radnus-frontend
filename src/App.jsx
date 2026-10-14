@@ -26,6 +26,7 @@ import jobsData from "./components/jobsData";
 import ShadeOfTrust from "./components/Shadeoftrust";
 import Mascot from "./components/shared/Mascot";
 import InternshipApply from "./pages/InternshipApply";
+import PushNotificationManager from "./components/shared/PushNotificationManager";
 
 /* Auth */
 import Login from "./pages/auth/Login";
@@ -196,6 +197,7 @@ function App() {
   return (
     <>
       <ScrollToTop />
+      <PushNotificationManager />
       {!hideHeaderFooter && <RadnusNavbar />}
       {!hideHeaderFooter && <Mascot />}
       <Routes>

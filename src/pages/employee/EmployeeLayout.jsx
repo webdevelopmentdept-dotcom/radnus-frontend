@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import EmployeeSidebar from "./Sidebar";
 import { Clock, XCircle, FileEdit } from "lucide-react";
+import { unsubscribeFromPush } from "../../utils/pushNotifications";
 
 const ALWAYS_ALLOWED_PATHS = ["/employee/my-documents"];
 
@@ -37,7 +38,8 @@ export default function EmployeeLayout({ children, pageTitle }) {
     fetchEmployee();
   }, []);
 
-  const handleLogout = () => {
+   const handleLogout = async () => {
+    await unsubscribeFromPush("employee", localStorage.getItem("employeeId"));
     localStorage.removeItem("employeeId");
     window.location.href = "/login";
   };
