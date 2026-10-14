@@ -468,7 +468,7 @@ function WhiteLabelPage() {
           content="Create your own brand with Radnus White Label OEM mobile accessories. Premium quality and marketing-ready solutions for entrepreneurs."
         />
         <meta property="og:url" content="https://www.radnus.in/whitelabel" />
-        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
+        <meta property="og:image" content="https://www.radnus.in/web-app-manifest-512x512.png" />
         <link rel="canonical" href="https://www.radnus.in/whitelabel" />
       </Helmet>
 

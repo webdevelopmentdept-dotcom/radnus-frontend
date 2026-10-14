@@ -71,7 +71,7 @@ const RadnusAcademy = () => {
     <>
       <Helmet>
         <title>
-          Radnus Academy | Mobile Repair Training & Skill Development
+          Mobile Repair Course in Puducherry | Radnus Academy
         </title>
         <meta
           name="description"
@@ -93,7 +93,7 @@ const RadnusAcademy = () => {
           content="Professional mobile repair and chip-level training at Radnus Academy. Learn, grow, and build your career with us."
         />
         <meta property="og:url" content="https://www.radnus.in/academy" />
-        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
+        <meta property="og:image" content="https://www.radnus.in/web-app-manifest-512x512.png" />
         <link rel="canonical" href="https://www.radnus.in/academy" />
       </Helmet>
 

@@ -44,7 +44,7 @@ const ToolsTech = () => {
   return (
     <>
       <Helmet>
-        <title>Mobile Repair Tools & Technology | Radnus Communication</title>
+       <title>Mobile Repair Tools & Software (Chimera, UMT) | Radnus</title>
         <meta
           name="description"
           content="Shop premium hardware and software tools for mobile repair technicians in India — Chimera, Pragmafix, UMT, and more."
@@ -65,7 +65,7 @@ const ToolsTech = () => {
           content="Find high-quality hardware and software tools for mobile and laptop repair technicians at Radnus Communication."
         />
         <meta property="og:url" content="https://www.radnus.in/tools-tech" />
-        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
+        <meta property="og:image" content="https://www.radnus.in/web-app-manifest-512x512.png" />
         <link rel="canonical" href="https://www.radnus.in/tools-tech" />
       </Helmet>
 
@@ -103,9 +103,9 @@ const ToolsTech = () => {
 
         {/* Overlay text */}
         <div className="position-absolute top-50 start-50 translate-middle text-center p-4 rounded overlay-content">
-          <h2 className="mb-3 fs-2 fw-bold">
+          <h1 className="mb-3 fs-2 fw-bold">
             Discover the Best Tools & Technology for Mobile Repair
-          </h2>
+          </h1>
           <p className="mb-3 " style={{ fontSize: "1.4rem" }}>
             Find advanced hardware and software tools for technicians, shop
             owners, and laptop repair experts — all in one place.

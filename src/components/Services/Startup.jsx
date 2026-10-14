@@ -13,7 +13,7 @@ export default function Startup({
   return (
     <>
       <Helmet>
-        <title>Startup Loan & Franchise Support | Radnus Communication</title>
+        <title>Mobile Shop Startup Loan & PMEGP Support | Radnus Puducherry</title>
         <meta
           name="description"
           content="Empower your business with Radnus Startup Loan and Franchise Support. Get funding assistance, mentorship, and training to grow your mobile business."
@@ -34,7 +34,7 @@ export default function Startup({
           content="Apply for Radnus Startup Loan and franchise support to start or expand your mobile service business with ease."
         />
         <meta property="og:url" content="https://www.radnus.in/startup" />
-        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
+        <meta property="og:image" content="https://www.radnus.in/web-app-manifest-512x512.png" />
         <link rel="canonical" href="https://www.radnus.in/startup" />
       </Helmet>
       <section
@@ -69,12 +69,12 @@ export default function Startup({
               className="d-flex align-items-start text-md-start text-center"
             >
               <div className="w-100 mx-auto" style={{ maxWidth: "540px" }}>
-                <h1
+                <h2
                   className="fw-bold display-6 lh-sm mb-3 mt-2"
                   style={{ color: "#ffffff" }}
                 >
                   {title}
-                </h1>
+                </h2>
                 <p
                   className="fs-5 fw-semibold mb-3"
                   style={{ color: "#000000c2" }}
@@ -447,7 +447,7 @@ export default function Startup({
 
             {/* RIGHT CONTENT */}
             <Col md={6} className="text-center">
-              <h1
+              <div
                 className="fw-bold "
                 style={{
                   fontSize: "2.5rem",
@@ -456,7 +456,7 @@ export default function Startup({
                 }}
               >
                 ₹390M+
-              </h1>
+              </div>
               <p style={{ fontSize: "1rem" }}>
                 From transforming small ventures to scaling large enterprises —
                 our PMEGP program continues to support sustainable success and

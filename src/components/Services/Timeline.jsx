@@ -57,7 +57,7 @@ export default function Timeline() {
           content="Explore how Radnus Communication grew from a single shop to a leading mobile brand in India."
         />
         <meta property="og:url" content="https://www.radnus.in/timeline" />
-        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
+        <meta property="og:image" content="https://www.radnus.in/web-app-manifest-512x512.png" />
         <link rel="canonical" href="https://www.radnus.in/timeline" />
       </Helmet>
 

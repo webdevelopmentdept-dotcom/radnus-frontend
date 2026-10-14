@@ -151,7 +151,7 @@ const Service = () => {
     <>
       {/* ✅ HELMET FOR META TAGS */}
       <Helmet>
-        <title>Mobile Repair Services | Radnus Communication</title>
+        <title>Mobile Repair & Service Center in Puducherry | Radnus</title>
         <meta
           name="description"
           content="Radnus offers fast, reliable mobile repair and maintenance services including software flashing, hardware tools, and OEM accessories."
@@ -172,7 +172,7 @@ const Service = () => {
           content="Get professional mobile service and repair solutions at Radnus Communication — trusted experts since 2003."
         />
         <meta property="og:url" content="https://www.radnus.in/service" />
-        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
+        <meta property="og:image" content="https://www.radnus.in/web-app-manifest-512x512.png" />
         <link rel="canonical" href="https://www.radnus.in/service" />
       </Helmet>
 

@@ -37,28 +37,35 @@ function RadnusHome() {
   return (
     <>
       <Helmet>
-        <title>Radnus Communication | 360° Mobile Industry Ecosystem</title>
-        <meta
-          name="description"
-          content="Radnus Communication empowers mobile entrepreneurs through training, repair services, tools, and startup support since 2003."
-        />
-        <meta
-          name="keywords"
-          content="
-      mobile service center pondicherry,
-      mobile repair shop in pondicherry,
-      mobile shop in pondicherry,
-      mobile service center in mahatma gandhi road,
-      best mobile repair shop in pondicherry,
-      mobile phone service pondicherry,
-      smartphone repair pondicherry,
-      Radnus Communication pondicherry,
-      mobile training institute pondicherry,
-      mobile training center pondicherry,
-      mobile accessories shop pondicherry
-    "
-        />
-      </Helmet>
+  <title>Mobile Repair Training in Puducherry | Radnus 360° Ecosystem</title>
+  <meta
+    name="description"
+    content="Radnus Communication, Puducherry: mobile repair training, chip-level courses, service tools, accessories and startup support since 2003."
+  />
+  <link rel="canonical" href="https://www.radnus.in/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Radnus Communication | Mobile Repair Training in Puducherry" />
+  <meta property="og:description" content="Mobile repair training, tools, accessories and startup support since 2003." />
+  <meta property="og:url" content="https://www.radnus.in/" />
+  <meta property="og:image" content="https://www.radnus.in/web-app-manifest-512x512.png" />
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "EducationalOrganization",
+      "name": "Radnus Communication",
+      "url": "https://www.radnus.in/",
+      "logo": "https://www.radnus.in/web-app-manifest-512x512.png",
+      "foundingDate": "2003",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Sinnaya Plaza, 242/244, Mahatma Gandhi Rd",
+        "addressLocality": "Puducherry",
+        "postalCode": "605001",
+        "addressCountry": "IN"
+      }
+    })}
+  </script>
+</Helmet>
       {/* ===== SHADE OF TRUST TICKER ===== */}
 <ShadeOfTrustTicker />
 
@@ -107,9 +114,8 @@ function RadnusHome() {
         <div className="container">
           <div className="row">
             <div className="col-md-5 col-12">
-              <h1 className="fw-bold display-4 text-danger mb-0">Radnus</h1>
-              <h1 className="fw-bold display-4 text-danger mb-3">
-                Communication
+                            <h1 className="fw-bold display-4 text-danger mb-3">
+                Radnus <br /> Communication
               </h1>
 
               <p className="lead text-dark mb-4">

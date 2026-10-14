@@ -154,7 +154,7 @@ const Accessories = () => {
           property="og:description"
           content="Discover our premium range of chargers, power banks, speakers, and headphones for all your devices. Quality products with fast delivery."
         />
-        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
+        <meta property="og:image" content="https://www.radnus.in/web-app-manifest-512x512.png" />
         <meta property="og:url" content="https://www.radnus.in/accessories" />
 
         {/* Twitter */}
@@ -167,7 +167,7 @@ const Accessories = () => {
           name="twitter:description"
           content="Discover premium chargers, speakers, and headphones with fast delivery and trusted quality."
         />
-        <meta name="twitter:image" content="https://www.radnus.in/logo2.png" />
+        <meta name="twitter:image" content="https://www.radnus.in/web-app-manifest-512x512.png" />
 
         <link rel="canonical" href="https://www.radnus.in/accessories" />
 
@@ -179,7 +179,7 @@ const Accessories = () => {
     "@type": "Organization",
     "name": "Radnus Communication",
     "url": "https://www.radnus.in",
-    "logo": "https://www.radnus.in/logo2.png",
+    "logo": "https://www.radnus.in/web-app-manifest-512x512.png",
     "description": "Radnus Communication offers premium mobile accessories and service support across India."
   }
   `}

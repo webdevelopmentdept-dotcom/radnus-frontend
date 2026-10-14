@@ -42,6 +42,7 @@ const SCHEME_OPTIONS = [
     { value: "NEEDS", label: "NEEDS - New Entrepreneur-cum-Enterprise Development Scheme" },
     { value: "TABCEDCO", label: "TABCEDCO - Tamil Nadu Backward Classes Economic Development Corporation" },
     { value: "TWEES", label: "TWEES - Tamil Nadu Women Entrepreneur Empowerment Scheme" },
+    { value: "PMFME", label: "PMFME - Pradhan Mantri Formalization Of Micro Food Processing Enterprises Scheme" },
 ];
 
 // PMEGP eligible business list — fixed list so everyone picks from the same
@@ -89,6 +90,8 @@ const BUSINESS_TYPE_OPTIONS = [
     "Soap And Detergent Manufacturing",
     "Diesel Generators Manufacturing",
     "Manufacturing Of Steel Rack",
+    "1 Gram Gold Jewellery ",
+    "Aqua purifier",
     // ── Agriculture & Allied Activities ──
     "Paddy Cultivation",
     "Vegetable Farming",

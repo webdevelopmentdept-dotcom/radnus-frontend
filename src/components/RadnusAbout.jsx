@@ -91,7 +91,7 @@ function RadnusAbout() {
     "@type": "Organization",
     "name": "Radnus Communication",
     "url": "https://www.radnus.in/about",
-    "logo": "https://www.radnus.in/logo2.png",
+    "logo": "https://www.radnus.in/web-app-manifest-512x512.png",
     "founder": {
       "@type": "Person",
       "name": "Sundar"

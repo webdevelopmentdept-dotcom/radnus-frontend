@@ -60,7 +60,7 @@ const Placement = () => {
           property="og:description"
           content="Empowering skilled mobile service professionals for global careers with resume prep, interview training, and country-wise job support."
         />
-        <meta property="og:image" content="https://www.radnus.in/logo2.png" />
+        <meta property="og:image" content="https://www.radnus.in/web-app-manifest-512x512.png" />
         <meta property="og:url" content="https://www.radnus.in/placement" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta
@@ -71,7 +71,7 @@ const Placement = () => {
           name="twitter:description"
           content="Empowering skilled mobile service professionals for global careers with resume prep, interview training, and job support."
         />
-        <meta name="twitter:image" content="https://www.radnus.in/logo2.png" />
+        <meta name="twitter:image" content="https://www.radnus.in/web-app-manifest-512x512.png" />
         <link rel="canonical" href="https://www.radnus.in/placement" />
       </Helmet>
 
