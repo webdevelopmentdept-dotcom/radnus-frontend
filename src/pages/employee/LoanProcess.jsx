@@ -34,7 +34,7 @@ const INCENTIVE_LINKED_KEYS = ["applicationProcess", "courier"];
 
 const DATE_ENABLED_STAGES = ["documentPayment", "courier"]; // date field intha rendu stages ku mattum
 const AMOUNT_ENABLED_STAGES = ["documentPayment"]; // amount field Document Payment ku mattum // date field intha rendu stages ku mattum
-
+const DOC_PAYMENT_OPTIONS = [5000, 10000];
 const SCHEME_OPTIONS = [
     { value: "PMEGP", label: "PMEGP - Prime Minister's Employment Generation Programme" },
     { value: "UYEGP", label: "UYEGP - Unemployed Youth Employment Generation Programme" },
@@ -551,6 +551,15 @@ export default function LoanProcess() {
                 "Unchecking this will revert the incentive eligibility for this loan. Are you sure?"
             );
             if (!ok) return;
+        }
+
+        // Document Payment tick panna amount (5000 / 10000) kandippa select pannanum
+        if (field === "documentPayment" && currentValue !== true) {
+            const amt = Number(current?.checklistAmounts?.documentPayment);
+            if (!DOC_PAYMENT_OPTIONS.includes(amt)) {
+                alert("Select the document payment amount (₹5,000 or ₹10,000) first, then tick Document Payment.");
+                return;
+            }
         }
 
         // optimistic update
@@ -1760,20 +1769,28 @@ export default function LoanProcess() {
                                                         )}
                                                     </div>
 
-                                                    {AMOUNT_ENABLED_STAGES.includes(stage.key) && (
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            placeholder="Amount ₹"
-                                                            key={`${c._id}-${stage.key}-amt-${c.checklistAmounts?.[stage.key] ?? ""}`}
-                                                            defaultValue={c.checklistAmounts?.[stage.key] ?? ""}
-                                                            onBlur={(e) => saveAmount(c._id, stage.key, e.target.value)}
-                                                            style={{
-                                                                width: 110, padding: "4px 8px", border: "1px solid var(--lp-border)",
-                                                                borderRadius: 6, fontSize: 12, background: "var(--lp-surface)",
-                                                            }}
-                                                        />
-                                                    )}
+                                                    {AMOUNT_ENABLED_STAGES.includes(stage.key) && (() => {
+                                                        const saved = c.checklistAmounts?.[stage.key];
+                                                        const isValid = DOC_PAYMENT_OPTIONS.includes(Number(saved));
+                                                        return (
+                                                            <select
+                                                                value={isValid ? String(saved) : ""}
+                                                                disabled={c.followup?.status && c.followup.status !== "NONE"}
+                                                                onChange={(e) => saveAmount(c._id, stage.key, e.target.value)}
+                                                                style={{
+                                                                    width: 150, padding: "4px 8px", border: "1px solid var(--lp-border)",
+                                                                    borderRadius: 6, fontSize: 12, background: "var(--lp-surface)",
+                                                                }}
+                                                            >
+                                                                <option value="">
+                                                                    {saved && !isValid ? `Select (old ₹${saved})` : "Select amount"}
+                                                                </option>
+                                                                {DOC_PAYMENT_OPTIONS.map((a) => (
+                                                                    <option key={a} value={a}>₹{a.toLocaleString()}</option>
+                                                                ))}
+                                                            </select>
+                                                        );
+                                                    })()}
 
                                                     {DATE_ENABLED_STAGES.includes(stage.key) && (
                                                         <input
@@ -1842,7 +1859,7 @@ export default function LoanProcess() {
                                             </div>
                                         </div>
                                         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                                                                                        {c.followup?.status === "PENDING" && (
+                                            {c.followup?.status === "PENDING" && (
                                                 <span className="lp-badge" style={{ background: "#fff4d6", color: "#8a6100" }}>
                                                     With Followup team
                                                 </span>

@@ -19,7 +19,15 @@ const authHeaders = () => ({
 // HR/Admin only — the Accounts employee who HAS access must not see it.
 const isHrOrAdmin = () => window.location.pathname.startsWith("/hr");
 
-const FIXED_INCENTIVE_AMOUNT = 150; // ₹150 per customer, fixed — no manual entry
+// Document payment amount → incentive (display only; server decides the real amount)
+const DOC_PAYMENT_INCENTIVE_MAP = { 5000: 150, 10000: 400 };
+const getIncentiveAmount = (loan) =>
+  DOC_PAYMENT_INCENTIVE_MAP[Number(loan?.checklistAmounts?.documentPayment)] || null;
+const docPaymentLabel = (loan) => {
+  const a = loan?.checklistAmounts?.documentPayment;
+  if (!a) return "Doc payment: not set";
+  return `Doc payment ₹${Number(a).toLocaleString()}`;
+};
 
 const formatDate = (d) => {
   if (!d) return "—";
@@ -196,7 +204,7 @@ export default function LoanIncentivePayouts() {
         {
           method: "POST",
           headers: { ...authHeaders(), "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: FIXED_INCENTIVE_AMOUNT, remark: "", paidAt: payDate }),
+          body: JSON.stringify({ remark: "", paidAt: payDate }),
         }
       );
       const data = await res.json();
@@ -280,7 +288,7 @@ export default function LoanIncentivePayouts() {
       </div>
       <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 20 }}>
         Loans where the employee has completed both "Online Loan Application" and
-        "Projection Dispatch". Click "Approve & pay" to release the fixed ₹{FIXED_INCENTIVE_AMOUNT} incentive.
+      "Projection Dispatch". Incentive is ₹150 for ₹5,000 document payment and ₹400 for ₹10,000 document payment.
       </p>
 
       {showAccessControl && (
@@ -472,7 +480,7 @@ export default function LoanIncentivePayouts() {
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14 }}>{loan.customerName}</div>
                   <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
-                    By {loan.staffName} · Loan value ₹{loan.loanValue?.toLocaleString?.() || 0}
+                   By {loan.staffName} · Loan value ₹{loan.loanValue?.toLocaleString?.() || 0} · {docPaymentLabel(loan)}
                   </div>
                   <div style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>
   App No: {loan.checklistRemarks?.applicationProcess || "—"} · Slip No: {loan.checklistRemarks?.courier || "—"}
@@ -575,7 +583,7 @@ export default function LoanIncentivePayouts() {
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14 }}>{loan.customerName}</div>
                   <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
-                    By {loan.staffName} · Loan value ₹{loan.loanValue?.toLocaleString?.() || 0}
+                    By {loan.staffName} · Loan value ₹{loan.loanValue?.toLocaleString?.() || 0} · {docPaymentLabel(loan)}
                   </div>
                   {loan.incentive?.paidRemark && (
                     <div style={{ fontSize: 12, color: "#374151", marginTop: 4, fontStyle: "italic" }}>
@@ -687,7 +695,9 @@ export default function LoanIncentivePayouts() {
       <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 380, padding: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Approve &amp; pay incentive</div>
         <div style={{ fontSize: 13, color: "#4b5563", marginBottom: 16 }}>
-          Pay ₹{FIXED_INCENTIVE_AMOUNT} incentive to {confirmLoan.staffName} for {confirmLoan.customerName}'s loan?
+                    {getIncentiveAmount(confirmLoan)
+            ? `Pay ₹${getIncentiveAmount(confirmLoan)} incentive to ${confirmLoan.staffName} for ${confirmLoan.customerName}'s loan? (${docPaymentLabel(confirmLoan)})`
+            : `Document payment amount is not ₹5,000 / ₹10,000 for ${confirmLoan.customerName}. Ask ${confirmLoan.staffName} to update it first.`}
         </div>
 
         <label style={{ fontSize: 11, fontWeight: 600, color: "#374151", textTransform: "uppercase", letterSpacing: 0.4 }}>
@@ -714,9 +724,10 @@ export default function LoanIncentivePayouts() {
           >
             Cancel
           </button>
-          <button
+                    <button
             onClick={approveAndPay}
-            style={{ padding: "8px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", background: "#111827", color: "#fff", cursor: "pointer" }}
+            disabled={!getIncentiveAmount(confirmLoan)}
+            style={{ padding: "8px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", background: "#111827", color: "#fff", cursor: getIncentiveAmount(confirmLoan) ? "pointer" : "not-allowed", opacity: getIncentiveAmount(confirmLoan) ? 1 : 0.5 }}
           >
             Approve &amp; pay
           </button>
