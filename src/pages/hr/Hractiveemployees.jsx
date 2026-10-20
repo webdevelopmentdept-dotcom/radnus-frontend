@@ -320,7 +320,7 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
 
       <input type="file" ref={fileRef} accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" style={{ display: "none" }} onChange={e => handleReplace(e.target.files[0])} />
 
-      <div style={{
+      <div className="doc-row" style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "12px 14px",
         background: hasFile ? "#f0fdf4" : "#fafafa",
@@ -334,15 +334,15 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
           </svg>
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="doc-row-info" style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e" }}>{label || docType}</span>
+            <span className="doc-row-label" style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e" }}>{label || docType}</span>
             {required !== undefined && (
-              <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 99, background: required ? "#fee2e2" : "#f3f4f6", color: required ? "#dc2626" : "#6b7280" }}>
+              <span className="doc-badge" style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 99, background: required ? "#fee2e2" : "#f3f4f6", color: required ? "#dc2626" : "#6b7280" }}>
                 {required ? "Required" : "Optional"}
               </span>
             )}
-            {isHrDoc && <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 99, background: "#eff6ff", color: "#2563eb" }}>HR</span>}
+            {isHrDoc && <span className="doc-badge" style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 99, background: "#eff6ff", color: "#2563eb" }}>HR</span>}
           </div>
 
           {isTextDoc && hasFile ? (
@@ -359,7 +359,7 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
           )}
         </div>
 
-        <div style={{ display: "flex", gap: 5, flexShrink: 0, flexWrap: "wrap" }}>
+        <div className="doc-row-actions" style={{ display: "flex", gap: 5, flexShrink: 0, flexWrap: "wrap" }}>
           {hasFile ? (
             <>
               {!isTextDoc && (
@@ -900,9 +900,9 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 0, borderBottom: "2px solid #e5e7eb", padding: "0 22px", flexShrink: 0, overflowX: "auto" }}>
+        <div className="doc-tabs" style={{ display: "flex", gap: 0, borderBottom: "2px solid #e5e7eb", padding: "0 22px", flexShrink: 0, overflowX: "auto" }}>
           {tabs.map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: "flex", alignItems: "center", gap: 6, border: "none", background: "none", padding: "12px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer", marginBottom: -2, borderBottom: activeTab === tab.key ? "3px solid #2563eb" : "3px solid transparent", color: activeTab === tab.key ? "#2563eb" : "#6b7280", whiteSpace: "nowrap", flexShrink: 0 }}>
+            <button key={tab.key} className="doc-tab" onClick={() => setActiveTab(tab.key)} style={{ display: "flex", alignItems: "center", gap: 6, border: "none", background: "none", padding: "12px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer", marginBottom: -2, borderBottom: activeTab === tab.key ? "3px solid #2563eb" : "3px solid transparent", color: activeTab === tab.key ? "#2563eb" : "#6b7280", whiteSpace: "nowrap", flexShrink: 0 }}>
               {tab.icon} {tab.label}
               {tab.count !== null && (
                 <span style={{ background: activeTab === tab.key ? "#2563eb" : "#e5e7eb", color: activeTab === tab.key ? "#fff" : "#374151", borderRadius: 99, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{tab.count}</span>
@@ -1471,6 +1471,23 @@ export default function HrActiveEmployees() {
         @media (max-width: 639px) {
           .emp-table { display: none !important; }
           .emp-cards { display: flex !important; flex-direction: column; gap: 10px; }
+
+          /* Document rows (employee docs modal): icon + name on top line,
+             action buttons on their own full-width line (was: one cramped line,
+             "Required" squeezed to "R" and the delete button cut off) */
+          .doc-row { flex-wrap: wrap !important; align-items: flex-start !important; gap: 10px !important; }
+          .doc-row-info { flex: 1 1 0 !important; min-width: 0 !important; }
+          .doc-row-label { overflow-wrap: anywhere; }
+          .doc-badge { white-space: nowrap !important; flex-shrink: 0 !important; }
+          .doc-row-actions { flex: 1 1 100% !important; width: 100%; flex-wrap: nowrap !important; gap: 6px !important; }
+          .doc-row-actions button { flex: 1 1 auto; justify-content: center; padding: 8px 6px !important; font-size: 12px !important; min-width: 0; }
+          .doc-row-actions button[title="Delete"] { flex: 0 0 auto; padding: 8px 12px !important; }
+          /* Modal tabs (Personal Docs | HR Docs | Edit Info): share the full width so
+             "Edit Info" is never pushed off-screen */
+          .doc-tabs { padding: 0 6px !important; }
+          .doc-tab { flex: 1 1 auto !important; justify-content: center; gap: 4px !important; padding: 11px 6px !important; font-size: 12px !important; }
+          .doc-tab > svg { display: none; }
+          .doc-tab span { padding: 1px 6px !important; font-size: 10px !important; }
         }
       `}</style>
 

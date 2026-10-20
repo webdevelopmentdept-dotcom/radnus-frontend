@@ -53,8 +53,8 @@ const STYLES = `
     .rp-page { padding: 16px; }
     .rp-header { flex-direction: column !important; gap: 12px; }
     .rp-export-btn { width: 100%; justify-content: center; }
-    .rp-view-toggle { width: 100% !important; overflow-x: auto; }
-    .rp-view-btn { white-space: nowrap; font-size: 12px !important; padding: 7px 12px !important; }
+    .rp-view-toggle { width: 100% !important; flex-wrap: wrap !important; gap: 6px !important; box-sizing: border-box; }
+    .rp-view-btn { flex: 1 1 auto !important; justify-content: center !important; white-space: nowrap; font-size: 12px !important; padding: 8px 12px !important; }
 
     .sc-4 { grid-template-columns: repeat(2, 1fr) !important; }
     .sc-5 { grid-template-columns: repeat(2, 1fr) !important; }

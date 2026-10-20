@@ -75,6 +75,7 @@ export default function PayslipDetail() {
         scale: 2,
         backgroundColor: "#ffffff",
         useCORS: true,
+        windowWidth: 900,
       });
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "pt", "a4");
@@ -121,7 +122,7 @@ const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount + half
   const isEditable = p.status === "draft";
 
   return (
-    <div style={{ padding: 24, maxWidth: 820, margin: "0 auto" }}>
+    <div className="payslip-page" style={{ padding: 24, maxWidth: 820, margin: "0 auto" }}>
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16,
       }}>
@@ -138,7 +139,7 @@ const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount + half
         )}
       </div>
 
-      <div id="payslip-print" style={{
+      <div id="payslip-print" className="payslip-card" style={{
         background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden",
         padding: "32px 40px", fontFamily: "inherit",
       }}>
@@ -153,7 +154,7 @@ const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount + half
         </div>
 
         {/* Employee / period info — two columns, like a classic payslip */}
-        <div style={{
+        <div className="payslip-info" style={{
           display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 24px",
           margin: "24px 0", fontSize: 14,
         }}>
@@ -169,7 +170,8 @@ const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount + half
         </div>
 
         {/* Earnings | Deductions table */}
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, marginTop: 8 }}>
+        <div className="payslip-table-wrap">
+        <table className="payslip-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, marginTop: 8 }}>
           <thead>
             <tr>
               <th style={thStyle}>Earnings</th>
@@ -195,6 +197,7 @@ const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount + half
             </tr>
           </tbody>
         </table>
+        </div>
 
         {/* Net Pay */}
         <div style={{
@@ -252,6 +255,17 @@ const totalDeductions = (p.deductions?.total_deductions || 0) + lopAmount + half
         @media print {
           .no-print { display: none !important; }
           #payslip-print { border: none !important; }
+        }
+        @media (max-width: 640px) {
+          .payslip-page { padding: 12px !important; }
+          .payslip-card { padding: 20px 14px !important; }
+          .payslip-info {
+            grid-template-columns: 1fr !important;
+            margin: 16px 0 !important;
+            font-size: 13px !important;
+          }
+          .payslip-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+          .payslip-table { min-width: 520px; font-size: 13px !important; }
         }
       `}</style>
     </div>

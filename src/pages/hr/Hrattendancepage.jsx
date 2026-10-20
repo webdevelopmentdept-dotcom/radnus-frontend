@@ -319,11 +319,27 @@ export const S = {
 
 export function StatStrip({ stats, activeFlag, onFlagClick }) {
   return (
-    <div style={{ ...S.card, display: "flex", marginBottom: 16 }}>
+    <>
+      <style>{`
+        /* MOBILE: 8 stat boxes can't fit in one line (Missing Punch / Early Out were
+           cut off). Wrap them into a 4-column grid (2 rows) instead. */
+        @media (max-width: 768px) {
+          .stat-strip { display: grid !important; grid-template-columns: repeat(4, 1fr); overflow: hidden; }
+          .stat-item {
+            border-right: 1px solid #f3f4f6 !important; border-bottom: 1px solid #f3f4f6;
+            padding: 12px 4px !important; min-width: 0;
+          }
+          .stat-item:nth-child(4n) { border-right: none !important; }
+          .stat-item:nth-last-child(-n+4) { border-bottom: none; }
+          .stat-item > div:last-child { white-space: normal !important; }
+        }
+      `}</style>
+    <div className="stat-strip" style={{ ...S.card, display: "flex", marginBottom: 16 }}>
       {stats.map((c, idx) => {
         const isActive = c.flag && activeFlag === c.flag;
         return (
           <div
+            className="stat-item"
             key={c.label}
             onClick={() => c.flag && onFlagClick(c.flag)}
             style={{
@@ -346,6 +362,7 @@ export function StatStrip({ stats, activeFlag, onFlagClick }) {
         );
       })}
     </div>
+    </>
   );
 }
 
