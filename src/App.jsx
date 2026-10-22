@@ -73,6 +73,8 @@ import EmployeeHrInduction from "./pages/employee/Employeehrinduction";
 import MyTeamKpi from "./pages/employee/MyTeamKpi";
 import LoanFollowup from "./pages/employee/LoanFollowup";
 import TeamLeaveRequests from "./pages/employee/TeamLeaveRequests";
+import MyLifeVision from "./pages/employee/MyLifeVision";
+import TeamSharedGoals from "./pages/employee/TeamSharedGoals";
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
@@ -134,6 +136,9 @@ import LoanIncentivePayouts from "./pages/hr/LoanIncentivePayouts";
 import HrInternships from "./pages/hr/HrInternships";
 import HrInduction from "./pages/hr/HrInduction";
 import KpiLeaderAccess from "./pages/hr/KpiLeaderAccess";
+import HrSharedGoals from "./pages/hr/HrSharedGoals";
+
+
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -257,6 +262,8 @@ function App() {
         <Route path="/employee/wellness" element={<WellnessEmployee />} />
         <Route path="/employee/clubs" element={<Myclubs />} />
         <Route path="/employee/leadership-track" element={<EmployeeLeadershipTrack />} />
+        <Route path="/employee/life-vision" element={<EmployeeProtectedRoute><MyLifeVision /></EmployeeProtectedRoute>} />
+        <Route path="/employee/team-life-goals" element={<EmployeeProtectedRoute><TeamSharedGoals /></EmployeeProtectedRoute>} />
         <Route path="/employee/retention" element={<EmployeeRetentionPlan />} />
         <Route path="/employee/alumni-network" element={<AlumniNetworkEmployee />} />
         <Route path="/employee/training" element={<TrainingRoadmapEmployee />} />
@@ -335,6 +342,7 @@ function App() {
           <Route path="performance/reports" element={<PerformanceReports />} />
           <Route path="performance/leader-access" element={<KpiLeaderAccess />} />
           <Route path="team-leaders" element={<KpiLeaderAccess />} />
+          <Route path="life-growth-shared" element={<HrSharedGoals />} />
 
           <Route path="performance/okr-dashboard" element={<OkrDashboard />} />
           <Route path="performance/okr-setup" element={<OkrSetup />} />

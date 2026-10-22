@@ -4,7 +4,7 @@ import {
   FileText, Building2, LayoutDashboard, User,
   LogOut, TrendingUp, ClipboardList, Wallet,
   Bell, Settings, CalendarCheck, X,
-  ChevronRight, Sun, Moon, Sparkles, MessageCircle, Lock, LifeBuoy, MessageSquarePlus,
+  ChevronRight, Sun, Moon, Sparkles, MessageCircle, Lock, LifeBuoy, MessageSquarePlus,Target,
   Package, Users
 } from "lucide-react";
 
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: "/employee/performance", icon: TrendingUp, label: "My Performance" },
   { href: "/employee/training", icon: TrendingUp, label: "Training Roadmap" },
   { href: "/employee/self-assessment", icon: ClipboardList, label: "Self Assessment" },
+  { href: "/employee/life-vision", icon: Target, label: "My Life Vision" },
   { href: "/employee/360-feedback", icon: MessageCircle, label: "360° Feedback" },
   { href: "/employee/my-applications", icon: FileText, label: "My Applications" },
   { href: "/employee/my-salary", icon: Wallet, label: "My Salary" },
