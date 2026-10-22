@@ -403,8 +403,14 @@ export default function MyLifeVision() {
                 <h2 style={{ margin: 0, fontSize: 18, display: "flex", gap: 8, alignItems: "center" }}><Target size={18} /> My Life Vision</h2>
                 <button style={btn} onClick={() => setModal({ type: "vision" })}><Pencil size={13} /> Edit</button>
               </div>
-              <p style={{ whiteSpace: "pre-wrap", fontSize: 14, margin: "10px 0 4px" }}><b>Mission: </b>{vision.personal_mission}</p>
-              <p style={{ whiteSpace: "pre-wrap", fontSize: 14, margin: 0 }}><b>5-year vision: </b>{vision.personal_vision}</p>
+              <div style={{ marginTop: 12 }}>
+                <span style={label}>My personal mission</span>
+                <div style={{ whiteSpace: "pre-wrap", fontSize: 14, color: "#111827", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 12px" }}>{vision.personal_mission}</div>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <span style={label}>My vision for the next five years</span>
+                <div style={{ whiteSpace: "pre-wrap", fontSize: 14, color: "#111827", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 12px" }}>{vision.personal_vision}</div>
+              </div>
               <div style={{ fontSize: 12, color: "#6b7280", marginTop: 8 }}>{open} open goal{open === 1 ? "" : "s"} · {completed} completed</div>
             </div>
 
