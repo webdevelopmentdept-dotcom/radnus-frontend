@@ -74,7 +74,9 @@ import MyTeamKpi from "./pages/employee/MyTeamKpi";
 import LoanFollowup from "./pages/employee/LoanFollowup";
 import TeamLeaveRequests from "./pages/employee/TeamLeaveRequests";
 import MyLifeVision from "./pages/employee/MyLifeVision";
-import TeamSharedGoals from "./pages/employee/TeamSharedGoals";
+
+
+import TeamSharedGoals from "./pages/employee/Teamsharedgoals";
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
