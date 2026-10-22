@@ -138,8 +138,7 @@ import LoanIncentivePayouts from "./pages/hr/LoanIncentivePayouts";
 import HrInternships from "./pages/hr/HrInternships";
 import HrInduction from "./pages/hr/HrInduction";
 import KpiLeaderAccess from "./pages/hr/KpiLeaderAccess";
-import HrSharedGoals from "./pages/hr/HrSharedGoals";
-
+import HrSharedGoals from "./pages/hr/Hrsharedgoals";
 
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
