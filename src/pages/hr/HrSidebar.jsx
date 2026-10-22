@@ -280,6 +280,15 @@ const HR_MENU = [
   },
   {
     type: "group",
+    key: "Life-Growth",
+    title: "Life Growth",
+    icon: Target01Icon,
+    items: [
+      { to: "/hr/dashboard/life-growth-shared", end: false, icon: Target01Icon, size: 20, label: "Shared Life Goals", flow: null, notif: false },
+    ],
+  },
+  {
+    type: "group",
     key: "IT-Support",
     title: "IT Support",
     icon: Task01Icon,
