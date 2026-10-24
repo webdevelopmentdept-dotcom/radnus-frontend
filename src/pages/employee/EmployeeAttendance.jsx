@@ -172,7 +172,7 @@ function LeaveForm({ onSubmit, onClose, empId }) {
       try {
         const [typesRes, balRes] = await Promise.allSettled([
           axios.get(`${API_BASE}/api/hr/settings/leave-types`, { headers: authHeader() }),
-          axios.get(`${API_BASE}/api/leave-balance/${empId}`, { headers: authHeader() }),
+          axios.get(`${API_BASE}/api/leave-requests/balance/${empId}`, { headers: authHeader() }),
         ]);
         if (typesRes.status === "fulfilled") {
           const types = typesRes.value.data?.data || [];

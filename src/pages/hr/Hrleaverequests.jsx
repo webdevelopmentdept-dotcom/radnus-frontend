@@ -392,6 +392,11 @@ function LeaveModal({ leave, onAction, onClose }) {
               HR Note: {leave.hr_remark}
             </div>
           )}
+          {leave.approved_by_name && (leave.status === "approved" || leave.status === "rejected") && (
+            <div style={{ fontSize: 12, color: "#475569", fontWeight: 600, marginTop: 8 }}>
+              {leave.status === "approved" ? "Approved" : "Rejected"} by: {leave.approved_by_name}
+            </div>
+          )}
         </div>
 
         {((leave.status === "pending" && leave.current_stage !== "team_lead") || leave.status === "rejected") && (
@@ -767,6 +772,15 @@ export default function HRLeaveRequests() {
                   <div className="hr-note">
                     <Info size={11} style={{ flexShrink: 0, marginTop: 2 }} />
                     HR Note: {l.hr_remark}
+                  </div>
+                )}
+
+
+                {/* NEW: yaar approve/reject pannanga */}
+                {l.approved_by_name && (l.status === "approved" || l.status === "rejected") && (
+                  <div className="hr-note" style={{ background: "#f0fdf4", color: "#15803d" }}>
+                    <Info size={11} style={{ flexShrink: 0, marginTop: 2 }} />
+                    {l.status === "approved" ? "Approved" : "Rejected"} by: {l.approved_by_name}
                   </div>
                 )}
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const authHeader = () => ({
@@ -216,7 +217,7 @@ export default function KpiLeaderAccess() {
               <tbody>
                 {mappings.map(m => (
                   <tr key={m._id}>
-                    <td data-label="Leader" style={S.td}><b>{m.leader_id?.name}</b><div style={{ color: "#6b7280", fontSize: 12 }}>{m.leader_id?.designation}</div></td>
+                    <td data-label="Leader" style={S.td}><b>{m.leader_id?.name}</b><div style={{ color: "#6b7280", fontSize: 12 }}>{m.leader_id?.designation}</div><ActionedBy id={m._id} /></td>
                     <td data-label="Department" style={S.td}>{m.leader_id?.department}</td>
                     <td data-label="Team" style={S.td}>{m.member_ids.length}</td>
                     <td data-label="Members" style={S.td}>{m.member_ids.map(x => <span key={x._id} style={S.chip}>{x.name}</span>)}</td>

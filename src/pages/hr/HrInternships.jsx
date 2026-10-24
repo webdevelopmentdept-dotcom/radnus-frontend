@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-
+import ActionedBy from "../../components/hr/ActionedBy";
 const STATUS_OPTIONS = ["New", "Shortlisted", "Rejected", "Selected"];
 
 const STATUS_CONFIG = {
@@ -294,6 +294,7 @@ export default function HrInternships() {
                       </div>
                       <span style={{ fontWeight: 600, color: "#111827" }}>{a.name}</span>
                     </div>
+                  <ActionedBy id={a._id} version={a.status} />
                   </td>
                   <td style={td}>
                     <div>{a.mobile}</div>

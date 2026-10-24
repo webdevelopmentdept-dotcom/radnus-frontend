@@ -4,6 +4,7 @@ import {
   FileText, Plus, Pencil, Trash2, X, Eye, Upload,
   ToggleLeft, ToggleRight, RefreshCw, Search,
 } from "lucide-react";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const API = `${API_BASE}/api/hr-induction`;
@@ -200,6 +201,7 @@ export default function HrInduction() {
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <h4 style={{ margin: 0, fontSize: 15, color: "#1a1a2e", wordBreak: "break-word" }}>{it.title}</h4>
                   <p style={{ margin: "2px 0 0", fontSize: 12, color: "#9ca3af", wordBreak: "break-all" }}>{it.fileName}</p>
+                <ActionedBy id={it._id} version={it.status} />
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: it.status === "active" ? "#dcfce7" : "#f3f4f6", color: it.status === "active" ? "#16a34a" : "#6b7280" }}>
                   {it.status}

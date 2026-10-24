@@ -5,6 +5,7 @@ import {
   Inbox, BarChart2, MousePointerClick, Filter, User, CheckCheck,
   Zap, Lock
 } from "lucide-react";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -651,6 +652,7 @@ export default function PerformanceReviews() {
                               <div>
                                 <p style={{ margin: 0, fontWeight: 600, color: "#1a1a2e" }}>{r.employee_id?.name || "—"}</p>
                                 <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{r.employee_id?.designation || ""}</p>
+                             <ActionedBy id={r._id} />
                               </div>
                             </div>
                           </td>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 export default function HrEmployees() {
   const [employees, setEmployees] = useState([]);
@@ -275,17 +276,17 @@ export default function HrEmployees() {
       <div className="card shadow-sm">
         <div className="card-body table-responsive">
           <table
-            className="table table-hover align-middle"
-            style={{ tableLayout: "fixed", minWidth: 1100 }}
-          >
-            <colgroup>
-              <col style={{ width: "100px" }} />{/* Emp ID */}
-              <col style={{ width: "170px" }} />{/* Name */}
-              <col style={{ width: "240px" }} />{/* Email */}
-              <col style={{ width: "200px" }} />{/* Department */}
-              <col style={{ width: "180px" }} />{/* Status */}
-              <col style={{ width: "280px" }} />{/* Action */}
-            </colgroup>
+  className="table table-hover align-middle"
+  style={{ tableLayout: "fixed", minWidth: 1100 }}
+>
+  <colgroup>
+    <col style={{ width: "100px" }} />{/* Emp ID */}
+    <col style={{ width: "170px" }} />{/* Name */}
+    <col style={{ width: "210px" }} />{/* Email */}
+    <col style={{ width: "190px" }} />{/* Department */}
+    <col style={{ width: "180px" }} />{/* Status */}
+    <col style={{ width: "280px" }} />{/* Action */}
+  </colgroup>
             <thead>
               <tr>
                 <th className="text-nowrap">Emp ID</th>
@@ -310,7 +311,22 @@ export default function HrEmployees() {
                     <td className="text-truncate" title={emp.name}>{emp.name}</td>
                     <td className="text-truncate" title={emp.email}>{emp.email}</td>
                     <td className="text-truncate" title={emp.department}>{emp.department}</td>
-                    <td className="text-nowrap">{getStatusBadge(emp)}</td>
+                                        <td>
+                      <div className="text-nowrap">{getStatusBadge(emp)}</div>
+                      {(() => {
+                        const ex = getExitType(emp);
+                        if (!ex) return null;
+                        const wrap = { whiteSpace: "normal", lineHeight: 1.35 };
+                        return (
+                          <>
+                            <ActionedBy id={emp._id} match={ex === "fired" ? "FIRE" : "RELIEVE"} version={ex} style={wrap} />
+                            {emp.accessDeactivated && (
+                              <ActionedBy id={emp._id} match="DEACTIVATE_ACCESS" version={String(emp.accessDeactivated)} style={wrap} />
+                            )}
+                          </>
+                        );
+                      })()}
+                    </td>
                     <td>
                       {(() => {
                         const exitStatus = getExitType(emp);

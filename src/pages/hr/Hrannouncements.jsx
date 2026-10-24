@@ -5,22 +5,22 @@ import axios from "axios";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TYPES = [
-  { value: "general",     label: "General",     emoji: "📢", color: "#6b7280", bg: "#f3f4f6" },
-  { value: "urgent",      label: "Urgent",      emoji: "🚨", color: "#dc2626", bg: "#fef2f2" },
-  { value: "event",       label: "Event",       emoji: "🎉", color: "#7c3aed", bg: "#f5f3ff" },
-  { value: "policy",      label: "Policy",      emoji: "📋", color: "#0369a1", bg: "#f0f9ff" },
+  { value: "general", label: "General", emoji: "📢", color: "#6b7280", bg: "#f3f4f6" },
+  { value: "urgent", label: "Urgent", emoji: "🚨", color: "#dc2626", bg: "#fef2f2" },
+  { value: "event", label: "Event", emoji: "🎉", color: "#7c3aed", bg: "#f5f3ff" },
+  { value: "policy", label: "Policy", emoji: "📋", color: "#0369a1", bg: "#f0f9ff" },
   { value: "achievement", label: "Achievement", emoji: "🏆", color: "#d97706", bg: "#fffbeb" },
-  { value: "holiday",     label: "Holiday",     emoji: "🌴", color: "#16a34a", bg: "#f0fdf4" },
+  { value: "holiday", label: "Holiday", emoji: "🌴", color: "#16a34a", bg: "#f0fdf4" },
 ];
 const PRIORITIES = [
-  { value: "low",    label: "Low",    color: "#6b7280" },
+  { value: "low", label: "Low", color: "#6b7280" },
   { value: "medium", label: "Medium", color: "#d97706" },
-  { value: "high",   label: "High",   color: "#dc2626" },
+  { value: "high", label: "High", color: "#dc2626" },
 ];
 const TARGET_OPTIONS = [
-  { value: "all",        label: "Everyone",   emoji: "🌐" },
+  { value: "all", label: "Everyone", emoji: "🌐" },
   { value: "department", label: "Department", emoji: "🏢" },
-  { value: "role",       label: "By Role",    emoji: "👤" },
+  { value: "role", label: "By Role", emoji: "👤" },
   { value: "individual", label: "Individual", emoji: "🎯" },
 ];
 
@@ -56,24 +56,24 @@ function compressImage(file, maxW = 1200, quality = 0.82) {
 
 export default function HRAnnouncements() {
   const [announcements, setAnnouncements] = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [showModal, setShowModal]         = useState(false);
-  const [editingId, setEditingId]         = useState(null);
-  const [form, setForm]                   = useState(defaultForm);
-  const [saving, setSaving]               = useState(false);
-  const [toast, setToast]                 = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState(defaultForm);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [filterType, setFilterType]       = useState("all");
-  const [stats, setStats]                 = useState(null);
-  const [departments, setDepartments]     = useState([]);
-  const [employees, setEmployees]         = useState([]);
-  const [empSearch, setEmpSearch]         = useState("");
-  const [uploadingImg, setUploadingImg]   = useState(false);
-  const [lightbox, setLightbox]           = useState(null); // { url, caption }
-  const [isMobile, setIsMobile]           = useState(window.innerWidth < 768);
-  const fileInputRef                      = useRef(null);
+  const [filterType, setFilterType] = useState("all");
+  const [stats, setStats] = useState(null);
+  const [departments, setDepartments] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [empSearch, setEmpSearch] = useState("");
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const [lightbox, setLightbox] = useState(null); // { url, caption }
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const fileInputRef = useRef(null);
 
-const hrId = localStorage.getItem("hrId");
+  const hrId = localStorage.getItem("hrId");
 
   useEffect(() => {
     const r = () => setIsMobile(window.innerWidth < 768);
@@ -91,17 +91,17 @@ const hrId = localStorage.getItem("hrId");
     finally { setLoading(false); }
   };
   const fetchStats = async () => {
-    try { const r = await axios.get(`${API_BASE}/api/announcements/stats`); if (r.data.success) setStats(r.data.data); } catch {}
+    try { const r = await axios.get(`${API_BASE}/api/announcements/stats`); if (r.data.success) setStats(r.data.data); } catch { }
   };
   const fetchDepts = async () => {
-    try { const r = await axios.get(`${API_BASE}/api/departments`); setDepartments((r.data.data || r.data || []).filter(d => d.status === "active")); } catch {}
+    try { const r = await axios.get(`${API_BASE}/api/departments`); setDepartments((r.data.data || r.data || []).filter(d => d.status === "active")); } catch { }
   };
 
   const fetchEmployees = async () => {
     try {
       const r = await axios.get(`${API_BASE}/api/hr/employees`);
       setEmployees((r.data || []).filter(e => e.status === "active" && !e.exitType));
-    } catch {}
+    } catch { }
   };
 
   // By Role: unique designations from active employees
@@ -179,7 +179,7 @@ const hrId = localStorage.getItem("hrId");
     setSaving(true);
     try {
       const isValidId = /^[a-f\d]{24}$/i.test(hrId || "");
-const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
+      const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
       const res = editingId
         ? await axios.put(`${API_BASE}/api/announcements/${editingId}`, payload)
         : await axios.post(`${API_BASE}/api/announcements`, payload);
@@ -196,14 +196,14 @@ const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
     catch { showToast("Delete failed", "error"); }
     setDeleteConfirm(null);
   };
-  const handlePin = async (id) => { try { await axios.put(`${API_BASE}/api/announcements/${id}/pin`); fetchAll(); } catch {} };
+  const handlePin = async (id) => { try { await axios.put(`${API_BASE}/api/announcements/${id}/pin`); fetchAll(); } catch { } };
   const handleToggleActive = async (a) => {
-    try { await axios.put(`${API_BASE}/api/announcements/${a._id}`, { is_active: !a.is_active }); fetchAll(); showToast(a.is_active ? "Deactivated" : "Activated"); } catch {}
+    try { await axios.put(`${API_BASE}/api/announcements/${a._id}`, { is_active: !a.is_active }); fetchAll(); showToast(a.is_active ? "Deactivated" : "Activated"); } catch { }
   };
 
   const filtered = filterType === "all" ? announcements : announcements.filter(a => a.type === filterType);
-  const getType  = (v) => TYPES.find(t => t.value === v) || TYPES[0];
-  const fmtDate  = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+  const getType = (v) => TYPES.find(t => t.value === v) || TYPES[0];
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
 
   const inp = { width: "100%", padding: "10px 12px", border: "1.5px solid #e5e7eb", borderRadius: 9, fontSize: 13, color: "#1a1a2e", background: "#fff", boxSizing: "border-box", outline: "none", fontFamily: "inherit" };
 
@@ -236,53 +236,53 @@ const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
 
       {/* Toast */}
       {toast && (
-        <div style={{ position:"fixed",top:16,right:16,zIndex:9999,background:toast.type==="error"?"#dc2626":"#16a34a",color:"#fff",padding:"12px 20px",borderRadius:10,boxShadow:"0 8px 24px rgba(0,0,0,.2)",fontWeight:600,fontSize:14,animation:"slideIn .3s ease",display:"flex",alignItems:"center",gap:8 }}>
-          {toast.type==="error"?"❌":"✅"} {toast.msg}
+        <div style={{ position: "fixed", top: 16, right: 16, zIndex: 9999, background: toast.type === "error" ? "#dc2626" : "#16a34a", color: "#fff", padding: "12px 20px", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,.2)", fontWeight: 600, fontSize: 14, animation: "slideIn .3s ease", display: "flex", alignItems: "center", gap: 8 }}>
+          {toast.type === "error" ? "❌" : "✅"} {toast.msg}
         </div>
       )}
 
       {/* Lightbox */}
       {lightbox && (
         <div className="lightbox-bg" onClick={() => setLightbox(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:12 }}>
-            <img src={lightbox.url} alt={lightbox.caption} className="lightbox-img"/>
-            {lightbox.caption && <p style={{ color:"#e2e8f0",fontSize:14,fontWeight:500 }}>{lightbox.caption}</p>}
-            <button onClick={() => setLightbox(null)} style={{ background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:8,padding:"8px 20px",cursor:"pointer",fontWeight:600 }}>✕ Close</button>
+          <div onClick={e => e.stopPropagation()} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+            <img src={lightbox.url} alt={lightbox.caption} className="lightbox-img" />
+            {lightbox.caption && <p style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 500 }}>{lightbox.caption}</p>}
+            <button onClick={() => setLightbox(null)} style={{ background: "rgba(255,255,255,.15)", border: "none", color: "#fff", borderRadius: 8, padding: "8px 20px", cursor: "pointer", fontWeight: 600 }}>✕ Close</button>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div style={{ background:"#fff",borderBottom:"1px solid #e5e7eb",padding:isMobile?"14px 16px":"18px 32px",position:"sticky",top:0,zIndex:50,boxShadow:"0 2px 8px rgba(0,0,0,.06)" }}>
-        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",gap:12 }}>
+      <div style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", padding: isMobile ? "14px 16px" : "18px 32px", position: "sticky", top: 0, zIndex: 50, boxShadow: "0 2px 8px rgba(0,0,0,.06)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
           <div>
-            <h1 style={{ margin:0,fontSize:isMobile?17:22,fontWeight:800,color:"#1a1a2e" }}>📢 Announcements</h1>
-            <p style={{ margin:"3px 0 0",color:"#6b7280",fontSize:13 }}>Broadcast updates with images to your team</p>
+            <h1 style={{ margin: 0, fontSize: isMobile ? 17 : 22, fontWeight: 800, color: "#1a1a2e" }}>📢 Announcements</h1>
+            <p style={{ margin: "3px 0 0", color: "#6b7280", fontSize: 13 }}>Broadcast updates with images to your team</p>
           </div>
-          <button onClick={openCreate} style={{ background:"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",border:"none",borderRadius:10,padding:isMobile?"10px 14px":"11px 22px",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8,boxShadow:"0 4px 14px rgba(37,99,235,.4)",whiteSpace:"nowrap" }}>
+          <button onClick={openCreate} style={{ background: "linear-gradient(135deg,#2563eb,#1d4ed8)", color: "#fff", border: "none", borderRadius: 10, padding: isMobile ? "10px 14px" : "11px 22px", fontWeight: 700, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 14px rgba(37,99,235,.4)", whiteSpace: "nowrap" }}>
             ✦ New Post
           </button>
         </div>
       </div>
 
-      <div style={{ padding:isMobile?"12px":"24px 32px" }}>
+      <div style={{ padding: isMobile ? "12px" : "24px 32px" }}>
 
         {/* Stats */}
         {stats && (
-          <div style={{ display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:12,marginBottom:22 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 12, marginBottom: 22 }}>
             {[
-              { label:"Total",  value:stats.total,  emoji:"📊", color:"#2563eb", bg:"#eff6ff" },
-              { label:"Active", value:stats.active, emoji:"✅", color:"#16a34a", bg:"#f0fdf4" },
-              { label:"Pinned", value:stats.pinned, emoji:"📌", color:"#7c3aed", bg:"#f5f3ff" },
-              { label:"Urgent", value:stats.urgent, emoji:"🚨", color:"#dc2626", bg:"#fef2f2" },
-            ].map((s,i) => (
-              <div key={i} style={{ background:s.bg,borderRadius:12,padding:"14px 16px",border:`1px solid ${s.color}22` }}>
-                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+              { label: "Total", value: stats.total, emoji: "📊", color: "#2563eb", bg: "#eff6ff" },
+              { label: "Active", value: stats.active, emoji: "✅", color: "#16a34a", bg: "#f0fdf4" },
+              { label: "Pinned", value: stats.pinned, emoji: "📌", color: "#7c3aed", bg: "#f5f3ff" },
+              { label: "Urgent", value: stats.urgent, emoji: "🚨", color: "#dc2626", bg: "#fef2f2" },
+            ].map((s, i) => (
+              <div key={i} style={{ background: s.bg, borderRadius: 12, padding: "14px 16px", border: `1px solid ${s.color}22` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <p style={{ margin:0,fontSize:10,color:s.color,fontWeight:700,textTransform:"uppercase",letterSpacing:".5px" }}>{s.label}</p>
-                    <p style={{ margin:"4px 0 0",fontSize:26,fontWeight:900,color:s.color,lineHeight:1 }}>{s.value}</p>
+                    <p style={{ margin: 0, fontSize: 10, color: s.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px" }}>{s.label}</p>
+                    <p style={{ margin: "4px 0 0", fontSize: 26, fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.value}</p>
                   </div>
-                  <span style={{ fontSize:26 }}>{s.emoji}</span>
+                  <span style={{ fontSize: 26 }}>{s.emoji}</span>
                 </div>
               </div>
             ))}
@@ -290,8 +290,8 @@ const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
         )}
 
         {/* Filters */}
-        <div style={{ display:"flex",gap:8,marginBottom:18,flexWrap:"wrap" }}>
-          <div className="filter-chip" onClick={() => setFilterType("all")} style={{ padding:"7px 14px",borderRadius:99,fontSize:12,fontWeight:700,background:filterType==="all"?"#2563eb":"#fff",color:filterType==="all"?"#fff":"#6b7280",border:`1.5px solid ${filterType==="all"?"#2563eb":"#e5e7eb"}` }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
+          <div className="filter-chip" onClick={() => setFilterType("all")} style={{ padding: "7px 14px", borderRadius: 99, fontSize: 12, fontWeight: 700, background: filterType === "all" ? "#2563eb" : "#fff", color: filterType === "all" ? "#fff" : "#6b7280", border: `1.5px solid ${filterType === "all" ? "#2563eb" : "#e5e7eb"}` }}>
             All ({announcements.length})
           </div>
           {TYPES.map(t => {
@@ -299,7 +299,7 @@ const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
             if (!count) return null;
             return (
               <div key={t.value} className="filter-chip" onClick={() => setFilterType(t.value)}
-                style={{ padding:"7px 12px",borderRadius:99,fontSize:12,fontWeight:700,background:filterType===t.value?t.color:"#fff",color:filterType===t.value?"#fff":t.color,border:`1.5px solid ${t.color}`,display:"flex",alignItems:"center",gap:4 }}>
+                style={{ padding: "7px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, background: filterType === t.value ? t.color : "#fff", color: filterType === t.value ? "#fff" : t.color, border: `1.5px solid ${t.color}`, display: "flex", alignItems: "center", gap: 4 }}>
                 {t.emoji} {t.label} ({count})
               </div>
             );
@@ -308,82 +308,85 @@ const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
 
         {/* List */}
         {loading ? (
-          <div style={{ textAlign:"center",padding:60,color:"#6b7280" }}><div style={{ fontSize:40,animation:"pulse 1.5s infinite" }}>📢</div><p style={{ marginTop:12 }}>Loading...</p></div>
+          <div style={{ textAlign: "center", padding: 60, color: "#6b7280" }}><div style={{ fontSize: 40, animation: "pulse 1.5s infinite" }}>📢</div><p style={{ marginTop: 12 }}>Loading...</p></div>
         ) : filtered.length === 0 ? (
-          <div style={{ background:"#fff",borderRadius:16,padding:"60px 20px",textAlign:"center",border:"1px solid #e5e7eb" }}>
-            <div style={{ fontSize:48,marginBottom:12 }}>📭</div>
-            <h3 style={{ color:"#1f2937",marginBottom:8 }}>No announcements yet</h3>
-            <button onClick={openCreate} style={{ background:"#2563eb",color:"#fff",border:"none",borderRadius:8,padding:"10px 24px",fontWeight:700,cursor:"pointer",marginTop:8 }}>Create First Post</button>
+          <div style={{ background: "#fff", borderRadius: 16, padding: "60px 20px", textAlign: "center", border: "1px solid #e5e7eb" }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
+            <h3 style={{ color: "#1f2937", marginBottom: 8 }}>No announcements yet</h3>
+            <button onClick={openCreate} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "10px 24px", fontWeight: 700, cursor: "pointer", marginTop: 8 }}>Create First Post</button>
           </div>
         ) : (
-          <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {filtered.map(a => {
               const typeInfo = getType(a.type);
               const isExpired = a.is_expired;
               return (
-                <div key={a._id} className="ann-card" style={{ background:"#fff",borderRadius:14,border:`1px solid ${a.is_pinned?"#2563eb33":"#e5e7eb"}`,boxShadow:a.is_pinned?"0 4px 16px rgba(37,99,235,.1)":"0 2px 8px rgba(0,0,0,.05)",overflow:"hidden",opacity:a.is_active?1:0.6 }}>
-                  {a.is_pinned && <div style={{ background:"linear-gradient(90deg,#2563eb,#3b82f6)",height:3 }}/>}
+                <div key={a._id} className="ann-card" style={{ background: "#fff", borderRadius: 14, border: `1px solid ${a.is_pinned ? "#2563eb33" : "#e5e7eb"}`, boxShadow: a.is_pinned ? "0 4px 16px rgba(37,99,235,.1)" : "0 2px 8px rgba(0,0,0,.05)", overflow: "hidden", opacity: a.is_active ? 1 : 0.6 }}>
+                  {a.is_pinned && <div style={{ background: "linear-gradient(90deg,#2563eb,#3b82f6)", height: 3 }} />}
 
-                  <div style={{ padding:isMobile?"14px":"18px 22px" }}>
+                  <div style={{ padding: isMobile ? "14px" : "18px 22px" }}>
                     {/* Top */}
-                    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:10 }}>
-                      <div style={{ flex:1,minWidth:0 }}>
-                        <div style={{ display:"flex",flexWrap:"wrap",gap:5,marginBottom:7,alignItems:"center" }}>
-                          <span style={{ background:typeInfo.bg,color:typeInfo.color,padding:"3px 10px",borderRadius:99,fontSize:11,fontWeight:700 }}>{typeInfo.emoji} {typeInfo.label}</span>
-                          {a.priority==="high" && <span style={{ background:"#fef2f2",color:"#dc2626",padding:"3px 9px",borderRadius:99,fontSize:11,fontWeight:700 }}>🔥 High</span>}
-                          {a.is_pinned && <span style={{ background:"#eff6ff",color:"#2563eb",padding:"3px 9px",borderRadius:99,fontSize:11,fontWeight:700 }}>📌 Pinned</span>}
-                          {isExpired && <span style={{ background:"#fef2f2",color:"#dc2626",padding:"3px 9px",borderRadius:99,fontSize:11,fontWeight:700 }}>Expired</span>}
-                          {a.images?.length > 0 && <span style={{ background:"#f0fdf4",color:"#16a34a",padding:"3px 9px",borderRadius:99,fontSize:11,fontWeight:700 }}>🖼 {a.images.length} image{a.images.length>1?"s":""}</span>}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 10 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 7, alignItems: "center" }}>
+                          <span style={{ background: typeInfo.bg, color: typeInfo.color, padding: "3px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700 }}>{typeInfo.emoji} {typeInfo.label}</span>
+                          {a.priority === "high" && <span style={{ background: "#fef2f2", color: "#dc2626", padding: "3px 9px", borderRadius: 99, fontSize: 11, fontWeight: 700 }}>🔥 High</span>}
+                          {a.is_pinned && <span style={{ background: "#eff6ff", color: "#2563eb", padding: "3px 9px", borderRadius: 99, fontSize: 11, fontWeight: 700 }}>📌 Pinned</span>}
+                          {isExpired && <span style={{ background: "#fef2f2", color: "#dc2626", padding: "3px 9px", borderRadius: 99, fontSize: 11, fontWeight: 700 }}>Expired</span>}
+                          {a.images?.length > 0 && <span style={{ background: "#f0fdf4", color: "#16a34a", padding: "3px 9px", borderRadius: 99, fontSize: 11, fontWeight: 700 }}>🖼 {a.images.length} image{a.images.length > 1 ? "s" : ""}</span>}
                         </div>
-                        <h3 style={{ margin:0,fontSize:isMobile?14:16,fontWeight:800,color:"#1a1a2e",lineHeight:1.3 }}>
-                          {a.emoji && <span style={{ marginRight:5 }}>{a.emoji}</span>}
+                        <h3 style={{ margin: 0, fontSize: isMobile ? 14 : 16, fontWeight: 800, color: "#1a1a2e", lineHeight: 1.3 }}>
+                          {a.emoji && <span style={{ marginRight: 5 }}>{a.emoji}</span>}
                           {a.title}
                         </h3>
-                        <p style={{ margin:"5px 0 0",fontSize:13,color:"#6b7280",lineHeight:1.6,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden" }}>{a.content}</p>
+                        <p style={{ margin: "5px 0 0", fontSize: 13, color: "#6b7280", lineHeight: 1.6, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{a.content}</p>
                       </div>
-                      <div style={{ display:"flex",gap:5,flexShrink:0 }}>
-                        <button onClick={() => handlePin(a._id)} style={{ background:a.is_pinned?"#eff6ff":"#f3f4f6",border:"none",borderRadius:8,width:32,height:32,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center" }} title={a.is_pinned?"Unpin":"Pin"}>📌</button>
-                        <button onClick={() => openEdit(a)} style={{ background:"#f0f9ff",border:"none",borderRadius:8,width:32,height:32,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center" }}>✏️</button>
-                        <button onClick={() => setDeleteConfirm(a._id)} style={{ background:"#fef2f2",border:"none",borderRadius:8,width:32,height:32,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center" }}>🗑️</button>
+                      <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+                        <button onClick={() => handlePin(a._id)} style={{ background: a.is_pinned ? "#eff6ff" : "#f3f4f6", border: "none", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }} title={a.is_pinned ? "Unpin" : "Pin"}>📌</button>
+                        <button onClick={() => openEdit(a)} style={{ background: "#f0f9ff", border: "none", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>✏️</button>
+                        <button onClick={() => setDeleteConfirm(a._id)} style={{ background: "#fef2f2", border: "none", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>🗑️</button>
                       </div>
                     </div>
 
                     {/* Image preview thumbnails */}
                     {a.images?.length > 0 && (
-                      <div style={{ display:"flex",gap:8,marginBottom:12,flexWrap:"wrap" }}>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
                         {a.images.map((img, ii) => (
                           <div key={ii} className="img-thumb" onClick={() => setLightbox(img)}
-                            style={{ width:isMobile?72:90,height:isMobile?72:90,flexShrink:0,position:"relative",borderRadius:10,overflow:"hidden",border:"1px solid #e5e7eb" }}>
-                            <img src={img.url} alt={img.caption||"img"} style={{ width:"100%",height:"100%",objectFit:"cover" }}/>
+                            style={{ width: isMobile ? 72 : 90, height: isMobile ? 72 : 90, flexShrink: 0, position: "relative", borderRadius: 10, overflow: "hidden", border: "1px solid #e5e7eb" }}>
+                            <img src={img.url} alt={img.caption || "img"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             {ii === 3 && a.images.length > 4 && (
-                              <div style={{ position:"absolute",inset:0,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:16 }}>
+                              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.55)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 16 }}>
                                 +{a.images.length - 4}
                               </div>
                             )}
                           </div>
-                        )).slice(0,4)}
+                        )).slice(0, 4)}
                       </div>
                     )}
 
                     {/* Bottom meta */}
-                    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,paddingTop:10,borderTop:"1px solid #f3f4f6" }}>
-                      <div style={{ display:"flex",gap:12,flexWrap:"wrap",alignItems:"center" }}>
-                        <span style={{ fontSize:12,color:"#9ca3af" }}>👤 {a.created_by?.name||"HR"}</span>
-                        <span style={{ fontSize:12,color:"#9ca3af" }}>🕐 {fmtDate(a.createdAt)}</span>
-                        <span style={{ fontSize:12,color:"#9ca3af" }}>❤️ {a.like_count||0}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, paddingTop: 10, borderTop: "1px solid #f3f4f6" }}>
+                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                        <span style={{ fontSize: 12, color: "#9ca3af" }}>
+                          👤 {a.created_by_name || a.created_by?.name || "HR"}
+                          {a.updated_by_name && a.updated_by_name !== a.created_by_name && ` · edited by ${a.updated_by_name}`}
+                        </span>
+                        <span style={{ fontSize: 12, color: "#9ca3af" }}>🕐 {fmtDate(a.createdAt)}</span>
+                        <span style={{ fontSize: 12, color: "#9ca3af" }}>❤️ {a.like_count || 0}</span>
                       </div>
-                      <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-                        <div style={{ width:100 }}>
-                          <div style={{ display:"flex",justifyContent:"space-between",marginBottom:3 }}>
-                            <span style={{ fontSize:11,color:"#6b7280" }}>Read</span>
-                            <span style={{ fontSize:11,fontWeight:700,color:"#2563eb" }}>{a.read_percentage||0}%</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 100 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                            <span style={{ fontSize: 11, color: "#6b7280" }}>Read</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "#2563eb" }}>{a.read_percentage || 0}%</span>
                           </div>
-                          <div className="read-bar"><div className="read-bar-fill" style={{ width:`${a.read_percentage||0}%`,background:"#2563eb" }}/></div>
-                          <p style={{ margin:"2px 0 0",fontSize:10,color:"#9ca3af" }}>{a.read_count} reads</p>
+                          <div className="read-bar"><div className="read-bar-fill" style={{ width: `${a.read_percentage || 0}%`, background: "#2563eb" }} /></div>
+                          <p style={{ margin: "2px 0 0", fontSize: 10, color: "#9ca3af" }}>{a.read_count} reads</p>
                         </div>
-                        <label className="toggle-switch" title={a.is_active?"Deactivate":"Activate"}>
-                          <input type="checkbox" checked={a.is_active} onChange={() => handleToggleActive(a)}/>
-                          <span className="toggle-slider"/>
+                        <label className="toggle-switch" title={a.is_active ? "Deactivate" : "Activate"}>
+                          <input type="checkbox" checked={a.is_active} onChange={() => handleToggleActive(a)} />
+                          <span className="toggle-slider" />
                         </label>
                       </div>
                     </div>
@@ -397,91 +400,91 @@ const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
 
       {/* ═══ CREATE/EDIT MODAL ═══ */}
       {showModal && (
-        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:12,animation:"fadeIn .2s ease" }}>
-          <div style={{ background:"#fff",borderRadius:16,width:"100%",maxWidth:660,maxHeight:"94vh",overflowY:"auto",boxShadow:"0 24px 64px rgba(0,0,0,.2)",animation:"slideIn .25s ease" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 12, animation: "fadeIn .2s ease" }}>
+          <div style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 660, maxHeight: "94vh", overflowY: "auto", boxShadow: "0 24px 64px rgba(0,0,0,.2)", animation: "slideIn .25s ease" }}>
 
             {/* Modal header */}
-            <div style={{ background:"linear-gradient(135deg,#1a1a2e,#2563eb)",padding:"18px 22px",borderRadius:"16px 16px 0 0",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10 }}>
+            <div style={{ background: "linear-gradient(135deg,#1a1a2e,#2563eb)", padding: "18px 22px", borderRadius: "16px 16px 0 0", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 10 }}>
               <div>
-                <h3 style={{ margin:0,color:"#fff",fontSize:17,fontWeight:800 }}>{editingId?"✏️ Edit":"✦ New"} Announcement</h3>
-                <p style={{ margin:"2px 0 0",color:"#93c5fd",fontSize:12 }}>Post updates with images</p>
+                <h3 style={{ margin: 0, color: "#fff", fontSize: 17, fontWeight: 800 }}>{editingId ? "✏️ Edit" : "✦ New"} Announcement</h3>
+                <p style={{ margin: "2px 0 0", color: "#93c5fd", fontSize: 12 }}>Post updates with images</p>
               </div>
-              <button onClick={() => setShowModal(false)} style={{ background:"rgba(255,255,255,.15)",border:"none",color:"#fff",borderRadius:8,width:32,height:32,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
+              <button onClick={() => setShowModal(false)} style={{ background: "rgba(255,255,255,.15)", border: "none", color: "#fff", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
 
-            <div style={{ padding:22 }}>
+            <div style={{ padding: 22 }}>
 
               {/* Emoji + Title */}
-              <div style={{ marginBottom:14 }}>
-                <label style={{ display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:5 }}>Title *</label>
-                <div style={{ display:"flex",gap:8 }}>
-                  <input value={form.emoji} onChange={e => setForm(f=>({...f,emoji:e.target.value}))} placeholder="😊" style={{ ...inp,width:50,textAlign:"center",fontSize:20,padding:"8px 4px" }}/>
-                  <input value={form.title} onChange={e => setForm(f=>({...f,title:e.target.value}))} placeholder="Announcement title..." style={{ ...inp,flex:1 }}/>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 5 }}>Title *</label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input value={form.emoji} onChange={e => setForm(f => ({ ...f, emoji: e.target.value }))} placeholder="😊" style={{ ...inp, width: 50, textAlign: "center", fontSize: 20, padding: "8px 4px" }} />
+                  <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Announcement title..." style={{ ...inp, flex: 1 }} />
                 </div>
               </div>
 
               {/* Content */}
-              <div style={{ marginBottom:14 }}>
-                <label style={{ display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:5 }}>Content *</label>
-                <textarea value={form.content} onChange={e => setForm(f=>({...f,content:e.target.value}))}
-                  placeholder="Write your announcement..." rows={4} style={{ ...inp,resize:"vertical",lineHeight:1.6 }}/>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 5 }}>Content *</label>
+                <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+                  placeholder="Write your announcement..." rows={4} style={{ ...inp, resize: "vertical", lineHeight: 1.6 }} />
               </div>
 
               {/* ✅ IMAGE UPLOAD SECTION */}
-              <div style={{ marginBottom:16 }}>
-                <label style={{ display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:5 }}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 5 }}>
                   Images (optional — max 5)
                 </label>
 
                 {/* Drop zone */}
                 <div
-                  className={`drop-zone ${dragOver?"drag":""}`}
+                  className={`drop-zone ${dragOver ? "drag" : ""}`}
                   onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  style={{ border:`2px dashed ${dragOver?"#2563eb":"#d1d5db"}`,borderRadius:12,padding:"22px 16px",textAlign:"center",cursor:"pointer",background:dragOver?"#eff6ff":"#f8fafc",marginBottom:12 }}>
-                  <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display:"none" }}
-                    onChange={e => handleImageFiles(e.target.files)}/>
+                  style={{ border: `2px dashed ${dragOver ? "#2563eb" : "#d1d5db"}`, borderRadius: 12, padding: "22px 16px", textAlign: "center", cursor: "pointer", background: dragOver ? "#eff6ff" : "#f8fafc", marginBottom: 12 }}>
+                  <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: "none" }}
+                    onChange={e => handleImageFiles(e.target.files)} />
                   {uploadingImg ? (
-                    <div style={{ display:"flex",alignItems:"center",justifyContent:"center",gap:10,color:"#2563eb" }}>
-                      <div style={{ width:20,height:20,border:"3px solid #bfdbfe",borderTopColor:"#2563eb",borderRadius:"50%",animation:"spin .8s linear infinite" }}/>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: "#2563eb" }}>
+                      <div style={{ width: 20, height: 20, border: "3px solid #bfdbfe", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin .8s linear infinite" }} />
                       Processing images...
                     </div>
                   ) : (
                     <>
-                      <div style={{ fontSize:32,marginBottom:8 }}>🖼️</div>
-                      <p style={{ margin:0,fontSize:13,fontWeight:600,color:"#374151" }}>Click or drag images here</p>
-                      <p style={{ margin:"4px 0 0",fontSize:11,color:"#9ca3af" }}>JPG, PNG, GIF · Max 5 images · Auto-compressed</p>
+                      <div style={{ fontSize: 32, marginBottom: 8 }}>🖼️</div>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#374151" }}>Click or drag images here</p>
+                      <p style={{ margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }}>JPG, PNG, GIF · Max 5 images · Auto-compressed</p>
                     </>
                   )}
                 </div>
 
                 {/* Image previews with caption inputs */}
                 {form.images.length > 0 && (
-                  <div style={{ display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(3,1fr)", gap: 10 }}>
                     {form.images.map((img, ii) => (
-                      <div key={ii} style={{ position:"relative",borderRadius:10,overflow:"hidden",border:"1px solid #e5e7eb",background:"#f8fafc" }}>
-                        <div style={{ position:"relative",paddingBottom:"60%",background:"#000" }}>
-                          <img src={img.url} alt="" style={{ position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover" }}/>
+                      <div key={ii} style={{ position: "relative", borderRadius: 10, overflow: "hidden", border: "1px solid #e5e7eb", background: "#f8fafc" }}>
+                        <div style={{ position: "relative", paddingBottom: "60%", background: "#000" }}>
+                          <img src={img.url} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                           <button onClick={() => removeImage(ii)}
-                            style={{ position:"absolute",top:5,right:5,background:"rgba(0,0,0,.65)",border:"none",color:"#fff",borderRadius:"50%",width:22,height:22,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700 }}>
+                            style={{ position: "absolute", top: 5, right: 5, background: "rgba(0,0,0,.65)", border: "none", color: "#fff", borderRadius: "50%", width: 22, height: 22, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
                             ✕
                           </button>
-                          <div style={{ position:"absolute",bottom:4,left:5,background:"rgba(0,0,0,.55)",color:"#fff",fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4 }}>
-                            {ii+1}/{form.images.length}
+                          <div style={{ position: "absolute", bottom: 4, left: 5, background: "rgba(0,0,0,.55)", color: "#fff", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4 }}>
+                            {ii + 1}/{form.images.length}
                           </div>
                         </div>
                         <input value={img.caption} onChange={e => updateCaption(ii, e.target.value)}
-                          placeholder="Caption (optional)" style={{ width:"100%",padding:"6px 8px",border:"none",borderTop:"1px solid #e5e7eb",fontSize:11,outline:"none",boxSizing:"border-box",background:"#fff" }}/>
+                          placeholder="Caption (optional)" style={{ width: "100%", padding: "6px 8px", border: "none", borderTop: "1px solid #e5e7eb", fontSize: 11, outline: "none", boxSizing: "border-box", background: "#fff" }} />
                       </div>
                     ))}
                     {/* Add more slot */}
                     {form.images.length < 5 && (
                       <div onClick={() => fileInputRef.current?.click()}
-                        style={{ borderRadius:10,border:"2px dashed #d1d5db",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",minHeight:100,gap:6,background:"#f9fafb" }}>
-                        <span style={{ fontSize:24 }}>➕</span>
-                        <span style={{ fontSize:11,color:"#9ca3af",fontWeight:600 }}>Add more</span>
+                        style={{ borderRadius: 10, border: "2px dashed #d1d5db", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", minHeight: 100, gap: 6, background: "#f9fafb" }}>
+                        <span style={{ fontSize: 24 }}>➕</span>
+                        <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600 }}>Add more</span>
                       </div>
                     )}
                   </div>
@@ -489,60 +492,60 @@ const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
               </div>
 
               {/* Type + Priority */}
-              <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
                 <div>
-                  <label style={{ display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:5 }}>Type</label>
-                  <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:5 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 5 }}>Type</label>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5 }}>
                     {TYPES.map(t => (
-                      <div key={t.value} onClick={() => setForm(f=>({...f,type:t.value}))}
-                        style={{ padding:"7px 10px",borderRadius:8,border:`2px solid ${form.type===t.value?t.color:"#e5e7eb"}`,background:form.type===t.value?t.bg:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:5,transition:"all .15s" }}>
-                        <span style={{ fontSize:13 }}>{t.emoji}</span>
-                        <span style={{ fontSize:11,fontWeight:700,color:form.type===t.value?t.color:"#374151" }}>{t.label}</span>
+                      <div key={t.value} onClick={() => setForm(f => ({ ...f, type: t.value }))}
+                        style={{ padding: "7px 10px", borderRadius: 8, border: `2px solid ${form.type === t.value ? t.color : "#e5e7eb"}`, background: form.type === t.value ? t.bg : "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, transition: "all .15s" }}>
+                        <span style={{ fontSize: 13 }}>{t.emoji}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: form.type === t.value ? t.color : "#374151" }}>{t.label}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label style={{ display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:5 }}>Priority</label>
-                  <div style={{ display:"flex",flexDirection:"column",gap:5 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 5 }}>Priority</label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                     {PRIORITIES.map(p => (
-                      <div key={p.value} onClick={() => setForm(f=>({...f,priority:p.value}))}
-                        style={{ padding:"8px 12px",borderRadius:8,border:`2px solid ${form.priority===p.value?p.color:"#e5e7eb"}`,background:form.priority===p.value?`${p.color}10`:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:7,transition:"all .15s" }}>
-                        <div style={{ width:9,height:9,borderRadius:"50%",background:p.color }}/>
-                        <span style={{ fontSize:12,fontWeight:700,color:form.priority===p.value?p.color:"#374151" }}>{p.label}</span>
+                      <div key={p.value} onClick={() => setForm(f => ({ ...f, priority: p.value }))}
+                        style={{ padding: "8px 12px", borderRadius: 8, border: `2px solid ${form.priority === p.value ? p.color : "#e5e7eb"}`, background: form.priority === p.value ? `${p.color}10` : "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, transition: "all .15s" }}>
+                        <div style={{ width: 9, height: 9, borderRadius: "50%", background: p.color }} />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: form.priority === p.value ? p.color : "#374151" }}>{p.label}</span>
                       </div>
                     ))}
                   </div>
-                  <div onClick={() => setForm(f=>({...f,is_pinned:!f.is_pinned}))}
-                    style={{ marginTop:6,padding:"8px 12px",borderRadius:8,border:`2px solid ${form.is_pinned?"#2563eb":"#e5e7eb"}`,background:form.is_pinned?"#eff6ff":"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:7,transition:"all .15s" }}>
+                  <div onClick={() => setForm(f => ({ ...f, is_pinned: !f.is_pinned }))}
+                    style={{ marginTop: 6, padding: "8px 12px", borderRadius: 8, border: `2px solid ${form.is_pinned ? "#2563eb" : "#e5e7eb"}`, background: form.is_pinned ? "#eff6ff" : "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, transition: "all .15s" }}>
                     <span>📌</span>
-                    <span style={{ fontSize:12,fontWeight:700,color:form.is_pinned?"#2563eb":"#374151" }}>{form.is_pinned?"Pinned":"Pin to top"}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: form.is_pinned ? "#2563eb" : "#374151" }}>{form.is_pinned ? "Pinned" : "Pin to top"}</span>
                   </div>
                 </div>
               </div>
 
               {/* Target */}
-              <div style={{ marginBottom:14 }}>
-                <label style={{ display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:5 }}>Audience</label>
-                <div style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:6 }}>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 5 }}>Audience</label>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 6 }}>
                   {TARGET_OPTIONS.map(t => (
-                    <div key={t.value} onClick={() => setForm(f=>({...f,target:t.value}))}
-                      style={{ padding:"9px 12px",borderRadius:8,border:`2px solid ${form.target===t.value?"#2563eb":"#e5e7eb"}`,background:form.target===t.value?"#eff6ff":"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:7,transition:"all .15s" }}>
-                      <span style={{ fontSize:16 }}>{t.emoji}</span>
-                      <span style={{ fontSize:12,fontWeight:700,color:form.target===t.value?"#2563eb":"#374151" }}>{t.label}</span>
+                    <div key={t.value} onClick={() => setForm(f => ({ ...f, target: t.value }))}
+                      style={{ padding: "9px 12px", borderRadius: 8, border: `2px solid ${form.target === t.value ? "#2563eb" : "#e5e7eb"}`, background: form.target === t.value ? "#eff6ff" : "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, transition: "all .15s" }}>
+                      <span style={{ fontSize: 16 }}>{t.emoji}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: form.target === t.value ? "#2563eb" : "#374151" }}>{t.label}</span>
                     </div>
                   ))}
                 </div>
-                {form.target==="department" && departments.length > 0 && (
-                  <div style={{ marginTop:10,padding:12,background:"#f8fafc",borderRadius:8,border:"1px solid #e5e7eb" }}>
-                    <p style={{ margin:"0 0 8px",fontSize:12,fontWeight:700,color:"#374151" }}>Select Departments</p>
-                    <div style={{ display:"flex",flexWrap:"wrap",gap:6 }}>
+                {form.target === "department" && departments.length > 0 && (
+                  <div style={{ marginTop: 10, padding: 12, background: "#f8fafc", borderRadius: 8, border: "1px solid #e5e7eb" }}>
+                    <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "#374151" }}>Select Departments</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                       {departments.map(d => {
                         const sel = form.target_departments.includes(d.name);
                         return (
-                          <span key={d._id} onClick={() => setForm(f=>({ ...f, target_departments: sel ? f.target_departments.filter(x=>x!==d.name) : [...f.target_departments,d.name] }))}
-                            style={{ padding:"5px 12px",borderRadius:99,fontSize:12,fontWeight:600,cursor:"pointer",background:sel?"#2563eb":"#fff",color:sel?"#fff":"#374151",border:`1.5px solid ${sel?"#2563eb":"#d1d5db"}` }}>
-                            {sel?"✓ ":""}{d.name}
+                          <span key={d._id} onClick={() => setForm(f => ({ ...f, target_departments: sel ? f.target_departments.filter(x => x !== d.name) : [...f.target_departments, d.name] }))}
+                            style={{ padding: "5px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer", background: sel ? "#2563eb" : "#fff", color: sel ? "#fff" : "#374151", border: `1.5px solid ${sel ? "#2563eb" : "#d1d5db"}` }}>
+                            {sel ? "✓ " : ""}{d.name}
                           </span>
                         );
                       })}
@@ -550,17 +553,17 @@ const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
                   </div>
                 )}
 
-                {form.target==="role" && (
-                  <div style={{ marginTop:10,padding:12,background:"#f8fafc",borderRadius:8,border:"1px solid #e5e7eb" }}>
-                    <p style={{ margin:"0 0 8px",fontSize:12,fontWeight:700,color:"#374151" }}>Select Roles</p>
-                    <div style={{ display:"flex",flexWrap:"wrap",gap:6 }}>
-                      {roles.length === 0 && <span style={{ fontSize:12,color:"#6b7280" }}>No roles found</span>}
+                {form.target === "role" && (
+                  <div style={{ marginTop: 10, padding: 12, background: "#f8fafc", borderRadius: 8, border: "1px solid #e5e7eb" }}>
+                    <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "#374151" }}>Select Roles</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {roles.length === 0 && <span style={{ fontSize: 12, color: "#6b7280" }}>No roles found</span>}
                       {roles.map(r => {
                         const sel = form.target_roles.includes(r);
                         return (
-                          <span key={r} onClick={() => setForm(f=>({ ...f, target_roles: sel ? f.target_roles.filter(x=>x!==r) : [...f.target_roles, r] }))}
-                            style={{ padding:"5px 12px",borderRadius:99,fontSize:12,fontWeight:600,cursor:"pointer",background:sel?"#2563eb":"#fff",color:sel?"#fff":"#374151",border:`1.5px solid ${sel?"#2563eb":"#d1d5db"}` }}>
-                            {sel?"✓ ":""}{r}
+                          <span key={r} onClick={() => setForm(f => ({ ...f, target_roles: sel ? f.target_roles.filter(x => x !== r) : [...f.target_roles, r] }))}
+                            style={{ padding: "5px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer", background: sel ? "#2563eb" : "#fff", color: sel ? "#fff" : "#374151", border: `1.5px solid ${sel ? "#2563eb" : "#d1d5db"}` }}>
+                            {sel ? "✓ " : ""}{r}
                           </span>
                         );
                       })}
@@ -568,18 +571,18 @@ const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
                   </div>
                 )}
 
-                {form.target==="individual" && (
-                  <div style={{ marginTop:10,padding:12,background:"#f8fafc",borderRadius:8,border:"1px solid #e5e7eb" }}>
-                    <p style={{ margin:"0 0 8px",fontSize:12,fontWeight:700,color:"#374151" }}>
+                {form.target === "individual" && (
+                  <div style={{ marginTop: 10, padding: 12, background: "#f8fafc", borderRadius: 8, border: "1px solid #e5e7eb" }}>
+                    <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "#374151" }}>
                       Select Employees ({form.target_employees.length} selected)
                     </p>
                     <input
                       value={empSearch}
                       onChange={e => setEmpSearch(e.target.value)}
                       placeholder="🔍 Search name / Emp ID / department"
-                      style={{ ...inp, marginBottom:8 }}
+                      style={{ ...inp, marginBottom: 8 }}
                     />
-                    <div style={{ maxHeight:200,overflowY:"auto",display:"flex",flexDirection:"column",gap:4 }}>
+                    <div style={{ maxHeight: 200, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
                       {employees
                         .filter(e => {
                           const q = empSearch.toLowerCase();
@@ -588,11 +591,11 @@ const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
                         .map(e => {
                           const sel = form.target_employees.includes(e._id);
                           return (
-                            <label key={e._id} style={{ display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:6,cursor:"pointer",background:sel?"#eff6ff":"#fff",border:`1px solid ${sel?"#2563eb":"#e5e7eb"}`,fontSize:12 }}>
+                            <label key={e._id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 6, cursor: "pointer", background: sel ? "#eff6ff" : "#fff", border: `1px solid ${sel ? "#2563eb" : "#e5e7eb"}`, fontSize: 12 }}>
                               <input type="checkbox" checked={sel}
-                                onChange={() => setForm(f=>({ ...f, target_employees: sel ? f.target_employees.filter(x=>x!==e._id) : [...f.target_employees, e._id] }))} />
+                                onChange={() => setForm(f => ({ ...f, target_employees: sel ? f.target_employees.filter(x => x !== e._id) : [...f.target_employees, e._id] }))} />
                               <strong>{e.name}</strong>
-                              <span style={{ color:"#6b7280" }}>{e.employeeId} · {e.department}</span>
+                              <span style={{ color: "#6b7280" }}>{e.employeeId} · {e.department}</span>
                             </label>
                           );
                         })}
@@ -602,17 +605,17 @@ const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
               </div>
 
               {/* Expiry */}
-              <div style={{ marginBottom:20 }}>
-                <label style={{ display:"block",fontSize:12,fontWeight:700,color:"#374151",marginBottom:5 }}>Expiry Date (optional)</label>
-                <input type="date" value={form.expires_at} onChange={e=>setForm(f=>({...f,expires_at:e.target.value}))} style={{ ...inp,maxWidth:200 }}/>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 5 }}>Expiry Date (optional)</label>
+                <input type="date" value={form.expires_at} onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))} style={{ ...inp, maxWidth: 200 }} />
               </div>
 
               {/* Footer */}
-              <div style={{ display:"flex",gap:10,justifyContent:"flex-end" }}>
-                <button onClick={() => setShowModal(false)} style={{ padding:"10px 22px",border:"1.5px solid #e5e7eb",borderRadius:9,background:"#fff",color:"#374151",fontWeight:600,cursor:"pointer",fontSize:13 }}>Cancel</button>
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                <button onClick={() => setShowModal(false)} style={{ padding: "10px 22px", border: "1.5px solid #e5e7eb", borderRadius: 9, background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer", fontSize: 13 }}>Cancel</button>
                 <button onClick={handleSubmit} disabled={saving}
-                  style={{ padding:"10px 26px",border:"none",borderRadius:9,background:saving?"#93c5fd":"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",fontWeight:700,cursor:saving?"not-allowed":"pointer",fontSize:13,boxShadow:"0 4px 14px rgba(37,99,235,.35)",display:"flex",alignItems:"center",gap:8 }}>
-                  {saving?<><div style={{ width:14,height:14,border:"2px solid #fff8",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite" }}/>Posting...</>:`${editingId?"✓ Update":"📢 Post"}`}
+                  style={{ padding: "10px 26px", border: "none", borderRadius: 9, background: saving ? "#93c5fd" : "linear-gradient(135deg,#2563eb,#1d4ed8)", color: "#fff", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontSize: 13, boxShadow: "0 4px 14px rgba(37,99,235,.35)", display: "flex", alignItems: "center", gap: 8 }}>
+                  {saving ? <><div style={{ width: 14, height: 14, border: "2px solid #fff8", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .8s linear infinite" }} />Posting...</> : `${editingId ? "✓ Update" : "📢 Post"}`}
                 </button>
               </div>
             </div>
@@ -622,14 +625,14 @@ const payload = { ...form, ...(isValidId ? { created_by: hrId } : {}) };
 
       {/* Delete confirm */}
       {deleteConfirm && (
-        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16 }}>
-          <div style={{ background:"#fff",borderRadius:14,padding:28,maxWidth:320,width:"100%",textAlign:"center",boxShadow:"0 24px 64px rgba(0,0,0,.2)" }}>
-            <div style={{ fontSize:44,marginBottom:12 }}>🗑️</div>
-            <h3 style={{ margin:"0 0 8px",color:"#1a1a2e" }}>Delete Announcement?</h3>
-            <p style={{ color:"#6b7280",fontSize:14,marginBottom:20 }}>All images and data will be removed.</p>
-            <div style={{ display:"flex",gap:10 }}>
-              <button onClick={() => setDeleteConfirm(null)} style={{ flex:1,padding:"10px 0",border:"1.5px solid #e5e7eb",borderRadius:9,background:"#fff",fontWeight:600,cursor:"pointer" }}>Cancel</button>
-              <button onClick={() => handleDelete(deleteConfirm)} style={{ flex:1,padding:"10px 0",border:"none",borderRadius:9,background:"#dc2626",color:"#fff",fontWeight:700,cursor:"pointer" }}>Delete</button>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 14, padding: 28, maxWidth: 320, width: "100%", textAlign: "center", boxShadow: "0 24px 64px rgba(0,0,0,.2)" }}>
+            <div style={{ fontSize: 44, marginBottom: 12 }}>🗑️</div>
+            <h3 style={{ margin: "0 0 8px", color: "#1a1a2e" }}>Delete Announcement?</h3>
+            <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 20 }}>All images and data will be removed.</p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setDeleteConfirm(null)} style={{ flex: 1, padding: "10px 0", border: "1.5px solid #e5e7eb", borderRadius: 9, background: "#fff", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+              <button onClick={() => handleDelete(deleteConfirm)} style={{ flex: 1, padding: "10px 0", border: "none", borderRadius: 9, background: "#dc2626", color: "#fff", fontWeight: 700, cursor: "pointer" }}>Delete</button>
             </div>
           </div>
         </div>
