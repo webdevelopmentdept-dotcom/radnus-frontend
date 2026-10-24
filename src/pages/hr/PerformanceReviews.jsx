@@ -5,6 +5,7 @@ import {
   Inbox, BarChart2, MousePointerClick, Filter, User, CheckCheck,
   Zap, Lock
 } from "lucide-react";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -48,6 +49,7 @@ const STYLES = `
   .pr-modal-header-right { flex-direction: row; align-items: center; gap: 12px; }
   .pr-modal-footer { flex-direction: row; justify-content: flex-end; }
   .pr-modal-footer button { width: auto; }
+  .pr-log-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 
   @media (max-width: 768px) {
     .pr-page { padding: 16px !important; }
@@ -63,7 +65,9 @@ const STYLES = `
     .pr-modal-header-right { flex-direction: row; gap: 8px !important; }
     .pr-modal-footer { flex-direction: column !important; gap: 10px !important; }
     .pr-modal-footer button { width: 100% !important; }
-    .pr-log-entry { flex-direction: column !important; align-items: flex-start !important; gap: 6px !important; }
+    .pr-log-entry { align-items: flex-start !important; gap: 8px !important; padding: 10px !important; }
+    .pr-log-actions { flex-direction: column-reverse !important; align-items: flex-end !important; gap: 6px !important; }
+    .pr-log-time { font-size: 11px !important; white-space: nowrap; }
   }
   @media (max-width: 480px) {
     .pr-stats { grid-template-columns: 1fr !important; }
@@ -648,6 +652,7 @@ export default function PerformanceReviews() {
                               <div>
                                 <p style={{ margin: 0, fontWeight: 600, color: "#1a1a2e" }}>{r.employee_id?.name || "—"}</p>
                                 <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{r.employee_id?.designation || ""}</p>
+                             <ActionedBy id={r._id} />
                               </div>
                             </div>
                           </td>
@@ -781,10 +786,10 @@ export default function PerformanceReviews() {
                       </div>
                       {logsByDate[date].map(log => (
                         <div key={log._id} className="pr-log-entry" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "#f8fafc", borderRadius: 8, marginBottom: 6, border: "1px solid #e5e7eb" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
                             <div style={{ width: 36, height: 36, borderRadius: 8, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#2563eb", fontSize: 13, flexShrink: 0 }}>{log.value}</div>
-                            <div>
-                              <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: "#1f2937" }}>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: "#1f2937", wordBreak: "break-word" }}>
                                 {log.kpi_name} — <span style={{ color: "#2563eb" }}>{log.value} {log.unit}</span>
                                 {log.isEdited && !log.isDeleted && (
                                   <span style={{
@@ -826,7 +831,8 @@ export default function PerformanceReviews() {
                               )}
                             </div>
                           </div>
-                          <span style={{ fontSize: 12, color: "#9ca3af", flexShrink: 0, textAlign: "right" }}>
+                          <div className="pr-log-actions">
+                          <span className="pr-log-time" style={{ fontSize: 12, color: "#9ca3af", flexShrink: 0, textAlign: "right" }}>
                             <span style={{ display: "block", fontWeight: 600, color: "#6b7280" }}>
                               {new Date(log.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                             </span>
@@ -863,6 +869,7 @@ export default function PerformanceReviews() {
                               {unlockingLog === log._id ? "..." : "🔒"}
                             </button>
                           )}
+                          </div>
                         </div>
                       ))}
                     </div>

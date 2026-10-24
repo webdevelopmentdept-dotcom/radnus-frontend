@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { getSecureUrl } from "../../utils/secureDoc";
-
+import ActionedBy from "../../components/hr/ActionedBy";
 // ✅ Text-only doc types (not files — just plain values)
 const TEXT_DOCS = [
   "CGPA",
@@ -220,8 +220,11 @@ export default function HrPending() {
                   <td>{emp.email}</td>
                                     <td>
                     {emp.status === "admin_pending" ? (
-                      <span className="badge bg-info text-dark">⏳ Waiting for Admin Approval</span>
-                    ) : emp.reuploaded ? (
+                                         <>
+                        <span className="badge bg-info text-dark">⏳ Waiting for Admin Approval</span>
+                        <ActionedBy id={emp._id} match="APPROVE" />
+                      </>
+                  ) : emp.reuploaded ? (
                       <span className="badge bg-warning text-dark">🔁 Re-uploaded</span>
                     ) : (
                       <span className="badge bg-secondary">New</span>
@@ -335,7 +338,8 @@ export default function HrPending() {
 
                         {selected.status === "admin_pending" ? (
               <div className="mt-3 alert alert-info mb-0">
-                ⏳ Already approved by you — waiting for <b>Admin's</b> final approval.
+                             ⏳ Approved — waiting for <b>Admin's</b> final approval.
+                <ActionedBy id={selected._id} match="APPROVE" />
               </div>
                         ) : (
               <div className="mt-3 row g-2">

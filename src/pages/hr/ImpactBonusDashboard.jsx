@@ -7,6 +7,7 @@ import {
   XCircle, CheckSquare, ClipboardList, X, ChevronRight
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -577,6 +578,7 @@ export default function ImpactBonusDashboard() {
                             <div>
                               <p style={{ margin:0,fontWeight:700,color:"#1a1a2e" }}>{s.employee_id?.name}</p>
                               <p style={{ margin:0,fontSize:11,color:"#9ca3af" }}>{s.employee_id?.department}</p>
+                            <ActionedBy id={s._id} match="STATUS" version={s.status} />
                             </div>
                           </div>
                         </td>

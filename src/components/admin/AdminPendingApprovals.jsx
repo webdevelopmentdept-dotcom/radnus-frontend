@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { getSecureUrl } from "../../utils/secureDoc";
-
+import ActionedBy from "../hr/ActionedBy";
 // ✅ Text-only doc types (not files — just plain values)
 const TEXT_DOCS = [
   "CGPA",
@@ -52,9 +52,9 @@ export default function AdminPendingApprovals() {
     return `${API_BASE}/uploads/${fileUrl}`;
   };
 
-  const isPDF   = (url) => url?.toLowerCase().endsWith(".pdf");
+  const isPDF = (url) => url?.toLowerCase().endsWith(".pdf");
   const isImage = (url) => url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-  const isDoc   = (url) => url?.match(/\.(doc|docx)$/i);
+  const isDoc = (url) => url?.match(/\.(doc|docx)$/i);
 
   // Open preview with doc type label
   const openPreview = (fileUrl, docType = "") => {
@@ -99,8 +99,8 @@ export default function AdminPendingApprovals() {
 
   // =================== ZOOM CONTROLS ===================
   const ZOOM_STEP = 0.25;
-  const MIN_ZOOM  = 0.5;
-  const MAX_ZOOM  = 5;
+  const MIN_ZOOM = 0.5;
+  const MAX_ZOOM = 5;
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
 
@@ -133,7 +133,7 @@ export default function AdminPendingApprovals() {
     e.preventDefault();
     setIsDragging(true);
     dragStart.current = { x: e.clientX, y: e.clientY };
-    panStart.current  = { ...pan };
+    panStart.current = { ...pan };
   };
 
   const handleMouseMove = useCallback((e) => {
@@ -151,7 +151,7 @@ export default function AdminPendingApprovals() {
     const touch = e.touches[0];
     setIsDragging(true);
     dragStart.current = { x: touch.clientX, y: touch.clientY };
-    panStart.current  = { ...pan };
+    panStart.current = { ...pan };
   };
 
   const handleTouchMove = useCallback((e) => {
@@ -169,21 +169,21 @@ export default function AdminPendingApprovals() {
   const handleDownload = async (url, docType) => {
     try {
       const response = await fetch(url);
-      const blob     = await response.blob();
-      const ext      = url.split(".").pop().split("?")[0];
+      const blob = await response.blob();
+      const ext = url.split(".").pop().split("?")[0];
       const filename = `${docType || "document"}_${Date.now()}.${ext}`;
-      const link     = document.createElement("a");
-      link.href      = URL.createObjectURL(blob);
-      link.download  = filename;
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
     } catch {
-      const link    = document.createElement("a");
-      link.href     = url;
+      const link = document.createElement("a");
+      link.href = url;
       link.download = docType || "document";
-      link.target   = "_blank";
+      link.target = "_blank";
       link.click();
     }
   };
@@ -224,6 +224,7 @@ export default function AdminPendingApprovals() {
                     ) : (
                       <span className="badge bg-secondary">New</span>
                     )}
+                    <ActionedBy id={emp._id} match="APPROVE" />
                   </td>
                   <td>
                     <button className="btn btn-primary btn-sm" onClick={() => setSelected(emp)}>
@@ -286,39 +287,39 @@ export default function AdminPendingApprovals() {
                             </small>
                           </div>
 
-                       ) : isPDF(fileUrl) ? (
-  <button
-    className="btn btn-outline-primary btn-sm w-100"
-    onClick={() => openPreview(fileUrl, doc.docType)}
-  >
-    📄 View PDF
-  </button>
+                        ) : isPDF(fileUrl) ? (
+                          <button
+                            className="btn btn-outline-primary btn-sm w-100"
+                            onClick={() => openPreview(fileUrl, doc.docType)}
+                          >
+                            📄 View PDF
+                          </button>
 
-) : isDoc(fileUrl) ? (
-  <button
-    className="btn btn-outline-primary btn-sm w-100"
-    onClick={() => openPreview(fileUrl, doc.docType)}
-  >
-    📝 View Document
-  </button>
+                        ) : isDoc(fileUrl) ? (
+                          <button
+                            className="btn btn-outline-primary btn-sm w-100"
+                            onClick={() => openPreview(fileUrl, doc.docType)}
+                          >
+                            📝 View Document
+                          </button>
 
-) : (
-  <img
-    src={fileUrl}
-    alt="doc"
-    className="img-fluid rounded"
-    style={{ height: "100px", objectFit: "cover", cursor: "pointer" }}
-    onClick={() => openPreview(fileUrl, doc.docType)}
-    onError={(e) => {
-      e.target.onerror = null;
-      e.target.src =
-        "data:image/svg+xml;utf8," +
-        encodeURIComponent(
-          `<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f8d7da'/><text x='50%' y='50%' font-size='11' text-anchor='middle' fill='%23842029' dy='.3em'>Load failed</text></svg>`
-        );
-    }}
-  />
-)}
+                        ) : (
+                          <img
+                            src={fileUrl}
+                            alt="doc"
+                            className="img-fluid rounded"
+                            style={{ height: "100px", objectFit: "cover", cursor: "pointer" }}
+                            onClick={() => openPreview(fileUrl, doc.docType)}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src =
+                                "data:image/svg+xml;utf8," +
+                                encodeURIComponent(
+                                  `<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f8d7da'/><text x='50%' y='50%' font-size='11' text-anchor='middle' fill='%23842029' dy='.3em'>Load failed</text></svg>`
+                                );
+                            }}
+                          />
+                        )}
 
                       </div>
                     </div>
@@ -327,9 +328,10 @@ export default function AdminPendingApprovals() {
               })}
             </div>
 
-                      <div className="mt-3 row g-2">
+            <div className="mt-3 row g-2">
               <div className="col-md-6">
                 <label className="fw-semibold small">HR Remark</label>
+                <ActionedBy id={selected._id} match="APPROVE" />
                 <textarea
                   className="form-control form-control-sm"
                   rows="2"
@@ -396,9 +398,9 @@ export default function AdminPendingApprovals() {
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
                   <span>Download</span>
                 </button>
@@ -410,9 +412,9 @@ export default function AdminPendingApprovals() {
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                    <polyline points="15 3 21 3 21 9"/>
-                    <line x1="10" y1="14" x2="21" y2="3"/>
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
                   </svg>
                   <span>New Tab</span>
                 </button>
@@ -424,8 +426,8 @@ export default function AdminPendingApprovals() {
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                   <span>Close</span>
                 </button>

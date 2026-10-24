@@ -292,14 +292,23 @@ export default function HrDashboard() {
           flex-shrink: 0;
         }
 
+        /* MOBILE: the stack used to stretch across the whole top (left:12 / right:12)
+           and sat on top of the hamburger menu button + page title.
+           Now it hugs the top-right corner and leaves the hamburger visible. */
         @media (max-width: 768px) {
           .top-right-stack {
-            left: 12px; right: 12px; top: 12px;
-            align-items: stretch;
+            top: 14px; left: auto; right: 12px;
+            max-width: calc(100vw - 80px);
+            align-items: flex-end;
           }
-          .pr-opp-card, .notif-card, .notif-bell-chip {
-            max-width: none;
+          .pr-opp-card, .notif-card {
+            max-width: min(270px, calc(100vw - 80px));
           }
+          /* bell chip -> compact bell + badge (no text) */
+          .notif-bell-chip {
+            padding: 6px 8px; gap: 6px; border-radius: 12px;
+          }
+          .notif-bell-chip-text { display: none; }
         }
       `}</style>
 
@@ -358,7 +367,7 @@ export default function HrDashboard() {
       <div
         style={{
           marginLeft: isMobile ? "0px" : (sidebarExpanded ? "260px" : "72px"),
-          padding: isMobile ? "15px" : "20px",
+          padding: isMobile ? "64px 15px 15px" : "20px", // top space so the fixed hamburger / bell never cover the page title
           transition: "0.3s",
         }}
       >

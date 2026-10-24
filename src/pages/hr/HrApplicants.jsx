@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
 import ApplicantProfileDrawer from "./Applicantprofiledrawer";
 import AddWalkinModal from "./AddWalkinModal";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const STATUS_OPTIONS = ["New", "Shortlisted", "Interview", "Hired", "Rejected"];
 
 const STATUS_CONFIG = {
-  New:         { bg: "#eff6ff", color: "#1d4ed8", dot: "#3b82f6" },
+  New: { bg: "#eff6ff", color: "#1d4ed8", dot: "#3b82f6" },
   Shortlisted: { bg: "#fefce8", color: "#a16207", dot: "#eab308" },
-  Interview:   { bg: "#f5f3ff", color: "#7c3aed", dot: "#8b5cf6" },
-  Hired:       { bg: "#f0fdf4", color: "#15803d", dot: "#22c55e" },
-  Rejected:    { bg: "#fff1f2", color: "#b91c1c", dot: "#ef4444" },
+  Interview: { bg: "#f5f3ff", color: "#7c3aed", dot: "#8b5cf6" },
+  Hired: { bg: "#f0fdf4", color: "#15803d", dot: "#22c55e" },
+  Rejected: { bg: "#fff1f2", color: "#b91c1c", dot: "#ef4444" },
 };
 
 const REJECTION_REASONS = [
@@ -452,11 +453,55 @@ export default function HrApplicants() {
         .ha-reject-confirm-btn:hover:not(:disabled) { background: #dc2626; }
         .ha-reject-confirm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
+        /* MOBILE: every table row becomes a labelled card (2-column details grid).
+           Before: thead was hidden and each <td> stacked with no labels, so
+           Location / Aadhaar / Applied looked like random "—" and dates. */
         @media (max-width: 768px) {
           .ha-wrap { padding: 20px 14px 48px; }
+          .ha-table-card { background: transparent; border: none; border-radius: 0; overflow: visible; }
+          .ha-table, .ha-table tbody { display: block; width: 100%; }
           .ha-table thead { display: none; }
-          .ha-table td { display: block; padding: 6px 14px; }
-          .ha-table tr { display: block; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+          .ha-table tbody tr {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px;
+            position: relative; padding: 16px 14px 14px; margin-bottom: 12px;
+            background: #fff; border: 1px solid #e2e8f0 !important; border-radius: 14px;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+          }
+          .ha-table tbody tr:hover { background: #fff; }
+          .ha-table td { display: block; padding: 0 !important; min-width: 0; text-align: left !important; overflow-wrap: anywhere; }
+          .ha-table td[colspan] { grid-column: 1 / -1; }
+          .ha-table td::before {
+            content: attr(data-label); display: block; margin-bottom: 3px;
+            font-size: 10px; font-weight: 700; color: #94a3b8;
+            text-transform: uppercase; letter-spacing: 0.6px;
+          }
+          /* no label for these */
+          .ha-table td:not([data-label])::before,
+          .ha-table td[data-label="#"]::before,
+          .ha-table td[data-label="Candidate"]::before,
+          .ha-table td[data-label="Resume"]::before,
+          .ha-table td[data-label="Action"]::before { display: none; }
+
+          /* row number -> small badge, top-right */
+          .ha-table td[data-label="#"] { position: absolute; top: 12px; right: 14px; }
+
+          /* full-width fields */
+          .ha-table td[data-label="Candidate"],
+          .ha-table td[data-label="Email"],
+          .ha-table td[data-label="Job Role"],
+          .ha-table td[data-label="Role Applied For"],
+          .ha-table td[data-label="Status"],
+          .ha-table td[data-label="Remarks"] { grid-column: 1 / -1; }
+          .ha-table td[data-label="Candidate"] { padding-right: 34px !important; }
+          .ha-table .ha-status-select { width: 100%; }
+
+          /* Resume / Remove buttons side by side, full width */
+          .ha-table td[data-label="Resume"],
+          .ha-table td[data-label="Action"] { padding-top: 4px !important; }
+          .ha-table td[data-label="Resume"] button,
+          .ha-table td[data-label="Action"] button { width: 100%; }
+          .ha-table td[data-label="Resume"] .ha-no-file { display: block; text-align: center; padding: 8px 0; }
+
           .ha-reason-grid { grid-template-columns: 1fr; }
           .ha-tabs { width: 100%; }
           .ha-tab-btn { flex: 1; justify-content: center; }
@@ -667,9 +712,9 @@ export default function HrApplicants() {
                     const dupTooltip = getDuplicateTooltip(a);
                     return (
                       <tr key={a._id}>
-                        <td><span className="ha-num">{i + 1}</span></td>
+                        <td data-label="#"><span className="ha-num">{i + 1}</span></td>
 
-                        <td>
+                        <td data-label="Candidate">
                           <div className="ha-candidate-name">{a.name}</div>
                           {a.phone && <div className="ha-candidate-phone">{a.phone}</div>}
 
@@ -684,30 +729,30 @@ export default function HrApplicants() {
                           )}
                         </td>
 
-                        <td><span className="ha-email">{a.email}</span></td>
-                        <td><span className="ha-job-chip">{a.jobTitle}</span></td>
-                        <td>
+                        <td data-label="Email"><span className="ha-email">{a.email}</span></td>
+                        <td data-label="Job Role"><span className="ha-job-chip">{a.jobTitle}</span></td>
+                        <td data-label="Location">
                           {a.location
                             ? <span className="ha-location-text">{a.location}</span>
                             : <span className="ha-na">—</span>
                           }
                         </td>
-                        <td>
+                        <td data-label="Aadhaar (Last 4)">
                           {a.aadhaarLast4
                             ? <span className="ha-aadhaar-text">•••• {a.aadhaarLast4}</span>
                             : <span className="ha-na">—</span>
                           }
                         </td>
-                        <td>
+                        <td data-label="Applied">
                           <span className="ha-date">
                             {a.createdAt
                               ? new Date(a.createdAt).toLocaleDateString("en-GB", {
-                                  day: "2-digit", month: "short", year: "numeric",
-                                })
+                                day: "2-digit", month: "short", year: "numeric",
+                              })
                               : "—"}
                           </span>
                         </td>
-                        <td>
+                        <td data-label="AI Score">
                           {a.aiScore != null ? (
                             <span
                               className="ha-ai-badge"
@@ -715,16 +760,16 @@ export default function HrApplicants() {
                               style={{
                                 background:
                                   a.aiGrade === "A" ? "#f0fdf4" :
-                                  a.aiGrade === "B" ? "#fefce8" : "#fff1f2",
+                                    a.aiGrade === "B" ? "#fefce8" : "#fff1f2",
                                 color:
                                   a.aiGrade === "A" ? "#15803d" :
-                                  a.aiGrade === "B" ? "#a16207" : "#b91c1c",
+                                    a.aiGrade === "B" ? "#a16207" : "#b91c1c",
                               }}
                             >
                               <span className="ha-ai-dot" style={{
                                 background:
                                   a.aiGrade === "A" ? "#22c55e" :
-                                  a.aiGrade === "B" ? "#eab308" : "#ef4444",
+                                    a.aiGrade === "B" ? "#eab308" : "#ef4444",
                               }} />
                               {a.aiScore}/100 · {a.aiGrade}
                             </span>
@@ -732,7 +777,7 @@ export default function HrApplicants() {
                             <span className="ha-ai-pending">Screening...</span>
                           )}
                         </td>
-                        <td>
+                        <td data-label="Status">
                           <div>
                             <select
                               className="ha-status-select"
@@ -748,9 +793,10 @@ export default function HrApplicants() {
                                 <span>↳ {a.rejectionReason}</span>
                               </div>
                             )}
+                            <ActionedBy id={a._id} match="STATUS" version={a.status} />   {/* NEW */}
                           </div>
                         </td>
-                        <td className="center">
+                        <td data-label="Resume" className="center">
                           {a.resumeUrl ? (
                             <button
                               className="ha-preview-btn"
@@ -762,11 +808,11 @@ export default function HrApplicants() {
                             <span className="ha-no-file">No file</span>
                           )}
                         </td>
-                           <td className="center">
-  <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
-    Remove
-  </button>
-</td>
+                        <td data-label="Action" className="center">
+                          <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
+                            Remove
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -797,88 +843,75 @@ export default function HrApplicants() {
                     </tr>
                   ) : filtered.map((a, i) => (
                     <tr key={a._id}>
-                      <td><span className="ha-num">{i + 1}</span></td>
+                      <td data-label="#"><span className="ha-num">{i + 1}</span></td>
 
-                      <td>
+                      <td data-label="Candidate">
                         <div className="ha-candidate-name">{a.name}</div>
                         <div className="ha-internal-sub">{a.employeeCode}</div>
                       </td>
 
-                      <td>
+                      <td data-label="Department">
                         {a.department || a.designation
                           ? <span className="ha-location-text">{a.department || a.designation}</span>
                           : <span className="ha-na">—</span>
                         }
                       </td>
 
-                      <td><span className="ha-job-chip">{a.jobTitle}</span></td>
+                      <td data-label="Role Applied For"><span className="ha-job-chip">{a.jobTitle}</span></td>
 
-                      <td>
+                      <td data-label="Applied">
                         <span className="ha-date">
                           {a.createdAt
                             ? new Date(a.createdAt).toLocaleDateString("en-GB", {
-                                day: "2-digit", month: "short", year: "numeric",
-                              })
+                              day: "2-digit", month: "short", year: "numeric",
+                            })
                             : "—"}
                         </span>
                       </td>
 
-                      <td>
-  <div>
-    {/* Show "Applied" badge when employee has applied */}
-    {/* {(a.rawStatus === "applied" || a.status === "applied") && (
-      <div style={{ 
-        display: "inline-flex", 
-        alignItems: "center", 
-        gap: 5, 
-        background: "#ecfdf5", 
-        color: "#059669", 
-        border: "1px solid #6ee7b7",
-        borderRadius: 6, 
-        padding: "3px 10px", 
-        fontSize: 11, 
-        fontWeight: 700,
-        marginBottom: 6 
-      }}>
-        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
-        ✓ Applied by employee
-      </div>
-    )} */}
-    
-    <select
-      className="ha-status-select"
-      value={mapInternalStatusToDisplay(a.status)}
-      onChange={(e) => handleStatusChange(a._id, e.target.value, a.name)}
-      disabled={updatingId === a._id}
-      style={statusStyle(mapInternalStatusToDisplay(a.status))}
-    >
-      {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-    </select>
-    
-    {(a.status === "Rejected" || a.status === "rejected") && a.rejectionReason && (
-      <div className="ha-reject-reason-tag" title={a.rejectionReason}>
-        <span>↳ {a.rejectionReason}</span>
-      </div>
-    )}
-  </div>
-</td>
+                      <td data-label="Status">
+                        <div>
 
-                      <td className="center">
-  <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-    <button
-      className="ha-preview-btn"
-      onClick={() => {
-        const empId = a._id.split("_")[2]; // internal_<jobId>_<empId>
-        setProfileDrawer({ open: true, employeeId: empId, jobTitle: a.jobTitle });
-      }}
-    >
-      View Profile
-    </button>
-    <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
-      Remove
-    </button>
-  </div>
-</td>
+                          <select
+                            className="ha-status-select"
+                            value={mapInternalStatusToDisplay(a.status)}
+                            onChange={(e) => handleStatusChange(a._id, e.target.value, a.name)}
+                            disabled={updatingId === a._id}
+                            style={statusStyle(mapInternalStatusToDisplay(a.status))}
+                          >
+                            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                          </select>
+
+                          {(a.status === "Rejected" || a.status === "rejected") && a.rejectionReason && (
+                            <div className="ha-reject-reason-tag" title={a.rejectionReason}>
+                              <span>↳ {a.rejectionReason}</span>
+                            </div>
+                          )}
+                          {a.statusByName && (
+                            <div style={{ fontSize: 12, color: "#475569", fontWeight: 600, marginTop: 4 }}>
+                              Status changed by {a.statusByName}
+                              {a.statusAt ? ` · ${new Date(a.statusAt).toLocaleString()}` : ""}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+
+                      <td data-label="Action" className="center">
+                        <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+                          <button
+                            className="ha-preview-btn"
+                            onClick={() => {
+                              const empId = a._id.split("_")[2]; // internal_<jobId>_<empId>
+                              setProfileDrawer({ open: true, employeeId: empId, jobTitle: a.jobTitle });
+                            }}
+                          >
+                            View Profile
+                          </button>
+                          <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
+                            Remove
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -915,30 +948,30 @@ export default function HrApplicants() {
                     </tr>
                   ) : filtered.map((a, i) => (
                     <tr key={a._id}>
-                      <td><span className="ha-num">{i + 1}</span></td>
-                      <td><div className="ha-candidate-name">{a.name}</div></td>
-                      <td>{a.department || <span className="ha-na">—</span>}</td>
-                      <td>{a.designation || <span className="ha-na">—</span>}</td>
-                      <td>{a.mobile}</td>
-                      <td>{a.emergencyContact || <span className="ha-na">—</span>}</td>
-                      <td>{a.location || <span className="ha-na">—</span>}</td>
-                      <td><span className="ha-job-chip">{a.source}</span></td>
-                      <td>
+                      <td data-label="#"><span className="ha-num">{i + 1}</span></td>
+                      <td data-label="Candidate"><div className="ha-candidate-name">{a.name}</div></td>
+                      <td data-label="Department">{a.department || <span className="ha-na">—</span>}</td>
+                      <td data-label="Designation">{a.designation || <span className="ha-na">—</span>}</td>
+                      <td data-label="Mobile">{a.mobile}</td>
+                      <td data-label="Emergency Contact">{a.emergencyContact || <span className="ha-na">—</span>}</td>
+                      <td data-label="Location">{a.location || <span className="ha-na">—</span>}</td>
+                      <td data-label="Source"><span className="ha-job-chip">{a.source}</span></td>
+                      <td data-label="Requisition Date">
                         <span className="ha-date">
                           {a.requisitionDate
                             ? new Date(a.requisitionDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
                             : "—"}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Interview Date">
                         <span className="ha-date">
                           {a.interviewDate
                             ? new Date(a.interviewDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
                             : "—"}
                         </span>
                       </td>
-                      <td>{a.receivedBy || <span className="ha-na">—</span>}</td>
-                      <td>
+                      <td data-label="Received By">{a.receivedBy || <span className="ha-na">—</span>}</td>
+                      <td data-label="Status">
                         <div>
                           <select
                             className="ha-status-select"
@@ -954,10 +987,11 @@ export default function HrApplicants() {
                               <span>↳ {a.rejectionReason}</span>
                             </div>
                           )}
+                          <ActionedBy id={a._id} match="STATUS" version={a.status} />   {/* NEW */}
                         </div>
                       </td>
-                      <td>{a.remarks || <span className="ha-na">—</span>}</td>
-                      <td className="center">
+                      <td data-label="Remarks">{a.remarks || <span className="ha-na">—</span>}</td>
+                      <td data-label="Action" className="center">
                         <button className="ha-delete-btn" onClick={() => handleWalkinDelete(a._id)}>
                           Remove
                         </button>

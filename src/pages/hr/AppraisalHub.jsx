@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import ActionedBy from "../../components/hr/ActionedBy";
 import {
   Plus, Search, Eye, Edit2, Trash2,
   CheckCircle, Clock, TrendingUp, Users,
@@ -540,6 +541,7 @@ export default function AppraisalHub() {
                       onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{a.title}</div>
+                        <ActionedBy id={a._id} version={a.status} />                
                       </td>
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

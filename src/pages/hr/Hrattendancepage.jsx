@@ -128,7 +128,7 @@ export const hasMissingOut = (r, dateStr) => {
   }
 
   // Sort punches by time
-  const sorted = [...r.punches].sort((a, b) => 
+  const sorted = [...r.punches].sort((a, b) =>
     new Date(a.time) - new Date(b.time)
   );
 
@@ -143,8 +143,8 @@ export const hasMissingOut = (r, dateStr) => {
       const now = new Date();
       // Before 8 PM, still working - not missing yet
       const nowMins = now.getHours() * 60 + now.getMinutes();
-const { endMins } = parseShiftMins(r.employee?.shift);
-if (nowMins < endMins) return false;
+      const { endMins } = parseShiftMins(r.employee?.shift);
+      if (nowMins < endMins) return false;
     }
     // Either past date or after 8 PM today - missing OUT
     return true;
@@ -158,20 +158,20 @@ if (nowMins < endMins) return false;
 export const workHrsFromPunches = (r) => {
   const firstIn = getFirstIn(r);
   const lastOut = getLastOut(r);
-  
+
   // No check-in at all
   if (!firstIn) return "—";
-  
+
   // Has check-in but no check-out
   if (!lastOut) {
     return (
-      <span style={{ 
-        color: "#f59e0b", 
-        fontWeight: 700, 
-        fontSize: 11, 
-        display: "inline-flex", 
-        alignItems: "center", 
-        gap: 3 
+      <span style={{
+        color: "#f59e0b",
+        fontWeight: 700,
+        fontSize: 11,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 3
       }}>
         <AlertCircle size={11} /> No Out
       </span>
@@ -181,11 +181,11 @@ export const workHrsFromPunches = (r) => {
   // Calculate work hours
   const diffMs = new Date(lastOut) - new Date(firstIn);
   if (diffMs <= 0) return "—";
-  
+
   const totalMins = Math.round(diffMs / 60000);
   const h = Math.floor(totalMins / 60);
   const m = totalMins % 60;
-  
+
   return `${h}h ${pad(m)}m`;
 };
 
@@ -222,13 +222,13 @@ export const calcLateMinutes = (checkIn, shiftStartMins = DEFAULT_SHIFT_START) =
 export const calcEarlyOut = (checkOut, shiftEndMins = DEFAULT_SHIFT_END) => {
   if (!checkOut) return 0;
   const total = new Date(checkOut).getHours() * 60 + new Date(checkOut).getMinutes();
-  
+
   // 12:00 AM = 0 → midnight checkout, not early out
   if (total === 0) return 0;
-  
+
   // After shift end → no early out
   if (total >= shiftEndMins) return 0;
-  
+
   return Math.max(shiftEndMins - total, 0);
 };
 
@@ -319,33 +319,50 @@ export const S = {
 
 export function StatStrip({ stats, activeFlag, onFlagClick }) {
   return (
-    <div style={{ ...S.card, display: "flex", marginBottom: 16 }}>
-      {stats.map((c, idx) => {
-        const isActive = c.flag && activeFlag === c.flag;
-        return (
-          <div
-            key={c.label}
-            onClick={() => c.flag && onFlagClick(c.flag)}
-            style={{
-              flex: 1,
-              padding: "14px 8px",
-              textAlign: "center",
-              borderRight: idx < stats.length - 1 ? "1px solid #f3f4f6" : "none",
-              cursor: c.flag ? "pointer" : "default",
-              background: isActive ? "#f7f8fa" : "transparent",
-              transition: "background 0.15s",
-              position: "relative",
-            }}
-          >
-            {isActive && (
-              <div style={{ position: "absolute", bottom: 0, left: "20%", right: "20%", height: 2, background: c.color, borderRadius: "2px 2px 0 0" }} />
-            )}
-            <div style={{ fontSize: 20, fontWeight: 800, color: c.color, lineHeight: 1 }}>{c.value}</div>
-            <div style={{ fontSize: 10, fontWeight: 600, color: "#adb5bd", marginTop: 4, lineHeight: 1.3, whiteSpace: "nowrap" }}>{c.label}</div>
-          </div>
-        );
-      })}
-    </div>
+    <>
+      <style>{`
+        /* MOBILE: 8 stat boxes can't fit in one line (Missing Punch / Early Out were
+           cut off). Wrap them into a 4-column grid (2 rows) instead. */
+        @media (max-width: 768px) {
+          .stat-strip { display: grid !important; grid-template-columns: repeat(4, 1fr); overflow: hidden; }
+          .stat-item {
+            border-right: 1px solid #f3f4f6 !important; border-bottom: 1px solid #f3f4f6;
+            padding: 12px 4px !important; min-width: 0;
+          }
+          .stat-item:nth-child(4n) { border-right: none !important; }
+          .stat-item:nth-last-child(-n+4) { border-bottom: none; }
+          .stat-item > div:last-child { white-space: normal !important; }
+        }
+      `}</style>
+      <div className="stat-strip" style={{ ...S.card, display: "flex", marginBottom: 16 }}>
+        {stats.map((c, idx) => {
+          const isActive = c.flag && activeFlag === c.flag;
+          return (
+            <div
+              className="stat-item"
+              key={c.label}
+              onClick={() => c.flag && onFlagClick(c.flag)}
+              style={{
+                flex: 1,
+                padding: "14px 8px",
+                textAlign: "center",
+                borderRight: idx < stats.length - 1 ? "1px solid #f3f4f6" : "none",
+                cursor: c.flag ? "pointer" : "default",
+                background: isActive ? "#f7f8fa" : "transparent",
+                transition: "background 0.15s",
+                position: "relative",
+              }}
+            >
+              {isActive && (
+                <div style={{ position: "absolute", bottom: 0, left: "20%", right: "20%", height: 2, background: c.color, borderRadius: "2px 2px 0 0" }} />
+              )}
+              <div style={{ fontSize: 20, fontWeight: 800, color: c.color, lineHeight: 1 }}>{c.value}</div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: "#adb5bd", marginTop: 4, lineHeight: 1.3, whiteSpace: "nowrap" }}>{c.label}</div>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -483,7 +500,7 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
             </button>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
-           <span style={{ ...S.pill(meta.color, meta.bg) }}>{statusLabel(record) || meta.label}</span>
+            <span style={{ ...S.pill(meta.color, meta.bg) }}>{statusLabel(record) || meta.label}</span>
             <span style={{ color: "#6b7280", fontSize: 12 }}>{fmtD(date)}</span>
           </div>
         </div>
@@ -507,33 +524,33 @@ function EmployeeDrawer({ record, date, onClose, onEdit }) {
                 valueColor="#6b7280"
               />
               <Row label="First In" value={fmt(firstIn) || "—"} valueColor="#16a34a" />
-              <Row 
-  label="Last Out" 
-  value={(() => {
-    const eo = getEffectiveLastOut(record, date);   // ✅ CHANGE
-    if (eo) return fmt(eo);
-    const fi = getFirstIn(record);
-    if (fi) return "Pending";
-    return "—";
-  })()} 
-  valueColor={getEffectiveLastOut(record, date) ? "#dc2626" : "#f59e0b"} 
-/>
-<Row 
-  label="Work Hours" 
-  value={(() => {
-    const fi = getFirstIn(record);
-    const lo = getEffectiveLastOut(record, date);   // ✅ CHANGE
-    if (!fi) return "—";
-    if (!lo) return "Ongoing";
-    const diffMs = new Date(lo) - new Date(fi);
-    const totalMins = Math.round(diffMs / 60000);
-    const h = Math.floor(totalMins / 60);
-    const m = totalMins % 60;
-    return `${h}h ${String(m).padStart(2, '0')}m`;
-  })()} 
-  valueColor="#2563eb" 
-/>
-              
+              <Row
+                label="Last Out"
+                value={(() => {
+                  const eo = getEffectiveLastOut(record, date);   // ✅ CHANGE
+                  if (eo) return fmt(eo);
+                  const fi = getFirstIn(record);
+                  if (fi) return "Pending";
+                  return "—";
+                })()}
+                valueColor={getEffectiveLastOut(record, date) ? "#dc2626" : "#f59e0b"}
+              />
+              <Row
+                label="Work Hours"
+                value={(() => {
+                  const fi = getFirstIn(record);
+                  const lo = getEffectiveLastOut(record, date);   // ✅ CHANGE
+                  if (!fi) return "—";
+                  if (!lo) return "Ongoing";
+                  const diffMs = new Date(lo) - new Date(fi);
+                  const totalMins = Math.round(diffMs / 60000);
+                  const h = Math.floor(totalMins / 60);
+                  const m = totalMins % 60;
+                  return `${h}h ${String(m).padStart(2, '0')}m`;
+                })()}
+                valueColor="#2563eb"
+              />
+
               {punches.length > 0 && <Row label="Total Punches" value={`${punches.length} punches`} valueColor="#6b7280" />}
               {record?.remark && <div style={{ padding: "8px 0", fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>Remark: {record.remark}</div>}
             </div>
@@ -781,7 +798,7 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
   const noTimeStatus = ["absent", "leave", "holiday", "weekend"];
   const [currentShift, setCurrentShift] = useState(employee.shift);
 
- const [form, setForm] = useState({
+  const [form, setForm] = useState({
     status: existing?.status || "present",
     checkIn: existingFirstIn ? new Date(existingFirstIn).toTimeString().slice(0, 5) : "10:00",
     checkOut: existingLastOut ? new Date(existingLastOut).toTimeString().slice(0, 5) : "",
@@ -840,7 +857,7 @@ function HRMarkModal({ employee, date, existing, onSave, onClose }) {
         checkIn: (!isNoTime && form.checkIn) ? `${date}T${form.checkIn}:00+05:30` : null,
         checkOut: (!isNoTime && form.checkOut) ? `${date}T${form.checkOut}:00+05:30` : null,
         remark: form.remark,
-         permissionStart: (!isNoTime && form.usePermission && form.permissionStart) ? form.permissionStart : null,
+        permissionStart: (!isNoTime && form.usePermission && form.permissionStart) ? form.permissionStart : null,
         permissionEnd: (!isNoTime && form.usePermission && form.permissionEnd) ? form.permissionEnd : null,
       }, { headers: authHeader() });
       onSave("success", `${employee.name} — attendance marked!`);
@@ -1159,13 +1176,13 @@ function DailyTab() {
                   const hrs = workHrsFromPunches(r);
                   const punchCount = r.punches?.length || (r.checkIn ? (r.checkOut ? 2 : 1) : 0);
                   const flags = [];
-const firstIn = getFirstIn(r);
-const lastOut = getLastOut(r);
-const isMissingOut = r.missingPunch; // ✅ Calculate properly
+                  const firstIn = getFirstIn(r);
+                  const lastOut = getLastOut(r);
+                  const isMissingOut = r.missingPunch; // ✅ Calculate properly
 
-if (r.lateMinutes > 0) flags.push({ label: `Late ${fmtMins(r.lateMinutes)}`, color: "#d97706", bg: "#fef9c3" });
-if (r.earlyOutMins > 0) flags.push({ label: `Early ${fmtMins(r.earlyOutMins)}`, color: "#9333ea", bg: "#faf5ff" });
-if (isMissingOut) flags.push({ label: "No Out", color: "#b91c1c", bg: "#fff1f2" });
+                  if (r.lateMinutes > 0) flags.push({ label: `Late ${fmtMins(r.lateMinutes)}`, color: "#d97706", bg: "#fef9c3" });
+                  if (r.earlyOutMins > 0) flags.push({ label: `Early ${fmtMins(r.earlyOutMins)}`, color: "#9333ea", bg: "#faf5ff" });
+                  if (isMissingOut) flags.push({ label: "No Out", color: "#b91c1c", bg: "#fff1f2" });
 
 
 
@@ -1192,12 +1209,12 @@ if (isMissingOut) flags.push({ label: "No Out", color: "#b91c1c", bg: "#fff1f2" 
                       <td style={{ ...S.tableCell, color: "#6b7280" }}>{r.employee?.department || "—"}</td>
 
                       <td style={S.tableCell}>
-                       <span style={S.pill(meta.color, meta.bg)}>{statusLabel(r) || meta.label}</span>
+                        <span style={S.pill(meta.color, meta.bg)}>{statusLabel(r) || meta.label}</span>
                       </td>
 
                       <td style={{ ...S.tableCell, color: "#16a34a", fontWeight: 700, fontFamily: "monospace" }}>{fmt(r._firstIn)}</td>
 
-{/* <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
+                      {/* <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
   {(() => {
     const lastOut = getLastOut(r); // ✅ Call function here
     const firstIn = getFirstIn(r); // ✅ Call function here
@@ -1216,72 +1233,50 @@ if (isMissingOut) flags.push({ label: "No Out", color: "#b91c1c", bg: "#fff1f2" 
   })()}
 </td> */}
 
-<td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
-  {(() => {
-    const effectiveOut = getEffectiveLastOut(r, date);   // ✅ CHANGE
-    const firstIn = getFirstIn(r);
+                      <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace" }}>
+                        {(() => {
+                          const effectiveOut = getEffectiveLastOut(r, date);   // ✅ CHANGE
+                          const firstIn = getFirstIn(r);
 
-    if (effectiveOut) {
-      const isRealOut = getLastOut(r) !== null;
-      return (
-        <span style={{ color: isRealOut ? "#dc2626" : "#7c3aed" }}>
-          {fmt(effectiveOut)}
-        </span>
-      );
-    }
-    if (firstIn) {
-      return (
-        <span style={{ color: "#f59e0b", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>
-          <AlertCircle size={11} /> Pending
-        </span>
-      );
-    }
-    return "—";
-  })()}
-</td>
+                          if (effectiveOut) {
+                            const isRealOut = getLastOut(r) !== null;
+                            return (
+                              <span style={{ color: isRealOut ? "#dc2626" : "#7c3aed" }}>
+                                {fmt(effectiveOut)}
+                              </span>
+                            );
+                          }
+                          if (firstIn) {
+                            return (
+                              <span style={{ color: "#f59e0b", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                <AlertCircle size={11} /> Pending
+                              </span>
+                            );
+                          }
+                          return "—";
+                        })()}
+                      </td>
+                      
+                      <td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>
+                        {(() => {
+                          const firstIn = getFirstIn(r);
+                          const effectiveOut = getEffectiveLastOut(r, date);   // ✅ CHANGE
 
-{/* <td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>
-  {(() => {
-    const firstIn = getFirstIn(r);
-    const lastOut = getLastOut(r);
-    
-    if (!firstIn) return "—";
-    if (!lastOut) {
-      return (
-        <span style={{ color: "#f59e0b", fontWeight: 700, fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>
-          <AlertCircle size={11} /> No Out
-        </span>
-      );
-    }
-    
-    const diffMs = new Date(lastOut) - new Date(firstIn);
-    const totalMins = Math.round(diffMs / 60000);
-    const h = Math.floor(totalMins / 60);
-    const m = totalMins % 60;
-    return `${h}h ${String(m).padStart(2, '0')}m`;
-  })()}
-</td> */}
-
-<td style={{ ...S.tableCell, color: "#2563eb", fontWeight: 700 }}>
-  {(() => {
-    const firstIn = getFirstIn(r);
-    const effectiveOut = getEffectiveLastOut(r, date);   // ✅ CHANGE
-
-    if (!firstIn) return "—";
-    if (!effectiveOut) {
-      return (
-        <span style={{ color: "#f59e0b", fontWeight: 700, fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>
-          <AlertCircle size={11} /> No Out
-        </span>
-      );
-    }
-    const diffMs = new Date(effectiveOut) - new Date(firstIn);
-    const totalMins = Math.round(diffMs / 60000);
-    const h = Math.floor(totalMins / 60);
-    const m = totalMins % 60;
-    return `${h}h ${String(m).padStart(2, '0')}m`;
-  })()}
-</td>
+                          if (!firstIn) return "—";
+                          if (!effectiveOut) {
+                            return (
+                              <span style={{ color: "#f59e0b", fontWeight: 700, fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                <AlertCircle size={11} /> No Out
+                              </span>
+                            );
+                          }
+                          const diffMs = new Date(effectiveOut) - new Date(firstIn);
+                          const totalMins = Math.round(diffMs / 60000);
+                          const h = Math.floor(totalMins / 60);
+                          const m = totalMins % 60;
+                          return `${h}h ${String(m).padStart(2, '0')}m`;
+                        })()}
+                      </td>
                       <td style={{ ...S.tableCell, fontWeight: 700, fontFamily: "monospace", color: "#0891b2" }}>
                         {r.breakOut ? fmt(r.breakOut) : "—"}
                       </td>
@@ -1307,9 +1302,15 @@ if (isMissingOut) flags.push({ label: "No Out", color: "#b91c1c", bg: "#fff1f2" 
                           {flags.length === 0
                             ? <span style={{ color: "#d1d5db", fontSize: 11 }}>—</span>
                             : flags.map((f, fi) => (
-                              <span key={fi} style={{ background: f.bg, color: f.color, padding: "2px 7px", borderRadius: 10, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>{f.label}</span>
+                               <span key={fi} style={{ background: f.bg, color: f.color, padding: "2px 7px", borderRadius: 10, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>{f.label}</span>
                             ))}
                         </div>
+                        {r.edited_by_name && (
+                          <div style={{ fontSize: 10, color: "#6b7280", marginTop: 3, whiteSpace: "nowrap" }}>
+                            Edited by {r.edited_by_name}
+                            {r.edited_at ? ` · ${new Date(r.edited_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}
+                          </div>
+                        )}
                       </td>
 
                       <td style={S.tableCell}>

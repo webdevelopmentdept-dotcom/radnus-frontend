@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 export default function HrRejected() {
   const [employees, setEmployees] = useState([]);
@@ -39,6 +40,7 @@ export default function HrRejected() {
                   <td>{emp.department}</td>
                   <td className="text-danger">
                     {emp.remarks || "No remark"}
+                    <ActionedBy id={emp._id} match="REJECT" />
                   </td>
                   <td>
                     <button
@@ -73,6 +75,7 @@ export default function HrRejected() {
             {/* REMARK */}
             <div className="alert alert-danger mt-3">
               <b>HR Remark:</b> {selected.remarks}
+              <ActionedBy id={selected._id} match="REJECT" />
             </div>
 
             {/* DOCUMENTS */}

@@ -558,7 +558,7 @@ export default function IncentiveResults() {
                         <>
                           <tr
                             key={r._id}
-                                                      className="row-expandable"
+                            className="row-expandable"
                             onClick={() => canExpand && setExpandedRow(isExpanded ? null : r._id)}
                             style={{ borderBottom: isExpanded ? "none" : "1px solid #f3f4f6", background: i % 2 === 0 ? "#fff" : "#fafafa" }}
                           >
@@ -598,7 +598,7 @@ export default function IncentiveResults() {
                                 {finalAmt > 0 ? `₹${finalAmt.toLocaleString("en-IN")}` : "—"}
                               </p>
                             </td>
-                                                        <td style={{ padding: "12px 16px", fontSize: 11, color: "#9ca3af", maxWidth: 220 }}>
+                            <td style={{ padding: "12px 16px", fontSize: 11, color: "#9ca3af", maxWidth: 220 }}>
                               {plan?.plan_type === "standalone" ? (
                                 hasEntries ? (
                                   <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -649,12 +649,29 @@ export default function IncentiveResults() {
                                     Mark Paid
                                   </button>
                                 )}
+                                {r.hr_actioned_by_name && (
+                                  <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, marginTop: 4 }}>
+                                    HR action by {r.hr_actioned_by_name}
+                                  </div>
+                                )}
+                                {r.approved_by_name && r.status !== "pending" && (
+                                  <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, width: "100%" }}>
+                                    Approved by {r.approved_by_name}
+                                    {r.approved_at && ` · ${new Date(r.approved_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
+                                  </div>
+                                )}
+                                {r.status === "paid" && r.paid_by_name && (
+                                  <div style={{ fontSize: 11, color: "#15803d", fontWeight: 600, width: "100%" }}>
+                                    Paid by {r.paid_by_name}
+                                    {r.paid_at && ` · ${new Date(r.paid_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
+                                  </div>
+                                )}
                                 {r.status === "paid" && (
                                   <span style={{ fontSize: 13, color: "#16a34a", fontWeight: 700 }}>✓ Paid</span>
                                 )}
                               </div>
                             </td>
-                                                    </tr>
+                          </tr>
 
                           {isExpanded && hasEntries && (
                             <tr key={`${r._id}-entries-exp`}>
@@ -665,9 +682,9 @@ export default function IncentiveResults() {
                                   </div>
                                   {[...r.sale_entries].sort((a, b) => new Date(b.date) - new Date(a.date)).map((se, seIdx) => {
                                     const seStatusMap = {
-                                      pending:  { label: "⏳ Pending",  bg: "#fffbeb", color: "#92400e" },
+                                      pending: { label: "⏳ Pending", bg: "#fffbeb", color: "#92400e" },
                                       approved: { label: "✅ Approved", bg: "#eff6ff", color: "#1d4ed8" },
-                                      paid:     { label: "💸 Paid",     bg: "#f0fdf4", color: "#15803d" },
+                                      paid: { label: "💸 Paid", bg: "#f0fdf4", color: "#15803d" },
                                       rejected: { label: "❌ Rejected", bg: "#fef2f2", color: "#dc2626" },
                                     };
                                     const seBadge = seStatusMap[se.status || "pending"];
@@ -676,6 +693,13 @@ export default function IncentiveResults() {
                                         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                                           <span style={{ fontSize: 13, fontWeight: 700, color: "#1f2937" }}>{Number(se.amount).toLocaleString("en-IN")}</span>
                                           {se.note && <span style={{ fontSize: 11, color: "#9ca3af" }}>{se.note}</span>}
+                                          {(() => {
+                                            const n = se.status === "paid" ? se.paid_by_name
+                                              : se.status === "rejected" ? se.rejected_by_name
+                                                : se.status === "approved" ? se.approved_by_name : "";
+                                            const w = se.status === "paid" ? "Paid" : se.status === "rejected" ? "Rejected" : "Approved";
+                                            return n ? <span style={{ fontSize: 10, color: "#475569", fontWeight: 600 }}>{w} by {n}</span> : null;
+                                          })()}
                                           {se.added_by === "hr" && <span style={{ fontSize: 10, background: "#fef9c3", color: "#a16207", padding: "1px 6px", borderRadius: 10, fontWeight: 700 }}>HR added</span>}
                                           <span style={{ fontSize: 11, fontWeight: 700, color: "#16a34a" }}>
                                             {se.payout > 0 ? `→ ₹${Number(se.payout).toLocaleString("en-IN")}` : (se.status === "paid" ? `→ ₹${Number(se.amount).toLocaleString("en-IN")}` : "")}
@@ -1070,6 +1094,13 @@ function HRReviewQueue({ onRefresh }) {
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                               <span style={{ fontSize: 13, fontWeight: 700, color: "#1f2937" }}>{Number(e.amount).toLocaleString("en-IN")}</span>
                               {e.note && <span style={{ fontSize: 11, color: "#9ca3af" }}>{e.note}</span>}
+                              {(() => {
+                                const n = e.status === "paid" ? e.paid_by_name
+                                  : e.status === "rejected" ? e.rejected_by_name
+                                    : e.status === "approved" ? e.approved_by_name : "";
+                                const w = e.status === "paid" ? "Paid" : e.status === "rejected" ? "Rejected" : "Approved";
+                                return n ? <span style={{ fontSize: 10, color: "#475569", fontWeight: 600 }}>{w} by {n}</span> : null;
+                              })()}
                               {e.added_by === "hr" && <span style={{ fontSize: 10, background: "#fef9c3", color: "#a16207", padding: "1px 6px", borderRadius: 10, fontWeight: 700 }}>HR added</span>}
                               {/* 🆕 per-entry slab + payout */}
                               <span style={{ fontSize: 11, fontWeight: 700, color: ePayout > 0 ? "#16a34a" : "#dc2626" }}>

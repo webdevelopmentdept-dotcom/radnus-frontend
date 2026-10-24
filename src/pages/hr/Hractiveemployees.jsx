@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { getSecureUrl } from "../../utils/secureDoc";
 import MachineStaffModal from "./MachineStaffModal";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -42,8 +43,8 @@ const HR_DOC_TYPES = [
   "Employment Contract",
   "Salary Structure Document",
   "HR Policy Document",
-   "Salary Revision Letter",   
-  "Promotion Letter",   
+  "Salary Revision Letter",
+  "Promotion Letter",
 ];
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -155,7 +156,7 @@ const getPreviewUrl = (url) =>
   /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url || "")
     ? `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`
     : url;
-    
+
 const isImage = (url) => /\.(jpg|jpeg|png|gif|webp)/i.test(url || "");
 const isPDF = (url) => /\.pdf/i.test(url || "") || (url || "").toLowerCase().includes("pdf");
 
@@ -216,7 +217,7 @@ const PreviewModal = ({ url, name, onClose }) => (
 );
 
 // ─── Doc Row Card ─────────────────────────────────────────────────────────────
-const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, employeeId, onRefresh, isHrDoc }) => {
+const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, employeeId, onRefresh, isHrDoc, uploadedByName, uploadedAt }) => {
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -320,7 +321,7 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
 
       <input type="file" ref={fileRef} accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" style={{ display: "none" }} onChange={e => handleReplace(e.target.files[0])} />
 
-      <div style={{
+      <div className="doc-row" style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "12px 14px",
         background: hasFile ? "#f0fdf4" : "#fafafa",
@@ -334,15 +335,15 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
           </svg>
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="doc-row-info" style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e" }}>{label || docType}</span>
+            <span className="doc-row-label" style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e" }}>{label || docType}</span>
             {required !== undefined && (
-              <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 99, background: required ? "#fee2e2" : "#f3f4f6", color: required ? "#dc2626" : "#6b7280" }}>
+              <span className="doc-badge" style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 99, background: required ? "#fee2e2" : "#f3f4f6", color: required ? "#dc2626" : "#6b7280" }}>
                 {required ? "Required" : "Optional"}
               </span>
             )}
-            {isHrDoc && <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 99, background: "#eff6ff", color: "#2563eb" }}>HR</span>}
+            {isHrDoc && <span className="doc-badge" style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 99, background: "#eff6ff", color: "#2563eb" }}>HR</span>}
           </div>
 
           {isTextDoc && hasFile ? (
@@ -357,9 +358,16 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
               ) : "Not uploaded yet"}
             </div>
           )}
+        
+          {hasFile && isHrDoc && uploadedByName && (
+            <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, marginTop: 2 }}>
+              Uploaded by {uploadedByName}
+              {uploadedAt ? ` · ${new Date(uploadedAt).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}
+            </div>
+          )}
         </div>
 
-        <div style={{ display: "flex", gap: 5, flexShrink: 0, flexWrap: "wrap" }}>
+        <div className="doc-row-actions" style={{ display: "flex", gap: 5, flexShrink: 0, flexWrap: "wrap" }}>
           {hasFile ? (
             <>
               {!isTextDoc && (
@@ -372,7 +380,7 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
                     headers: { Authorization: `Bearer ${token}` }
                   });
                   const data = await res.json();
-                                    if (data.url) newTab.location.href = getPreviewUrl(data.url);
+                  if (data.url) newTab.location.href = getPreviewUrl(data.url);
                 }} title="Preview" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "1px solid #e5e7eb", borderRadius: 7, background: "#fff", color: "#374151", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                   <EyeIcon /> View
                 </button>
@@ -900,9 +908,9 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 0, borderBottom: "2px solid #e5e7eb", padding: "0 22px", flexShrink: 0, overflowX: "auto" }}>
+        <div className="doc-tabs" style={{ display: "flex", gap: 0, borderBottom: "2px solid #e5e7eb", padding: "0 22px", flexShrink: 0, overflowX: "auto" }}>
           {tabs.map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: "flex", alignItems: "center", gap: 6, border: "none", background: "none", padding: "12px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer", marginBottom: -2, borderBottom: activeTab === tab.key ? "3px solid #2563eb" : "3px solid transparent", color: activeTab === tab.key ? "#2563eb" : "#6b7280", whiteSpace: "nowrap", flexShrink: 0 }}>
+            <button key={tab.key} className="doc-tab" onClick={() => setActiveTab(tab.key)} style={{ display: "flex", alignItems: "center", gap: 6, border: "none", background: "none", padding: "12px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer", marginBottom: -2, borderBottom: activeTab === tab.key ? "3px solid #2563eb" : "3px solid transparent", color: activeTab === tab.key ? "#2563eb" : "#6b7280", whiteSpace: "nowrap", flexShrink: 0 }}>
               {tab.icon} {tab.label}
               {tab.count !== null && (
                 <span style={{ background: activeTab === tab.key ? "#2563eb" : "#e5e7eb", color: activeTab === tab.key ? "#fff" : "#374151", borderRadius: 99, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{tab.count}</span>
@@ -1038,6 +1046,8 @@ const EmployeeDocsModal = ({ employee, onClose, onEmployeeUpdate }) => {
                         employeeId={empData._id}
                         onRefresh={fetchDocs}
                         isHrDoc={true}
+                        uploadedByName={doc?.uploadedByName || ""}
+                        uploadedAt={doc?.updatedAt || null}
                       />
                     );
                   })}
@@ -1122,15 +1132,15 @@ const EmployeeDetailsPanel = ({ employee, onClose, onViewDocs }) => {
   const [hrDocs, setHrDocs] = useState([]);
   const [activation, setActivation] = useState(null);
   const [esslId, setEsslId] = useState(employee.essl_id ?? "");
-    const [lastMonthPerf, setLastMonthPerf] = useState(null); // { score, rating, period } | { score: null, period }
+  const [lastMonthPerf, setLastMonthPerf] = useState(null); // { score, rating, period } | { score: null, period }
   const [lastMonthAttendance, setLastMonthAttendance] = useState(null); // { pct, present, absent, late, half_day, on_leave, work_days, label } | null
 
   const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+  useEffect(() => {
     let cancelled = false;
     setLoading(true);
-        const { year: lastY, month: lastM } = getLastMonthNum();
+    const { year: lastY, month: lastM } = getLastMonthNum();
 
     Promise.all([
       fetch(`${API_BASE}/api/employee/me/${employee._id}`).then(r => r.json()).catch(() => ({})),
@@ -1161,15 +1171,15 @@ const EmployeeDetailsPanel = ({ employee, onClose, onViewDocs }) => {
       setLastMonthAttendance(
         attMatch
           ? {
-              pct: attMatch.attendance_pct ?? 0,
-              present: attMatch.present ?? 0,
-              absent: attMatch.absent ?? 0,
-              late: attMatch.late ?? 0,
-              half_day: attMatch.half_day ?? 0,
-              on_leave: attMatch.on_leave ?? 0,
-              work_days: attMatch.work_days ?? 0,
-              label: lastMonthLabel,
-            }
+            pct: attMatch.attendance_pct ?? 0,
+            present: attMatch.present ?? 0,
+            absent: attMatch.absent ?? 0,
+            late: attMatch.late ?? 0,
+            half_day: attMatch.half_day ?? 0,
+            on_leave: attMatch.on_leave ?? 0,
+            work_days: attMatch.work_days ?? 0,
+            label: lastMonthLabel,
+          }
           : { pct: null, label: lastMonthLabel }
       );
 
@@ -1287,7 +1297,7 @@ const EmployeeDetailsPanel = ({ employee, onClose, onViewDocs }) => {
                 </div>
               </div>
 
-{/* Performance */}
+              {/* Performance */}
               <div>
                 {editInfoSectionTitle("Performance")}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 14px" }}>
@@ -1401,7 +1411,7 @@ export default function HrActiveEmployees() {
   const [deleting, setDeleting] = useState(false);
   const [docsModal, setDocsModal] = useState(null);
   const [detailsEmp, setDetailsEmp] = useState(null);
-    const [showStaffModal, setShowStaffModal] = useState(false);
+  const [showStaffModal, setShowStaffModal] = useState(false);
 
   useEffect(() => { fetchActive(); }, []);
 
@@ -1471,6 +1481,23 @@ export default function HrActiveEmployees() {
         @media (max-width: 639px) {
           .emp-table { display: none !important; }
           .emp-cards { display: flex !important; flex-direction: column; gap: 10px; }
+
+          /* Document rows (employee docs modal): icon + name on top line,
+             action buttons on their own full-width line (was: one cramped line,
+             "Required" squeezed to "R" and the delete button cut off) */
+          .doc-row { flex-wrap: wrap !important; align-items: flex-start !important; gap: 10px !important; }
+          .doc-row-info { flex: 1 1 0 !important; min-width: 0 !important; }
+          .doc-row-label { overflow-wrap: anywhere; }
+          .doc-badge { white-space: nowrap !important; flex-shrink: 0 !important; }
+          .doc-row-actions { flex: 1 1 100% !important; width: 100%; flex-wrap: nowrap !important; gap: 6px !important; }
+          .doc-row-actions button { flex: 1 1 auto; justify-content: center; padding: 8px 6px !important; font-size: 12px !important; min-width: 0; }
+          .doc-row-actions button[title="Delete"] { flex: 0 0 auto; padding: 8px 12px !important; }
+          /* Modal tabs (Personal Docs | HR Docs | Edit Info): share the full width so
+             "Edit Info" is never pushed off-screen */
+          .doc-tabs { padding: 0 6px !important; }
+          .doc-tab { flex: 1 1 auto !important; justify-content: center; gap: 4px !important; padding: 11px 6px !important; font-size: 12px !important; }
+          .doc-tab > svg { display: none; }
+          .doc-tab span { padding: 1px 6px !important; font-size: 10px !important; }
         }
       `}</style>
 
@@ -1494,7 +1521,7 @@ export default function HrActiveEmployees() {
         </div>
       )}
 
-            {showStaffModal && (
+      {showStaffModal && (
         <MachineStaffModal
           departments={departments.filter(d => d !== "All")}
           onClose={() => setShowStaffModal(false)}
@@ -1530,11 +1557,11 @@ export default function HrActiveEmployees() {
         <div>
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: "#1a1a2e" }}>Active Employees</h2>
           <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 13 }}>
-           
+
             {loading ? "Loading..." : `${filtered.length} of ${employees.length} active employee${employees.length !== 1 ? "s" : ""}`}
           </p>
         </div>
-          <button onClick={() => setShowStaffModal(true)}
+        <button onClick={() => setShowStaffModal(true)}
           style={{ background: "#16a34a", color: "#fff", border: "none", borderRadius: 8, padding: "10px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
           + Add Staff (Non-HRMS)
         </button>
@@ -1605,12 +1632,16 @@ export default function HrActiveEmployees() {
                           <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#16a34a", fontSize: 13, flexShrink: 0 }}>
                             {emp.name?.charAt(0)?.toUpperCase() || "?"}
                           </div>
-                          <p style={{ margin: 0, fontWeight: 600, color: "#1a1a2e", fontSize: 13 }}>{emp.name}</p>
-                        {emp.staffType === "machine_staff" && (
-  <span style={{ background: "#fef3c7", color: "#b45309", border: "1px solid #fde68a", borderRadius: 99, padding: "2px 8px", fontSize: 10, fontWeight: 700 }}>
-    Non-HRMS
-  </span>
-)}
+                          <div>
+                            <p style={{ margin: 0, fontWeight: 600, color: "#1a1a2e", fontSize: 13 }}>{emp.name}</p>
+                            <ActionedBy id={emp._id} match="_ACTIVATE" />
+                            <ActionedBy id={emp._id} match="UPDATE" style={{ marginTop: 0 }} />
+                          </div>
+                          {emp.staffType === "machine_staff" && (
+                            <span style={{ background: "#fef3c7", color: "#b45309", border: "1px solid #fde68a", borderRadius: 99, padding: "2px 8px", fontSize: 10, fontWeight: 700 }}>
+                              Non-HRMS
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td style={{ padding: "12px 16px", color: "#6b7280", fontSize: 12 }}>{emp.email}</td>
@@ -1619,11 +1650,11 @@ export default function HrActiveEmployees() {
                           <span style={{ background: "#f3f4f6", color: "#374151", padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600 }}>{emp.department}</span>
                         ) : "—"}
                       </td>
-                                          <td style={{ padding:"12px 16px" }}>
-                      <button onClick={(e) => { e.stopPropagation(); setDocsModal(emp); }} style={{ display:"flex", alignItems:"center", gap:6, background:"#eff6ff", color:"#2563eb", border:"1px solid #bfdbfe", borderRadius:7, padding:"7px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
-                        <EyeIcon /> View Docs
-                      </button>
-                    </td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <button onClick={(e) => { e.stopPropagation(); setDocsModal(emp); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", borderRadius: 7, padding: "7px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                          <EyeIcon /> View Docs
+                        </button>
+                      </td>
                       <td style={{ padding: "12px 16px" }}>
                         <button onClick={(e) => { e.stopPropagation(); setConfirmId(emp._id); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 7, padding: "7px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                           <TrashIcon /> Remove
@@ -1649,10 +1680,10 @@ export default function HrActiveEmployees() {
                       <div>
                         <p style={{ margin: 0, fontWeight: 700, color: "#1a1a2e", fontSize: 14 }}>{emp.name}</p>
                         {emp.staffType === "machine_staff" && (
-  <span style={{ background: "#fef3c7", color: "#b45309", border: "1px solid #fde68a", borderRadius: 99, padding: "2px 8px", fontSize: 10, fontWeight: 700 }}>
-    Non-HRMS
-  </span>
-)}
+                          <span style={{ background: "#fef3c7", color: "#b45309", border: "1px solid #fde68a", borderRadius: 99, padding: "2px 8px", fontSize: 10, fontWeight: 700 }}>
+                            Non-HRMS
+                          </span>
+                        )}
                         <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>{emp.email}</p>
                       </div>
                     </div>

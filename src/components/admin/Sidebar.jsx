@@ -79,6 +79,14 @@ export default function AdminSidebar() {
       ],
     },
 
+        {
+      module: "HR Access",
+      items: [
+        { name: "Manage HR Accounts", path: "/admin/hr-accounts", icon: "bi-shield-lock-fill" },
+        { name: "HR Activity", path: "/admin/hr-activity", icon: "bi-clock-history" },
+      ],
+    },
+
     {
       module: "Settings",
       items: [
@@ -97,6 +105,7 @@ export default function AdminSidebar() {
   const handleLogout = () => {
     localStorage.removeItem("admin-theme");
     localStorage.removeItem("admin-role");
+        localStorage.removeItem("adminToken");
     window.location.replace("/login");
   };
 

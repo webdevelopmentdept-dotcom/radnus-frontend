@@ -68,7 +68,11 @@ const TYPE_META = {
   employee: { label: "Employee", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", icon: "employee" },
   document: { label: "Document", color: "#047857", bg: "#f0fdf4", border: "#bbf7d0", icon: "document" },
   system: { label: "System", color: "#374151", bg: "#f9fafb", border: "#e5e7eb", icon: "system" },
-    hr_message_sent: { label: "Sent",  color: "#047857", bg: "#f0fdf4", border: "#bbf7d0", icon: "employee" }, 
+  hr_message_sent: { label: "Sent", color: "#047857", bg: "#f0fdf4", border: "#bbf7d0", icon: "employee" },
+  incentive_review: { label: "Incentive", color: "#b45309", bg: "#fffbeb", border: "#fde68a", icon: "general" },
+  leave_tl_decision: { label: "Leave", color: "#6d28d9", bg: "#f5f3ff", border: "#ddd6fe", icon: "leave" },
+  new_applicant: { label: "Applicant", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", icon: "employee" },
+  new_internship: { label: "Applicant", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", icon: "employee" },
 };
 const DEFAULT_META = { label: "General", color: "#374151", bg: "#f9fafb", border: "#e5e7eb", icon: "general" };
 
@@ -217,9 +221,9 @@ function SendMessageModal({ employees, hrId, onClose }) {  // ✅ mode: "all" | 
 
     setSending(true);
     try {
-            await axios.post(`${API_BASE}/api/notifications/send-hr-message`, {
+      await axios.post(`${API_BASE}/api/notifications/send-hr-message`, {
         employeeIds,
-        title:   msgTitle.trim() || "HR Message",
+        title: msgTitle.trim() || "HR Message",
         message: msgBody.trim(),
         hrId,
       });
@@ -800,7 +804,7 @@ export default function HrNotifications() {
 
       {/* ✅ Modal */}
       {showModal && (
-                <SendMessageModal
+        <SendMessageModal
           employees={employees}
           hrId={hrId}
           onClose={() => setShowModal(false)}

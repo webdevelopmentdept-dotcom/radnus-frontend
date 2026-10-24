@@ -194,85 +194,85 @@ function StandaloneSlabEditor({ slabs, targetType, onAdd, onUpdate, onRemove }) 
           </div>
 
           {slabs.map((slab, si) => {
-           const isNoLimit = slab.max_target === null;   // ⬅️ FIXED: only an explicit null means "no limit"
-           return (
-            <div key={si} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 160px 1fr 32px", gap: 8, marginBottom: 8, alignItems: "start" }}>
-              {/* Min target */}
-              <div>
-                <input
-                  type="number" min="0"
-                  value={slab.min_target}
-                  onChange={e => onUpdate(si, "min_target", e.target.value)}
-                  placeholder={tInfo.placeholder}
-                  style={{ ...inp, padding: "7px 8px", fontSize: 12 }}
-                />
-                <span style={{ fontSize: 10, color: "#94a3b8", marginTop: 2, display: "block" }}>
-                  {formatTarget(slab.min_target, targetType)}
-                </span>
-              </div>
-
-            {/* Max target */}
-              <div>
-                <input
-                  type="number" min="0"
-                  value={isNoLimit ? "" : slab.max_target}
-                  onChange={e => onUpdate(si, "max_target", e.target.value)}
-                  disabled={isNoLimit}
-                  placeholder="e.g. 200000"
-                  style={{ ...inp, padding: "7px 8px", fontSize: 12, background: isNoLimit ? "#f8fafc" : "#fff", color: isNoLimit ? "#9ca3af" : "#1e293b" }}
-                />
-                <label style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 4, cursor: "pointer" }}>
+            const isNoLimit = slab.max_target === null;   // ⬅️ FIXED: only an explicit null means "no limit"
+            return (
+              <div key={si} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 160px 1fr 32px", gap: 8, marginBottom: 8, alignItems: "start" }}>
+                {/* Min target */}
+                <div>
                   <input
-                    type="checkbox"
-                    checked={isNoLimit}
-                    onChange={e => onUpdate(si, "max_target", e.target.checked ? null : "")}
-                    style={{ width: 12, height: 12, cursor: "pointer" }}
+                    type="number" min="0"
+                    value={slab.min_target}
+                    onChange={e => onUpdate(si, "min_target", e.target.value)}
+                    placeholder={tInfo.placeholder}
+                    style={{ ...inp, padding: "7px 8px", fontSize: 12 }}
                   />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: isNoLimit ? "#4f46e5" : "#94a3b8" }}>
-                    {isNoLimit ? "∞ No Limit (& Above)" : "No limit?"}
+                  <span style={{ fontSize: 10, color: "#94a3b8", marginTop: 2, display: "block" }}>
+                    {formatTarget(slab.min_target, targetType)}
                   </span>
-                </label>
-              </div>
+                </div>
 
-              {/* Payout type */}
-              <select
-                value={slab.payout_type}
-                onChange={e => onUpdate(si, "payout_type", e.target.value)}
-                style={{ ...inp, padding: "7px 8px", fontSize: 12 }}
-              >
-                {STANDALONE_PAYOUT_TYPES.map(pt => (
-                  <option key={pt.value} value={pt.value}>{pt.label}</option>
-                ))}
-              </select>
+                {/* Max target */}
+                <div>
+                  <input
+                    type="number" min="0"
+                    value={isNoLimit ? "" : slab.max_target}
+                    onChange={e => onUpdate(si, "max_target", e.target.value)}
+                    disabled={isNoLimit}
+                    placeholder="e.g. 200000"
+                    style={{ ...inp, padding: "7px 8px", fontSize: 12, background: isNoLimit ? "#f8fafc" : "#fff", color: isNoLimit ? "#9ca3af" : "#1e293b" }}
+                  />
+                  <label style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 4, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={isNoLimit}
+                      onChange={e => onUpdate(si, "max_target", e.target.checked ? null : "")}
+                      style={{ width: 12, height: 12, cursor: "pointer" }}
+                    />
+                    <span style={{ fontSize: 10, fontWeight: 700, color: isNoLimit ? "#4f46e5" : "#94a3b8" }}>
+                      {isNoLimit ? "∞ No Limit (& Above)" : "No limit?"}
+                    </span>
+                  </label>
+                </div>
 
-              {/* Payout value */}
-              <div>
-                <input
-                  type="number" min="0" step="0.01"
-                  value={slab.payout_value}
-                  onChange={e => onUpdate(si, "payout_value", e.target.value)}
-                  placeholder={slab.payout_type === "fixed" || slab.payout_type === "per_unit" ? "e.g. 150" : "e.g. 5"}
+                {/* Payout type */}
+                <select
+                  value={slab.payout_type}
+                  onChange={e => onUpdate(si, "payout_type", e.target.value)}
                   style={{ ...inp, padding: "7px 8px", fontSize: 12 }}
-                />
-                {slab.payout_value > 0 && (
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "#4f46e5", marginTop: 2, display: "block" }}>
-                    {slab.payout_type === "fixed"
-                      ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}`
-                      : slab.payout_type === "per_unit"
-                        ? `₹${Number(slab.payout_value).toLocaleString("en-IN")} / unit`
-                        : `${slab.payout_value}%`}
-                  </span>
-                )}
-              </div>
+                >
+                  {STANDALONE_PAYOUT_TYPES.map(pt => (
+                    <option key={pt.value} value={pt.value}>{pt.label}</option>
+                  ))}
+                </select>
 
-              {/* Remove */}
-              <button
-                onClick={() => onRemove(si)}
-                style={{ background: "#fef2f2", border: "none", borderRadius: 7, padding: "7px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}
-              >
-                <HugeiconsIcon icon={Delete02Icon} size={13} color="#dc2626" strokeWidth={2} />
-              </button>
-            </div>
+                {/* Payout value */}
+                <div>
+                  <input
+                    type="number" min="0" step="0.01"
+                    value={slab.payout_value}
+                    onChange={e => onUpdate(si, "payout_value", e.target.value)}
+                    placeholder={slab.payout_type === "fixed" || slab.payout_type === "per_unit" ? "e.g. 150" : "e.g. 5"}
+                    style={{ ...inp, padding: "7px 8px", fontSize: 12 }}
+                  />
+                  {slab.payout_value > 0 && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#4f46e5", marginTop: 2, display: "block" }}>
+                      {slab.payout_type === "fixed"
+                        ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}`
+                        : slab.payout_type === "per_unit"
+                          ? `₹${Number(slab.payout_value).toLocaleString("en-IN")} / unit`
+                          : `${slab.payout_value}%`}
+                    </span>
+                  )}
+                </div>
+
+                {/* Remove */}
+                <button
+                  onClick={() => onRemove(si)}
+                  style={{ background: "#fef2f2", border: "none", borderRadius: 7, padding: "7px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}
+                >
+                  <HugeiconsIcon icon={Delete02Icon} size={13} color="#dc2626" strokeWidth={2} />
+                </button>
+              </div>
             );
           })}
 
@@ -284,21 +284,21 @@ function StandaloneSlabEditor({ slabs, targetType, onAdd, onUpdate, onRemove }) 
                 {slabs.map((slab, si) => {
                   const isNoLimit = slab.max_target === null;   // ⬅️ FIXED: only an explicit null means "no limit"
                   return (
-                  <div key={si} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: "#374151" }}>
-                    <span style={{ color: "#64748b" }}>
-                      {formatTarget(slab.min_target, targetType)}
-                      {" → "}
-                      {isNoLimit ? "∞" : formatTarget(slab.max_target, targetType)}
-                    </span>
-                    <span style={{ margin: "0 6px", color: "#cbd5e1" }}>|</span>
-                    <span style={{ color: "#16a34a", fontWeight: 700 }}>
-                      {slab.payout_type === "fixed"
-                        ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}`
-                        : slab.payout_type === "per_unit"
-                          ? `₹${Number(slab.payout_value).toLocaleString("en-IN")} / unit`
-                          : `${slab.payout_value}% ${slab.payout_type === "percent_of_salary" ? "of salary" : "of achieved"}`}
-                    </span>
-                  </div>
+                    <div key={si} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: "#374151" }}>
+                      <span style={{ color: "#64748b" }}>
+                        {formatTarget(slab.min_target, targetType)}
+                        {" → "}
+                        {isNoLimit ? "∞" : formatTarget(slab.max_target, targetType)}
+                      </span>
+                      <span style={{ margin: "0 6px", color: "#cbd5e1" }}>|</span>
+                      <span style={{ color: "#16a34a", fontWeight: 700 }}>
+                        {slab.payout_type === "fixed"
+                          ? `₹${Number(slab.payout_value).toLocaleString("en-IN")}`
+                          : slab.payout_type === "per_unit"
+                            ? `₹${Number(slab.payout_value).toLocaleString("en-IN")} / unit`
+                            : `${slab.payout_value}% ${slab.payout_type === "percent_of_salary" ? "of salary" : "of achieved"}`}
+                      </span>
+                    </div>
                   );
                 })}
               </div>
@@ -550,7 +550,7 @@ function SearchableSelect({ options = [], value, onChange, placeholder = "Search
 // ════════════════════════════════════════════════════════════════════════════
 export default function IncentivePlans() {
   const [plans, setPlans] = useState([]);
-    const [expandedDesc, setExpandedDesc] = useState({}); // 🆕 { [planId]: true/false }
+  const [expandedDesc, setExpandedDesc] = useState({}); // 🆕 { [planId]: true/false }
   const [depts, setDepts] = useState([]);
   const [kpiTemplates, setKpiTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -559,61 +559,61 @@ export default function IncentivePlans() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
-    const [pageSearch, setPageSearch] = useState("");
+  const [pageSearch, setPageSearch] = useState("");
 
   useEffect(() => { fetchAll(); }, []);
 
- const fetchAll = async () => {
-  setLoading(true);
+  const fetchAll = async () => {
+    setLoading(true);
 
-  const results = await Promise.allSettled([
-    axios.get(`${API_BASE}/api/incentive-plans`),
-    axios.get(`${API_BASE}/api/departments`),
-    axios.get(`${API_BASE}/api/kpi-templates`),
-  ]);
+    const results = await Promise.allSettled([
+      axios.get(`${API_BASE}/api/incentive-plans`),
+      axios.get(`${API_BASE}/api/departments`),
+      axios.get(`${API_BASE}/api/kpi-templates`),
+    ]);
 
-  const [pRes, dRes, kRes] = results;
+    const [pRes, dRes, kRes] = results;
 
-  // ── Plans ──
-  let plansData = [];
-  if (pRes.status === "fulfilled") {
-    plansData = pRes.value.data?.data || pRes.value.data || [];
-    setPlans(plansData);
-  } else {
-    console.error("Plans fetch failed:", pRes.reason);
-    showToast("Failed to load plans", "error");
-  }
-
-  // ── Departments ──
-  let deptNames = [];
-  if (dRes.status === "fulfilled") {
-    const list = dRes.value.data?.data || dRes.value.data || [];
-    if (Array.isArray(list)) {
-      deptNames = list
-        .map(x => (typeof x === "string" ? x : x?.name || x?.department_name || x?.dept_name))
-        .filter(Boolean);
+    // ── Plans ──
+    let plansData = [];
+    if (pRes.status === "fulfilled") {
+      plansData = pRes.value.data?.data || pRes.value.data || [];
+      setPlans(plansData);
     } else {
-      console.warn("Departments API returned non-array:", list);
+      console.error("Plans fetch failed:", pRes.reason);
+      showToast("Failed to load plans", "error");
     }
-  } else {
-    console.error("Departments fetch failed:", dRes.reason);
-  }
 
-  // Fallback: build from plans if departments API gave nothing usable
-  if (deptNames.length === 0) {
-    deptNames = [...new Set(plansData.map(pl => pl.department).filter(Boolean))];
-  }
-  setDepts(deptNames);
+    // ── Departments ──
+    let deptNames = [];
+    if (dRes.status === "fulfilled") {
+      const list = dRes.value.data?.data || dRes.value.data || [];
+      if (Array.isArray(list)) {
+        deptNames = list
+          .map(x => (typeof x === "string" ? x : x?.name || x?.department_name || x?.dept_name))
+          .filter(Boolean);
+      } else {
+        console.warn("Departments API returned non-array:", list);
+      }
+    } else {
+      console.error("Departments fetch failed:", dRes.reason);
+    }
 
-  // ── KPI Templates ──
-  if (kRes.status === "fulfilled" && kRes.value.data?.success) {
-    setKpiTemplates(kRes.value.data.data || []);
-  } else if (kRes.status === "rejected") {
-    console.error("KPI templates fetch failed:", kRes.reason);
-  }
+    // Fallback: build from plans if departments API gave nothing usable
+    if (deptNames.length === 0) {
+      deptNames = [...new Set(plansData.map(pl => pl.department).filter(Boolean))];
+    }
+    setDepts(deptNames);
 
-  setLoading(false);
-};
+    // ── KPI Templates ──
+    if (kRes.status === "fulfilled" && kRes.value.data?.success) {
+      setKpiTemplates(kRes.value.data.data || []);
+    } else if (kRes.status === "rejected") {
+      console.error("KPI templates fetch failed:", kRes.reason);
+    }
+
+    setLoading(false);
+  };
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -661,21 +661,21 @@ export default function IncentivePlans() {
       const newMin = last ? (Number(last.max_target) + 1) : 0;
       return {
         ...f,
-         standalone_slabs: [...f.standalone_slabs, { min_target: newMin, max_target: null, payout_type: "fixed", payout_value: 0 }], 
+        standalone_slabs: [...f.standalone_slabs, { min_target: newMin, max_target: null, payout_type: "fixed", payout_value: 0 }],
       };
     });
   };
 
   const updateStandaloneSlab = (si, field, val) => {
-  setForm(f => {
-    const slabs = [...f.standalone_slabs];
-    slabs[si] = {
-      ...slabs[si],
-      [field]: (field === "payout_type" || val === null) ? val : Number(val),
-    };
-    return { ...f, standalone_slabs: slabs };
-  });
-};
+    setForm(f => {
+      const slabs = [...f.standalone_slabs];
+      slabs[si] = {
+        ...slabs[si],
+        [field]: (field === "payout_type" || val === null) ? val : Number(val),
+      };
+      return { ...f, standalone_slabs: slabs };
+    });
+  };
 
   const removeStandaloneSlab = (si) => {
     setForm(f => ({ ...f, standalone_slabs: f.standalone_slabs.filter((_, i) => i !== si) }));
@@ -708,14 +708,14 @@ export default function IncentivePlans() {
       return { ...c, is_admission_kpi: c.is_admission_kpi || false, program_targets, program_slabs, slabs: c.slabs || [] };
     });
 
-       setForm({
+    setForm({
       name: p.name,
       description: p.description || "",   // 🆕
       department: p.department,
       plan_type: p.plan_type ?? "kpi_linked",
       payout_frequency: p.payout_frequency || "monthly",
       validity_start: p.validity_start ? p.validity_start.slice(0, 10) : "",
-      validity_end:   p.validity_end   ? p.validity_end.slice(0, 10)   : "",
+      validity_end: p.validity_end ? p.validity_end.slice(0, 10) : "",
       period_type: p.period_type || "Monthly",
       period_month: p.period_month || new Date().getMonth() + 1,
       period_quarter: p.period_quarter || "Q1",
@@ -753,12 +753,12 @@ export default function IncentivePlans() {
     }
     setSaving(true);
     try {
-            const payload = {
+      const payload = {
         name: form.name, description: form.description,
         department: form.department, plan_type: form.plan_type,
         payout_frequency: form.payout_frequency,
         validity_start: form.validity_start || null,
-        validity_end:   form.validity_end   || null,
+        validity_end: form.validity_end || null,
         period_type: form.period_type,
         period_month: form.period_type === "Monthly" ? form.period_month : null,
         period_quarter: form.period_type === "Quarterly" ? form.period_quarter : null,
@@ -802,13 +802,13 @@ export default function IncentivePlans() {
   const totalWeight = form.kpi_configs.reduce((s, c) => s + (c.weight || 0), 0);
   const totalTemplateKpis = selectedTemplate?.kpi_items?.length || 0;
 
-   const filteredPlans = plans.filter(p =>
+  const filteredPlans = plans.filter(p =>
     !pageSearch.trim() ||
     p.name?.toLowerCase().includes(pageSearch.toLowerCase()) ||
     p.department?.toLowerCase().includes(pageSearch.toLowerCase()) ||
     p.kpi_template_id?.template_name?.toLowerCase().includes(pageSearch.toLowerCase())
   );
-  
+
   return (
     <div style={{ padding: "28px 32px", fontFamily: "'Segoe UI',sans-serif", minHeight: "100vh", background: "#f4f6fb" }}>
       <style>{`
@@ -837,7 +837,7 @@ export default function IncentivePlans() {
           New Plan
         </button>
       </div>
-          <input
+      <input
         value={pageSearch}
         onChange={e => setPageSearch(e.target.value)}
         placeholder="🔍 Search plans by name, department, or template..."
@@ -873,7 +873,7 @@ export default function IncentivePlans() {
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(340px,1fr))", gap: 16 }}>
-         {filteredPlans.map(plan => {
+          {filteredPlans.map(plan => {
             const { color, bg } = getColor(plan.department);
             const isKpi = plan.plan_type === "kpi_linked";
             const period = periodLabel(plan);
@@ -886,7 +886,12 @@ export default function IncentivePlans() {
                     </div>
                     <div>
                       <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "#1e293b" }}>{plan.name}</p>
-                                           {plan.description && (() => {
+                      {(plan.updated_by_name || plan.created_by_name) && (
+                        <div style={{ fontSize: 11, color: "#6b7280" }}>
+                          {plan.updated_by_name ? `Updated by ${plan.updated_by_name}` : `Created by ${plan.created_by_name}`}
+                        </div>
+                      )}
+                      {plan.description && (() => {
                         const isLong = plan.description.length > 140;
                         const isOpen = !!expandedDesc[plan._id];
                         return (
@@ -1032,18 +1037,18 @@ export default function IncentivePlans() {
                     />
                   </div>
                   <div>
-  <label style={lbl}>Department *</label>
-  <select
-    value={form.department}
-    onChange={(e) => setForm(f => ({ ...f, department: e.target.value, kpi_template_id: "", selected_kpis: [], kpi_configs: [] }))}
-    style={inp}
-  >
-    <option value="">Select Department</option>
-    {depts.map(d => (
-      <option key={d} value={d}>{d}</option>
-    ))}
-  </select>
-</div>
+                    <label style={lbl}>Department *</label>
+                    <select
+                      value={form.department}
+                      onChange={(e) => setForm(f => ({ ...f, department: e.target.value, kpi_template_id: "", selected_kpis: [], kpi_configs: [] }))}
+                      style={inp}
+                    >
+                      <option value="">Select Department</option>
+                      {depts.map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label style={lbl}>Plan Type *</label>
                     <div style={{ display: "flex", gap: 8 }}>
@@ -1111,7 +1116,7 @@ export default function IncentivePlans() {
                   <div style={{ display: "flex", gap: 8 }}>
                     {[
                       { val: "monthly", label: "🗓️ Monthly — log entries, one final submit & pay at month end" },
-                      { val: "daily",   label: "⚡ Daily — each entry is its own request, HR can pay same day" },
+                      { val: "daily", label: "⚡ Daily — each entry is its own request, HR can pay same day" },
                     ].map(opt => (
                       <div key={opt.val} onClick={() => setForm(f => ({ ...f, payout_frequency: opt.val }))}
                         style={{ flex: 1, padding: "10px 12px", borderRadius: 9, cursor: "pointer", fontSize: 13, fontWeight: 700, border: form.payout_frequency === opt.val ? "2px solid #4f46e5" : "2px solid #e2e8f0", background: form.payout_frequency === opt.val ? "#eef2ff" : "#fafafa", color: form.payout_frequency === opt.val ? "#4f46e5" : "#64748b" }}>

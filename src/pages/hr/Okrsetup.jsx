@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import ActionedBy from "../../components/hr/ActionedBy";
 import {
   Plus, Trash2, ChevronDown, ChevronUp,
   Target, Link2, AlertCircle,
@@ -413,6 +414,7 @@ function ObjCard({ obj, templates, onEdit, onDelete, saving, searchQuery }) {
             <p style={{ margin: 0, color: "#fff", fontWeight: 800, fontSize: 15, wordBreak: "break-word" }}>
               {highlightText(obj.title, searchQuery)}
             </p>
+            <ActionedBy id={obj._id} style={{ color: "#9ca3af" }} />
             <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: 12 }}>
               {obj.department} · {obj.quarter} {obj.year}
               <span style={{ marginLeft: 8, background: obj.status === "active" ? "#16a34a22" : "#6b728022", color: obj.status === "active" ? "#86efac" : "#9ca3af", padding: "2px 8px", borderRadius: 20, fontSize: 10, fontWeight: 700 }}>

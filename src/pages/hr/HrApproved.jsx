@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ActionedBy from "../../components/hr/ActionedBy";
 import {
   CheckCircle,
   Clock,
@@ -271,13 +272,13 @@ export default function HrApproved() {
       if (data.success && data.data) {
         setExistingActivation(data.data);
         if (data.data.employment) {
-        setEmployment({
-  ...initialEmployment,
-  employee_code: code,
-  department: rawDept,
-  designation: empDesignation,
-   essl_id: data.data.employment.essl_id || emp?.essl_id || "",
-});
+          setEmployment({
+            ...initialEmployment,
+            employee_code: code,
+            department: rawDept,
+            designation: empDesignation,
+            essl_id: data.data.employment.essl_id || emp?.essl_id || "",
+          });
         }
         if (data.data.salary) setSalary({ ...initialSalary, ...data.data.salary });
       }
@@ -294,7 +295,7 @@ export default function HrApproved() {
         data.data.forEach(d => { map[d.docType] = d.fileUrl; });
         setUploadedDocs(map);
       }
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const closeModal = () => {
@@ -389,9 +390,9 @@ export default function HrApproved() {
 
   const sections = [
     { id: 1, label: "Employment", icon: <User size={15} /> },
-    { id: 2, label: "Salary",     icon: <DollarSign size={15} /> },
-    { id: 3, label: "Documents",  icon: <FileText size={15} /> },
-    { id: 4, label: "Activate",   icon: <CheckCircle size={15} /> },
+    { id: 2, label: "Salary", icon: <DollarSign size={15} /> },
+    { id: 3, label: "Documents", icon: <FileText size={15} /> },
+    { id: 4, label: "Activate", icon: <CheckCircle size={15} /> },
   ];
 
   const uploadedCount = HR_DOCS.filter(d => uploadedDocs[d]).length;
@@ -460,18 +461,21 @@ export default function HrApproved() {
                         <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#2563eb", flexShrink: 0 }}>
                           {emp.name?.charAt(0)}
                         </div>
-                        <span style={{ fontWeight: 600, color: "#1a1a2e", whiteSpace: "nowrap" }}>{emp.name}</span>
+                        <div>
+                          <span style={{ fontWeight: 600, color: "#1a1a2e", whiteSpace: "nowrap" }}>{emp.name}</span>
+                          <ActionedBy id={emp._id} match="APPROVE" />
+                        </div>
                       </div>
                     </td>
                     <td style={{ padding: "14px 20px", color: "#6b7280", whiteSpace: "nowrap" }}>{emp.email}</td>
                     <td style={{ padding: "14px 20px", color: "#374151", whiteSpace: "nowrap" }}>{getDepartment(emp) || "—"}</td>
                     <td style={{ padding: "14px 20px", color: "#374151", whiteSpace: "nowrap" }}>{getDesignation(emp) || "—"}</td>
-<td style={{ padding: "14px 20px", color: "#6b7280", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={emp.hrRemarks || ""}>
-  {emp.hrRemarks || "—"}
-</td>
-<td style={{ padding: "14px 20px", color: "#6b7280", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={emp.mdRemarks || ""}>
-  {emp.mdRemarks || "—"}
-</td>
+                    <td style={{ padding: "14px 20px", color: "#6b7280", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={emp.hrRemarks || ""}>
+                      {emp.hrRemarks || "—"}
+                    </td>
+                    <td style={{ padding: "14px 20px", color: "#6b7280", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={emp.mdRemarks || ""}>
+                      {emp.mdRemarks || "—"}
+                    </td>
                     <td style={{ padding: "14px 20px" }}>
                       <span style={{
                         background: emp.status === "active" ? "#f0fdf4" : "#fffbeb",
@@ -676,14 +680,14 @@ export default function HrApproved() {
                   </h4>
                   <div className="form-grid-2">
                     {[
-                      { field: "ctc",                  label: "CTC (Annual) ₹",         placeholder: "e.g. 360000" },
-                      { field: "basic",                label: "Basic Salary ₹",         placeholder: "e.g. 15000"  },
-                      { field: "hra",                  label: "HRA ₹",                  placeholder: "e.g. 6000"   },
-                      { field: "special_allowance",    label: "Special Allowance ₹",    placeholder: "e.g. 3000"   },
-                      { field: "conveyance_allowance", label: "Conveyance Allowance ₹", placeholder: "e.g. 1000"   },
-                      { field: "gross_salary",         label: "Gross Salary ₹",         placeholder: "e.g. 25000"  },
-                      { field: "net_salary",           label: "Net Salary ₹",           placeholder: "e.g. 22000"  },
-                      { field: "professional_tax",     label: "Professional Tax ₹",     placeholder: "e.g. 200"    },
+                      { field: "ctc", label: "CTC (Annual) ₹", placeholder: "e.g. 360000" },
+                      { field: "basic", label: "Basic Salary ₹", placeholder: "e.g. 15000" },
+                      { field: "hra", label: "HRA ₹", placeholder: "e.g. 6000" },
+                      { field: "special_allowance", label: "Special Allowance ₹", placeholder: "e.g. 3000" },
+                      { field: "conveyance_allowance", label: "Conveyance Allowance ₹", placeholder: "e.g. 1000" },
+                      { field: "gross_salary", label: "Gross Salary ₹", placeholder: "e.g. 25000" },
+                      { field: "net_salary", label: "Net Salary ₹", placeholder: "e.g. 22000" },
+                      { field: "professional_tax", label: "Professional Tax ₹", placeholder: "e.g. 200" },
                     ].map(f => (
                       <div key={f.field}>
                         <label style={labelStyle}>{f.label}</label>
@@ -696,7 +700,7 @@ export default function HrApproved() {
                     <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 13, color: "#374151" }}>Statutory Deductions</p>
                     <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
                       {[
-                        { field: "pf_applicable",  label: "PF Applicable"  },
+                        { field: "pf_applicable", label: "PF Applicable" },
                         { field: "esi_applicable", label: "ESI Applicable" },
                         { field: "tds_applicable", label: "TDS Applicable" },
                       ].map(s => (
@@ -715,9 +719,9 @@ export default function HrApproved() {
                       </p>
                       <div className="salary-preview-grid">
                         {[
-                          { label: "CTC (Annual)",  value: salary.ctc          ? `₹${Number(salary.ctc).toLocaleString("en-IN")}`          : "—" },
+                          { label: "CTC (Annual)", value: salary.ctc ? `₹${Number(salary.ctc).toLocaleString("en-IN")}` : "—" },
                           { label: "Gross / Month", value: salary.gross_salary ? `₹${Number(salary.gross_salary).toLocaleString("en-IN")}` : "—" },
-                          { label: "Net / Month",   value: salary.net_salary   ? `₹${Number(salary.net_salary).toLocaleString("en-IN")}`   : "—" },
+                          { label: "Net / Month", value: salary.net_salary ? `₹${Number(salary.net_salary).toLocaleString("en-IN")}` : "—" },
                         ].map((s, i) => (
                           <div key={i} style={{ background: "#fff", borderRadius: 8, padding: "10px 14px", border: "1px solid #bfdbfe" }}>
                             <p style={{ margin: "0 0 2px", fontSize: 11, color: "#6b7280", fontWeight: 600 }}>{s.label}</p>
@@ -759,9 +763,9 @@ export default function HrApproved() {
 
                   <div className="docs-grid">
                     {HR_DOCS.map(label => {
-                      const isUploaded  = !!uploadedDocs[label];
+                      const isUploaded = !!uploadedDocs[label];
                       const isUploading = uploading[label];
-                      const hasFile     = !!files[label];
+                      const hasFile = !!files[label];
                       return (
                         <div key={label} style={{ border: `2px solid ${isUploaded ? "#86efac" : "#e5e7eb"}`, borderRadius: 10, padding: 14, background: isUploaded ? "#f0fdf4" : "#fafafa" }}>
                           <label style={{ ...labelStyle, color: isUploaded ? "#16a34a" : "#374151", display: "flex", alignItems: "center", gap: 6 }}>
@@ -832,15 +836,15 @@ export default function HrApproved() {
                     <p style={{ margin: "0 0 14px", fontWeight: 700, fontSize: 14, color: "#1a1a2e" }}>Activation Summary</p>
                     <div className="summary-grid">
                       {[
-                        { label: "Employee",        value: selected.name },
-                        { label: "Employee Code",   value: employment.employee_code || getEmpId(selected, selectedIndex) },
-                        { label: "Designation",     value: employment.designation   || "—" },
-                        { label: "Department",      value: employment.department    || getDepartment(selected) || "—" },
+                        { label: "Employee", value: selected.name },
+                        { label: "Employee Code", value: employment.employee_code || getEmpId(selected, selectedIndex) },
+                        { label: "Designation", value: employment.designation || "—" },
+                        { label: "Department", value: employment.department || getDepartment(selected) || "—" },
                         { label: "Employment Type", value: employment.employment_type },
                         { label: "Date of Joining", value: employment.date_of_joining || "—" },
-                        { label: "CTC (Annual)",    value: salary.ctc        ? `₹${Number(salary.ctc).toLocaleString("en-IN")}`        : "—" },
-                        { label: "Net Salary",      value: salary.net_salary ? `₹${Number(salary.net_salary).toLocaleString("en-IN")}/mo` : "—" },
-                        { label: "Documents",       value: `${uploadedCount} / ${HR_DOCS.length} uploaded` },
+                        { label: "CTC (Annual)", value: salary.ctc ? `₹${Number(salary.ctc).toLocaleString("en-IN")}` : "—" },
+                        { label: "Net Salary", value: salary.net_salary ? `₹${Number(salary.net_salary).toLocaleString("en-IN")}/mo` : "—" },
+                        { label: "Documents", value: `${uploadedCount} / ${HR_DOCS.length} uploaded` },
                       ].map((d, i) => (
                         <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "#fff", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 13, gap: 8, flexWrap: "wrap" }}>
                           <span style={{ color: "#6b7280" }}>{d.label}</span>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const authHeader = () => ({
@@ -143,15 +144,49 @@ export default function KpiLeaderAccess() {
   };
 
   return (
-    <div style={S.page}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+    <div className="tl-page" style={S.page}>
+      <style>{`
+        /* MOBILE: table -> one labelled card per team leader.
+           Before: 6 columns were forced into a sideways-scrolling box, so
+           Members / Access / Action were hidden off the right edge. */
+        @media (max-width: 768px) {
+          .tl-page { padding: 4px !important; }
+          .tl-header { flex-direction: column !important; align-items: stretch !important; gap: 12px; }
+          .tl-add-btn { width: 100%; padding: 12px 16px !important; }
+          .tl-card { padding: 0 !important; background: transparent !important; border: none !important; }
+          .tl-scroll { overflow: visible !important; }
+          .tl-table, .tl-table tbody { display: block; width: 100%; }
+          .tl-table thead { display: none; }
+          .tl-table tbody tr {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px;
+            padding: 14px; margin-bottom: 12px; background: #fff;
+            border: 1px solid #e5e7eb; border-radius: 14px;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+          }
+          .tl-table td { display: block; padding: 0 !important; border-top: none !important; min-width: 0; overflow-wrap: anywhere; }
+          .tl-table td::before {
+            content: attr(data-label); display: block; margin-bottom: 4px;
+            font-size: 10px; font-weight: 700; color: #94a3b8;
+            text-transform: uppercase; letter-spacing: 0.6px;
+          }
+          .tl-table td[data-label="Leader"]::before,
+          .tl-table td[data-label="Action"]::before { display: none; }
+          .tl-table td[data-label="Leader"],
+          .tl-table td[data-label="Members"],
+          .tl-table td[data-label="Access"],
+          .tl-table td[data-label="Action"] { grid-column: 1 / -1; }
+          .tl-table td[data-label="Action"] { display: flex; gap: 8px; }
+          .tl-table td[data-label="Action"] button { flex: 1; padding: 10px 12px !important; }
+        }
+      `}</style>
+      <div className="tl-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div>
           <h2 style={{ margin: 0 }}>Team Leaders &amp; Members</h2>
           <p style={{ margin: "4px 0 0", color: "#6b7280" }}>
             Assign team members to a team leader (from any department) and choose what the leader can access: KPI view and Leave approval.
           </p>
         </div>
-        <button style={S.btn} onClick={() => openCreate(null)}>+ Add Team Leader</button>
+        <button className="tl-add-btn" style={S.btn} onClick={() => openCreate(null)}>+ Add Team Leader</button>
       </div>
 
       {suggested.length > 0 && (
@@ -167,12 +202,12 @@ export default function KpiLeaderAccess() {
         </div>
       )}
 
-      <div style={S.card}>
+      <div className="tl-card" style={S.card}>
         {loading ? "Loading..." : mappings.length === 0 ? (
           <div style={{ color: "#6b7280" }}>No leader teams yet.</div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="tl-scroll" style={{ overflowX: "auto" }}>
+            <table className="tl-table" style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
                   <th style={S.th}>Leader</th><th style={S.th}>Department</th>
@@ -182,15 +217,15 @@ export default function KpiLeaderAccess() {
               <tbody>
                 {mappings.map(m => (
                   <tr key={m._id}>
-                    <td style={S.td}><b>{m.leader_id?.name}</b><div style={{ color: "#6b7280", fontSize: 12 }}>{m.leader_id?.designation}</div></td>
-                    <td style={S.td}>{m.leader_id?.department}</td>
-                    <td style={S.td}>{m.member_ids.length}</td>
-                    <td style={S.td}>{m.member_ids.map(x => <span key={x._id} style={S.chip}>{x.name}</span>)}</td>
-                    <td style={S.td}>
+                    <td data-label="Leader" style={S.td}><b>{m.leader_id?.name}</b><div style={{ color: "#6b7280", fontSize: 12 }}>{m.leader_id?.designation}</div><ActionedBy id={m._id} /></td>
+                    <td data-label="Department" style={S.td}>{m.leader_id?.department}</td>
+                    <td data-label="Team" style={S.td}>{m.member_ids.length}</td>
+                    <td data-label="Members" style={S.td}>{m.member_ids.map(x => <span key={x._id} style={S.chip}>{x.name}</span>)}</td>
+                    <td data-label="Access" style={S.td}>
                       {m.permissions?.kpi_view !== false && <span style={{ ...S.chip, background: "#ecfdf5", color: "#047857" }}>KPI view</span>}
                       {m.permissions?.leave_approval !== false && <span style={{ ...S.chip, background: "#eff6ff", color: "#1d4ed8" }}>Leave approval</span>}
                     </td>
-                    <td style={S.td}>
+                    <td data-label="Action" style={S.td}>
                       <button style={S.btnGhost} onClick={() => openEdit(m)}>Edit</button>{" "}
                       <button style={{ ...S.btnGhost, color: "#dc2626" }} onClick={() => remove(m)}>Remove</button>
                     </td>

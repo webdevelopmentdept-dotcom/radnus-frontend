@@ -7,6 +7,7 @@ import {
 import * as XLSX from "xlsx";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const CATEGORY_CONFIG = {
   exec: { label: "Executives / Sr. Executives", min: 5,  max: 10, freq: "Quarterly" },
@@ -441,6 +442,7 @@ export default function VariablePayDashboard() {
                             <div>
                               <p style={{ margin:0, fontWeight:700, color:"#1a1a2e" }}>{r.employee_id?.name}</p>
                               <p style={{ margin:0, fontSize:11, color:"#9ca3af" }}>{r.employee_id?.designation}</p>
+                            <ActionedBy id={r._id} version={r.status} />
                             </div>
                           </div>
                         </td>
