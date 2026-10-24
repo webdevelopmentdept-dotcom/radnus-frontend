@@ -248,6 +248,7 @@ function OverviewTab() {
       </div>
 
       {error && <div className="alert alert-warning rounded-4 py-2">⚠️ Refresh failed: {error}</div>}
+      {error && <div className="alert alert-warning rounded-4 py-2">⚠️ Refresh fail aachu: {error}</div>}
 
       {/* =====================================================
           1. LOAN  (most important)
@@ -256,6 +257,7 @@ function OverviewTab() {
         icon="💰"
         title="Loan Process"
         sub={`${rangeText} · "Pending" cards are always live (all-time)`}
+        sub={`${rangeText} · "Pending" cards eppavum live (all-time)`}
         to="/admin/loan-analytics"
         right={
           <div className="btn-group btn-group-sm">
