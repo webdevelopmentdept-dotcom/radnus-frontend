@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
 import ApplicantProfileDrawer from "./Applicantprofiledrawer";
 import AddWalkinModal from "./AddWalkinModal";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const STATUS_OPTIONS = ["New", "Shortlisted", "Interview", "Hired", "Rejected"];
 
 const STATUS_CONFIG = {
-  New:         { bg: "#eff6ff", color: "#1d4ed8", dot: "#3b82f6" },
+  New: { bg: "#eff6ff", color: "#1d4ed8", dot: "#3b82f6" },
   Shortlisted: { bg: "#fefce8", color: "#a16207", dot: "#eab308" },
-  Interview:   { bg: "#f5f3ff", color: "#7c3aed", dot: "#8b5cf6" },
-  Hired:       { bg: "#f0fdf4", color: "#15803d", dot: "#22c55e" },
-  Rejected:    { bg: "#fff1f2", color: "#b91c1c", dot: "#ef4444" },
+  Interview: { bg: "#f5f3ff", color: "#7c3aed", dot: "#8b5cf6" },
+  Hired: { bg: "#f0fdf4", color: "#15803d", dot: "#22c55e" },
+  Rejected: { bg: "#fff1f2", color: "#b91c1c", dot: "#ef4444" },
 };
 
 const REJECTION_REASONS = [
@@ -746,8 +747,8 @@ export default function HrApplicants() {
                           <span className="ha-date">
                             {a.createdAt
                               ? new Date(a.createdAt).toLocaleDateString("en-GB", {
-                                  day: "2-digit", month: "short", year: "numeric",
-                                })
+                                day: "2-digit", month: "short", year: "numeric",
+                              })
                               : "—"}
                           </span>
                         </td>
@@ -759,16 +760,16 @@ export default function HrApplicants() {
                               style={{
                                 background:
                                   a.aiGrade === "A" ? "#f0fdf4" :
-                                  a.aiGrade === "B" ? "#fefce8" : "#fff1f2",
+                                    a.aiGrade === "B" ? "#fefce8" : "#fff1f2",
                                 color:
                                   a.aiGrade === "A" ? "#15803d" :
-                                  a.aiGrade === "B" ? "#a16207" : "#b91c1c",
+                                    a.aiGrade === "B" ? "#a16207" : "#b91c1c",
                               }}
                             >
                               <span className="ha-ai-dot" style={{
                                 background:
                                   a.aiGrade === "A" ? "#22c55e" :
-                                  a.aiGrade === "B" ? "#eab308" : "#ef4444",
+                                    a.aiGrade === "B" ? "#eab308" : "#ef4444",
                               }} />
                               {a.aiScore}/100 · {a.aiGrade}
                             </span>
@@ -792,6 +793,7 @@ export default function HrApplicants() {
                                 <span>↳ {a.rejectionReason}</span>
                               </div>
                             )}
+                            <ActionedBy id={a._id} match="STATUS" version={a.status} />   {/* NEW */}
                           </div>
                         </td>
                         <td data-label="Resume" className="center">
@@ -806,11 +808,11 @@ export default function HrApplicants() {
                             <span className="ha-no-file">No file</span>
                           )}
                         </td>
-                           <td data-label="Action" className="center">
-  <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
-    Remove
-  </button>
-</td>
+                        <td data-label="Action" className="center">
+                          <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
+                            Remove
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -861,68 +863,55 @@ export default function HrApplicants() {
                         <span className="ha-date">
                           {a.createdAt
                             ? new Date(a.createdAt).toLocaleDateString("en-GB", {
-                                day: "2-digit", month: "short", year: "numeric",
-                              })
+                              day: "2-digit", month: "short", year: "numeric",
+                            })
                             : "—"}
                         </span>
                       </td>
 
                       <td data-label="Status">
-  <div>
-    {/* Show "Applied" badge when employee has applied */}
-    {/* {(a.rawStatus === "applied" || a.status === "applied") && (
-      <div style={{ 
-        display: "inline-flex", 
-        alignItems: "center", 
-        gap: 5, 
-        background: "#ecfdf5", 
-        color: "#059669", 
-        border: "1px solid #6ee7b7",
-        borderRadius: 6, 
-        padding: "3px 10px", 
-        fontSize: 11, 
-        fontWeight: 700,
-        marginBottom: 6 
-      }}>
-        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
-        ✓ Applied by employee
-      </div>
-    )} */}
-    
-    <select
-      className="ha-status-select"
-      value={mapInternalStatusToDisplay(a.status)}
-      onChange={(e) => handleStatusChange(a._id, e.target.value, a.name)}
-      disabled={updatingId === a._id}
-      style={statusStyle(mapInternalStatusToDisplay(a.status))}
-    >
-      {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-    </select>
-    
-    {(a.status === "Rejected" || a.status === "rejected") && a.rejectionReason && (
-      <div className="ha-reject-reason-tag" title={a.rejectionReason}>
-        <span>↳ {a.rejectionReason}</span>
-      </div>
-    )}
-  </div>
-</td>
+                        <div>
+
+                          <select
+                            className="ha-status-select"
+                            value={mapInternalStatusToDisplay(a.status)}
+                            onChange={(e) => handleStatusChange(a._id, e.target.value, a.name)}
+                            disabled={updatingId === a._id}
+                            style={statusStyle(mapInternalStatusToDisplay(a.status))}
+                          >
+                            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                          </select>
+
+                          {(a.status === "Rejected" || a.status === "rejected") && a.rejectionReason && (
+                            <div className="ha-reject-reason-tag" title={a.rejectionReason}>
+                              <span>↳ {a.rejectionReason}</span>
+                            </div>
+                          )}
+                          {a.statusByName && (
+                            <div style={{ fontSize: 12, color: "#475569", fontWeight: 600, marginTop: 4 }}>
+                              Status changed by {a.statusByName}
+                              {a.statusAt ? ` · ${new Date(a.statusAt).toLocaleString()}` : ""}
+                            </div>
+                          )}
+                        </div>
+                      </td>
 
                       <td data-label="Action" className="center">
-  <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-    <button
-      className="ha-preview-btn"
-      onClick={() => {
-        const empId = a._id.split("_")[2]; // internal_<jobId>_<empId>
-        setProfileDrawer({ open: true, employeeId: empId, jobTitle: a.jobTitle });
-      }}
-    >
-      View Profile
-    </button>
-    <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
-      Remove
-    </button>
-  </div>
-</td>
+                        <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+                          <button
+                            className="ha-preview-btn"
+                            onClick={() => {
+                              const empId = a._id.split("_")[2]; // internal_<jobId>_<empId>
+                              setProfileDrawer({ open: true, employeeId: empId, jobTitle: a.jobTitle });
+                            }}
+                          >
+                            View Profile
+                          </button>
+                          <button className="ha-delete-btn" onClick={() => handleDelete(a._id)}>
+                            Remove
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -998,6 +987,7 @@ export default function HrApplicants() {
                               <span>↳ {a.rejectionReason}</span>
                             </div>
                           )}
+                          <ActionedBy id={a._id} match="STATUS" version={a.status} />   {/* NEW */}
                         </div>
                       </td>
                       <td data-label="Remarks">{a.remarks || <span className="ha-na">—</span>}</td>

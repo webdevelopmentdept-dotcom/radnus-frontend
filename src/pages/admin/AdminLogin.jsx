@@ -32,7 +32,7 @@ export default function AdminLogin() {
       }
 
       // ✅ Role save பண்ணு
-      localStorage.setItem("admin-role", data.role);
+            if (data.token) localStorage.setItem("adminToken", data.token);
       navigate("/admin");
 
     } catch (err) {

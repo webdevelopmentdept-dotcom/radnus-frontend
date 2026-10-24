@@ -177,7 +177,7 @@ function OverviewTab() {
     return (
       <div className="container mt-5">
         <div className="alert alert-danger d-flex justify-content-between align-items-center rounded-4">
-          <span>⚠️ Dashboard load aagala: {error}</span>
+          <span>⚠️ Failed to load dashboard: {error}</span>
           <button className="btn btn-sm btn-outline-danger" onClick={load}>Retry</button>
         </div>
       </div>
@@ -247,7 +247,7 @@ function OverviewTab() {
         </div>
       </div>
 
-      {error && <div className="alert alert-warning rounded-4 py-2">⚠️ Refresh fail aachu: {error}</div>}
+      {error && <div className="alert alert-warning rounded-4 py-2">⚠️ Refresh failed: {error}</div>}
 
       {/* =====================================================
           1. LOAN  (most important)
@@ -255,7 +255,7 @@ function OverviewTab() {
       <SectionTitle
         icon="💰"
         title="Loan Process"
-        sub={`${rangeText} · "Pending" cards eppavum live (all-time)`}
+        sub={`${rangeText} · "Pending" cards are always live (all-time)`}
         to="/admin/loan-analytics"
         right={
           <div className="btn-group btn-group-sm">
@@ -273,7 +273,7 @@ function OverviewTab() {
       />
 
       {!L ? (
-        <div className="alert alert-warning rounded-4">Loan data load aagala. Backend console-la error paarunga.</div>
+        <div className="alert alert-warning rounded-4">Failed to load loan data. Please check the backend console for errors.</div>
       ) : (
         <>
           <div className="row g-3 mb-4">
@@ -295,7 +295,7 @@ function OverviewTab() {
             </div>
             <div className="col-lg-3 col-md-6">
               <KpiCard title="Document Payment Pending" value={L.docPendingCount} bg="#FFF1F0" color="#E5484D"
-                sub="Live · payment stage innum varaadhavanga" to="/admin/loan-process" />
+                sub="Live · customers who haven't reached the payment stage yet" to="/admin/loan-process" />
             </div>
 
             <div className="col-lg-3 col-md-6">
@@ -304,7 +304,7 @@ function OverviewTab() {
             </div>
             <div className="col-lg-3 col-md-6">
               <KpiCard title="Pending (with reason)" value={L.pendingWithReason} bg="#FFF6ED" color="#DC3545"
-                sub="Live · reason mark panniyirukkaanga" />
+                sub="Live · a pending reason has been marked" />
             </div>
             <div className="col-lg-3 col-md-6">
               <KpiCard title="Follow-up Pending" value={L.followupPending} bg="#EBF5FF" color="#0D6EFD"
@@ -337,7 +337,7 @@ function OverviewTab() {
 
             <div className="col-lg-5">
               <Panel title="Document Payment – Last 6 Months" height={300}>
-                {L.docMonthly.length === 0 ? <Empty text="Payment date record illa" /> : (
+                {L.docMonthly.length === 0 ? <Empty text="No payment date records" /> : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={L.docMonthly} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -400,7 +400,7 @@ function OverviewTab() {
 
             <div className="col-lg-4">
               <Panel title="Why Loans Are Pending (live)">
-                {L.reasons.length === 0 ? <Empty text="Pending reason edhuvum illa 👍" /> : (
+                {L.reasons.length === 0 ? <Empty text="No pending reasons 👍" /> : (
                   <ul className="list-group list-group-flush">
                     {L.reasons.map((r, i) => (
                       <li key={i} className="list-group-item px-0 d-flex justify-content-between align-items-start gap-2">

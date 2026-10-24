@@ -5,13 +5,14 @@ import {
   ClipboardList, CheckCircle2, Flag, Inbox, AlertTriangle,
   Trash2, BarChart2, MoreHorizontal, Eye, Pencil, XCircle
 } from "lucide-react";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const PERIOD_TYPES = ["monthly", "quarterly", "annual"];
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const YEARS = ["2025", "2026", "2027"];
-const QUARTERS = ["Q1","Q2","Q3","Q4"];
+const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
 
 const STYLES = `
   .ak-page { padding: 28px 32px; }
@@ -186,41 +187,41 @@ function ActionDropdown({ assignment, onView, onEdit, onCancel, onDelete }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
-  const dropdownRef = useRef(null); 
+  const dropdownRef = useRef(null);
 
-useEffect(() => {
-  if (!open) return;
-  const close = (e) => {
-    if (
-      btnRef.current && !btnRef.current.contains(e.target) &&
-      dropdownRef.current && !dropdownRef.current.contains(e.target)
-    ) {
-      setOpen(false);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => {
+      if (
+        btnRef.current && !btnRef.current.contains(e.target) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
+    };
+    setTimeout(() => document.addEventListener("mousedown", close), 0);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  const handleOpen = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + 4,
+        left: rect.right - 160,
+      });
     }
+    setOpen(o => !o);
   };
-  setTimeout(() => document.addEventListener("mousedown", close), 0);
-  return () => document.removeEventListener("mousedown", close);
-}, [open]);
-
- const handleOpen = () => {
-  if (btnRef.current) {
-    const rect = btnRef.current.getBoundingClientRect();
-    setPos({
-      top: rect.bottom + 4,
-      left: rect.right - 160,
-    });
-  }
-  setOpen(o => !o);
-};
   const isActive = assignment.status === "active";
 
   const menu = open && createPortal(
     <div
-  className="ak-portal-dropdown"
-  ref={dropdownRef}
-  style={{ top: pos.top, left: pos.left }}
-  onMouseDown={e => e.stopPropagation()}
->
+      className="ak-portal-dropdown"
+      ref={dropdownRef}
+      style={{ top: pos.top, left: pos.left }}
+      onMouseDown={e => e.stopPropagation()}
+    >
       <button className="ak-dropdown-item" style={{ color: "#2563eb" }}
         onClick={() => { setOpen(false); setTimeout(() => onView(assignment), 50); }}>
         <Eye size={14} color="#2563eb" /> View
@@ -256,15 +257,15 @@ useEffect(() => {
 }
 
 export default function AssignKpi() {
-  const [employees, setEmployees]           = useState([]);
-  const [templates, setTemplates]           = useState([]);
-  const [assignments, setAssignments]       = useState([]);
-  const [loading, setLoading]               = useState(true);
-  const [showModal, setShowModal]           = useState(false);
-  const [saving, setSaving]                 = useState(false);
-  const [toast, setToast]                   = useState(null);
-  const [deleteConfirm, setDeleteConfirm]   = useState(null);
-  const [cancelConfirm, setCancelConfirm]   = useState(null);
+  const [employees, setEmployees] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [cancelConfirm, setCancelConfirm] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [viewAssignment, setViewAssignment] = useState(null);
@@ -285,7 +286,7 @@ export default function AssignKpi() {
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
 
   const [empSearch, setEmpSearch] = useState("");
-const [showEmpDropdown, setShowEmpDropdown] = useState(false);
+  const [showEmpDropdown, setShowEmpDropdown] = useState(false);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -300,7 +301,7 @@ const [showEmpDropdown, setShowEmpDropdown] = useState(false);
         setEmployees(empRes.data.filter(emp => emp.status === "active"));
       if (tplRes.data.success) setTemplates(tplRes.data.data);
       if (assignRes.data.success)
-  setAssignments(assignRes.data.data.filter(a => a.employee_id));
+        setAssignments(assignRes.data.data.filter(a => a.employee_id));
     } catch { showToast("Failed to load data", "error"); }
     finally { setLoading(false); }
   };
@@ -311,7 +312,7 @@ const [showEmpDropdown, setShowEmpDropdown] = useState(false);
   };
 
   const getPeriodLabel = () => {
-    if (form.period_type === "monthly")   return `${form.month} ${form.year}`;
+    if (form.period_type === "monthly") return `${form.month} ${form.year}`;
     if (form.period_type === "quarterly") return `${form.quarter} ${form.year}`;
     return `Annual ${form.year}`;
   };
@@ -344,7 +345,7 @@ const [showEmpDropdown, setShowEmpDropdown] = useState(false);
     setForm(f => ({ ...f, monthly_version_id: versionId }));
   };
 
-const handleEdit = (a) => {
+  const handleEdit = (a) => {
     setEditingAssignment(a);
     const period = a.period || "";
     let period_type = a.period_type || "monthly";
@@ -361,10 +362,10 @@ const handleEdit = (a) => {
       year = period.replace("Annual ", "") || "2026";
     }
     const tplId = a.template_id?._id || "";
-    
+
     // ✅ FIX: Check both monthly_version_id and month_version_id
     const monthVersionId = a.monthly_version_id?._id || a.month_version_id?._id || "";
-    
+
     setForm({
       employee_id: a.employee_id?._id || "",
       template_id: tplId,
@@ -391,7 +392,7 @@ const handleEdit = (a) => {
         .catch(() => setMonthVersions([]));
     }
     setShowModal(true);
-};
+  };
 
   const handleSubmit = async () => {
     if (!form.employee_id || !form.template_id)
@@ -404,7 +405,7 @@ const handleEdit = (a) => {
       const payload = {
         employee_id: form.employee_id,
         template_id: form.template_id,
-         month_version_id: form.monthly_version_id || null, 
+        month_version_id: form.monthly_version_id || null,
         period: getPeriodLabel(),
         period_type: form.period_type,
         notes: form.notes.trim()
@@ -443,29 +444,29 @@ const handleEdit = (a) => {
   };
 
   // ✅ NEW: View modal-க்கு month version fetch பண்ணுங்க
-const openView = async (assignment) => {
-  setViewAssignment(assignment);
-  setViewMonthVersion(null); // reset
-  
-  // If assignment has month_version_id, fetch its data
-  if (assignment.monthly_version_id?._id || assignment.month_version_id?._id) {
-    try {
-      const monthVerId = assignment.monthly_version_id?._id || assignment.month_version_id?._id;
-      const templateId = assignment.template_id?._id || assignment.template_id;
-      
-      const res = await axios.get(`${API_BASE}/api/kpi-monthly-versions?template_id=${templateId}`);
-      if (res.data.success) {
-        const version = res.data.data.find(v => v._id === monthVerId);
-        setViewMonthVersion(version || null);
+  const openView = async (assignment) => {
+    setViewAssignment(assignment);
+    setViewMonthVersion(null); // reset
+
+    // If assignment has month_version_id, fetch its data
+    if (assignment.monthly_version_id?._id || assignment.month_version_id?._id) {
+      try {
+        const monthVerId = assignment.monthly_version_id?._id || assignment.month_version_id?._id;
+        const templateId = assignment.template_id?._id || assignment.template_id;
+
+        const res = await axios.get(`${API_BASE}/api/kpi-monthly-versions?template_id=${templateId}`);
+        if (res.data.success) {
+          const version = res.data.data.find(v => v._id === monthVerId);
+          setViewMonthVersion(version || null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch month version for view", err);
       }
-    } catch (err) {
-      console.error("Failed to fetch month version for view", err);
     }
-  }
-};
+  };
 
   const getStatusStyle = (status) => {
-    if (status === "active")    return { color: "#16a34a", bg: "#f0fdf4" };
+    if (status === "active") return { color: "#16a34a", bg: "#f0fdf4" };
     if (status === "completed") return { color: "#2563eb", bg: "#eff6ff" };
     if (status === "cancelled") return { color: "#ef4444", bg: "#fef2f2" };
     return { color: "#ef4444", bg: "#fef2f2" };
@@ -482,17 +483,17 @@ const openView = async (assignment) => {
   };
 
   const STATS = [
-    { label: "Total Assignments", value: assignments.length,                                       color: "#2563eb", bg: "#eff6ff", Icon: ClipboardList },
-    { label: "Active",            value: assignments.filter(a => a.status === "active").length,    color: "#16a34a", bg: "#f0fdf4", Icon: CheckCircle2  },
-    { label: "Completed",         value: assignments.filter(a => a.status === "completed").length, color: "#d97706", bg: "#fffbeb", Icon: Flag          },
+    { label: "Total Assignments", value: assignments.length, color: "#2563eb", bg: "#eff6ff", Icon: ClipboardList },
+    { label: "Active", value: assignments.filter(a => a.status === "active").length, color: "#16a34a", bg: "#f0fdf4", Icon: CheckCircle2 },
+    { label: "Completed", value: assignments.filter(a => a.status === "completed").length, color: "#d97706", bg: "#fffbeb", Icon: Flag },
   ];
 
   const ownerBadge = (role) => {
     const map = {
-      self:    { label: "Self",    color: "#16a34a", bg: "#f0fdf4" },
+      self: { label: "Self", color: "#16a34a", bg: "#f0fdf4" },
       manager: { label: "Manager", color: "#2563eb", bg: "#eff6ff" },
-      md:      { label: "MD",      color: "#7c3aed", bg: "#f5f3ff" },
-      hr:      { label: "HR",      color: "#d97706", bg: "#fffbeb" },
+      md: { label: "MD", color: "#7c3aed", bg: "#f5f3ff" },
+      hr: { label: "HR", color: "#d97706", bg: "#fffbeb" },
     };
     const s = map[role] || map.self;
     return (
@@ -507,17 +508,17 @@ const openView = async (assignment) => {
     const q = templateSearch.trim().toLowerCase();
     if (!q) return true;
     return t.template_name?.toLowerCase().includes(q)
-        || t.role?.toLowerCase().includes(q)
-        || t.department?.toLowerCase().includes(q);
+      || t.role?.toLowerCase().includes(q)
+      || t.department?.toLowerCase().includes(q);
   });
 
   const filteredEmployees = employees.filter(emp => {
-  const q = empSearch.trim().toLowerCase();
-  if (!q) return true;
-  return emp.name?.toLowerCase().includes(q)
+    const q = empSearch.trim().toLowerCase();
+    if (!q) return true;
+    return emp.name?.toLowerCase().includes(q)
       || emp.designation?.toLowerCase().includes(q)
       || emp.department?.toLowerCase().includes(q);
-});
+  });
 
   // ✅ NEW: Filtered list — statusTab + monthFilter apply பண்ணும், original `assignments` touch பண்ணல
   const filteredAssignments = assignments.filter(a => {
@@ -642,7 +643,7 @@ const openView = async (assignment) => {
                 </colgroup>
                 <thead>
                   <tr>
-                    {["S.No","Employee","Department","Template","Period","Assigned On","Status","Action"].map(h => (
+                    {["S.No", "Employee", "Department", "Template", "Period", "Assigned On", "Status", "Action"].map(h => (
                       <th key={h}>{h}</th>
                     ))}
                   </tr>
@@ -682,11 +683,13 @@ const openView = async (assignment) => {
                         </td>
                         <td>
                           <span style={{ background: st.bg, color: st.color, fontWeight: 700, padding: "4px 12px", borderRadius: 20, fontSize: 11, textTransform: "capitalize", whiteSpace: "nowrap" }}>{a.status}</span>
+                          <ActionedBy id={a._id} version={a.status} compact
+                            style={{ fontSize: 11, overflow: "hidden", textOverflow: "ellipsis" }} />
                         </td>
                         <td style={{ textAlign: "center", overflow: "visible" }}>
                           <ActionDropdown
                             assignment={a}
-                            onView={openView} 
+                            onView={openView}
                             onEdit={handleEdit}
                             onCancel={setCancelConfirm}
                             onDelete={setDeleteConfirm}
@@ -719,7 +722,7 @@ const openView = async (assignment) => {
                         <span style={{ background: st.bg, color: st.color, fontWeight: 700, padding: "4px 10px", borderRadius: 20, fontSize: 11, textTransform: "capitalize", flexShrink: 0 }}>{a.status}</span>
                         <ActionDropdown
                           assignment={a}
-                          onView={openView} 
+                          onView={openView}
                           onEdit={handleEdit}
                           onCancel={setCancelConfirm}
                           onDelete={setDeleteConfirm}
@@ -763,7 +766,7 @@ const openView = async (assignment) => {
           <div style={{ background: "#fff", borderRadius: 14, width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
             <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", zIndex: 1 }}>
               <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>Assignment Details</h3>
-              <button onClick={() => { setViewAssignment(null); setViewMonthVersion(null); }}  style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#6b7280" }}>✕</button>
+              <button onClick={() => { setViewAssignment(null); setViewMonthVersion(null); }} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#6b7280" }}>✕</button>
             </div>
             <div style={{ padding: "20px 24px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, background: "#f8fafc", borderRadius: 10, padding: "14px" }}>
@@ -778,11 +781,11 @@ const openView = async (assignment) => {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px", marginBottom: 20 }}>
                 {[
-                  { label: "Template",    value: viewAssignment.template_id?.template_name || "—" },
-                  { label: "Role",        value: viewAssignment.template_id?.role || "—" },
-                  { label: "Period",      value: viewAssignment.period },
+                  { label: "Template", value: viewAssignment.template_id?.template_name || "—" },
+                  { label: "Role", value: viewAssignment.template_id?.role || "—" },
+                  { label: "Period", value: viewAssignment.period },
                   { label: "Period Type", value: viewAssignment.period_type },
-                  { label: "Status",      value: viewAssignment.status, badge: true },
+                  { label: "Status", value: viewAssignment.status, badge: true },
                   { label: "Assigned On", value: new Date(viewAssignment.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) },
                 ].map((item, i) => {
                   const st = getStatusStyle(viewAssignment.status);
@@ -804,39 +807,39 @@ const openView = async (assignment) => {
                 </div>
               )}
               {/* ✅ FIX: Use viewMonthVersion.kpi_items if available */}
-{(viewMonthVersion?.kpi_items || viewAssignment.template_id?.kpi_items)?.length > 0 && (
-  <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: 14 }}>
-    
-    {/* Month version badge */}
-    {viewMonthVersion && (
-      <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 8, padding: "10px 12px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-        <CheckCircle2 size={14} color="#16a34a" />
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#16a34a" }}>
-          📅 Using {viewMonthVersion.month} Version — Specific Targets
-        </span>
-      </div>
-    )}
-    
-    <p style={{ margin: "0 0 10px", fontWeight: 700, fontSize: 13, color: "#0369a1" }}>
-      KPI Items — {(viewMonthVersion?.kpi_items || viewAssignment.template_id?.kpi_items).length} total
-    </p>
-    
-    {(viewMonthVersion?.kpi_items || viewAssignment.template_id?.kpi_items).map((item, i) => (
-      <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #e0f2fe", fontSize: 13, gap: 8 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ color: "#1e40af", fontWeight: 500, display: "block", wordBreak: "break-word" }}>{item.kpi_name}</span>
-          {item.owner_role && item.owner_role !== "self" && (
-            <span style={{ marginTop: 2, display: "inline-block" }}>{ownerBadge(item.owner_role)}</span>
-          )}
-        </div>
-        <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-          <span style={{ color: "#6b7280" }}>Target: {item.target} {item.unit}</span>
-          <span style={{ fontWeight: 700, color: "#0369a1" }}>{item.weight}%</span>
-        </div>
-      </div>
-    ))}
-  </div>
-)}
+              {(viewMonthVersion?.kpi_items || viewAssignment.template_id?.kpi_items)?.length > 0 && (
+                <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: 14 }}>
+
+                  {/* Month version badge */}
+                  {viewMonthVersion && (
+                    <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 8, padding: "10px 12px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                      <CheckCircle2 size={14} color="#16a34a" />
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#16a34a" }}>
+                        📅 Using {viewMonthVersion.month} Version — Specific Targets
+                      </span>
+                    </div>
+                  )}
+
+                  <p style={{ margin: "0 0 10px", fontWeight: 700, fontSize: 13, color: "#0369a1" }}>
+                    KPI Items — {(viewMonthVersion?.kpi_items || viewAssignment.template_id?.kpi_items).length} total
+                  </p>
+
+                  {(viewMonthVersion?.kpi_items || viewAssignment.template_id?.kpi_items).map((item, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #e0f2fe", fontSize: 13, gap: 8 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ color: "#1e40af", fontWeight: 500, display: "block", wordBreak: "break-word" }}>{item.kpi_name}</span>
+                        {item.owner_role && item.owner_role !== "self" && (
+                          <span style={{ marginTop: 2, display: "inline-block" }}>{ownerBadge(item.owner_role)}</span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+                        <span style={{ color: "#6b7280" }}>Target: {item.target} {item.unit}</span>
+                        <span style={{ fontWeight: 700, color: "#0369a1" }}>{item.weight}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
                 <button onClick={() => { setViewAssignment(null); setViewMonthVersion(null); }} style={{ padding: "10px 28px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Close</button>
               </div>

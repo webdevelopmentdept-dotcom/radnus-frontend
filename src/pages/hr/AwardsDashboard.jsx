@@ -14,6 +14,7 @@ import {
   ShieldCheck, ListChecks, Gauge, Info
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -725,6 +726,7 @@ export default function AwardsDashboard() {
                                 <div>
                                   <p style={{ margin:0, fontWeight:700, color:"#111827", fontSize:13 }}>{a.employee_id?.name}</p>
                                   <p style={{ margin:0, fontSize:11, color:"#9ca3af" }}>{a.employee_id?.department}</p>
+                                <ActionedBy id={a._id} version={a.status} />
                                 </div>
                               </div>
                             </td>

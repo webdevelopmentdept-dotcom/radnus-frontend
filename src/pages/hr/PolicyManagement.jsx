@@ -32,7 +32,7 @@ export default function PolicyManagement() {
     try {
       const res = await axios.get(`${API_BASE}/api/policies`);
       const data = Array.isArray(res.data) ? res.data :
-                   Array.isArray(res.data?.data) ? res.data.data : [];
+        Array.isArray(res.data?.data) ? res.data.data : [];
       setPolicies(data);
     } catch (err) {
       console.log("FETCH ERROR:", err);
@@ -114,10 +114,10 @@ export default function PolicyManagement() {
   };
 
   const categoryColor = {
-    HR:         { bg: "#ede9fe", color: "#6d28d9" },
-    Finance:    { bg: "#fef9c3", color: "#854d0e" },
-    IT:         { bg: "#dbeafe", color: "#1e40af" },
-    General:    { bg: "#dcfce7", color: "#166534" },
+    HR: { bg: "#ede9fe", color: "#6d28d9" },
+    Finance: { bg: "#fef9c3", color: "#854d0e" },
+    IT: { bg: "#dbeafe", color: "#1e40af" },
+    General: { bg: "#dcfce7", color: "#166534" },
     Operations: { bg: "#fee2e2", color: "#991b1b" },
   };
 
@@ -310,7 +310,13 @@ export default function PolicyManagement() {
                         </button>
                       </td>
                       <td style={{ padding: "12px 16px", fontSize: 13, color: "#64748b", whiteSpace: "nowrap" }}>
-                        {new Date(p.createdAt).toLocaleDateString("en-IN")}
+                        <div>{new Date(p.createdAt).toLocaleDateString("en-IN")}</div>
+                        {p.uploaded_by_name && (
+                          <div style={{ fontSize: 11, color: "#94a3b8" }}>by {p.uploaded_by_name}</div>
+                        )}
+                        {p.updated_by_name && p.updated_by_name !== p.uploaded_by_name && (
+                          <div style={{ fontSize: 11, color: "#94a3b8" }}>edited by {p.updated_by_name}</div>
+                        )}
                       </td>
                       <td style={{ padding: "12px 16px" }}>
                         <div style={{ display: "flex", gap: 8 }}>
@@ -360,6 +366,10 @@ export default function PolicyManagement() {
 
                                   <span style={{ fontSize: 12, color: "#94a3b8", minWidth: 90 }}>
                                     {v.created_at ? new Date(v.created_at).toLocaleDateString("en-IN") : "—"}
+                                  </span>
+
+                                  <span style={{ fontSize: 12, color: "#475569", fontWeight: 600, minWidth: 110 }}>
+                                    {v.uploaded_by_name ? `by ${v.uploaded_by_name}` : ""}
                                   </span>
 
                                   <span style={{ fontSize: 12, color: "#64748b", flex: 1 }}>

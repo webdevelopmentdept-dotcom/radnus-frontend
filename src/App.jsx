@@ -150,6 +150,8 @@ import AdminLoanProcess from "./components/admin/AdminLoanProcess";
 import AdminLoanAccess from "./components/admin/Adminloanaccess";
 import AdminPendingApprovals from "./components/admin/AdminPendingApprovals";
 import AdminLoanAnalytics from "./components/admin/AdminLoanAnalytics";
+import ManageHrAccounts from "./pages/admin/ManageHrAccounts";
+import HrActivity from "./pages/admin/HrActivity";
 
 /* Channel */
 import ChannelDashboard from "./pages/Channel/ChannelDashboard";
@@ -288,8 +290,6 @@ function App() {
         }
         />
 
-
-
         {/* HR Routes */}
 
         <Route path="/hr/dashboard" element={<HrDashboard />}>
@@ -384,9 +384,6 @@ function App() {
           <Route path="tickets" element={<HrTickets />} />
 
           <Route path="feedback" element={<HrFeedback />} />
-
-
-
         </Route>
 
 
@@ -406,6 +403,8 @@ function App() {
           <Route path="settings" element={<SystemSettings />} />
           <Route path="radnus-connect/posters" element={<PosterManager />} />
           <Route path="updates" element={<AdminUpdates />} />
+          <Route path="hr-accounts" element={<ManageHrAccounts />} />
+          <Route path="hr-activity" element={<HrActivity />} />
           <Route path="pending-approvals" element={<AdminPendingApprovals />} />
           <Route
             path="radnus-connect/shop-owners"

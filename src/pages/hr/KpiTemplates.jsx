@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const KPI_API = `${API_BASE}/api/kpi-templates`;
@@ -672,7 +673,9 @@ export default function KpiTemplates() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <h3 style={{ margin: 0, color: "#fff", fontSize: 15, fontWeight: 700, wordBreak: "break-word" }}>{t.template_name}</h3>
                     <p style={{ margin: "4px 0 0", color: "#bfdbfe", fontSize: 13 }}>{t.role} · {t.department}</p>
+                    <ActionedBy id={t._id} style={{ color: "#bfdbfe" }} />
                   </div>
+
                   <span style={{ background: "rgba(255,255,255,0.2)", color: "#fff", padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
                     {t.kpi_items?.length || 0} KPIs · v{t.version || 1}
                   </span>

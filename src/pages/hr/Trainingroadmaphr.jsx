@@ -35,43 +35,43 @@ const programLength = (p) => {
 
 // ─── Constants ────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  pending:     { label: "Pending",     color: "#6b7280", bg: "#f3f4f6" },
+  pending: { label: "Pending", color: "#6b7280", bg: "#f3f4f6" },
   in_progress: { label: "In Progress", color: "#3b82f6", bg: "#eff6ff" },
-  completed:   { label: "Completed",   color: "#10b981", bg: "#ecfdf5" },
-  overdue:     { label: "Overdue",     color: "#ef4444", bg: "#fef2f2" },
-  waived:      { label: "Waived",      color: "#8b5cf6", bg: "#f5f3ff" },
-  pending_review:  { label: "Pending Review",  color: "#f59e0b", bg: "#fffbeb" }, // ✅ NEW — quiz submitted, awaiting HR to review & mark Completed
-  retrain:         { label: "Retrain Required", color: "#f97316", bg: "#fff7ed" }, // ✅ NEW — HR sent employee back to re-study + retake the test
+  completed: { label: "Completed", color: "#10b981", bg: "#ecfdf5" },
+  overdue: { label: "Overdue", color: "#ef4444", bg: "#fef2f2" },
+  waived: { label: "Waived", color: "#8b5cf6", bg: "#f5f3ff" },
+  pending_review: { label: "Pending Review", color: "#f59e0b", bg: "#fffbeb" }, // ✅ NEW — quiz submitted, awaiting HR to review & mark Completed
+  retrain: { label: "Retrain Required", color: "#f97316", bg: "#fff7ed" }, // ✅ NEW — HR sent employee back to re-study + retake the test
   needs_hr_review: { label: "Under HR Review", color: "#dc2626", bg: "#fef2f2" }, // legacy status, kept for old records
-  failed_retake:   { label: "Failed (old data)", color: "#dc2626", bg: "#fef2f2" }, // legacy status from the old multi-attempt system, kept so old records don't silently show "Pending"
-absent:          { label: "Absent / Not Attended", color: "#9f1239", bg: "#f3f4f6" },
+  failed_retake: { label: "Failed (old data)", color: "#dc2626", bg: "#fef2f2" }, // legacy status from the old multi-attempt system, kept so old records don't silently show "Pending"
+  absent: { label: "Absent / Not Attended", color: "#9f1239", bg: "#f3f4f6" },
 };
 
 const LEVEL_CONFIG = {
-  L1: { label: "L1 – Intern/Trainee",        color: "#6b7280" },
-  L2: { label: "L2 – Executive",              color: "#3b82f6" },
-  L3: { label: "L3 – Senior Executive",       color: "#8b5cf6" },
-  L4: { label: "L4 – Manager",                color: "#f59e0b" },
-  L5: { label: "L5 – GM / AVP",               color: "#ef4444" },
-  L6: { label: "L6 – VP / Director / CXO",   color: "#10b981" },
-  all:{ label: "All Levels",                  color: "#111827" },
+  L1: { label: "L1 – Intern/Trainee", color: "#6b7280" },
+  L2: { label: "L2 – Executive", color: "#3b82f6" },
+  L3: { label: "L3 – Senior Executive", color: "#8b5cf6" },
+  L4: { label: "L4 – Manager", color: "#f59e0b" },
+  L5: { label: "L5 – GM / AVP", color: "#ef4444" },
+  L6: { label: "L6 – VP / Director / CXO", color: "#10b981" },
+  all: { label: "All Levels", color: "#111827" },
 };
 
 const TYPE_CONFIG = {
-  induction:        { label: "Induction",        color: "#3b82f6", bg: "#eff6ff" },
-  job_role:         { label: "Job Role",          color: "#8b5cf6", bg: "#f5f3ff" },
-  cross_functional: { label: "Cross-Functional",  color: "#f59e0b", bg: "#fffbeb" },
-  culture:          { label: "Culture",           color: "#10b981", bg: "#ecfdf5" },
-  refresher:        { label: "Refresher",         color: "#6b7280", bg: "#f3f4f6" },
-  department:       { label: "Department",        color: "#ef4444", bg: "#fef2f2" },
-  equipment:        { label: "Equipment",         color: "#0ea5e9", bg: "#f0f9ff" },
+  induction: { label: "Induction", color: "#3b82f6", bg: "#eff6ff" },
+  job_role: { label: "Job Role", color: "#8b5cf6", bg: "#f5f3ff" },
+  cross_functional: { label: "Cross-Functional", color: "#f59e0b", bg: "#fffbeb" },
+  culture: { label: "Culture", color: "#10b981", bg: "#ecfdf5" },
+  refresher: { label: "Refresher", color: "#6b7280", bg: "#f3f4f6" },
+  department: { label: "Department", color: "#ef4444", bg: "#fef2f2" },
+  equipment: { label: "Equipment", color: "#0ea5e9", bg: "#f0f9ff" },
 };
 
-const DEPARTMENTS = ["Sales & Distribution","Technical & Service","HR & Admin","Accounts & Finance","Marketing","Operations","all"];
-const LEVELS      = ["L1","L2","L3","L4","L5","L6","all"];
-const TYPES       = ["induction","job_role","cross_functional","culture","refresher","department"];
+const DEPARTMENTS = ["Sales & Distribution", "Technical & Service", "HR & Admin", "Accounts & Finance", "Marketing", "Operations", "all"];
+const LEVELS = ["L1", "L2", "L3", "L4", "L5", "L6", "all"];
+const TYPES = ["induction", "job_role", "cross_functional", "culture", "refresher", "department"];
 
-const labelStyle = { fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4, display:"block" };
+const labelStyle = { fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4, display: "block" };
 
 // ─── Chapter Progress Helper ────────────────────────────────────
 // ✅ NEW — for a multi-chapter course record, boils down record.chapterProgress
@@ -80,7 +80,7 @@ const labelStyle = { fontSize:11, fontWeight:700, color:"#6b7280", textTransform
 // chapter-level quizzes (separate from the Final Test) are going. Returns
 // null for a non-chapter program so callers can just skip rendering.
 const STUCK_QUIZ_ATTEMPTS = 3;   // 3+ failed attempts on the current chapter's quiz
-const STUCK_IDLE_DAYS     = 5;   // no activity at all for 5+ days
+const STUCK_IDLE_DAYS = 5;   // no activity at all for 5+ days
 function getChapterInfo(record) {
   const chapters = record.programId?.chapters || [];
   const total = chapters.length;
@@ -131,7 +131,7 @@ function getChapterInfo(record) {
 function chapterInfoStyle(info) {
   if (info.completed === 0) return { bg: "#f3f4f6", color: "#6b7280", label: "Not started" };
   if (info.percent === 100) return { bg: "#d1fae5", color: "#059669", label: "All chapters done" };
-  if (info.stuck)           return { bg: "#ffedd5", color: "#c2410c", label: "Stuck" };
+  if (info.stuck) return { bg: "#ffedd5", color: "#c2410c", label: "Stuck" };
   return { bg: "#dbeafe", color: "#2563eb", label: "In progress" };
 }
 
@@ -145,8 +145,8 @@ function ChapterProgressChip({ record }) {
   const s = chapterInfoStyle(info);
   const title = info.stuck
     ? (info.stuckOnQuiz
-        ? `Stuck on Chapter ${info.currentChapter?.chapterNo} — quiz attempted ${info.currentAttempts} times`
-        : `No activity for ${info.daysSinceActivity}+ days`)
+      ? `Stuck on Chapter ${info.currentChapter?.chapterNo} — quiz attempted ${info.currentAttempts} times`
+      : `No activity for ${info.daysSinceActivity}+ days`)
     : `${info.completed} of ${info.total} chapters completed`;
   return (
     <div title={title} style={{ display: "inline-flex", flexDirection: "column", gap: 3, minWidth: 74 }}>
@@ -268,22 +268,22 @@ function StatCard({ label, value, sub, color, bg, icon, onClick, active }) {
 // quick button on a program card (0-assigned state) can jump straight
 // into this modal with that program already selected.
 function AssignModal({ programs, employees, onClose, onSave, initialProgramId }) {
-  const [mode, setMode]         = useState("single"); // "single"|"bulk"
-  const [employeeId, setEmpId]  = useState("");
-  const [employeeIds, setEmpIds]= useState([]);
-  const [programId, setProgId]  = useState(initialProgramId || "");
-  const [dueDate, setDueDate]   = useState(() => {
+  const [mode, setMode] = useState("single"); // "single"|"bulk"
+  const [employeeId, setEmpId] = useState("");
+  const [employeeIds, setEmpIds] = useState([]);
+  const [programId, setProgId] = useState(initialProgramId || "");
+  const [dueDate, setDueDate] = useState(() => {
     if (initialProgramId) {
       const p = programs.find(x => x._id === initialProgramId);
-      if (p?.accessEndDate) return new Date(p.accessEndDate).toISOString().slice(0,10);
+      if (p?.accessEndDate) return new Date(p.accessEndDate).toISOString().slice(0, 10);
     }
     return "";
   });
-  const [dueAuto, setDueAuto]   = useState(!!initialProgramId); // true while dueDate was auto-filled from the course end date
-  const [notes, setNotes]       = useState("");
-  const [saving, setSaving]     = useState(false);
+  const [dueAuto, setDueAuto] = useState(!!initialProgramId); // true while dueDate was auto-filled from the course end date
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
   const [deptFilter, setDeptFilter] = useState("all");
-const [modal, setModal] = useState(null);
+  const [modal, setModal] = useState(null);
 
   const employeeDepts = [...new Set(employees.map(e => e.department).filter(Boolean))].sort();
   const filteredEmployees = deptFilter === "all" ? employees : employees.filter(e => e.department === deptFilter);
@@ -301,36 +301,36 @@ const [modal, setModal] = useState(null);
     setSaving(false);
   };
 
-  const toggleEmp = (id) => setEmpIds(prev => prev.includes(id) ? prev.filter(e=>e!==id) : [...prev, id]);
-  const selectAllFiltered = () => setEmpIds(prev => [...new Set([...prev, ...filteredEmployees.map(e=>e._id)])]);
-  const clearAllFiltered   = () => setEmpIds(prev => prev.filter(id => !filteredEmployees.some(e=>e._id===id)));
+  const toggleEmp = (id) => setEmpIds(prev => prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]);
+  const selectAllFiltered = () => setEmpIds(prev => [...new Set([...prev, ...filteredEmployees.map(e => e._id)])]);
+  const clearAllFiltered = () => setEmpIds(prev => prev.filter(id => !filteredEmployees.some(e => e._id === id)));
 
   const preselectedProgram = initialProgramId ? programs.find(p => p._id === initialProgramId) : null;
 
   return (
-    <div className="modal show d-block" style={{ background:"rgba(15,23,42,.45)", zIndex:1050 }}>
+    <div className="modal show d-block" style={{ background: "rgba(15,23,42,.45)", zIndex: 1050 }}>
       <div className="modal-dialog modal-dialog-centered modal-lg">
-        <div className="modal-content border-0 shadow-lg" style={{ borderRadius:14 }}>
-          <div className="modal-header border-bottom" style={{ background:"#f9fafb", borderRadius:"14px 14px 0 0" }}>
+        <div className="modal-content border-0 shadow-lg" style={{ borderRadius: 14 }}>
+          <div className="modal-header border-bottom" style={{ background: "#f9fafb", borderRadius: "14px 14px 0 0" }}>
             <div className="d-flex align-items-center gap-2">
               <GraduationCap size={18} color="#3b82f6" />
-              <p className="mb-0 fw-bold" style={{ fontSize:14 }}>Assign Training</p>
+              <p className="mb-0 fw-bold" style={{ fontSize: 14 }}>Assign Training</p>
             </div>
             <button className="btn-close" onClick={onClose} />
           </div>
           <div className="modal-body">
             {/* ✅ NEW — quick-assign confirmation banner when opened from a program card */}
             {preselectedProgram && (
-              <div className="d-flex align-items-center gap-2 mb-3" style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:9, padding:"8px 12px" }}>
+              <div className="d-flex align-items-center gap-2 mb-3" style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 9, padding: "8px 12px" }}>
                 <Zap size={13} color="#3b82f6" />
-                <span style={{ fontSize:12, color:"#1e40af" }}>Assigning <strong>{preselectedProgram.title}</strong> — pick employees below.</span>
+                <span style={{ fontSize: 12, color: "#1e40af" }}>Assigning <strong>{preselectedProgram.title}</strong> — pick employees below.</span>
               </div>
             )}
             {/* Mode toggle */}
             <div className="d-flex gap-2 mb-4">
-              {["single","bulk"].map(m => (
-                <button key={m} onClick={()=>setMode(m)}
-                  className={`btn btn-sm ${mode===m?"btn-primary":"btn-light"}`} style={{ fontSize:12 }}>
+              {["single", "bulk"].map(m => (
+                <button key={m} onClick={() => setMode(m)}
+                  className={`btn btn-sm ${mode === m ? "btn-primary" : "btn-light"}`} style={{ fontSize: 12 }}>
                   {m === "single" ? "Single Employee" : "Bulk Assign"}
                 </button>
               ))}
@@ -339,14 +339,14 @@ const [modal, setModal] = useState(null);
             <div className="row g-3">
               <div className="col-md-6">
                 <label style={labelStyle}>Training Program *</label>
-                <select className="form-select form-select-sm" value={programId} onChange={e=>{
+                <select className="form-select form-select-sm" value={programId} onChange={e => {
                   const id = e.target.value;
                   setProgId(id);
                   const p = programs.find(x => x._id === id);
-                  if (p?.accessEndDate && (!dueDate || dueAuto)) { setDueDate(new Date(p.accessEndDate).toISOString().slice(0,10)); setDueAuto(true); }
+                  if (p?.accessEndDate && (!dueDate || dueAuto)) { setDueDate(new Date(p.accessEndDate).toISOString().slice(0, 10)); setDueAuto(true); }
                 }}>
                   <option value="">-- Select Program --</option>
-                  {programs.map(p=>(
+                  {programs.map(p => (
                     <option key={p._id} value={p._id}>{p.title} ({LEVEL_CONFIG[p.level]?.label || p.level})</option>
                   ))}
                 </select>
@@ -354,50 +354,50 @@ const [modal, setModal] = useState(null);
               <div className="col-md-6">
                 <label style={labelStyle}>Due Date (deadline)</label>
                 <input type="date" className="form-control form-control-sm" value={dueDate}
-                  max={(() => { const p = programs.find(x => x._id === programId); return p?.accessEndDate ? new Date(p.accessEndDate).toISOString().slice(0,10) : undefined; })()}
-                  onChange={e=>{ setDueDate(e.target.value); setDueAuto(false); }} />
+                  max={(() => { const p = programs.find(x => x._id === programId); return p?.accessEndDate ? new Date(p.accessEndDate).toISOString().slice(0, 10) : undefined; })()}
+                  onChange={e => { setDueDate(e.target.value); setDueAuto(false); }} />
                 <div className="text-muted" style={{ fontSize: 10.5, marginTop: 3 }}>
                   Employee shows as Overdue after this date. Auto-filled from the course end date; leave blank for no deadline.
                 </div>
               </div>
 
-               {mode === "single" ? (
+              {mode === "single" ? (
                 <div className="col-12">
                   <label style={labelStyle}>Employee *</label>
-                  <select className="form-select form-select-sm mb-2" value={deptFilter} onChange={e=>setDeptFilter(e.target.value)}>
+                  <select className="form-select form-select-sm mb-2" value={deptFilter} onChange={e => setDeptFilter(e.target.value)}>
                     <option value="all">All Departments</option>
-                    {employeeDepts.map(d=><option key={d} value={d}>{d}</option>)}
+                    {employeeDepts.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
-                  <select className="form-select form-select-sm" value={employeeId} onChange={e=>setEmpId(e.target.value)}>
+                  <select className="form-select form-select-sm" value={employeeId} onChange={e => setEmpId(e.target.value)}>
                     <option value="">-- Select Employee --</option>
-                    {filteredEmployees.map(e=><option key={e._id} value={e._id}>{e.name} — {e.department}</option>)}
+                    {filteredEmployees.map(e => <option key={e._id} value={e._id}>{e.name} — {e.department}</option>)}
                   </select>
                 </div>
               ) : (
                 <div className="col-12">
                   <label style={labelStyle}>Select Employees ({employeeIds.length} selected)</label>
                   <div className="d-flex gap-2 mb-2 align-items-center flex-wrap">
-                    <select className="form-select form-select-sm" style={{ maxWidth:220 }} value={deptFilter} onChange={e=>setDeptFilter(e.target.value)}>
+                    <select className="form-select form-select-sm" style={{ maxWidth: 220 }} value={deptFilter} onChange={e => setDeptFilter(e.target.value)}>
                       <option value="all">All Departments</option>
-                      {employeeDepts.map(d=><option key={d} value={d}>{d}</option>)}
+                      {employeeDepts.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
-                    <button type="button" className="btn btn-sm btn-outline-primary" style={{ fontSize:11 }} onClick={selectAllFiltered}>
+                    <button type="button" className="btn btn-sm btn-outline-primary" style={{ fontSize: 11 }} onClick={selectAllFiltered}>
                       Select All {deptFilter !== "all" ? `(${deptFilter})` : ""}
                     </button>
-                    <button type="button" className="btn btn-sm btn-outline-secondary" style={{ fontSize:11 }} onClick={clearAllFiltered}>
+                    <button type="button" className="btn btn-sm btn-outline-secondary" style={{ fontSize: 11 }} onClick={clearAllFiltered}>
                       Clear {deptFilter !== "all" ? `(${deptFilter})` : "All"}
                     </button>
                   </div>
-                  <div style={{ maxHeight:200, overflowY:"auto", border:"1px solid #e5e7eb", borderRadius:8, padding:"8px" }}>
+                  <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px" }}>
                     {filteredEmployees.length === 0 && (
-                      <p className="text-muted mb-0" style={{ fontSize:12.5 }}>No employees in this department.</p>
+                      <p className="text-muted mb-0" style={{ fontSize: 12.5 }}>No employees in this department.</p>
                     )}
-                    {filteredEmployees.map(e=>(
+                    {filteredEmployees.map(e => (
                       <div key={e._id} className="form-check">
                         <input className="form-check-input" type="checkbox"
                           checked={employeeIds.includes(e._id)}
-                          onChange={()=>toggleEmp(e._id)} />
-                        <label className="form-check-label" style={{ fontSize:13 }}>{e.name} — {e.department}</label>
+                          onChange={() => toggleEmp(e._id)} />
+                        <label className="form-check-label" style={{ fontSize: 13 }}>{e.name} — {e.department}</label>
                       </div>
                     ))}
                   </div>
@@ -407,7 +407,7 @@ const [modal, setModal] = useState(null);
               {mode === "single" && (
                 <div className="col-12">
                   <label style={labelStyle}>Notes</label>
-                  <textarea className="form-control form-control-sm" rows={2} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Any instructions or notes..." />
+                  <textarea className="form-control form-control-sm" rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any instructions or notes..." />
                 </div>
               )}
             </div>
@@ -427,14 +427,14 @@ const [modal, setModal] = useState(null);
 // ─── Record Update Modal ──────────────────────────────────────
 function UpdateRecordModal({ record, onClose, onSave }) {
   const [form, setForm] = useState({
-    status:              record.status,
-    assessmentScore:     record.assessmentScore || "",
+    status: record.status,
+    assessmentScore: record.assessmentScore || "",
     certificationIssued: record.certificationIssued || false,
-    progressNote:        "",
-    notes:               record.notes || "",
-    dueDate:             record.dueDate ? new Date(record.dueDate).toISOString().slice(0,10) : "", // ✅ NEW — editable due date
+    progressNote: "",
+    notes: record.notes || "",
+    dueDate: record.dueDate ? new Date(record.dueDate).toISOString().slice(0, 10) : "", // ✅ NEW — editable due date
   });
-  const courseEndDate = record.programId?.accessEndDate ? new Date(record.programId.accessEndDate).toISOString().slice(0,10) : undefined; // ✅ NEW — due date can't go past course end date
+  const courseEndDate = record.programId?.accessEndDate ? new Date(record.programId.accessEndDate).toISOString().slice(0, 10) : undefined; // ✅ NEW — due date can't go past course end date
   const [saving, setSaving] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false); // ✅ NEW — collapsed by default
   const [showChapters, setShowChapters] = useState(false); // ✅ NEW — full chapter list, collapsed by default
@@ -442,34 +442,34 @@ function UpdateRecordModal({ record, onClose, onSave }) {
   const chapterInfo = getChapterInfo(record); // ✅ NEW — null for non-chapter programs
 
   return (
-    <div className="modal show d-block" style={{ background:"rgba(15,23,42,.45)", zIndex:1055 }}>
+    <div className="modal show d-block" style={{ background: "rgba(15,23,42,.45)", zIndex: 1055 }}>
       <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content border-0 shadow-lg" style={{ borderRadius:14 }}>
-          <div className="modal-header" style={{ background:"#f9fafb", borderRadius:"14px 14px 0 0" }}>
+        <div className="modal-content border-0 shadow-lg" style={{ borderRadius: 14 }}>
+          <div className="modal-header" style={{ background: "#f9fafb", borderRadius: "14px 14px 0 0" }}>
             <div className="d-flex align-items-center gap-2">
               <ClipboardList size={16} color="#10b981" />
               <div>
-                <p className="mb-0 fw-bold" style={{ fontSize:14 }}>Update Training Record</p>
-                <p className="mb-0 text-muted" style={{ fontSize:11 }}>{record.employeeId?.name} — {record.programId?.title}</p>
+                <p className="mb-0 fw-bold" style={{ fontSize: 14 }}>Update Training Record</p>
+                <p className="mb-0 text-muted" style={{ fontSize: 11 }}>{record.employeeId?.name} — {record.programId?.title}</p>
               </div>
             </div>
             <button className="btn-close" onClick={onClose} />
           </div>
           <div className="modal-body d-flex flex-column gap-3">
             {chapterInfo && (
-              <div style={{ background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:9, padding:"12px 14px" }}>
+              <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 9, padding: "12px 14px" }}>
                 <div className="d-flex align-items-center justify-content-between mb-2">
-                  <p className="mb-0 fw-bold" style={{ fontSize:12.5 }}>Chapter Progress</p>
-                  <span className="badge" style={{ background: chapterInfoStyle(chapterInfo).bg, color: chapterInfoStyle(chapterInfo).color, fontSize:11 }}>
+                  <p className="mb-0 fw-bold" style={{ fontSize: 12.5 }}>Chapter Progress</p>
+                  <span className="badge" style={{ background: chapterInfoStyle(chapterInfo).bg, color: chapterInfoStyle(chapterInfo).color, fontSize: 11 }}>
                     {chapterInfo.completed}/{chapterInfo.total} · {chapterInfoStyle(chapterInfo).label}
                   </span>
                 </div>
-                <div style={{ height:7, background:"#e5e7eb", borderRadius:5, overflow:"hidden", marginBottom:8 }}>
-                  <div style={{ height:"100%", width:`${chapterInfo.percent}%`, background: chapterInfo.percent===100 ? "#10b981" : chapterInfo.stuck ? "#f97316" : "#3b82f6", transition:"width .3s" }} />
+                <div style={{ height: 7, background: "#e5e7eb", borderRadius: 5, overflow: "hidden", marginBottom: 8 }}>
+                  <div style={{ height: "100%", width: `${chapterInfo.percent}%`, background: chapterInfo.percent === 100 ? "#10b981" : chapterInfo.stuck ? "#f97316" : "#3b82f6", transition: "width .3s" }} />
                 </div>
 
                 {chapterInfo.currentChapter && (
-                  <p className="mb-1" style={{ fontSize:11.5, color: chapterInfo.stuck ? "#c2410c" : "#6b7280" }}>
+                  <p className="mb-1" style={{ fontSize: 11.5, color: chapterInfo.stuck ? "#c2410c" : "#6b7280" }}>
                     📍 Currently on Chapter {chapterInfo.currentChapter.chapterNo} — {chapterInfo.currentChapter.title}
                     {chapterInfo.currentHasQuiz && chapterInfo.currentAttempts > 0
                       ? ` · quiz attempted ${chapterInfo.currentAttempts} time${chapterInfo.currentAttempts > 1 ? "s" : ""}, best score ${chapterInfo.currentBestScore}% (needs 70%)`
@@ -479,24 +479,24 @@ function UpdateRecordModal({ record, onClose, onSave }) {
                 )}
 
                 {chapterInfo.quizChapterCount > 0 && (
-                  <p className="mb-1 text-muted" style={{ fontSize:11 }}>
+                  <p className="mb-1 text-muted" style={{ fontSize: 11 }}>
                     {chapterInfo.quizChapterCount} chapter{chapterInfo.quizChapterCount > 1 ? "s have" : " has"} a quiz — {chapterInfo.quizPassedCount} passed, {chapterInfo.quizChapterCount - chapterInfo.quizPassedCount} pending
                   </p>
                 )}
 
-                <button type="button" className="btn btn-sm btn-outline-secondary mt-1" style={{ fontSize:11 }}
+                <button type="button" className="btn btn-sm btn-outline-secondary mt-1" style={{ fontSize: 11 }}
                   onClick={() => setShowChapters(v => !v)}>
                   {showChapters ? "Hide" : "View"} full chapter list ({chapterInfo.total})
                 </button>
 
                 {showChapters && (
-                  <div className="mt-2" style={{ maxHeight:220, overflowY:"auto", border:"1px solid #e5e7eb", borderRadius:7, background:"#fff" }}>
+                  <div className="mt-2" style={{ maxHeight: 220, overflowY: "auto", border: "1px solid #e5e7eb", borderRadius: 7, background: "#fff" }}>
                     {chapterInfo.sorted.map(c => {
                       const cp = chapterInfo.cpByNo.get(c.chapterNo);
                       const hasQuiz = (c.quizQuestions?.length || 0) > 0;
                       const watched = !!cp?.watched;
                       return (
-                        <div key={c.chapterNo} className="d-flex align-items-center justify-content-between px-2 py-1" style={{ fontSize:11, borderBottom:"1px solid #f1f2f4" }}>
+                        <div key={c.chapterNo} className="d-flex align-items-center justify-content-between px-2 py-1" style={{ fontSize: 11, borderBottom: "1px solid #f1f2f4" }}>
                           <span>{watched ? "✅" : "⬜"} Ch.{c.chapterNo} — {c.title}</span>
                           <span className="text-muted">
                             {hasQuiz
@@ -519,10 +519,10 @@ function UpdateRecordModal({ record, onClose, onSave }) {
               }}>
                 {lastAttempt.passed ? <CheckCircle2 size={16} color="#10b981" /> : <AlertTriangle size={16} color="#ef4444" />}
                 <div>
-                  <p className="mb-0 fw-bold" style={{ fontSize:13, color: lastAttempt.passed ? "#065f46" : "#991b1b" }}>
+                  <p className="mb-0 fw-bold" style={{ fontSize: 13, color: lastAttempt.passed ? "#065f46" : "#991b1b" }}>
                     Quiz score: {lastAttempt.score}% — {lastAttempt.passed ? "Passed" : "Failed"} (70% required)
                   </p>
-                  <p className="mb-0" style={{ fontSize:11, color:"#6b7280" }}>Review the result, then set status to Completed to approve certification.</p>
+                  <p className="mb-0" style={{ fontSize: 11, color: "#6b7280" }}>Review the result, then set status to Completed to approve certification.</p>
                 </div>
               </div>
             )}
@@ -556,7 +556,7 @@ function UpdateRecordModal({ record, onClose, onSave }) {
                           <div className="d-flex flex-column gap-1">
                             {(q.options || []).map((opt, oi) => {
                               const isEmployeePick = oi === a.selectedOptionIndex;
-                              const isCorrectOpt   = oi === q.correctOptionIndex;
+                              const isCorrectOpt = oi === q.correctOptionIndex;
                               return (
                                 <span key={oi} style={{
                                   fontSize: 11.5,
@@ -579,16 +579,16 @@ function UpdateRecordModal({ record, onClose, onSave }) {
             )}
             <div>
               <label style={labelStyle}>Status</label>
-              <select className="form-select form-select-sm" value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))}>
-                {Object.entries(STATUS_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+              <select className="form-select form-select-sm" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+                {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
-               {form.status === "retrain" && (
-                <p className="mt-1 mb-0" style={{ fontSize:11, color:"#c2410c" }}>
+              {form.status === "retrain" && (
+                <p className="mt-1 mb-0" style={{ fontSize: 11, color: "#c2410c" }}>
                   This resets their study checklist and clears the quiz attempt — they'll need to re-study every product and retake the test.
                 </p>
               )}
               {form.status === "absent" && (
-                <p className="mt-1 mb-0" style={{ fontSize:11, color:"#9f1239" }}>
+                <p className="mt-1 mb-0" style={{ fontSize: 11, color: "#9f1239" }}>
                   Marks this person as not attended for the offline session. They'll be notified and can be re-assigned or rescheduled.
                 </p>
               )}
@@ -598,8 +598,8 @@ function UpdateRecordModal({ record, onClose, onSave }) {
               <input type="date" className="form-control form-control-sm"
                 value={form.dueDate}
                 max={courseEndDate}
-                onChange={e=>setForm(f=>({...f,dueDate:e.target.value}))} />
-              <p className="text-muted mt-1 mb-0" style={{ fontSize:11 }}>
+                onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
+              <p className="text-muted mt-1 mb-0" style={{ fontSize: 11 }}>
                 {courseEndDate
                   ? `Course ends on ${new Date(courseEndDate).toLocaleDateString("en-IN")} — due date can't be later than this. To go beyond, extend the course end date in the program first.`
                   : "Leave blank for no deadline."}
@@ -610,30 +610,30 @@ function UpdateRecordModal({ record, onClose, onSave }) {
               <label style={labelStyle}>Post-Training Assessment Score (%)</label>
               <input type="number" min="0" max="100" className="form-control form-control-sm"
                 value={form.assessmentScore}
-                onChange={e=>setForm(f=>({...f,assessmentScore:e.target.value}))}
+                onChange={e => setForm(f => ({ ...f, assessmentScore: e.target.value }))}
                 placeholder="e.g. 85" />
-              <p className="text-muted mt-1" style={{ fontSize:11 }}>Policy target: ≥ 80%</p>
+              <p className="text-muted mt-1" style={{ fontSize: 11 }}>Policy target: ≥ 80%</p>
             </div>
-            <div className="form-check form-switch d-flex align-items-center gap-2" style={{ background:"#f9fafb", borderRadius:9, padding:"10px 14px", border:"1px solid #e5e7eb" }}>
+            <div className="form-check form-switch d-flex align-items-center gap-2" style={{ background: "#f9fafb", borderRadius: 9, padding: "10px 14px", border: "1px solid #e5e7eb" }}>
               <input className="form-check-input" type="checkbox" role="switch"
                 checked={form.certificationIssued}
-                onChange={e=>setForm(f=>({...f,certificationIssued:e.target.checked}))}
-                style={{ width:36, height:20 }} />
-              <label className="form-check-label fw-bold" style={{ fontSize:13 }}>Certification Issued</label>
+                onChange={e => setForm(f => ({ ...f, certificationIssued: e.target.checked }))}
+                style={{ width: 36, height: 20 }} />
+              <label className="form-check-label fw-bold" style={{ fontSize: 13 }}>Certification Issued</label>
             </div>
             <div>
               <label style={labelStyle}>Progress Note</label>
               <textarea className="form-control form-control-sm" rows={2}
                 value={form.progressNote}
-                onChange={e=>setForm(f=>({...f,progressNote:e.target.value}))}
+                onChange={e => setForm(f => ({ ...f, progressNote: e.target.value }))}
                 placeholder="What was covered, observations..." />
             </div>
           </div>
           <div className="modal-footer gap-2">
             <button className="btn btn-light flex-fill" onClick={onClose}>Cancel</button>
             <button className="btn btn-success fw-bold flex-fill" disabled={saving}
-              onClick={async()=>{setSaving(true);await onSave(record._id,{...form,assessmentScore:form.assessmentScore?Number(form.assessmentScore):undefined});setSaving(false);}}>
-              {saving?"Saving...":"Update Record"}
+              onClick={async () => { setSaving(true); await onSave(record._id, { ...form, assessmentScore: form.assessmentScore ? Number(form.assessmentScore) : undefined }); setSaving(false); }}>
+              {saving ? "Saving..." : "Update Record"}
             </button>
           </div>
         </div>
@@ -644,17 +644,17 @@ function UpdateRecordModal({ record, onClose, onSave }) {
 
 // ─── Quiz Questions Manager Modal (HR) ─────────────────────────
 function QuizQuestionsManagerModal({ onClose, showMsg }) {
-  const [mode, setMode]           = useState("product");
-  const [products, setProducts]   = useState([]);
-  const [programs, setPrograms]   = useState([]);
+  const [mode, setMode] = useState("product");
+  const [products, setProducts] = useState([]);
+  const [programs, setPrograms] = useState([]);
   const [productId, setProductId] = useState("");
   const [programId, setProgramId] = useState("");
   const [questions, setQuestions] = useState([]);
-  const [loading, setLoading]     = useState(true);
+  const [loading, setLoading] = useState(true);
   const [loadingQs, setLoadingQs] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ questionText: "", options: ["", "", "", ""], correctOptionIndex: 0 });
-  const [saving, setSaving]   = useState(false);
+  const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
   const selectedId = mode === "product" ? productId : programId;
@@ -940,7 +940,7 @@ function CertificateRequestsPanel({ records, onUploaded }) {
 // ─── Create Training Program Modal ────────────────────────────
 function CreateProgramModal({ onClose, onSave, editingProgram }) {
   const isEditing = !!editingProgram;
-  const [title, setTitle]             = useState(editingProgram?.title || "");
+  const [title, setTitle] = useState(editingProgram?.title || "");
   const [description, setDescription] = useState(editingProgram?.description || "");
   const uidRef = useRef(0);
   const newUid = () => `c${Date.now()}-${uidRef.current++}`;
@@ -949,10 +949,10 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
   );
   const [useChapters, setUseChapters] = useState((editingProgram?.chapters || []).length > 0);
   const [accessStartDate, setAccessStartDate] = useState(
-    editingProgram?.accessStartDate ? new Date(editingProgram.accessStartDate).toISOString().slice(0,10) : ""
+    editingProgram?.accessStartDate ? new Date(editingProgram.accessStartDate).toISOString().slice(0, 10) : ""
   );
   const [accessEndDate, setAccessEndDate] = useState(
-    editingProgram?.accessEndDate ? new Date(editingProgram.accessEndDate).toISOString().slice(0,10) : ""
+    editingProgram?.accessEndDate ? new Date(editingProgram.accessEndDate).toISOString().slice(0, 10) : ""
   );
   const addChapter = () => setChapters(prev => [
     ...prev,
@@ -1037,29 +1037,29 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
     abortAllUploads();
     onClose();
   };
-  const [duration, setDuration]        = useState(editingProgram?.duration || "");
-  const [conductedBy, setConductedBy]  = useState(editingProgram?.conductedBy || "");
-  const [modulesText, setModulesText]  = useState((editingProgram?.modules || []).join(", "));
-  const [videoMode, setVideoMode]      = useState(editingProgram?.videoSource === "upload" ? "upload" : "youtube");
-  const [youtubeUrl, setYoutubeUrl]    = useState(editingProgram?.videoSource === "youtube" ? (editingProgram?.videoUrl || "") : "");
-  const [videoFile, setVideoFile]      = useState(null);
-  const [pdfFile, setPdfFile]          = useState(null);
-  const [saving, setSaving]            = useState(false);
-  const [error, setError]              = useState("");
+  const [duration, setDuration] = useState(editingProgram?.duration || "");
+  const [conductedBy, setConductedBy] = useState(editingProgram?.conductedBy || "");
+  const [modulesText, setModulesText] = useState((editingProgram?.modules || []).join(", "));
+  const [videoMode, setVideoMode] = useState(editingProgram?.videoSource === "upload" ? "upload" : "youtube");
+  const [youtubeUrl, setYoutubeUrl] = useState(editingProgram?.videoSource === "youtube" ? (editingProgram?.videoUrl || "") : "");
+  const [videoFile, setVideoFile] = useState(null);
+  const [pdfFile, setPdfFile] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-   const [deliveryMode, setDeliveryMode] = useState(editingProgram?.deliveryMode || "online");
-   const [sessionDate, setSessionDate]   = useState(editingProgram?.sessionDate ? new Date(editingProgram.sessionDate).toISOString().slice(0,10) : "");
-  const [sessionTime, setSessionTime]   = useState(editingProgram?.sessionTime || "");
-  const [venue, setVenue]               = useState(editingProgram?.venue || "");
+  const [deliveryMode, setDeliveryMode] = useState(editingProgram?.deliveryMode || "online");
+  const [sessionDate, setSessionDate] = useState(editingProgram?.sessionDate ? new Date(editingProgram.sessionDate).toISOString().slice(0, 10) : "");
+  const [sessionTime, setSessionTime] = useState(editingProgram?.sessionTime || "");
+  const [venue, setVenue] = useState(editingProgram?.venue || "");
 
   const [hasCertification, setHasCertification] = useState(!!editingProgram?.certification);
-  const [certification, setCertification]       = useState(editingProgram?.certification || "");
+  const [certification, setCertification] = useState(editingProgram?.certification || "");
 
-   const [departments, setDepartments] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [deptLoading, setDeptLoading] = useState(true);
-  const [department, setDepartment]   = useState(editingProgram?.department || "all");
-  const [deptQuery, setDeptQuery]     = useState(editingProgram?.department && editingProgram.department !== "all" ? editingProgram.department : "All Departments");
-  const [deptOpen, setDeptOpen]       = useState(false);
+  const [department, setDepartment] = useState(editingProgram?.department || "all");
+  const [deptQuery, setDeptQuery] = useState(editingProgram?.department && editingProgram.department !== "all" ? editingProgram.department : "All Departments");
+  const [deptOpen, setDeptOpen] = useState(false);
 
   useEffect(() => {
     const fetchDepts = async () => {
@@ -1159,10 +1159,10 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
       fd.append("chapters", JSON.stringify([]));
     }
 
-        const modules = modulesText.split(",").map(m => m.trim()).filter(Boolean);
+    const modules = modulesText.split(",").map(m => m.trim()).filter(Boolean);
     fd.append("modules", JSON.stringify(modules));
 
-        fd.append("deliveryMode", deliveryMode);
+    fd.append("deliveryMode", deliveryMode);
 
     if (deliveryMode === "offline") {
       if (sessionDate) fd.append("sessionDate", sessionDate);
@@ -1177,7 +1177,7 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
       if (pdfFile) fd.append("pdf", pdfFile);
     }
 
-      try {
+    try {
       await onSave(fd);
     } catch (e) {
       setError(e?.response?.data?.message || `Failed to ${isEditing ? "update" : "create"} program`);
@@ -1443,7 +1443,7 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
                 </div>
               )}
 
-                <div className="col-12">
+              <div className="col-12">
                 <label style={labelStyle}>Delivery Mode</label>
                 <div className="d-flex gap-2">
                   <button type="button" className={`btn btn-sm ${deliveryMode === "online" ? "btn-primary" : "btn-light"}`} style={{ fontSize: 12 }} onClick={() => setDeliveryMode("online")}>
@@ -1561,7 +1561,7 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
                 />
               </div>
 
-                           {deliveryMode === "online" && !useChapters && (
+              {deliveryMode === "online" && !useChapters && (
                 <>
                   <div className="col-12">
                     <label style={labelStyle}>Training Video</label>
@@ -1598,10 +1598,10 @@ function CreateProgramModal({ onClose, onSave, editingProgram }) {
                     <input type="date" className="form-control form-control-sm" value={sessionDate} onChange={e => setSessionDate(e.target.value)} />
                   </div>
                   <div className="col-md-6">
-  <label style={labelStyle}>Session Time</label>
-  <input type="text" className="form-control form-control-sm" value={sessionTime}
-    onChange={e => setSessionTime(e.target.value)} placeholder="e.g. 10:00 AM - 1:00 PM" />
-</div>
+                    <label style={labelStyle}>Session Time</label>
+                    <input type="text" className="form-control form-control-sm" value={sessionTime}
+                      onChange={e => setSessionTime(e.target.value)} placeholder="e.g. 10:00 AM - 1:00 PM" />
+                  </div>
                   <div className="col-md-6">
                     <label style={labelStyle}>Venue</label>
                     <input type="text" className="form-control form-control-sm" value={venue} onChange={e => setVenue(e.target.value)} placeholder="e.g. HO Training Hall, 2nd Floor" />
@@ -1780,25 +1780,25 @@ function ProgramPreviewModal({ program, onClose, onEdit }) {
 
 // ─── Main HR Component ────────────────────────────────────────
 export default function TrainingRoadmapHR() {
-  const [programs, setPrograms]   = useState([]);
-  const [records, setRecords]     = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [records, setRecords] = useState([]);
   const [employees, setEmployees] = useState([]);
-  const [stats, setStats]         = useState(null);
-  const [compLog, setCompLog]     = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState(null);
-  const [toast, setToast]         = useState(null);
-  const [modal, setModal]         = useState(null); // "assign"|"update"|"quizQuestions"|"createProgram"
+  const [stats, setStats] = useState(null);
+  const [compLog, setCompLog] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [modal, setModal] = useState(null); // "assign"|"update"|"quizQuestions"|"createProgram"
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [activeTab, setActiveTab] = useState("roadmap"); // "roadmap"|"records"|"kpi"|"certificates"
-  const [search, setSearch]       = useState("");
+  const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [filterDept, setFilterDept]     = useState("all");
-  const [seeding, setSeeding]     = useState(false);
+  const [filterDept, setFilterDept] = useState("all");
+  const [seeding, setSeeding] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [deletingLogId, setDeletingLogId] = useState(null);
   const [expandedEmp, setExpandedEmp] = useState(null);
- const [editingProgram, setEditingProgram] = useState(null);
+  const [editingProgram, setEditingProgram] = useState(null);
   const [deletingProgramId, setDeletingProgramId] = useState(null);
   const [unassigningId, setUnassigningId] = useState(null);
   const [lockingId, setLockingId] = useState(null);
@@ -1817,26 +1817,26 @@ export default function TrainingRoadmapHR() {
   // ✅ NEW — search box next to "Active Training Programs" (title/modules/conductedBy)
   const [programSearch, setProgramSearch] = useState("");
 
-  const showMsg = (msg, type="success") => {
+  const showMsg = (msg, type = "success") => {
     setToast({ msg, type });
-    setTimeout(()=>setToast(null), 3000);
+    setTimeout(() => setToast(null), 3000);
   };
 
   const fetchAll = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      await axios.post(`${API_BASE}/api/training/consolidate-equipment`).catch(() => {});
+      await axios.post(`${API_BASE}/api/training/consolidate-equipment`).catch(() => { });
 
       const params = {};
       if (filterStatus !== "all") params.status = filterStatus;
-      if (filterDept   !== "all") params.department = filterDept;
+      if (filterDept !== "all") params.department = filterDept;
 
       const [progRes, recRes, statsRes, empRes, logRes] = await Promise.all([
         axios.get(`${API_BASE}/api/training/programs`),
         axios.get(`${API_BASE}/api/training/records`, { params }),
         axios.get(`${API_BASE}/api/training/stats`),
         axios.get(`${API_BASE}/api/hr/employees`),
-        axios.get(`${API_BASE}/api/training/compliance-log`, { params:{ limit:30 } }),
+        axios.get(`${API_BASE}/api/training/compliance-log`, { params: { limit: 30 } }),
       ]);
       setPrograms(progRes.data.data || []);
       setRecords(recRes.data.data || []);
@@ -1844,7 +1844,7 @@ export default function TrainingRoadmapHR() {
       const allEmp = Array.isArray(empRes.data) ? empRes.data : [];
       setEmployees(allEmp.filter(e => e.status === "active"));
       setCompLog(logRes.data.data || []);
-    } catch(e) { setError(e?.response?.data?.message || "Failed to load"); }
+    } catch (e) { setError(e?.response?.data?.message || "Failed to load"); }
     finally { setLoading(false); }
   }, [filterStatus, filterDept]);
 
@@ -1857,7 +1857,7 @@ export default function TrainingRoadmapHR() {
       const res = await axios.delete(`${API_BASE}/api/training/programs`);
       showMsg(res.data.message);
       fetchAll();
-    } catch(e) { showMsg(e?.response?.data?.message || "Clear failed","error"); }
+    } catch (e) { showMsg(e?.response?.data?.message || "Clear failed", "error"); }
     setSeeding(false);
   };
 
@@ -1873,7 +1873,7 @@ export default function TrainingRoadmapHR() {
       setModal(null);
       setAssignPresetId(null);
       fetchAll();
-    } catch(e) { showMsg(e?.response?.data?.message||"Failed","error"); }
+    } catch (e) { showMsg(e?.response?.data?.message || "Failed", "error"); }
   };
 
   // ✅ NEW — opens the Assign modal pre-loaded with this program (from the
@@ -1883,19 +1883,19 @@ export default function TrainingRoadmapHR() {
     setModal("assign");
   };
 
-const [finishingProgId, setFinishingProgId] = useState(null);
-const handleMarkAllComplete = async (program) => {
-  const progRecords = records.filter(r => r.programId?._id === program._id && !["completed","waived"].includes(r.status));
-  if (!progRecords.length) { showMsg("Everyone assigned to this program is already completed.", "error"); return; }
-  if (!window.confirm(`Mark all ${progRecords.length} assigned employee${progRecords.length>1?"s":""} as completed for "${program.title}"?\n\nIf anyone was actually absent, you can fix their record individually afterwards from the Records tab.`)) return;
-  setFinishingProgId(program._id);
-  try {
-    const res = await axios.put(`${API_BASE}/api/training/programs/${program._id}/mark-all-complete`);
-    showMsg(res.data.message || "Marked complete!");
-    fetchAll();
-  } catch(e) { showMsg(e?.response?.data?.message || "Failed", "error"); }
-  finally { setFinishingProgId(null); }
-};
+  const [finishingProgId, setFinishingProgId] = useState(null);
+  const handleMarkAllComplete = async (program) => {
+    const progRecords = records.filter(r => r.programId?._id === program._id && !["completed", "waived"].includes(r.status));
+    if (!progRecords.length) { showMsg("Everyone assigned to this program is already completed.", "error"); return; }
+    if (!window.confirm(`Mark all ${progRecords.length} assigned employee${progRecords.length > 1 ? "s" : ""} as completed for "${program.title}"?\n\nIf anyone was actually absent, you can fix their record individually afterwards from the Records tab.`)) return;
+    setFinishingProgId(program._id);
+    try {
+      const res = await axios.put(`${API_BASE}/api/training/programs/${program._id}/mark-all-complete`);
+      showMsg(res.data.message || "Marked complete!");
+      fetchAll();
+    } catch (e) { showMsg(e?.response?.data?.message || "Failed", "error"); }
+    finally { setFinishingProgId(null); }
+  };
 
   // ✅ NEW — quick "No Test" toggle straight from the program card
   const [togglingNoTestId, setTogglingNoTestId] = useState(null);
@@ -1920,7 +1920,7 @@ const handleMarkAllComplete = async (program) => {
       setModal(null);
       setSelectedRecord(null);
       fetchAll();
-    } catch(e) { showMsg(e?.response?.data?.message||"Failed","error"); }
+    } catch (e) { showMsg(e?.response?.data?.message || "Failed", "error"); }
   };
 
   const handleDeleteRecord = async (record) => {
@@ -1932,7 +1932,7 @@ const handleMarkAllComplete = async (program) => {
       await axios.delete(`${API_BASE}/api/training/records/${record._id}`);
       showMsg("Training record deleted.");
       fetchAll();
-    } catch(e) {
+    } catch (e) {
       showMsg(e?.response?.data?.message || "Delete failed", "error");
     } finally {
       setDeletingId(null);
@@ -1947,7 +1947,7 @@ const handleMarkAllComplete = async (program) => {
       await axios.delete(`${API_BASE}/api/training/compliance-log/${log._id}`);
       showMsg("Compliance log entry deleted.");
       fetchAll();
-    } catch(e) {
+    } catch (e) {
       showMsg(e?.response?.data?.message || "Delete failed", "error");
     } finally {
       setDeletingLogId(null);
@@ -1956,7 +1956,7 @@ const handleMarkAllComplete = async (program) => {
 
   const handleUnassign = async (record) => {
     if (unassignInfo?.timer) clearTimeout(unassignInfo.timer);
-    const empName   = record.employeeId?.name || "this employee";
+    const empName = record.employeeId?.name || "this employee";
     const progTitle = record.programId?.title || "this program";
     setUnassigningId(record._id);
     try {
@@ -1965,12 +1965,12 @@ const handleMarkAllComplete = async (program) => {
       const timer = setTimeout(() => setUnassignInfo(null), 7000);
       setUnassignInfo({
         employeeId: record.employeeId?._id || record.employeeId,
-        programId:  record.programId?._id || record.programId,
-        dueDate:    record.dueDate,
-        notes:      record.notes,
+        programId: record.programId?._id || record.programId,
+        dueDate: record.dueDate,
+        notes: record.notes,
         empName, progTitle, timer,
       });
-    } catch(e) {
+    } catch (e) {
       showMsg(e?.response?.data?.message || "Unassign failed", "error");
     } finally {
       setUnassigningId(null);
@@ -1986,7 +1986,7 @@ const handleMarkAllComplete = async (program) => {
       await axios.post(`${API_BASE}/api/training/assign`, { employeeId, programId, dueDate, notes });
       showMsg(`"${progTitle}" re-assigned to ${empName}.`);
       fetchAll();
-    } catch(e) {
+    } catch (e) {
       showMsg(e?.response?.data?.message || "Undo failed — please re-assign manually", "error");
     }
   };
@@ -2012,7 +2012,7 @@ const handleMarkAllComplete = async (program) => {
       await axios.delete(`${API_BASE}/api/training/programs/${program._id}`);
       showMsg("Training program deleted.");
       fetchAll();
-    } catch(e) {
+    } catch (e) {
       showMsg(e?.response?.data?.message || "Delete failed", "error");
     } finally {
       setDeletingProgramId(null);
@@ -2055,7 +2055,7 @@ const handleMarkAllComplete = async (program) => {
   });
 
   return (
-    <div className="container-fluid py-4" style={{ maxWidth:1400 }}>
+    <div className="container-fluid py-4" style={{ maxWidth: 1400 }}>
       {/* ✅ NEW — small stylesheet for the program-card hover lift + 2-line title clamp,
           kept local to this component so nothing else on the page is affected. */}
       <style>{`
@@ -2070,10 +2070,10 @@ const handleMarkAllComplete = async (program) => {
         .hr-records-table > tbody > tr:not(.hr-history-row):hover { background: #f5f8ff !important; }
       `}</style>
 
-        {toast && <div className={`alert alert-${toast.type==="error"?"danger":"success"} position-fixed top-0 end-0 m-3`} style={{ zIndex:9999, fontSize:13 }}>{toast.msg}</div>}
+      {toast && <div className={`alert alert-${toast.type === "error" ? "danger" : "success"} position-fixed top-0 end-0 m-3`} style={{ zIndex: 9999, fontSize: 13 }}>{toast.msg}</div>}
 
       {unassignInfo && (
-        <div className="alert alert-warning position-fixed top-0 end-0 m-3 d-flex align-items-center gap-3 shadow-sm" style={{ zIndex:9999, fontSize:13 }}>
+        <div className="alert alert-warning position-fixed top-0 end-0 m-3 d-flex align-items-center gap-3 shadow-sm" style={{ zIndex: 9999, fontSize: 13 }}>
           <span>Unassigned "{unassignInfo.progTitle}" from {unassignInfo.empName}.</span>
           <button className="btn btn-sm btn-dark fw-bold" onClick={handleUndoUnassign}>Undo</button>
         </div>
@@ -2084,12 +2084,12 @@ const handleMarkAllComplete = async (program) => {
           programs={programs}
           employees={employees}
           initialProgramId={assignPresetId}
-          onClose={()=>{ setModal(null); setAssignPresetId(null); }}
+          onClose={() => { setModal(null); setAssignPresetId(null); }}
           onSave={handleAssign}
         />
       )}
-      {modal === "update" && selectedRecord && <UpdateRecordModal record={selectedRecord} onClose={()=>{setModal(null);setSelectedRecord(null);}} onSave={handleUpdate} />}
-      {modal === "quizQuestions" && <QuizQuestionsManagerModal onClose={()=>setModal(null)} showMsg={showMsg} />}
+      {modal === "update" && selectedRecord && <UpdateRecordModal record={selectedRecord} onClose={() => { setModal(null); setSelectedRecord(null); }} onSave={handleUpdate} />}
+      {modal === "quizQuestions" && <QuizQuestionsManagerModal onClose={() => setModal(null)} showMsg={showMsg} />}
       {/* ✅ NEW — read-only program preview, opened from the 🔍 icon on a program card */}
       {previewProgram && (
         <ProgramPreviewModal
@@ -2101,13 +2101,13 @@ const handleMarkAllComplete = async (program) => {
       {modal === "createProgram" && (
         <CreateProgramModal
           editingProgram={editingProgram}
-          onClose={()=>{ setModal(null); setEditingProgram(null); }}
-          onSave={async(fd)=>{
+          onClose={() => { setModal(null); setEditingProgram(null); }}
+          onSave={async (fd) => {
             if (editingProgram) {
-              await axios.put(`${API_BASE}/api/training/programs/${editingProgram._id}`, fd, {headers:{'Content-Type':'multipart/form-data'}});
+              await axios.put(`${API_BASE}/api/training/programs/${editingProgram._id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
               showMsg("Training program updated!");
             } else {
-              await axios.post(`${API_BASE}/api/training/programs`, fd, {headers:{'Content-Type':'multipart/form-data'}});
+              await axios.post(`${API_BASE}/api/training/programs`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
               showMsg("Training program created!");
             }
             setModal(null);
@@ -2119,23 +2119,23 @@ const handleMarkAllComplete = async (program) => {
       {/* ── Header ── */}
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div className="d-flex align-items-center gap-3">
-          <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg,#3b82f6,#8b5cf6)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg,#3b82f6,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <GraduationCap size={22} color="#fff" />
           </div>
           <div>
             <h4 className="mb-0 fw-bold">Training Roadmap</h4>
-            <p className="mb-0 text-muted" style={{ fontSize:12 }}>Job-Role Based Mandatory Training (RCA)</p>
+            <p className="mb-0 text-muted" style={{ fontSize: 12 }}>Job-Role Based Mandatory Training (RCA)</p>
           </div>
         </div>
         <div className="d-flex align-items-center gap-2 flex-wrap">
           <div className="d-flex gap-2 flex-wrap">
-            <button className="btn btn-sm btn-outline-primary d-flex align-items-center gap-2 fw-bold" onClick={()=>setModal("quizQuestions")}>
+            <button className="btn btn-sm btn-outline-primary d-flex align-items-center gap-2 fw-bold" onClick={() => setModal("quizQuestions")}>
               <ClipboardList size={14} /> Manage Quiz Questions
             </button>
-            <button className="btn btn-primary d-flex align-items-center gap-2 fw-bold" onClick={()=>{ setAssignPresetId(null); setModal("assign"); }}>
+            <button className="btn btn-primary d-flex align-items-center gap-2 fw-bold" onClick={() => { setAssignPresetId(null); setModal("assign"); }}>
               <Plus size={14} /> Assign Training
             </button>
-            <button className="btn btn-sm btn-outline-success d-flex align-items-center gap-2 fw-bold" onClick={()=>{ setEditingProgram(null); setModal("createProgram"); }}>
+            <button className="btn btn-sm btn-outline-success d-flex align-items-center gap-2 fw-bold" onClick={() => { setEditingProgram(null); setModal("createProgram"); }}>
               <Plus size={14} /> Create Training
             </button>
           </div>
@@ -2158,26 +2158,26 @@ const handleMarkAllComplete = async (program) => {
           Completion Rate and Avg Score stay as plain summary cards. */}
       {stats && (
         <div className="row g-3 mb-4">
-          <div className="col"><StatCard label="Total Assigned"    value={stats.total}          color="#111827" bg="#f3f4f6" icon={<BookOpen size={15}/>} /></div>
-          <div className="col"><StatCard label="Completion Rate"   value={`${stats.completionRate}%`} sub={`Target ≥ 95%`} color={stats.completionRate>=95?"#10b981":"#ef4444"} bg={stats.completionRate>=95?"#ecfdf5":"#fef2f2"} icon={<CheckCircle2 size={15}/>} /></div>
-          <div className="col"><StatCard label="In Progress"       value={stats.inProgress}     color="#3b82f6" bg="#eff6ff" icon={<Clock size={15}/>} onClick={()=>handleStatClick("in_progress")} active={statFilterKey==="in_progress"} /></div>
-          <div className="col"><StatCard label="Overdue"           value={stats.overdue}        color="#ef4444" bg="#fef2f2" icon={<AlertTriangle size={15}/>} onClick={()=>handleStatClick("overdue")} active={statFilterKey==="overdue"} /></div>
-          <div className="col"><StatCard label="Avg Score"         value={`${stats.avgScore}%`} sub="Target ≥ 80%" color={stats.avgScore>=80?"#10b981":"#f59e0b"} bg={stats.avgScore>=80?"#ecfdf5":"#fffbeb"} icon={<Target size={15}/>} /></div>
-          <div className="col"><StatCard label="Certified"         value={stats.certified}      color="#8b5cf6" bg="#f5f3ff" icon={<Award size={15}/>} onClick={()=>handleStatClick("certified")} active={statFilterKey==="certified"} /></div>
+          <div className="col"><StatCard label="Total Assigned" value={stats.total} color="#111827" bg="#f3f4f6" icon={<BookOpen size={15} />} /></div>
+          <div className="col"><StatCard label="Completion Rate" value={`${stats.completionRate}%`} sub={`Target ≥ 95%`} color={stats.completionRate >= 95 ? "#10b981" : "#ef4444"} bg={stats.completionRate >= 95 ? "#ecfdf5" : "#fef2f2"} icon={<CheckCircle2 size={15} />} /></div>
+          <div className="col"><StatCard label="In Progress" value={stats.inProgress} color="#3b82f6" bg="#eff6ff" icon={<Clock size={15} />} onClick={() => handleStatClick("in_progress")} active={statFilterKey === "in_progress"} /></div>
+          <div className="col"><StatCard label="Overdue" value={stats.overdue} color="#ef4444" bg="#fef2f2" icon={<AlertTriangle size={15} />} onClick={() => handleStatClick("overdue")} active={statFilterKey === "overdue"} /></div>
+          <div className="col"><StatCard label="Avg Score" value={`${stats.avgScore}%`} sub="Target ≥ 80%" color={stats.avgScore >= 80 ? "#10b981" : "#f59e0b"} bg={stats.avgScore >= 80 ? "#ecfdf5" : "#fffbeb"} icon={<Target size={15} />} /></div>
+          <div className="col"><StatCard label="Certified" value={stats.certified} color="#8b5cf6" bg="#f5f3ff" icon={<Award size={15} />} onClick={() => handleStatClick("certified")} active={statFilterKey === "certified"} /></div>
         </div>
       )}
 
       {/* ── Tabs ── */}
       <div className="d-flex gap-2 mb-3 flex-wrap">
         {[
-          { key:"roadmap",    label:"Training Roadmap",       icon:<Layers size={13}/> },
-          { key:"records",    label:`Records (${records.length})`, icon:<ClipboardList size={13}/> },
-          { key:"kpi",        label:"KPI Dashboard",          icon:<BarChart2 size={13}/> },
-          { key:"certificates", label:`Certificate Requests (${records.filter(r => r.certificateRequestStatus === "requested").length})`, icon:<Award size={13}/> },
-        ].map(tab=>(
-          <button key={tab.key} onClick={()=>setActiveTab(tab.key)}
-            className={`btn btn-sm d-flex align-items-center gap-1 ${activeTab===tab.key?"btn-primary":"btn-light"}`}
-            style={{ fontSize:12 }}>
+          { key: "roadmap", label: "Training Roadmap", icon: <Layers size={13} /> },
+          { key: "records", label: `Records (${records.length})`, icon: <ClipboardList size={13} /> },
+          { key: "kpi", label: "KPI Dashboard", icon: <BarChart2 size={13} /> },
+          { key: "certificates", label: `Certificate Requests (${records.filter(r => r.certificateRequestStatus === "requested").length})`, icon: <Award size={13} /> },
+        ].map(tab => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            className={`btn btn-sm d-flex align-items-center gap-1 ${activeTab === tab.key ? "btn-primary" : "btn-light"}`}
+            style={{ fontSize: 12 }}>
             {tab.icon} {tab.label}
           </button>
         ))}
@@ -2191,9 +2191,9 @@ const handleMarkAllComplete = async (program) => {
           {/* Framework strip */}
           <div className="d-flex flex-wrap gap-3 mb-4">
             {[
-              { stage: "Learn", icon: <BookOpen size={16} />, focus: "Foundation & Skill Learning", outcome: "Acquire job knowledge",         color: "#3b82f6" },
-              { stage: "Apply", icon: <Target size={16} />,   focus: "Real-world Implementation",   outcome: "Demonstrate proficiency",       color: "#8b5cf6" },
-              { stage: "Lead",  icon: <TrendingUp size={16} />,focus: "Coaching & Mentorship",       outcome: "Guide others, build leadership", color: "#10b981" },
+              { stage: "Learn", icon: <BookOpen size={16} />, focus: "Foundation & Skill Learning", outcome: "Acquire job knowledge", color: "#3b82f6" },
+              { stage: "Apply", icon: <Target size={16} />, focus: "Real-world Implementation", outcome: "Demonstrate proficiency", color: "#8b5cf6" },
+              { stage: "Lead", icon: <TrendingUp size={16} />, focus: "Coaching & Mentorship", outcome: "Guide others, build leadership", color: "#10b981" },
             ].map((s, i) => (
               <div key={s.stage} className="d-flex align-items-center flex-fill" style={{ minWidth: 220 }}>
                 <div className="d-flex align-items-center gap-3 flex-fill" style={{
@@ -2223,16 +2223,16 @@ const handleMarkAllComplete = async (program) => {
             <div className="d-flex align-items-center gap-3">
               {/* ✅ NEW — search programs by title / modules / conducted-by */}
               <div className="input-group input-group-sm" style={{ maxWidth: 220 }}>
-                <span className="input-group-text border-end-0 bg-white"><Search size={13} color="#9ca3af"/></span>
+                <span className="input-group-text border-end-0 bg-white"><Search size={13} color="#9ca3af" /></span>
                 <input
                   className="form-control border-start-0"
                   placeholder="Search programs..."
                   value={programSearch}
-                  onChange={e=>setProgramSearch(e.target.value)}
+                  onChange={e => setProgramSearch(e.target.value)}
                 />
               </div>
               <span className="text-muted" style={{ fontSize: 12, whiteSpace: "nowrap" }}>
-                {filteredPrograms.length} of {visiblePrograms.length} program{visiblePrograms.length===1?"":"s"}
+                {filteredPrograms.length} of {visiblePrograms.length} program{visiblePrograms.length === 1 ? "" : "s"}
               </span>
             </div>
           </div>
@@ -2241,7 +2241,7 @@ const handleMarkAllComplete = async (program) => {
             <div className="card border-0 shadow-sm text-center py-5" style={{ borderRadius: 13 }}>
               <Layers size={36} className="text-muted mb-3 mx-auto" />
               <p className="text-muted mb-3">No training programs yet.</p>
-              <button className="btn btn-primary btn-sm mx-auto" style={{ width: "fit-content" }} onClick={()=>{ setAssignPresetId(null); setModal("assign"); }}>
+              <button className="btn btn-primary btn-sm mx-auto" style={{ width: "fit-content" }} onClick={() => { setAssignPresetId(null); setModal("assign"); }}>
                 <Plus size={13} /> Assign Training
               </button>
             </div>
@@ -2331,14 +2331,17 @@ const handleMarkAllComplete = async (program) => {
 
                         <div className="d-flex flex-wrap gap-2 mb-3" style={{ fontSize: 11, color: "#6b7280" }}>
                           {programLength(p) && <span className="d-flex align-items-center gap-1"><Clock size={11} />{programLength(p)}</span>}
-                                                    {p.conductedBy && <span className="d-flex align-items-center gap-1"><UserCheck size={11} />{p.conductedBy}</span>}
+                          {p.conductedBy && <span className="d-flex align-items-center gap-1"><UserCheck size={11} />{p.conductedBy}</span>}
+                          {p.createdByName && (
+                            <span className="d-flex align-items-center gap-1">Added by <strong>{p.createdByName}</strong></span>
+                          )}
                           {p.deliveryMode === "offline" && (
-                            <span className="d-flex align-items-center gap-1" style={{ color:"#f97316", fontWeight:600 }}>
+                            <span className="d-flex align-items-center gap-1" style={{ color: "#f97316", fontWeight: 600 }}>
                               <Calendar size={11} />
                               {p.sessionDate ? new Date(p.sessionDate).toLocaleDateString("en-IN") : "Offline"}{p.sessionTime ? `, ${p.sessionTime}` : ""}{p.venue ? ` · ${p.venue}` : ""}
                             </span>
                           )}
-                          {p.frequency && p.frequency !== "once" && <span className="d-flex align-items-center gap-1"><RefreshCw size={11} />{p.frequency.replace("_"," ")}</span>}
+                          {p.frequency && p.frequency !== "once" && <span className="d-flex align-items-center gap-1"><RefreshCw size={11} />{p.frequency.replace("_", " ")}</span>}
                         </div>
 
                         {/* ✅ NEW — No Test quick toggle (chapter courses only) */}
@@ -2378,7 +2381,7 @@ const handleMarkAllComplete = async (program) => {
                             <span style={{ fontSize: 11, color: "#6b7280" }}>{assignedCount} assigned · {completedCount} completed</span>
                             <span style={{ fontSize: 11, fontWeight: 700, color: completionPct >= 80 ? "#10b981" : "#3b82f6" }}>{completionPct}%</span>
                           </div>
-                     <div style={{ height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden" }}>
+                          <div style={{ height: 6, background: "#f3f4f6", borderRadius: 3, overflow: "hidden" }}>
                             <div style={{ height: "100%", width: `${completionPct}%`, background: completionPct >= 80 ? "#10b981" : "#3b82f6", transition: "width .3s" }} />
                           </div>
                         </div>
@@ -2401,7 +2404,7 @@ const handleMarkAllComplete = async (program) => {
                             disabled={finishingProgId === p._id}
                             onClick={() => handleMarkAllComplete(p)}
                           >
-                            {finishingProgId === p._id ? <span className="spinner-border spinner-border-sm" style={{ width:12, height:12 }} /> : <CheckCircle2 size={12} />}
+                            {finishingProgId === p._id ? <span className="spinner-border spinner-border-sm" style={{ width: 12, height: 12 }} /> : <CheckCircle2 size={12} />}
                             {finishingProgId === p._id ? "Finishing…" : "Finish Training — Mark All Complete"}
                           </button>
                         )}
@@ -2418,58 +2421,58 @@ const handleMarkAllComplete = async (program) => {
       {/* ══ RECORDS TAB (now includes inline compliance history) ═══ */}
       {activeTab === "records" && (
         <div>
-          <div className="alert d-flex align-items-start gap-2 mb-3" style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:10, fontSize:12 }}>
-            <Info size={14} color="#3b82f6" style={{ flexShrink:0, marginTop:1 }}/>
-            <p className="mb-0" style={{ color:"#1e40af" }}>
+          <div className="alert d-flex align-items-start gap-2 mb-3" style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, fontSize: 12 }}>
+            <Info size={14} color="#3b82f6" style={{ flexShrink: 0, marginTop: 1 }} />
+            <p className="mb-0" style={{ color: "#1e40af" }}>
               All trainings are tracked via RCA (Radnus Corporate Academy). Click the arrow next to any row to see its full history log. Managers must ensure 100% training compliance before confirming employee probation or promotion.
             </p>
           </div>
 
           {/* ✅ NEW — banner shown only when this list is filtered from a stat card click */}
           {statFilterKey && (
-            <div className="alert d-flex align-items-center justify-content-between gap-2 mb-3" style={{ background:"#f5f3ff", border:"1px solid #ddd6fe", borderRadius:10, fontSize:12, padding:"8px 14px" }}>
-              <span style={{ color:"#6d28d9" }}>
+            <div className="alert d-flex align-items-center justify-content-between gap-2 mb-3" style={{ background: "#f5f3ff", border: "1px solid #ddd6fe", borderRadius: 10, fontSize: 12, padding: "8px 14px" }}>
+              <span style={{ color: "#6d28d9" }}>
                 <Filter size={13} className="me-1" />
                 Filtered from <strong>{statFilterLabel}</strong> stat card
               </span>
-              <button className="btn btn-sm btn-outline-secondary" style={{ fontSize:11 }} onClick={clearStatFilter}>
+              <button className="btn btn-sm btn-outline-secondary" style={{ fontSize: 11 }} onClick={clearStatFilter}>
                 <X size={11} className="me-1" />Clear filter
               </button>
             </div>
           )}
 
           {/* Filters */}
-          <div className="card border-0 shadow-sm mb-3" style={{ borderRadius:10 }}>
+          <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 10 }}>
             <div className="card-body py-2 px-3 d-flex gap-3 align-items-center flex-wrap">
-              <div className="input-group input-group-sm" style={{ maxWidth:240 }}>
-                <span className="input-group-text border-end-0 bg-white"><Search size={13} color="#9ca3af"/></span>
-                <input className="form-control border-start-0" placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)}/>
+              <div className="input-group input-group-sm" style={{ maxWidth: 240 }}>
+                <span className="input-group-text border-end-0 bg-white"><Search size={13} color="#9ca3af" /></span>
+                <input className="form-control border-start-0" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
               </div>
-              <select className="form-select form-select-sm" style={{ maxWidth:150 }} value={filterStatus} onChange={e=>{ setFilterStatus(e.target.value); setStatFilterKey(null); }}>
+              <select className="form-select form-select-sm" style={{ maxWidth: 150 }} value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setStatFilterKey(null); }}>
                 <option value="all">All Status</option>
-                {Object.entries(STATUS_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+                {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
-              <select className="form-select form-select-sm" style={{ maxWidth:200 }} value={filterDept} onChange={e=>setFilterDept(e.target.value)}>
+              <select className="form-select form-select-sm" style={{ maxWidth: 200 }} value={filterDept} onChange={e => setFilterDept(e.target.value)}>
                 <option value="all">All Departments</option>
-                {DEPARTMENTS.filter(d=>d!=="all").map(d=><option key={d} value={d}>{d}</option>)}
+                {DEPARTMENTS.filter(d => d !== "all").map(d => <option key={d} value={d}>{d}</option>)}
               </select>
-              <span className="text-muted ms-auto" style={{ fontSize:12 }}>{filteredRecords.length} records</span>
-              {loading && <div className="spinner-border spinner-border-sm text-primary"/>}
+              <span className="text-muted ms-auto" style={{ fontSize: 12 }}>{filteredRecords.length} records</span>
+              {loading && <div className="spinner-border spinner-border-sm text-primary" />}
             </div>
           </div>
 
           {filteredRecords.length === 0 ? (
             <div className="text-center py-5">
-              <BookOpen size={40} className="text-muted mb-3"/>
+              <BookOpen size={40} className="text-muted mb-3" />
               <p className="text-muted">No training records found.</p>
-              <button className="btn btn-primary btn-sm mt-2" onClick={()=>{ setAssignPresetId(null); setModal("assign"); }}>
-                <Plus size={13}/> Assign First Training
+              <button className="btn btn-primary btn-sm mt-2" onClick={() => { setAssignPresetId(null); setModal("assign"); }}>
+                <Plus size={13} /> Assign First Training
               </button>
             </div>
           ) : (
-            <div className="card border-0 shadow-sm" style={{ borderRadius:12, overflow:"hidden" }}>
+            <div className="card border-0 shadow-sm" style={{ borderRadius: 12, overflow: "hidden" }}>
               <div className="table-responsive">
-                <table className="table align-middle mb-0 hr-records-table" style={{ fontSize:13 }}>
+                <table className="table align-middle mb-0 hr-records-table" style={{ fontSize: 13 }}>
                   <thead className="table-light">
                     <tr>
                       <th style={{ width: 24 }}></th>
@@ -2484,15 +2487,15 @@ const handleMarkAllComplete = async (program) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredRecords.map(r=>{
-                      const st  = STATUS_CONFIG[r.status] || STATUS_CONFIG.pending;
+                    {filteredRecords.map(r => {
+                      const st = STATUS_CONFIG[r.status] || STATUS_CONFIG.pending;
                       const typ = TYPE_CONFIG[r.programId?.type] || TYPE_CONFIG.job_role;
                       const lvl = LEVEL_CONFIG[r.programId?.level];
-                    const isOverdue = r.dueDate && (() => {
-  const end = new Date(r.dueDate);
-  end.setHours(23, 59, 59, 999);
-  return end < new Date();
-})() && r.status !== "completed";
+                      const isOverdue = r.dueDate && (() => {
+                        const end = new Date(r.dueDate);
+                        end.setHours(23, 59, 59, 999);
+                        return end < new Date();
+                      })() && r.status !== "completed";
                       const isDeleting = deletingId === r._id;
                       const isHistoryOpen = expandedEmp === r._id;
                       const rowLogs = compLog.filter(l =>
@@ -2501,144 +2504,149 @@ const handleMarkAllComplete = async (program) => {
                       );
                       return (
                         <React.Fragment key={r._id}>
-                        <tr>
-                          <td style={{ cursor: rowLogs.length ? "pointer" : "default" }}
-                            onClick={() => rowLogs.length && setExpandedEmp(isHistoryOpen ? null : r._id)}>
-                            {rowLogs.length > 0 && (
-                              <ChevronRight size={14} color="#9ca3af"
-                                style={{ transform: isHistoryOpen ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
-                            )}
-                          </td>
-                          <td>
-                            <div className="d-flex align-items-center gap-2">
-                              <div style={{ width:30, height:30, borderRadius:"50%", background:"#eff6ff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, color:"#3b82f6", fontSize:12, flexShrink:0 }}>
-                                {r.employeeId?.name?.charAt(0)}
-                              </div>
-                              <div>
-                                <p className="mb-0 fw-bold" style={{ fontSize:13 }}>{r.employeeId?.name}</p>
-                                <p className="mb-0 text-muted" style={{ fontSize:11 }}>{r.employeeId?.department}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <p className="mb-0 fw-semibold" style={{ fontSize:12 }}>{r.programId?.title}</p>
-                            <p className="mb-0 text-muted" style={{ fontSize:11 }}>{programLength(r.programId)}</p>
-                          </td>
-                          <td>
-                            <div className="d-flex flex-column gap-1 align-items-start">
-                              {/* ✅ CHANGED — "all" level hidden (not useful info), pills made compact/rounded */}
-                              {lvl && r.programId?.level !== "all" && (
-                                <span className="badge" style={{ background:lvl.color, color:"#fff", fontSize:10, fontWeight:600, borderRadius:20, padding:"3px 9px" }}>{r.programId?.level}</span>
-                              )}
-                              <span className="badge" style={{ background:typ.bg, color:typ.color, fontSize:10, fontWeight:600, borderRadius:20, padding:"3px 9px" }}>{typ.label}</span>
-                            </div>
-                          </td>
-                          <td>
-                            {/* ✅ CHANGED — status badge + lock icon inline on one line instead of stacked blocks */}
-                            <div className="d-flex align-items-center gap-1 flex-wrap">
-                              <span className="badge" style={{ background:st.bg, color:st.color, border:`1px solid ${st.color}33`, fontSize:11, borderRadius:20, padding:"4px 10px" }}>
-                                {isOverdue && r.status!=="completed" ? "Overdue" : st.label}
-                              </span>
-                              {r.isLocked && (
-                                <span title={`Locked${r.lockReason==="auto_due_date" ? " (due date)" : ""}`}
-                                  style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", width:20, height:20, borderRadius:"50%", background:"#1f2937", color:"#fff", flexShrink:0 }}>
-                                  <Lock size={10} />
-                                </span>
-                              )}
-                            </div>
-                            {r.submittedForReview && r.status !== "completed" && (
-                              <span className="badge d-block mt-1" style={{ background:"#fffbeb", color:"#92400e", border:"1px solid #fde68a", fontSize:10, width:"fit-content" }}>
-                                Submitted by employee
-                              </span>
-                            )}
-                            <div className="mt-1"><ChapterProgressChip record={r} /></div>
-                          </td>
-                          <td>
-                            {r.assessmentScore !== null && r.assessmentScore !== undefined ? (
-                              <span style={{ fontSize:13, fontWeight:700, color:r.assessmentScore>=80?"#10b981":"#ef4444" }}>
-                                {r.assessmentScore}%
-                              </span>
-                            ) : <span className="text-muted" style={{ fontSize:11 }}>—</span>}
-                          </td>
-                          <td>
-                            {r.certificationIssued
-                              ? <span style={{ color:"#10b981" }}><Award size={14}/></span>
-                              : <span className="text-muted" style={{ fontSize:11 }}>—</span>}
-                          </td>
-                          <td className="text-muted" style={{ fontSize:11 }}>
-                            {r.dueDate ? (
-                              <span style={{ color:isOverdue?"#ef4444":"inherit" }}>
-                                {new Date(r.dueDate).toLocaleDateString("en-IN")}
-                              </span>
-                            ) : "—"}
-                          </td>
-                          <td>
-                            {/* ✅ CHANGED — was 4 buttons crammed in a row (overflowed on narrow
-                                screens); now "Update" stays visible, the rest live in a ⋮ menu. */}
-                            <RowActionsMenu
-                              record={r}
-                              isDeleting={isDeleting}
-                              unassigningId={unassigningId === r._id}
-                              lockingId={lockingId === r._id}
-                              onUpdate={() => { setSelectedRecord(r); setModal("update"); }}
-                              onUnassign={() => handleUnassign(r)}
-                              onToggleLock={() => handleToggleLock(r)}
-                              onDelete={() => handleDeleteRecord(r)}
-                            />
-                          </td>
-                        </tr>
-                        {isHistoryOpen && (
-                          <tr className="hr-history-row">
-                            <td></td>
-                            <td colSpan={8} style={{ background: "#f9fafb", padding: 0 }}>
-                              {rowLogs.length === 0 ? (
-                                <p className="text-muted mb-0 p-3" style={{ fontSize: 12 }}>No history yet.</p>
-                              ) : (
-                                <table className="table table-sm mb-0" style={{ fontSize: 12 }}>
-                                  <thead>
-                                    <tr className="text-muted">
-                                      <th style={{ fontWeight: 600 }}>Date</th>
-                                      <th style={{ fontWeight: 600 }}>Action</th>
-                                      <th style={{ fontWeight: 600 }}>Note</th>
-                                      <th style={{ fontWeight: 600 }}>By</th>
-                                      <th></th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {rowLogs.map(l => {
-                                      const actionColor = {
-                                        assigned:"#3b82f6", started:"#f59e0b", completed:"#10b981",
-                                        overdue:"#ef4444", score_updated:"#8b5cf6", cert_issued:"#10b981",
-                                        waived:"#6b7280", needs_hr_review:"#dc2626", bulk_completed:"#10b981",
-                                      }[l.action] || "#6b7280";
-                                      return (
-                                        <tr key={l._id}>
-                                          <td className="text-muted" style={{ fontSize: 11 }}>{new Date(l.date).toLocaleDateString("en-IN")}</td>
-                                          <td><span className="badge" style={{ background:`${actionColor}20`, color:actionColor, fontSize:11 }}>{l.action?.replace("_"," ")}</span></td>
-                                          <td className="text-muted" style={{ fontSize: 11 }}>{l.note || "—"}</td>
-                                          <td className="text-muted" style={{ fontSize: 11 }}>{l.addedBy}</td>
-                                          <td>
-                                            <button className="btn btn-sm btn-outline-danger py-0 px-2 d-flex align-items-center gap-1" style={{ fontSize: 11 }}
-                                              onClick={() => handleDeleteLog(l)}
-                                              disabled={deletingLogId === l._id}
-                                              title="Delete this log entry">
-                                              {deletingLogId === l._id ? (
-                                                <span className="spinner-border spinner-border-sm" style={{ width: 11, height: 11 }} />
-                                              ) : (
-                                                <Trash2 size={11} />
-                                              )}
-                                              Delete
-                                            </button>
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
+                          <tr>
+                            <td style={{ cursor: rowLogs.length ? "pointer" : "default" }}
+                              onClick={() => rowLogs.length && setExpandedEmp(isHistoryOpen ? null : r._id)}>
+                              {rowLogs.length > 0 && (
+                                <ChevronRight size={14} color="#9ca3af"
+                                  style={{ transform: isHistoryOpen ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
                               )}
                             </td>
+                            <td>
+                              <div className="d-flex align-items-center gap-2">
+                                <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#3b82f6", fontSize: 12, flexShrink: 0 }}>
+                                  {r.employeeId?.name?.charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="mb-0 fw-bold" style={{ fontSize: 13 }}>{r.employeeId?.name}</p>
+                                  <p className="mb-0 text-muted" style={{ fontSize: 11 }}>{r.employeeId?.department}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <p className="mb-0 fw-semibold" style={{ fontSize: 12 }}>{r.programId?.title}</p>
+                              <p className="mb-0 text-muted" style={{ fontSize: 11 }}>{programLength(r.programId)}</p>
+                              {r.addedBy && r.addedBy !== "HR" && (
+                                <p className="mb-0 text-muted" style={{ fontSize: 11 }}>
+                                  Assigned by <strong>{r.addedBy}</strong>
+                                </p>
+                              )}
+                            </td>
+                            <td>
+                              <div className="d-flex flex-column gap-1 align-items-start">
+                                {/* ✅ CHANGED — "all" level hidden (not useful info), pills made compact/rounded */}
+                                {lvl && r.programId?.level !== "all" && (
+                                  <span className="badge" style={{ background: lvl.color, color: "#fff", fontSize: 10, fontWeight: 600, borderRadius: 20, padding: "3px 9px" }}>{r.programId?.level}</span>
+                                )}
+                                <span className="badge" style={{ background: typ.bg, color: typ.color, fontSize: 10, fontWeight: 600, borderRadius: 20, padding: "3px 9px" }}>{typ.label}</span>
+                              </div>
+                            </td>
+                            <td>
+                              {/* ✅ CHANGED — status badge + lock icon inline on one line instead of stacked blocks */}
+                              <div className="d-flex align-items-center gap-1 flex-wrap">
+                                <span className="badge" style={{ background: st.bg, color: st.color, border: `1px solid ${st.color}33`, fontSize: 11, borderRadius: 20, padding: "4px 10px" }}>
+                                  {isOverdue && r.status !== "completed" ? "Overdue" : st.label}
+                                </span>
+                                {r.isLocked && (
+                                  <span title={`Locked${r.lockReason === "auto_due_date" ? " (due date)" : ""}`}
+                                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, borderRadius: "50%", background: "#1f2937", color: "#fff", flexShrink: 0 }}>
+                                    <Lock size={10} />
+                                  </span>
+                                )}
+                              </div>
+                              {r.submittedForReview && r.status !== "completed" && (
+                                <span className="badge d-block mt-1" style={{ background: "#fffbeb", color: "#92400e", border: "1px solid #fde68a", fontSize: 10, width: "fit-content" }}>
+                                  Submitted by employee
+                                </span>
+                              )}
+                              <div className="mt-1"><ChapterProgressChip record={r} /></div>
+                            </td>
+                            <td>
+                              {r.assessmentScore !== null && r.assessmentScore !== undefined ? (
+                                <span style={{ fontSize: 13, fontWeight: 700, color: r.assessmentScore >= 80 ? "#10b981" : "#ef4444" }}>
+                                  {r.assessmentScore}%
+                                </span>
+                              ) : <span className="text-muted" style={{ fontSize: 11 }}>—</span>}
+                            </td>
+                            <td>
+                              {r.certificationIssued
+                                ? <span style={{ color: "#10b981" }}><Award size={14} /></span>
+                                : <span className="text-muted" style={{ fontSize: 11 }}>—</span>}
+                            </td>
+                            <td className="text-muted" style={{ fontSize: 11 }}>
+                              {r.dueDate ? (
+                                <span style={{ color: isOverdue ? "#ef4444" : "inherit" }}>
+                                  {new Date(r.dueDate).toLocaleDateString("en-IN")}
+                                </span>
+                              ) : "—"}
+                            </td>
+                            <td>
+                              {/* ✅ CHANGED — was 4 buttons crammed in a row (overflowed on narrow
+                                screens); now "Update" stays visible, the rest live in a ⋮ menu. */}
+                              <RowActionsMenu
+                                record={r}
+                                isDeleting={isDeleting}
+                                unassigningId={unassigningId === r._id}
+                                lockingId={lockingId === r._id}
+                                onUpdate={() => { setSelectedRecord(r); setModal("update"); }}
+                                onUnassign={() => handleUnassign(r)}
+                                onToggleLock={() => handleToggleLock(r)}
+                                onDelete={() => handleDeleteRecord(r)}
+                              />
+                            </td>
                           </tr>
-                        )}
+                          {isHistoryOpen && (
+                            <tr className="hr-history-row">
+                              <td></td>
+                              <td colSpan={8} style={{ background: "#f9fafb", padding: 0 }}>
+                                {rowLogs.length === 0 ? (
+                                  <p className="text-muted mb-0 p-3" style={{ fontSize: 12 }}>No history yet.</p>
+                                ) : (
+                                  <table className="table table-sm mb-0" style={{ fontSize: 12 }}>
+                                    <thead>
+                                      <tr className="text-muted">
+                                        <th style={{ fontWeight: 600 }}>Date</th>
+                                        <th style={{ fontWeight: 600 }}>Action</th>
+                                        <th style={{ fontWeight: 600 }}>Note</th>
+                                        <th style={{ fontWeight: 600 }}>By</th>
+                                        <th></th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {rowLogs.map(l => {
+                                        const actionColor = {
+                                          assigned: "#3b82f6", started: "#f59e0b", completed: "#10b981",
+                                          overdue: "#ef4444", score_updated: "#8b5cf6", cert_issued: "#10b981",
+                                          waived: "#6b7280", needs_hr_review: "#dc2626", bulk_completed: "#10b981",
+                                        }[l.action] || "#6b7280";
+                                        return (
+                                          <tr key={l._id}>
+                                            <td className="text-muted" style={{ fontSize: 11 }}>{new Date(l.date).toLocaleDateString("en-IN")}</td>
+                                            <td><span className="badge" style={{ background: `${actionColor}20`, color: actionColor, fontSize: 11 }}>{l.action?.replace("_", " ")}</span></td>
+                                            <td className="text-muted" style={{ fontSize: 11 }}>{l.note || "—"}</td>
+                                            <td className="text-muted" style={{ fontSize: 11 }}>{l.addedBy}</td>
+                                            <td>
+                                              <button className="btn btn-sm btn-outline-danger py-0 px-2 d-flex align-items-center gap-1" style={{ fontSize: 11 }}
+                                                onClick={() => handleDeleteLog(l)}
+                                                disabled={deletingLogId === l._id}
+                                                title="Delete this log entry">
+                                                {deletingLogId === l._id ? (
+                                                  <span className="spinner-border spinner-border-sm" style={{ width: 11, height: 11 }} />
+                                                ) : (
+                                                  <Trash2 size={11} />
+                                                )}
+                                                Delete
+                                              </button>
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                )}
+                              </td>
+                            </tr>
+                          )}
                         </React.Fragment>
                       );
                     })}
@@ -2661,32 +2669,32 @@ const handleMarkAllComplete = async (program) => {
       {/* ══ KPI TAB ══════════════════════════════════════════════ */}
       {activeTab === "kpi" && (
         <div>
-          <p className="fw-bold mb-3" style={{ fontSize:14 }}>Performance Indicators (KPIs)</p>
+          <p className="fw-bold mb-3" style={{ fontSize: 14 }}>Performance Indicators (KPIs)</p>
           <div className="row g-3 mb-4">
             {[
-              { kpi:"Training Completion Rate",                    target:"≥ 95%",             freq:"Quarterly",  current:`${stats?.completionRate||0}%`,  pass:(stats?.completionRate||0)>=95 },
-              { kpi:"Post-Training Assessment Score",              target:"≥ 80%",             freq:"Monthly",    current:`${stats?.avgScore||0}%`,          pass:(stats?.avgScore||0)>=80 },
-              { kpi:"New Hire Certification Completion",           target:"100% within 30 days",freq:"Ongoing",  current:`${stats?.certified||0} certified`, pass:true },
-              { kpi:"Cross-Functional Certification Rate",         target:"≥ 60%",             freq:"Half-Yearly",current:"—",                               pass:null },
-              { kpi:"Leadership Readiness (Internal Promotion)",   target:"≥ 20%",             freq:"Annual",     current:"—",                               pass:null },
-            ].map((k,i)=>(
+              { kpi: "Training Completion Rate", target: "≥ 95%", freq: "Quarterly", current: `${stats?.completionRate || 0}%`, pass: (stats?.completionRate || 0) >= 95 },
+              { kpi: "Post-Training Assessment Score", target: "≥ 80%", freq: "Monthly", current: `${stats?.avgScore || 0}%`, pass: (stats?.avgScore || 0) >= 80 },
+              { kpi: "New Hire Certification Completion", target: "100% within 30 days", freq: "Ongoing", current: `${stats?.certified || 0} certified`, pass: true },
+              { kpi: "Cross-Functional Certification Rate", target: "≥ 60%", freq: "Half-Yearly", current: "—", pass: null },
+              { kpi: "Leadership Readiness (Internal Promotion)", target: "≥ 20%", freq: "Annual", current: "—", pass: null },
+            ].map((k, i) => (
               <div key={i} className="col-md-6">
-                <div className="card border-0 shadow-sm" style={{ borderRadius:12, borderLeft:`4px solid ${k.pass===null?"#e5e7eb":k.pass?"#10b981":"#ef4444"}` }}>
+                <div className="card border-0 shadow-sm" style={{ borderRadius: 12, borderLeft: `4px solid ${k.pass === null ? "#e5e7eb" : k.pass ? "#10b981" : "#ef4444"}` }}>
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-start">
-                      <p className="mb-0 fw-bold" style={{ fontSize:13 }}>{k.kpi}</p>
+                      <p className="mb-0 fw-bold" style={{ fontSize: 13 }}>{k.kpi}</p>
                       {k.pass !== null && (
-                        <span style={{ color:k.pass?"#10b981":"#ef4444" }}>
-                          {k.pass ? <CheckCircle2 size={16}/> : <AlertTriangle size={16}/>}
+                        <span style={{ color: k.pass ? "#10b981" : "#ef4444" }}>
+                          {k.pass ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
                         </span>
                       )}
                     </div>
-                    <div className="d-flex gap-3 mt-2" style={{ fontSize:12 }}>
+                    <div className="d-flex gap-3 mt-2" style={{ fontSize: 12 }}>
                       <span className="text-muted">Target: <strong>{k.target}</strong></span>
                       <span className="text-muted">·</span>
                       <span className="text-muted">{k.freq}</span>
                     </div>
-                    <p className="mb-0 mt-1" style={{ fontSize:13, fontWeight:700, color:k.pass===null?"#6b7280":k.pass?"#10b981":"#ef4444" }}>
+                    <p className="mb-0 mt-1" style={{ fontSize: 13, fontWeight: 700, color: k.pass === null ? "#6b7280" : k.pass ? "#10b981" : "#ef4444" }}>
                       Current: {k.current}
                     </p>
                   </div>
@@ -2696,20 +2704,20 @@ const handleMarkAllComplete = async (program) => {
           </div>
 
           {stats?.byDept?.length > 0 && (
-            <div className="card border-0 shadow-sm" style={{ borderRadius:12 }}>
+            <div className="card border-0 shadow-sm" style={{ borderRadius: 12 }}>
               <div className="card-body">
-                <p className="fw-bold mb-3" style={{ fontSize:14 }}>Department-wise Completion</p>
+                <p className="fw-bold mb-3" style={{ fontSize: 14 }}>Department-wise Completion</p>
                 <div className="d-flex flex-column gap-3">
-                  {stats.byDept.map((d,i)=>{
-                    const rate = d.total > 0 ? Math.round((d.completed/d.total)*100) : 0;
+                  {stats.byDept.map((d, i) => {
+                    const rate = d.total > 0 ? Math.round((d.completed / d.total) * 100) : 0;
                     return (
                       <div key={i}>
                         <div className="d-flex justify-content-between mb-1">
-                          <span style={{ fontSize:13 }}>{d._id || "Unknown"}</span>
-                          <span style={{ fontSize:13, fontWeight:700 }}>{d.completed}/{d.total} ({rate}%)</span>
+                          <span style={{ fontSize: 13 }}>{d._id || "Unknown"}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700 }}>{d.completed}/{d.total} ({rate}%)</span>
                         </div>
-                        <div style={{ height:8, background:"#f3f4f6", borderRadius:4 }}>
-                          <div style={{ height:8, background:rate>=95?"#10b981":rate>=70?"#f59e0b":"#ef4444", borderRadius:4, width:`${rate}%`, transition:"width .3s" }}/>
+                        <div style={{ height: 8, background: "#f3f4f6", borderRadius: 4 }}>
+                          <div style={{ height: 8, background: rate >= 95 ? "#10b981" : rate >= 70 ? "#f59e0b" : "#ef4444", borderRadius: 4, width: `${rate}%`, transition: "width .3s" }} />
                         </div>
                       </div>
                     );

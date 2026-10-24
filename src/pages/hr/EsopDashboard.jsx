@@ -7,6 +7,7 @@ import {
   Briefcase, Target, Lock, BookOpen, Activity, Zap
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import ActionedBy from "../../components/hr/ActionedBy";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -506,6 +507,7 @@ export default function EsopDashboard() {
                             <div>
                               <p style={{ margin:0, fontWeight:700, color:"#1a1a2e" }}>{g.employee_id?.name}</p>
                               <p style={{ margin:0, fontSize:11, color:"#9ca3af" }}>{g.employee_id?.department}</p>
+                          <ActionedBy id={g._id} version={g.status} />
                             </div>
                           </div>
                         </td>
