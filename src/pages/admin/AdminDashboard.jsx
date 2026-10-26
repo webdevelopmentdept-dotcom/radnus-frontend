@@ -256,8 +256,8 @@ function OverviewTab() {
       <SectionTitle
         icon="💰"
         title="Loan Process"
-        sub={`${rangeText} · "Pending" cards are always live (all-time)`}
-        sub={`${rangeText} · "Pending" cards eppavum live (all-time)`}
+        sub={`${rangeText}  "Pending" cards are always live (all-time)`}
+
         to="/admin/loan-analytics"
         right={
           <div className="btn-group btn-group-sm">
@@ -292,12 +292,12 @@ function OverviewTab() {
             </div>
             <div className="col-lg-3 col-md-6">
               <KpiCard title="Document Payment Collected" value={inr(L.docCollected)} bg="#F3EEFF" color="#5A2EF9"
-                sub={`${L.docPaidCount} customers paid · ${inr(L.docCollectedThisMonth)} this month`}
+                sub={`${L.docPaidCount} customers paid  ${inr(L.docCollectedThisMonth)} this month`}
                 trend={<Trend current={L.docCollected} previous={L.docCollectedPrev} />} />
             </div>
             <div className="col-lg-3 col-md-6">
               <KpiCard title="Document Payment Pending" value={L.docPendingCount} bg="#FFF1F0" color="#E5484D"
-                sub="Live · customers who haven't reached the payment stage yet" to="/admin/loan-process" />
+                sub="Live customers who haven't reached the payment stage yet" to="/admin/loan-process" />
             </div>
 
             <div className="col-lg-3 col-md-6">
@@ -306,15 +306,15 @@ function OverviewTab() {
             </div>
             <div className="col-lg-3 col-md-6">
               <KpiCard title="Pending (with reason)" value={L.pendingWithReason} bg="#FFF6ED" color="#DC3545"
-                sub="Live · a pending reason has been marked" />
+                sub="Live a pending reason has been marked" />
             </div>
             <div className="col-lg-3 col-md-6">
               <KpiCard title="Follow-up Pending" value={L.followupPending} bg="#EBF5FF" color="#0D6EFD"
-                sub={`Live · ${L.sanctioned} sanctioned (${rangeText}) · ${inrShort(L.sanctionedValue)}`} />
+                sub={`Live ${L.sanctioned} sanctioned (${rangeText}) ${inrShort(L.sanctionedValue)}`} />
             </div>
             <div className="col-lg-3 col-md-6">
               <KpiCard title="Incentive to Pay" value={L.incentiveCount} bg="#FFEAF3" color="#DB2777"
-                sub={`Live · ${inr(L.incentiveAmount)} eligible for processing`} to="/admin/loan-analytics" />
+                sub={`Live ${inr(L.incentiveAmount)} eligible for processing`} to="/admin/loan-analytics" />
             </div>
           </div>
 

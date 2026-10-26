@@ -18,7 +18,7 @@ function getHrId() {
       const obj = JSON.parse(hrUserRaw);
       const id = obj?._id || obj?.id || obj?.hrId || obj?.userId;
       if (id) return String(id);
-    } catch (_) {}
+    } catch (_) { }
   }
   const hrId = localStorage.getItem("hrId");
   if (hrId && hrId !== "undefined" && hrId !== "null" && hrId.trim() !== "") return hrId.trim();
@@ -94,6 +94,42 @@ export default function HrDashboard() {
   const goToNotifications = () => {
     navigate("/hr/dashboard/notifications");
   };
+
+  // ── Draggable notification stack (UI only) ──
+  const stackRef = useRef(null);
+  const dragRef = useRef({ moved: false });
+  const [stackPos, setStackPos] = useState(null); // { right, top } | null = default position
+
+  const onStackPointerDown = (e) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    const el = stackRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const d = { moved: false, sx: e.clientX, sy: e.clientY, oRight: window.innerWidth - rect.right, oTop: rect.top };
+    dragRef.current = d;
+
+    const move = (ev) => {
+      const dx = ev.clientX - d.sx;
+      const dy = ev.clientY - d.sy;
+      if (!d.moved && Math.abs(dx) + Math.abs(dy) < 5) return; // small movement = normal click
+      d.moved = true;
+      const right = Math.min(Math.max(0, d.oRight - dx), window.innerWidth - el.offsetWidth);
+      const top = Math.min(Math.max(0, d.oTop + dy), window.innerHeight - el.offsetHeight);
+      setStackPos({ right, top });
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      setTimeout(() => { d.moved = false; }, 50);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+
+  const onStackClickCapture = (e) => {
+    if (dragRef.current.moved) { e.stopPropagation(); e.preventDefault(); } // drag-ku apparam click fire aagakoodadhu
+  };
+
   // ══════════════════════════════════════════
   // END — Notification logic
   // ══════════════════════════════════════════
@@ -143,6 +179,9 @@ export default function HrDashboard() {
           position: fixed;
           top: 16px;
           right: 20px;
+          cursor: grab;       
+          touch-action: none;    
+          user-select: none; 
           z-index: 1600;
           display: flex;
           flex-direction: column;
@@ -316,7 +355,16 @@ export default function HrDashboard() {
       <HrSidebar onHoverChange={setSidebarExpanded} />
 
       {/* ✅ Single wrapper — auto-stacks notification + pending review, no manual pixel math */}
-      <div className="top-right-stack">
+      <div
+        className="top-right-stack"
+        ref={stackRef}
+        onPointerDown={onStackPointerDown}
+        onClickCapture={onStackClickCapture}
+        style={stackPos ? {
+          right: Math.min(stackPos.right, window.innerWidth - 60),
+          top: Math.min(stackPos.top, window.innerHeight - 60),
+        } : undefined}
+      >
 
         {/* Notification Card (auto-shrinks to bell chip after 5s) */}
         {!isEmployee && showToast && (
