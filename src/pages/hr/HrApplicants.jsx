@@ -59,12 +59,30 @@ const toPreviewUrl = (url) => {
 
 const isImage = (url) => /\.(jpg|jpeg|png|webp|gif|bmp|tiff|heic)(\?|$)/i.test(url);
 
+
+const downloadResume = async (url, name) => {
+  try {
+    const blob = await (await fetch(url)).blob();
+    const head = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+    const hex = Array.from(head).map(b => b.toString(16).padStart(2, "0")).join("");
+    const ext = hex === "25504446" ? ".pdf" : hex.startsWith("504b") ? ".docx" : hex === "d0cf11e0" ? ".doc" : "";
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${name || "Resume"}_Resume${ext}`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } catch {
+    window.open(url, "_blank");
+  }
+};
+
 export default function HrApplicants() {
   const [applicants, setApplicants] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewName, setPreviewName] = useState("");
   const [tooltip, setTooltip] = useState({ visible: false, text: "", x: 0, y: 0 });
 
   // ── NEW: Public / Internal / Walk-in tab split ──
@@ -575,7 +593,7 @@ export default function HrApplicants() {
               <div className="ha-modal-header">
                 <span className="ha-modal-title">Resume Preview</span>
                 <div className="ha-modal-actions">
-                  <a href={previewUrl} download className="ha-download-btn">Download</a>
+                 <button className="ha-download-btn" onClick={() => downloadResume(previewUrl, previewName)}>Download</button>
                   <button onClick={() => setPreviewUrl(null)} className="ha-close-btn">Close</button>
                 </div>
               </div>
@@ -800,7 +818,7 @@ export default function HrApplicants() {
                           {a.resumeUrl ? (
                             <button
                               className="ha-preview-btn"
-                              onClick={() => setPreviewUrl(toPreviewUrl(a.resumeUrl))}
+                            onClick={() => { setPreviewUrl(toPreviewUrl(a.resumeUrl)); setPreviewName(a.name); }}
                             >
                               Preview
                             </button>

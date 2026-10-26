@@ -10,6 +10,9 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+const sopFileLink = (fileUrl) =>
+  /^https?:\/\//i.test(fileUrl) ? fileUrl : `${API_BASE}/api/sops/download/${fileUrl}`;
+
 const COLORS = ["#2563eb", "#7c3aed", "#d97706", "#059669", "#dc2626", "#db2777", "#0891b2", "#65a30d", "#ea580c", "#4f46e5"];
 const getColor = (name = "") => COLORS[(name.charCodeAt(0) || 0) % COLORS.length];
 
@@ -576,7 +579,7 @@ export default function SOPManagement() {
 
                       {/* File */}
                       <td style={{ padding: "12px 16px" }}>
-                        <a href={`${API_BASE}/api/sops/download/${sop.fileUrl}`} target="_blank" rel="noreferrer"
+                        <a href={sopFileLink(sop.fileUrl)} target="_blank" rel="noreferrer"
                           style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#f8f9fb", border: "1px solid #e5e7eb", borderRadius: 7, padding: "5px 10px", color: "#374151", fontSize: 12, fontWeight: 600, textDecoration: "none", maxWidth: 160 }}
                           title={sop.fileName}>
                           <Download size={11} color="#6b7280" />

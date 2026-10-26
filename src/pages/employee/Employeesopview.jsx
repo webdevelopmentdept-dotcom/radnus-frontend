@@ -5,10 +5,13 @@ import EmployeeLayout from "./EmployeeLayout";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+const sopFileLink = (fileUrl) =>
+  /^https?:\/\//i.test(fileUrl) ? fileUrl : `${API_BASE}/api/sops/download/${fileUrl}`;
+
 export default function EmployeeSOPView() {
-  const [sops,    setSops]    = useState([]);
+  const [sops, setSops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState("");
+  const [error, setError] = useState("");
 
   const employeeId = localStorage.getItem("employeeId");
 
@@ -27,7 +30,7 @@ export default function EmployeeSOPView() {
 
         const sopRes = await axios.get(`${API_BASE}/api/sops/my`, {
           params: {
-            department:  emp.department,
+            department: emp.department,
             designation: emp.designation || "",
           },
         });
@@ -266,7 +269,7 @@ function Section({ icon, title, subtitle, color, bg, border, sops }) {
 
             {/* Download */}
             <a
-              href={`${API_BASE}/api/sops/download/${sop.fileUrl}`}
+              href={sopFileLink(sop.fileUrl)}
               target="_blank"
               rel="noreferrer"
               style={{
