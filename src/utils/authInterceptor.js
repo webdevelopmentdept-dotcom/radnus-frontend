@@ -6,6 +6,8 @@ function pickToken() {
   const p = window.location.pathname;
   if (p.startsWith("/admin")) return localStorage.getItem("adminToken");
   if (p.startsWith("/hr")) return localStorage.getItem("hrToken");
+   if (p.startsWith("/employee"))
+    return localStorage.getItem("employeeToken") || sessionStorage.getItem("employeeToken");
   return null;
 }
 
