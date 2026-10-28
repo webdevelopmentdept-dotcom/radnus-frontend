@@ -61,16 +61,18 @@ export default function AdminLoanAnalytics() {
 
   // ── Followup funnel: Total → Handed over → DIC → Bank → Sanctioned ──
   const fu = data?.followup || {};
+  const ap = data?.applicationSummary || {};
+  const applicationStaff = data?.applicationStaff || [];
   const followupStaff = data?.followupStaff || [];
   const totalApps = data?.summary?.totalApplications || 0;
   const followupFunnel = data
     ? [
-        { key: "total", label: "Total Applications", count: totalApps, base: null },
-        { key: "handed", label: `${staffLabel} Completed (Handed over)`, count: fu.handedOver || 0, base: totalApps },
-        { key: "dic", label: "DIC Office Completed", count: fu.dicCompleted || 0, base: fu.handedOver || 0 },
-        { key: "bank", label: "Bank Process Completed", count: fu.bankCompleted || 0, base: fu.handedOver || 0 },
-        { key: "sanctioned", label: "Loan Sanctioned", count: fu.sanctioned || 0, base: fu.handedOver || 0 },
-      ]
+      { key: "total", label: "Total Applications", count: totalApps, base: null },
+      { key: "handed", label: `${staffLabel} Completed (Handed over)`, count: fu.handedOver || 0, base: totalApps },
+      { key: "dic", label: "DIC Office Completed", count: fu.dicCompleted || 0, base: fu.handedOver || 0 },
+      { key: "bank", label: "Bank Process Completed", count: fu.bankCompleted || 0, base: fu.handedOver || 0 },
+      { key: "sanctioned", label: "Loan Sanctioned", count: fu.sanctioned || 0, base: fu.handedOver || 0 },
+    ]
     : [];
 
   return (
@@ -249,6 +251,40 @@ export default function AdminLoanAnalytics() {
             </div>
           </div>
 
+          {/* ── Document Payment cards ── */}
+          <div className="ala-section-label">Document Payment</div>
+          <div className="ala-metrics-grid" style={{ marginBottom: 14 }}>
+            <div className="ala-metric-card">
+              <div className="ala-metric-label">Doc Payment Collected</div>
+              <div className="ala-metric-value accent">{formatRupee(data.summary.docPaymentTotal)}</div>
+            </div>
+            <div className="ala-metric-card">
+              <div className="ala-metric-label">Payments Received</div>
+              <div className="ala-metric-value primary">{data.summary.docPaymentCount || 0}</div>
+            </div>
+            <div className="ala-metric-card">
+              <div className="ala-metric-label">Done Elsewhere</div>
+              <div className="ala-metric-value warn">{data.summary.docPaymentElsewhere || 0}</div>
+            </div>
+          </div>
+
+          {/* ── Application cards ── */}
+          <div className="ala-section-label">Application</div>
+          <div className="ala-metrics-grid" style={{ marginBottom: 14 }}>
+            <div className="ala-metric-card">
+              <div className="ala-metric-label">Not Taken Yet</div>
+              <div className="ala-metric-value warn">{ap.notTaken || 0}</div>
+            </div>
+            <div className="ala-metric-card">
+              <div className="ala-metric-label">In Progress</div>
+              <div className="ala-metric-value primary">{ap.inProgress || 0}</div>
+            </div>
+            <div className="ala-metric-card">
+              <div className="ala-metric-label">Completed</div>
+              <div className="ala-metric-value accent">{ap.completed || 0}</div>
+            </div>
+          </div>
+
           {/* ── Followup & Sanction cards ── */}
           <div className="ala-section-label">Followup & Sanction</div>
           <div className="ala-metrics-grid">
@@ -374,6 +410,55 @@ export default function AdminLoanAnalytics() {
                 </div>
               );
             })}
+          </div>
+
+          {/* ── Application team performance (employee-wise) ── */}
+          <div className="ala-panel" style={{ marginBottom: 16 }}>
+            <div className="ala-panel-title">Application Team Performance</div>
+            <div className="ala-panel-sub">Who took how many applications and how many were completed.</div>
+            {applicationStaff.length === 0 ? (
+              <div className="ala-empty">
+                No applications have been taken yet.
+                {ap.notTaken ? ` ${ap.notTaken} application(s) are waiting to be taken.` : ""}
+              </div>
+            ) : (
+              <div className="ala-table-wrap">
+                <table className="ala-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Employee</th>
+                      <th>Taken</th>
+                      <th>In Progress</th>
+                      <th>Completed</th>
+                      <th>Completion %</th>
+                      <th>Completed Loan Value</th>
+                      <th>Avg Days to Complete</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {applicationStaff.map((s, i) => (
+                      <tr key={s.employeeId}>
+                        <td><span className={`ala-rank-badge ${i === 0 ? "gold" : ""}`}>{i + 1}</span></td>
+                        <td style={{ fontWeight: 600 }}>{s.name}</td>
+                        <td><b>{s.taken}</b></td>
+                        <td><span className="ala-pill warn">{s.pending}</span></td>
+                        <td><span className="ala-pill ok">{s.completed}</span></td>
+                        <td>{s.completionRate}%</td>
+                        <td>{formatRupee(s.completedValue)}</td>
+                        <td>{s.avgDaysToComplete === null ? "—" : `${s.avgDaysToComplete} d`}</td>
+                        <td>
+                          <a className="ala-link" href={`/admin/loan-process?applicationStaff=${s.employeeId}`}>
+                            View applications →
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* ── Followup team performance (employee-wise) ── */}

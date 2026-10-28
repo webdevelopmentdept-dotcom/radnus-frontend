@@ -279,7 +279,7 @@ export default function LoanProcess() {
         Authorization: `Bearer ${localStorage.getItem("employeeToken") || sessionStorage.getItem("employeeToken")}`,
     });
 
-    const [tab, setTab] = useState("form"); // "form" | "checklist"
+    const [tab, setTab] = useState("form");
     const [form, setForm] = useState(BLANK_FORM);
     const [files, setFiles] = useState({}); // { aadharCard: File, ... }
     const [saving, setSaving] = useState(false);
@@ -306,11 +306,20 @@ export default function LoanProcess() {
     const [editError, setEditError] = useState("");
     const [deletingId, setDeletingId] = useState(null);
     const [rowMsg, setRowMsg] = useState({}); // { [customerId]: "Saved" | "Deleted" }
-    const [isHead, setIsHead] = useState(false);
+    const [isTelecaller, setIsTelecaller] = useState(false);
+    const [isApplication, setIsApplication] = useState(false);
+    const [accessLoaded, setAccessLoaded] = useState(false);
     const [allCustomers, setAllCustomers] = useState([]);
     const [loadingAll, setLoadingAll] = useState(false);
     const [expandedViewAllId, setExpandedViewAllId] = useState(null);
-
+    const [appTab, setAppTab] = useState("pending");   // "pending" | "completed"
+    const [appDate, setAppDate] = useState({});         // { [customerId]: "YYYY-MM-DD" }
+    const [appSavingId, setAppSavingId] = useState(null);
+    const [appSearch, setAppSearch] = useState("");
+    const [appFrom, setAppFrom] = useState("");   // YYYY-MM-DD
+    const [appTo, setAppTo] = useState("");       // YYYY-MM-DD
+    const myEmployeeId = localStorage.getItem("employeeId");
+    const todayStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
 
     /* ------------------------ LOAD CHECKLIST TAB ------------------------ */
     const loadCustomers = async () => {
@@ -331,14 +340,20 @@ export default function LoanProcess() {
         if (tab === "viewAll") loadAllCustomers();
     }, [tab]);
 
-    // Check once on mount whether this employee is the Loan Process Head
+    // Telecaller / Application access — token vachu backend la irundhu edukkurom
     useEffect(() => {
-        const empId = localStorage.getItem("employeeId");
-        if (!empId) return;
-        fetch(`${API}/api/employee/me/${empId}`)
+        fetch(`${API}/api/loan-process/my-access`, { headers: authHeaders() })
             .then((r) => r.json())
-            .then((data) => setIsHead(!!data?.isLoanProcessHead))
-            .catch(() => { });
+            .then((data) => {
+                const tele = !!data?.isTelecaller;
+                const app = !!data?.isApplication;
+                setIsTelecaller(tele);
+                setIsApplication(app);
+                // Application-only person → land directly on "View Details"
+                if (!tele && app) setTab("viewAll");
+            })
+            .catch(() => { })
+            .finally(() => setAccessLoaded(true));
     }, []);
 
     const loadAllCustomers = async () => {
@@ -353,6 +368,56 @@ export default function LoanProcess() {
             setLoadingAll(false);
         }
     };
+
+    const appCall = async (id, action, method, body) => {
+        setAppSavingId(id);
+        try {
+            const res = await fetch(`${API}/api/loan-process/${id}/application/${action}`, {
+                method,
+                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                body: JSON.stringify(body || {}),
+            });
+            const data = await res.json();
+            if (!data.success) alert(data.message || "Couldn't save — please try again.");
+            await loadAllCustomers();
+        } catch (err) {
+            console.error("APPLICATION ACTION ERROR", err);
+            alert("Network error — please try again.");
+        } finally {
+            setAppSavingId(null);
+        }
+    };
+    const takeApplication = (c) => appCall(c._id, "claim", "POST");
+    const releaseApplication = (c) => {
+        if (!window.confirm(`Release ${c.customerName}? Others can take it.`)) return;
+        appCall(c._id, "release", "POST");
+    };
+    const completeApplication = (c) => {
+        const date = appDate[c._id] || todayStr;
+        if (!window.confirm(`Mark ${c.customerName}'s application as COMPLETED on ${date}?`)) return;
+        appCall(c._id, "complete", "PATCH", { date });
+    };
+
+    const pendingApps = allCustomers.filter((c) => c.application?.status !== "COMPLETED");
+    const completedApps = allCustomers
+        .filter((c) => c.application?.status === "COMPLETED")
+        .sort((a, b) => new Date(b.application.completedAt) - new Date(a.application.completedAt));
+    const toDay = (d) => (d ? new Date(d).toLocaleDateString("en-CA") : ""); // local YYYY-MM-DD
+
+    const matchesAppFilter = (c) => {
+        const q = appSearch.trim().toLowerCase();
+        if (q) {
+            const hay = `${c.customerName || ""} ${c.contactNo || ""} ${c.staffId?.name || c.staffName || ""}`.toLowerCase();
+            if (!hay.includes(q)) return false;
+        }
+        // Pending tab → customer date (loanDate), Completed tab → completed date
+        const day = toDay(appTab === "completed" ? c.application?.completedAt : c.loanDate);
+        if (appFrom && (!day || day < appFrom)) return false;
+        if (appTo && (!day || day > appTo)) return false;
+        return true;
+    };
+
+    const appList = (appTab === "completed" ? completedApps : pendingApps).filter(matchesAppFilter);
 
     /* ------------------------ TAB 1 — FORM ------------------------ */
     const handleChange = (e) => {
@@ -556,8 +621,8 @@ export default function LoanProcess() {
         // Document Payment tick panna amount (5000 / 10000) kandippa select pannanum
         if (field === "documentPayment" && currentValue !== true) {
             const amt = Number(current?.checklistAmounts?.documentPayment);
-            if (!DOC_PAYMENT_OPTIONS.includes(amt)) {
-                alert("Select the document payment amount (₹5,000 or ₹10,000) first, then tick Document Payment.");
+            if (!current?.documentPaymentExternal && !DOC_PAYMENT_OPTIONS.includes(amt)) {
+                alert("Select the document payment amount (₹5,000 or ₹10,000) or 'Done elsewhere' first, then tick Document Payment.");
                 return;
             }
         }
@@ -689,7 +754,7 @@ export default function LoanProcess() {
 
     const saveAmount = async (customerId, field, amountValue) => {
         const current = customers.find((c) => c._id === customerId);
-        const oldVal = current?.checklistAmounts?.[field] ?? "";
+        const oldVal = current?.documentPaymentExternal ? "ELSEWHERE" : (current?.checklistAmounts?.[field] ?? "");
         if (String(oldVal) === String(amountValue)) return; // maaralana save venaam
         const currentValue = !!current?.checklist?.[field];
         try {
@@ -1058,28 +1123,38 @@ export default function LoanProcess() {
 
                 <h4 style={{ fontWeight: 700, marginBottom: 4 }}>Loan Process</h4>
                 <p style={{ color: "var(--lp-text-muted)", fontSize: 14, marginBottom: 24 }}>
-                    Add customer details and documents, then track the process through checklist.
+                    {isTelecaller
+                        ? "Add customer details and documents, then track the process through checklist."
+                        : "View every telecaller's customer details and documents to submit applications."}
                 </p>
 
                 <div className="lp-tabs">
-                    <button className={`lp-tab-btn ${tab === "form" ? "active" : ""}`} onClick={() => setTab("form")}>
-                        Customer Details
-                    </button>
-                    <button className={`lp-tab-btn ${tab === "data" ? "active" : ""}`} onClick={() => setTab("data")}>
-                        Customer Data {customers.length > 0 && `(${customers.length})`}
-                    </button>
-                    <button className={`lp-tab-btn ${tab === "checklist" ? "active" : ""}`} onClick={() => setTab("checklist")}>
-                        Checklist {customers.length > 0 && `(${customers.length})`}
-                    </button>
-                    {isHead && (
+                    {accessLoaded && isTelecaller && (
+                        <>
+                            <button className={`lp-tab-btn ${tab === "form" ? "active" : ""}`} onClick={() => setTab("form")}>
+                                Customer Details
+                            </button>
+                            <button className={`lp-tab-btn ${tab === "data" ? "active" : ""}`} onClick={() => setTab("data")}>
+                                Customer Data {customers.length > 0 && `(${customers.length})`}
+                            </button>
+                            <button className={`lp-tab-btn ${tab === "checklist" ? "active" : ""}`} onClick={() => setTab("checklist")}>
+                                Checklist {customers.length > 0 && `(${customers.length})`}
+                            </button>
+                        </>
+                    )}
+                    {accessLoaded && isApplication && (
                         <button className={`lp-tab-btn ${tab === "viewAll" ? "active" : ""}`} onClick={() => setTab("viewAll")}>
                             View Details
                         </button>
                     )}
                 </div>
 
+                {accessLoaded && !isTelecaller && !isApplication && (
+                    <p style={{ color: "var(--lp-text-muted)" }}>You don't have access to Loan Process.</p>
+                )}
+
                 {/* ══════════════ TAB 1 — CUSTOMER FORM ══════════════ */}
-                {tab === "form" && (
+                {tab === "form" && isTelecaller && (
                     <form onSubmit={handleSubmit}>
                         {error && <div className="lp-alert-error">{error}</div>}
                         {successMsg && <div className="lp-alert-success">{successMsg}</div>}
@@ -1277,7 +1352,7 @@ export default function LoanProcess() {
                 )}
 
                 {/* ══════════════ TAB 2 — CUSTOMER DATA (view / edit / delete) ══════════════ */}
-                {tab === "data" && (
+                {tab === "data" && isTelecaller && (
                     <div className="lp-card">
                         {loadingList && <p style={{ color: "var(--lp-text-muted)" }}>Loading…</p>}
                         {!loadingList && customers.length === 0 && (
@@ -1643,7 +1718,7 @@ export default function LoanProcess() {
                 )}
 
                 {/* ══════════════ TAB 3 — CHECKLIST ══════════════ */}
-                {tab === "checklist" && (
+                {tab === "checklist" && isTelecaller && (
                     <div className="lp-card">
                         {loadingList && <p style={{ color: "var(--lp-text-muted)" }}>Loading…</p>}
                         {!loadingList && customers.length === 0 && (
@@ -1669,6 +1744,11 @@ export default function LoanProcess() {
                                             {c.incentive?.eligibility === "Eligible for Processing" && (
                                                 <span className="lp-badge" style={{ background: "#fff4d6", color: "#8a6100" }}>
                                                     Eligible for incentive
+                                                </span>
+                                            )}
+                                            {c.documentPaymentExternal && (
+                                                <span className="lp-badge" style={{ background: "#fff7ed", color: "#b45309" }}>
+                                                    No incentive · payment elsewhere
                                                 </span>
                                             )}
                                             {c.incentive?.eligibility === "Paid" && (
@@ -1772,22 +1852,27 @@ export default function LoanProcess() {
                                                     {AMOUNT_ENABLED_STAGES.includes(stage.key) && (() => {
                                                         const saved = c.checklistAmounts?.[stage.key];
                                                         const isValid = DOC_PAYMENT_OPTIONS.includes(Number(saved));
+                                                        const isExternal = !!c.documentPaymentExternal;
                                                         return (
                                                             <select
-                                                                value={isValid ? String(saved) : ""}
-                                                                disabled={c.followup?.status && c.followup.status !== "NONE"}
+                                                                value={isExternal ? "ELSEWHERE" : isValid ? String(saved) : ""}
+                                                                disabled={(c.followup?.status && c.followup.status !== "NONE") || c.incentive?.eligibility === "Paid"}
                                                                 onChange={(e) => saveAmount(c._id, stage.key, e.target.value)}
+                                                                title={isExternal ? "Payment done elsewhere — no incentive for this loan" : ""}
                                                                 style={{
-                                                                    width: 150, padding: "4px 8px", border: "1px solid var(--lp-border)",
-                                                                    borderRadius: 6, fontSize: 12, background: "var(--lp-surface)",
+                                                                    width: 150, padding: "4px 8px",
+                                                                    border: `1px solid ${isExternal ? "#d97706" : "var(--lp-border)"}`,
+                                                                    borderRadius: 6, fontSize: 12,
+                                                                    background: isExternal ? "#fff7ed" : "var(--lp-surface)",
                                                                 }}
                                                             >
                                                                 <option value="">
-                                                                    {saved && !isValid ? `Select (old ₹${saved})` : "Select amount"}
+                                                                    {saved && !isValid && !isExternal ? `Select (old ₹${saved})` : "Select amount"}
                                                                 </option>
                                                                 {DOC_PAYMENT_OPTIONS.map((a) => (
                                                                     <option key={a} value={a}>₹{a.toLocaleString()}</option>
                                                                 ))}
+                                                                <option value="ELSEWHERE">Done elsewhere</option>
                                                             </select>
                                                         );
                                                     })()}
@@ -1831,15 +1916,49 @@ export default function LoanProcess() {
                     </div>
                 )}
 
-                {/* ══════════════ TAB 4 — VIEW DETAILS (Head only, all staff) ══════════════ */}
-                {tab === "viewAll" && (
+                {/* ══════════════ TAB 4 — VIEW DETAILS ══════════════ */}
+                {tab === "viewAll" && isApplication && (
                     <div className="lp-card">
+                        <div className="lp-tabs" style={{ marginBottom: 12 }}>
+                            <button className={`lp-tab-btn ${appTab === "pending" ? "active" : ""}`} onClick={() => setAppTab("pending")}>
+                                Pending ({pendingApps.length})
+                            </button>
+                            <button className={`lp-tab-btn ${appTab === "completed" ? "active" : ""}`} onClick={() => setAppTab("completed")}>
+                                Completed ({completedApps.length})
+                            </button>
+                        </div>
+                        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
+                            <input
+                                placeholder="Search customer name, mobile or telecaller…"
+                                value={appSearch}
+                                onChange={(e) => setAppSearch(e.target.value)}
+                                style={{ flex: "1 1 260px", padding: "9px 14px", border: "1px solid var(--lp-border)", borderRadius: 8, fontSize: 14 }}
+                            />
+                            <label style={{ fontSize: 12, color: "var(--lp-text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
+                                From
+                                <input type="date" value={appFrom} max={appTo || undefined} onChange={(e) => setAppFrom(e.target.value)}
+                                    style={{ padding: "8px 10px", border: "1px solid var(--lp-border)", borderRadius: 8 }} />
+                            </label>
+                            <label style={{ fontSize: 12, color: "var(--lp-text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
+                                To
+                                <input type="date" value={appTo} min={appFrom || undefined} onChange={(e) => setAppTo(e.target.value)}
+                                    style={{ padding: "8px 10px", border: "1px solid var(--lp-border)", borderRadius: 8 }} />
+                            </label>
+                            {(appSearch || appFrom || appTo) && (
+                                <button
+                                    className="lp-btn-sm"
+                                    onClick={() => { setAppSearch(""); setAppFrom(""); setAppTo(""); }}
+                                >
+                                    ✕ Clear
+                                </button>
+                            )}
+                        </div>
                         {loadingAll && <p style={{ color: "var(--lp-text-muted)" }}>Loading…</p>}
-                        {!loadingAll && allCustomers.length === 0 && (
-                            <p style={{ color: "var(--lp-text-muted)" }}>No customer records found.</p>
+                        {!loadingAll && appList.length === 0 && (
+                            <p style={{ color: "var(--lp-text-muted)" }}>{(appSearch || appFrom || appTo) ? "No records match your search." : "No customer records found."}</p>
                         )}
 
-                        {allCustomers.map((c) => {
+                        {appList.map((c) => {
                             const total = CHECKLIST_STAGES.length;
                             const doneCount = Object.values(c.checklist || {}).filter(Boolean).length;
                             const pct = c.processPercent ?? Math.round((doneCount / total) * 100);
@@ -1855,10 +1974,17 @@ export default function LoanProcess() {
                                         <div>
                                             <div style={{ fontWeight: 700, fontSize: 15 }}>{c.customerName}</div>
                                             <div style={{ fontSize: 12, color: "var(--lp-text-muted)" }}>
-                                                {c.contactNo} · {staffLabel}
+                                                {c.contactNo} · {staffLabel} · {c.loanDate ? new Date(c.loanDate).toLocaleDateString("en-IN") : "—"}
                                             </div>
                                         </div>
                                         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                                            {c.application?.assignedTo?.name && (
+                                                <span className="lp-badge" style={{ background: "#e0e7ff", color: "#3730a3" }}>
+                                                    {c.application.status === "COMPLETED"
+                                                        ? `✔ ${c.application.assignedTo.name} · ${new Date(c.application.completedAt).toLocaleDateString("en-IN")}`
+                                                        : `Taken by ${c.application.assignedTo.name}`}
+                                                </span>
+                                            )}
                                             {c.followup?.status === "PENDING" && (
                                                 <span className="lp-badge" style={{ background: "#fff4d6", color: "#8a6100" }}>
                                                     With Followup team
@@ -1880,6 +2006,22 @@ export default function LoanProcess() {
                                     {isOpen && (
                                         <div className="lp-checklist-body">
                                             <div className="lp-view-grid">
+                                                <div className="lp-view-item">
+                                                    <div className="lp-view-label">Scheme</div>
+                                                    <div className="lp-view-value">{c.scheme || "—"}</div>
+                                                </div>
+                                                <div className="lp-view-item">
+                                                    <div className="lp-view-label">Business Type</div>
+                                                    <div className="lp-view-value">{c.businessType || "—"}</div>
+                                                </div>
+                                                <div className="lp-view-item">
+                                                    <div className="lp-view-label">Business Sub-Type</div>
+                                                    <div className="lp-view-value">{c.businessSubType || "—"}</div>
+                                                </div>
+                                                <div className="lp-view-item">
+                                                    <div className="lp-view-label">Loan Date</div>
+                                                    <div className="lp-view-value">{c.loanDate ? new Date(c.loanDate).toLocaleDateString("en-IN") : "—"}</div>
+                                                </div>
                                                 <div className="lp-view-item">
                                                     <div className="lp-view-label">Mail ID</div>
                                                     <div className="lp-view-value">{c.mailId || "—"}</div>
@@ -1943,6 +2085,48 @@ export default function LoanProcess() {
                                             </div>
                                         </div>
                                     )}
+                                    {(() => {
+                                        const app = c.application || {};
+                                        const ownerId = app.assignedTo?.employeeId;
+                                        const isMine = ownerId && String(ownerId) === String(myEmployeeId);
+                                        const busy = appSavingId === c._id;
+                                        const box = { display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: 12, marginBottom: 14, borderRadius: 10, background: "var(--lp-bg)", border: "1px solid var(--lp-border)" };
+
+                                        if (app.status === "COMPLETED") {
+                                            return (
+                                                <div style={box}>
+                                                    ✔ Application completed by <b>{app.assignedTo?.name}</b> on{" "}
+                                                    <b>{new Date(app.completedAt).toLocaleDateString("en-IN")}</b>
+                                                </div>
+                                            );
+                                        }
+                                        if (!ownerId) {
+                                            return (
+                                                <div style={box}>
+                                                    <span>Nobody has taken this application yet.</span>
+                                                    <button className="lp-btn-sm edit" disabled={busy} onClick={() => takeApplication(c)}>
+                                                        Take this application
+                                                    </button>
+                                                </div>
+                                            );
+                                        }
+                                        if (!isMine) {
+                                            return <div style={box}>🔒 Being handled by <b>{app.assignedTo?.name}</b> — read only.</div>;
+                                        }
+                                        return (
+                                            <div style={box}>
+                                                <span>✅ You are handling this application.</span>
+                                                <input
+                                                    type="date"
+                                                    max={todayStr}
+                                                    value={appDate[c._id] || todayStr}
+                                                    onChange={(e) => setAppDate((p) => ({ ...p, [c._id]: e.target.value }))}
+                                                />
+                                                <button className="lp-btn-sm edit" disabled={busy} onClick={() => completeApplication(c)}>Complete</button>
+                                                <button className="lp-btn-sm delete" disabled={busy} onClick={() => releaseApplication(c)}>Release</button>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             );
                         })}

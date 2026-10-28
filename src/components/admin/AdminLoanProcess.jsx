@@ -14,6 +14,8 @@ const CHECKLIST_STAGES = [
   { key: "completed", label: "Completed" },
 ];
 
+
+
 const DOC_FIELDS = [
   { key: "aadharCard", label: "Aadhar Card" },
   { key: "passportPhoto", label: "Passport Photo" },
@@ -104,12 +106,17 @@ export default function AdminLoanProcess() {
   const [staffFilter, setStaffFilter] = useState("");
   const [staffList, setStaffList] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
-
+  const [exporting, setExporting] = useState(false);
   // ── Followup employees (for reassign + filter) ──
   const [followupStaff, setFollowupStaff] = useState([]);
   // "" = all | "UNASSIGNED" | <employeeId>   (can be pre-set from Analytics via ?followupStaff=<id>)
   const [followupStaffFilter, setFollowupStaffFilter] = useState(
     () => new URLSearchParams(window.location.search).get("followupStaff") || ""
+  );
+
+  // Application employees filter ("" = all | "NOT_TAKEN" | <employeeId>)
+  const [applicationStaffFilter, setApplicationStaffFilter] = useState(
+    () => new URLSearchParams(window.location.search).get("applicationStaff") || ""
   );
 
   // ── New filters: date range, scheme, sort ───────────────────────────────
@@ -198,6 +205,15 @@ export default function AdminLoanProcess() {
 
   const formatRupee = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
+  // Application employees (derived from loaded customers)
+  const applicationStaffOptions = Array.from(
+    new Map(
+      customers
+        .filter((c) => c.application?.assignedTo?.employeeId)
+        .map((c) => [String(c.application.assignedTo.employeeId), c.application.assignedTo.name])
+    ).entries()
+  ); // [[id, name], ...]
+
   // ── Scheme dropdown options — derived from currently loaded customers ──
   const schemeOptions = Array.from(
     new Set(customers.map((c) => c.scheme).filter(Boolean))
@@ -205,6 +221,12 @@ export default function AdminLoanProcess() {
 
   // ── Apply followup employee + date range + scheme filter + sort on top of server-filtered list ──
   const baseCustomers = customers
+    .filter((c) => {
+      if (!applicationStaffFilter) return true;
+      const ownerId = c.application?.assignedTo?.employeeId;
+      if (applicationStaffFilter === "NOT_TAKEN") return !ownerId && c.application?.status !== "COMPLETED";
+      return String(ownerId || "") === applicationStaffFilter;
+    })
     .filter((c) => {
       if (!followupStaffFilter) return true;
       const inFollowup = c.followup?.status && c.followup.status !== "NONE";
@@ -257,22 +279,22 @@ export default function AdminLoanProcess() {
 
   const workload = selectedFollowupEmp
     ? baseCustomers.reduce(
-        (w, c) => {
-          const st = getStageKey(c);
-          w.taken += 1;
-          if (st === "SANCTIONED") {
-            w.sanctioned += 1;
-            w.sanctionedValue += Number(c.loanValue || 0);
-          } else {
-            w.pending += 1;
-            if (st === "NOT_SANCTIONED") w.notSanctioned += 1;
-            if (c.followup?.dicOffice?.state !== "COMPLETED") w.dicPending += 1;
-            if (c.followup?.bank?.state !== "COMPLETED") w.bankPending += 1;
-          }
-          return w;
-        },
-        { taken: 0, pending: 0, sanctioned: 0, notSanctioned: 0, dicPending: 0, bankPending: 0, sanctionedValue: 0 }
-      )
+      (w, c) => {
+        const st = getStageKey(c);
+        w.taken += 1;
+        if (st === "SANCTIONED") {
+          w.sanctioned += 1;
+          w.sanctionedValue += Number(c.loanValue || 0);
+        } else {
+          w.pending += 1;
+          if (st === "NOT_SANCTIONED") w.notSanctioned += 1;
+          if (c.followup?.dicOffice?.state !== "COMPLETED") w.dicPending += 1;
+          if (c.followup?.bank?.state !== "COMPLETED") w.bankPending += 1;
+        }
+        return w;
+      },
+      { taken: 0, pending: 0, sanctioned: 0, notSanctioned: 0, dicPending: 0, bankPending: 0, sanctionedValue: 0 }
+    )
     : null;
 
   const clearAllFilters = () => {
@@ -280,6 +302,7 @@ export default function AdminLoanProcess() {
     setStatusFilter("");
     setStaffFilter("");
     setFollowupStaffFilter("");
+    setApplicationStaffFilter("");
     setFromDate("");
     setToDate("");
     setSchemeFilter("");
@@ -288,17 +311,45 @@ export default function AdminLoanProcess() {
   };
 
   // ── Export current filtered list to Excel (backend generates the file) ──
-  const handleExportExcel = () => {
-    const params = new URLSearchParams();
-    if (search) params.append("search", search);
-    if (statusFilter) params.append("status", statusFilter);
-    if (staffFilter) params.append("staffId", staffFilter);
-    if (schemeFilter) params.append("scheme", schemeFilter);
-    if (fromDate) params.append("fromDate", fromDate);
-    if (toDate) params.append("toDate", toDate);
-    params.append("mode", mode);
 
-    window.open(`${API}/api/admin-loan-process/export/excel?${params.toString()}`, "_blank");
+  const handleExportExcel = async () => {
+    if (displayedCustomers.length === 0) {
+      alert("No customers to export for the current filters.");
+      return;
+    }
+    setExporting(true);
+    try {
+      const token = localStorage.getItem("adminToken") || "";
+      const res = await fetch(`${API}/api/admin-loan-process/export/excel?mode=${mode}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        // exactly what's visible on screen (all filters + chips applied)
+        body: JSON.stringify({ ids: displayedCustomers.map((c) => c._id) }),
+      });
+      if (!res.ok) {
+        let msg = "";
+        try { msg = (await res.json()).message || ""; } catch { /* not json */ }
+        throw new Error(`${res.status} ${msg}`.trim());
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `loan-customers-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("ADMIN EXPORT ERROR", err);
+      alert(`Excel export failed: ${err.message}`);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const CHIPS = [
@@ -512,6 +563,15 @@ export default function AdminLoanProcess() {
           <option value="COMPLETED">Completed</option>
         </select>
 
+        {/* Application employee filter */}
+        <select value={applicationStaffFilter} onChange={(e) => setApplicationStaffFilter(e.target.value)}>
+          <option value="">All Application Employees</option>
+          <option value="NOT_TAKEN">Application not taken</option>
+          {applicationStaffOptions.map(([id, name]) => (
+            <option key={id} value={id}>{name}</option>
+          ))}
+        </select>
+
         {/* ── Followup employee filter ── */}
         <select value={followupStaffFilter} onChange={(e) => setFollowupStaffFilter(e.target.value)}>
           <option value="">All Followup Employees</option>
@@ -612,6 +672,8 @@ export default function AdminLoanProcess() {
         const bank = fu.bank || {};
         const sanc = fu.loanSanctioned || {};
         const owner = fu.assignedTo || {};
+        const app = c.application || {};
+        const appOwner = app.assignedTo || {};
 
         const badgeClass =
           stageKey === "SANCTIONED" ? "done"
@@ -629,6 +691,13 @@ export default function AdminLoanProcess() {
               <div>
                 <div className="alp-name">{c.customerName}</div>
                 <div className="alp-sub">{c.contactNo} {c.mailId ? `· ${c.mailId}` : ""}</div>
+                {(appOwner.employeeId || app.status === "COMPLETED") && (
+                  <div className={`alp-assign-chip ${app.status === "COMPLETED" ? "on" : ""}`}>
+                    {app.status === "COMPLETED"
+                      ? `✅ Application: ${appOwner.name} · ${fmtDate(app.completedAt)}`
+                      : `📝 Application: ${appOwner.name} (in progress)`}
+                  </div>
+                )}
                 {hasFollowup && (
                   <div className={`alp-assign-chip ${owner.employeeId ? "on" : ""}`}>
                     {owner.employeeId
@@ -694,6 +763,18 @@ export default function AdminLoanProcess() {
                   <div className="alp-info-item"><b>Communication Address</b>{c.communicationAddress || "—"}</div>
                   <div className="alp-info-item"><b>Unit Address</b>{c.unitAddress || "—"}</div>
                 </div>
+
+                {(appOwner.employeeId || app.status === "COMPLETED") && (
+                  <>
+                    <div className="alp-section-title">Application Status</div>
+                    <div className="alp-info-grid">
+                      <div className="alp-info-item"><b>Handled by</b>{appOwner.name || "—"}</div>
+                      <div className="alp-info-item"><b>Taken on</b>{fmtDate(appOwner.assignedAt)}</div>
+                      <div className="alp-info-item"><b>Status</b>{app.status === "COMPLETED" ? "Completed" : "In progress"}</div>
+                      <div className="alp-info-item"><b>Completed on</b>{app.status === "COMPLETED" ? fmtDate(app.completedAt) : "—"}</div>
+                    </div>
+                  </>
+                )}
 
                 {/* ── Followup Status (who / DIC / Bank / Sanction / timeline) ── */}
                 {hasFollowup && (
@@ -796,6 +877,11 @@ export default function AdminLoanProcess() {
                       {stage.key === "documentPayment" && c.checklistAmounts?.documentPayment != null && (
                         <div style={{ fontSize: 11, color: "var(--lp-text-muted)", marginLeft: 22, marginTop: -2 }}>
                           💰 ₹{Number(c.checklistAmounts.documentPayment).toLocaleString("en-IN")}
+                        </div>
+                      )}
+                      {stage.key === "documentPayment" && c.documentPaymentExternal && (
+                        <div style={{ fontSize: 11, color: "#b45309", marginLeft: 22, marginTop: -2 }}>
+                          🏷 Done elsewhere · no incentive
                         </div>
                       )}
                     </div>

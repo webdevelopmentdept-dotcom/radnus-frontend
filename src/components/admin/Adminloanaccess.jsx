@@ -37,14 +37,14 @@ export default function AdminLoanAccess() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, department]);
 
-    const toggleHead = async (emp) => {
+  const toggleHead = async (emp) => {
     const nextValue = !emp.isLoanProcessHead;
 
     // optimistic update — remote head off everyone, on for this one
     setEmployees((prev) =>
       prev.map((e) => ({
         ...e,
-        isLoanProcessHead: e._id === emp._id ? nextValue : false,
+        isLoanProcessHead: e._id === emp._id ? nextValue : e.isLoanProcessHead,
       }))
     );
     setSavingId(emp._id);
@@ -130,7 +130,7 @@ export default function AdminLoanAccess() {
     }
   };
 
-    const toggleFollowupAccess = async (emp) => {
+  const toggleFollowupAccess = async (emp) => {
     const nextValue = !emp.canManageLoanFollowup;
     setEmployees((prev) =>
       prev.map((e) => (e._id === emp._id ? { ...e, canManageLoanFollowup: nextValue } : e))
@@ -189,10 +189,13 @@ export default function AdminLoanAccess() {
           background: var(--lp-surface); border: 1px solid var(--lp-border);
           border-radius: var(--lp-radius-lg); box-shadow: var(--lp-shadow-sm); overflow: hidden;
         }
-                .ala-row {
-          display: grid; grid-template-columns: 2fr 1.4fr 1fr auto auto auto auto;
-          align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--lp-border);
-        }
+           .ala-row {
+  display: grid;
+  grid-template-columns: 2fr 1.4fr 1fr 110px 110px 110px 110px;
+  align-items: center; gap: 12px; padding: 14px 20px;
+  border-bottom: 1px solid var(--lp-border);
+}
+.ala-row > :nth-child(n+4) { justify-self: center; }
         .ala-row:last-child { border-bottom: none; }
         .ala-row:hover { background: var(--lp-bg); }
         .ala-name { font-weight: 700; font-size: 14px; }
@@ -219,10 +222,13 @@ export default function AdminLoanAccess() {
         .ala-switch.on .ala-switch-thumb { left: 23px; }
         .ala-switch.off .ala-switch-thumb { left: 3px; }
         .ala-header-row {
-          display: grid; grid-template-columns: 2fr 1.4fr 1fr auto auto auto; gap: 12px; padding: 10px 20px;
-          font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
-          color: var(--lp-text-muted); border-bottom: 1px solid var(--lp-border); background: var(--lp-bg);
-        }
+  display: grid;
+  grid-template-columns: 2fr 1.4fr 1fr 110px 110px 110px 110px;
+  gap: 12px; padding: 10px 20px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--lp-text-muted); border-bottom: 1px solid var(--lp-border); background: var(--lp-bg);
+}
+.ala-header-row > :nth-child(n+4) { text-align: center; }
       `}</style>
 
       <h4 style={{ fontWeight: 700, marginBottom: 4 }}>Loan Process — Access Control</h4>
@@ -249,8 +255,9 @@ export default function AdminLoanAccess() {
         <div className="ala-header-row">
           <div>Employee</div>
           <div>Department</div>
-          <div>Access</div>
-              <div>Head</div>
+          <div>Status</div>
+          <div>Telecaller</div>
+          <div>Application</div>
           <div>Report</div>
           <div>Followup</div>
         </div>
@@ -270,9 +277,9 @@ export default function AdminLoanAccess() {
               <span className="ala-dept-chip">{emp.department || "—"}</span>
             </div>
             <div className={`ala-status ${emp.canManageLoanProcess ? "on" : "off"}`}>
-              {emp.canManageLoanProcess ? "Enabled" : "Disabled"}
+              {emp.canManageLoanProcess ? "Telecaller" : "—"}
             </div>
-                        <button
+            <button
               className={`ala-switch ${emp.canManageLoanProcess ? "on" : "off"}`}
               onClick={() => toggleAccess(emp)}
               disabled={savingId === emp._id}
@@ -283,8 +290,8 @@ export default function AdminLoanAccess() {
             <button
               className={`ala-switch ${emp.isLoanProcessHead ? "on" : "off"}`}
               onClick={() => toggleHead(emp)}
-              disabled={savingId === emp._id || !emp.canManageLoanProcess}
-              title={!emp.canManageLoanProcess ? "Module access venum head aaganum na" : ""}
+              disabled={savingId === emp._id}
+              title="Application person: sees all telecallers' customers (View Details) to submit applications"
               aria-label={`Set ${emp.name} as Loan Process Head`}
             >
               <span className="ala-switch-thumb" />
@@ -298,7 +305,7 @@ export default function AdminLoanAccess() {
             >
               <span className="ala-switch-thumb" />
             </button>
-             <button
+            <button
               className={`ala-switch ${emp.canManageLoanFollowup ? "on" : "off"}`}
               onClick={() => toggleFollowupAccess(emp)}
               disabled={savingId === emp._id}

@@ -33,6 +33,7 @@ export default function LoanFollowup() {
   const [expandedId, setExpandedId] = useState(null);
   const [reasonDraft, setReasonDraft] = useState({}); // { "id-dicOffice": text }
   const [savingKey, setSavingKey] = useState("");
+  const [completeDate, setCompleteDate] = useState({}); // { [customerId]: "YYYY-MM-DD" }
 
   const load = async () => {
     setLoading(true);
@@ -103,7 +104,7 @@ export default function LoanFollowup() {
 
   // value: "YES" | "NO" | "" (clear)
   const saveSanction = (c, value) => {
-    if (value === "YES" && !window.confirm(`Mark ${c.customerName}'s loan as SANCTIONED? It will move to the Completed tab.`)) return;
+    // if (value === "YES" && !window.confirm(`Mark ${c.customerName}'s loan as SANCTIONED? It will move to the Completed tab.`)) return;
     callApi(`${c._id}-sanction`, `/api/loan-followup/${c._id}/sanction`, { value });
   };
 
@@ -138,6 +139,13 @@ export default function LoanFollowup() {
   };
 
   const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-IN") : "—");
+
+  const todayStr = new Date().toLocaleDateString("en-CA");
+  const completeLead = (c) => {
+    const date = completeDate[c._id] || todayStr;
+    if (!window.confirm(`Submit ${c.customerName} as COMPLETED on ${date}? It will move to the Completed tab.`)) return;
+    callApi(`${c._id}-complete`, `/api/loan-followup/${c._id}/complete`, { date });
+  };
 
   // NOTE: normal function (not a nested component) so the reason input keeps focus while typing.
   const renderStep = (c, step, title) => {
@@ -377,7 +385,7 @@ export default function LoanFollowup() {
                   )}
                   {tab === "completed" && hasOwner && (
                     <div className="lf-banner mine">
-                      <span>Handled by {c.isMine ? "you" : owner.name}.</span>
+                     <span>Handled by {c.isMine ? "you" : owner.name} · Completed on {fmtDate(c.followup?.completedAt)}</span>
                     </div>
                   )}
 
@@ -433,6 +441,30 @@ export default function LoanFollowup() {
                         <div className="lf-note">You can mark "Yes" only after both DIC Office and Bank Process are Completed.</div>
                       )}
                     </div>
+                    {canEdit && (
+                      <div className="lf-step">
+                        <div className="lf-step-title">4. Submit as Completed</div>
+                        <div className="lf-btn-row">
+                          <input
+                            type="date"
+                            className="lf-search"
+                            max={todayStr}
+                            value={completeDate[c._id] || todayStr}
+                            onChange={(e) => setCompleteDate((p) => ({ ...p, [c._id]: e.target.value }))}
+                          />
+                          <button
+                            className="lf-take"
+                            disabled={sanc !== "YES" || savingKey === `${c._id}-complete`}
+                            onClick={() => completeLead(c)}
+                          >
+                            Complete
+                          </button>
+                        </div>
+                        {sanc !== "YES" && (
+                          <div className="lf-note">Enabled after DIC Office & Bank = Completed and Loan Sanctioned = Yes.</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
