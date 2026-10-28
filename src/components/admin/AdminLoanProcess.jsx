@@ -762,6 +762,15 @@ export default function AdminLoanProcess() {
                   <div className="alp-info-item"><b>IFSC Code</b>{c.ifscCode || "—"}</div>
                   <div className="alp-info-item"><b>Communication Address</b>{c.communicationAddress || "—"}</div>
                   <div className="alp-info-item"><b>Unit Address</b>{c.unitAddress || "—"}</div>
+                  <div className="alp-info-item"><b>Father Name</b>{c.fatherName || "—"}</div>
+                  <div className="alp-info-item"><b>Father Occupation</b>{c.fatherOccupation || "—"}</div>
+                  <div className="alp-info-item"><b>Marital Status</b>{c.maritalStatus || "—"}</div>
+                  {c.maritalStatus === "Married" && (
+                    <>
+                      <div className="alp-info-item"><b>Spouse Name</b>{c.spouseName || "—"}</div>
+                      <div className="alp-info-item"><b>Spouse Occupation</b>{c.spouseOccupation || "—"}</div>
+                    </>
+                  )}
                 </div>
 
                 {(appOwner.employeeId || app.status === "COMPLETED") && (
