@@ -187,6 +187,15 @@ const BANK_NAME_OPTIONS = [
 
 const todayStr = () => new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
 
+// "28/10/2026, 5:21 pm" — customer system-la add aana neram
+const fmtAdded = (d) =>
+    d
+        ? new Date(d).toLocaleString("en-IN", {
+            day: "2-digit", month: "2-digit", year: "numeric",
+            hour: "numeric", minute: "2-digit", hour12: true,
+        })
+        : "—";
+
 
 const BLANK_FORM = {
     customerName: "",
@@ -321,7 +330,7 @@ export default function LoanProcess() {
     const [appDate, setAppDate] = useState({});         // { [customerId]: "YYYY-MM-DD" }
     const [appSavingId, setAppSavingId] = useState(null);
     const [appSearch, setAppSearch] = useState("");
-    const [appSort, setAppSort] = useState("newest"); // "newest" | "oldest"
+    const [appSort, setAppSort] = useState("added");// "newest" | "oldest"
     const [appFrom, setAppFrom] = useState("");   // YYYY-MM-DD
     const [appTo, setAppTo] = useState("");       // YYYY-MM-DD
     const myEmployeeId = localStorage.getItem("employeeId");
@@ -385,14 +394,19 @@ export default function LoanProcess() {
             const data = await res.json();
             if (!data.success) alert(data.message || "Couldn't save — please try again.");
             await loadAllCustomers();
+            return !!data.success;
         } catch (err) {
             console.error("APPLICATION ACTION ERROR", err);
             alert("Network error — please try again.");
+            return false;
         } finally {
             setAppSavingId(null);
         }
     };
-    const takeApplication = (c) => appCall(c._id, "claim", "POST");
+    const takeApplication = async (c) => {
+        const ok = await appCall(c._id, "claim", "POST");
+        if (ok) setAppTab("mine");   // eduthadha My Applications tab-ku poidum
+    };
     const releaseApplication = (c) => {
         if (!window.confirm(`Release ${c.customerName}? Others can take it.`)) return;
         appCall(c._id, "release", "POST");
@@ -403,14 +417,29 @@ export default function LoanProcess() {
         appCall(c._id, "complete", "PATCH", { date });
     };
 
-    const byNewest = (a, b) => new Date(b.createdAt) - new Date(a.createdAt);
-    const byOldest = (a, b) =>
-        new Date(a.loanDate || a.createdAt) - new Date(b.loanDate || b.createdAt) ||
-        new Date(a.createdAt) - new Date(b.createdAt);
+    const t = (d) => new Date(d).getTime() || 0;
 
+    const SORTERS = {
+        // add pannina neram (system created time)
+        added: (a, b) => t(b.createdAt) - t(a.createdAt),
+        // card-la theriyura Loan Date: pudhusu mela
+        dateNew: (a, b) => t(b.loanDate || b.createdAt) - t(a.loanDate || a.createdAt) || t(b.createdAt) - t(a.createdAt),
+        // card-la theriyura Loan Date: pazhasu mela
+        dateOld: (a, b) => t(a.loanDate || a.createdAt) - t(b.loanDate || b.createdAt) || t(a.createdAt) - t(b.createdAt),
+    };
+
+    const isMineApp = (c) =>
+        !!myEmployeeId && String(c.application?.assignedTo?.employeeId || "") === String(myEmployeeId);
+
+    // Pending = yaarum edukaadhadhu mattum
     const pendingApps = allCustomers
-        .filter((c) => c.application?.status !== "COMPLETED")
-        .sort(appSort === "oldest" ? byOldest : byNewest);
+        .filter((c) => c.application?.status !== "COMPLETED" && !c.application?.assignedTo?.employeeId)
+        .sort(SORTERS[appSort] || SORTERS.added);
+
+    // My Applications = naan eduthu innum mudikkaadhadhu (latest eduthadhu mela)
+    const myApps = allCustomers
+        .filter((c) => c.application?.status !== "COMPLETED" && isMineApp(c))
+        .sort((a, b) => t(b.application?.assignedTo?.assignedAt) - t(a.application?.assignedTo?.assignedAt));
     const completedApps = allCustomers
         .filter((c) => c.application?.status === "COMPLETED")
         .sort((a, b) => new Date(b.application.completedAt) - new Date(a.application.completedAt));
@@ -429,7 +458,9 @@ export default function LoanProcess() {
         return true;
     };
 
-    const appList = (appTab === "completed" ? completedApps : pendingApps).filter(matchesAppFilter);
+    const appList = (
+        appTab === "completed" ? completedApps : appTab === "mine" ? myApps : pendingApps
+    ).filter(matchesAppFilter);
 
     /* ------------------------ TAB 1 — FORM ------------------------ */
     const handleChange = (e) => {
@@ -2017,6 +2048,9 @@ export default function LoanProcess() {
                             <button className={`lp-tab-btn ${appTab === "pending" ? "active" : ""}`} onClick={() => setAppTab("pending")}>
                                 Pending ({pendingApps.length})
                             </button>
+                            <button className={`lp-tab-btn ${appTab === "mine" ? "active" : ""}`} onClick={() => setAppTab("mine")}>
+                                My Applications ({myApps.length})
+                            </button>
                             <button className={`lp-tab-btn ${appTab === "completed" ? "active" : ""}`} onClick={() => setAppTab("completed")}>
                                 Completed ({completedApps.length})
                             </button>
@@ -2033,8 +2067,9 @@ export default function LoanProcess() {
                                 onChange={(e) => setAppSort(e.target.value)}
                                 style={{ padding: "9px 12px", border: "1px solid var(--lp-border)", borderRadius: 8, fontSize: 14 }}
                             >
-                                <option value="newest">Newest first</option>
-                                <option value="oldest">Oldest first</option>
+                                <option value="added">Recently added</option>
+                                <option value="dateNew">Date: newest first</option>
+                                <option value="dateOld">Date: oldest first</option>
                             </select>
                             <label style={{ fontSize: 12, color: "var(--lp-text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
                                 From
@@ -2077,6 +2112,9 @@ export default function LoanProcess() {
                                             <div style={{ fontWeight: 700, fontSize: 15 }}>{c.customerName}</div>
                                             <div style={{ fontSize: 12, color: "var(--lp-text-muted)" }}>
                                                 {c.contactNo} · {staffLabel} · {c.loanDate ? new Date(c.loanDate).toLocaleDateString("en-IN") : "—"}
+                                            </div>
+                                            <div style={{ fontSize: 12, color: "var(--lp-text-muted)", marginTop: 2 }}>
+                                                🕒 Added: {fmtAdded(c.createdAt)}
                                             </div>
                                         </div>
                                         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
