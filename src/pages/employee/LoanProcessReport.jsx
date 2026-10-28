@@ -14,6 +14,8 @@ const CHECKLIST_STAGES = [
   { key: "courier", label: "Courier" },
   { key: "completed", label: "Completed" },
 ];
+const STEP_TEXT = { COMPLETED: "Completed", NOT_COMPLETED: "Not Completed" };
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-IN") : "—");
 
 export default function LoanProcessReport() {
   const API = import.meta.env.VITE_API_BASE_URL;
@@ -23,6 +25,10 @@ export default function LoanProcessReport() {
 
   const [customers, setCustomers] = useState([]);
   const [staffBreakdown, setStaffBreakdown] = useState([]);
+  const [applicationBreakdown, setApplicationBreakdown] = useState([]);
+  const [followupBreakdown, setFollowupBreakdown] = useState([]);
+  const [followupUnassigned, setFollowupUnassigned] = useState(0);
+  const [summaryTab, setSummaryTab] = useState("telecaller");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -32,6 +38,8 @@ export default function LoanProcessReport() {
   const [expandedId, setExpandedId] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [applicationFilter, setApplicationFilter] = useState("");
+  const [followupFilter, setFollowupFilter] = useState("");
 
   const loadReport = async () => {
     setLoading(true);
@@ -42,6 +50,9 @@ export default function LoanProcessReport() {
       if (data.success) {
         setCustomers(data.data || []);
         setStaffBreakdown(data.staffBreakdown || []);
+        setApplicationBreakdown(data.applicationBreakdown || []);
+        setFollowupBreakdown(data.followupBreakdown || []);
+        setFollowupUnassigned(data.followupUnassigned || 0);
       } else {
         setError(data.message || "Report load aagala");
       }
@@ -60,11 +71,39 @@ export default function LoanProcessReport() {
 
   const formatRupee = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
+  const applicationStaffOptions = Array.from(
+    new Map(
+      customers
+        .filter((c) => c.application?.assignedTo?.employeeId)
+        .map((c) => [String(c.application.assignedTo.employeeId), c.application.assignedTo.name])
+    ).entries()
+  );
+  const followupStaffOptions = Array.from(
+    new Map(
+      customers
+        .filter((c) => c.followup?.assignedTo?.employeeId)
+        .map((c) => [String(c.followup.assignedTo.employeeId), c.followup.assignedTo.name])
+    ).entries()
+  );
+
   const displayedCustomers = customers
     .filter((c) => (staffFilter ? (c.staffId?._id || c.staffId) === staffFilter : true))
     .filter((c) =>
       search ? (c.customerName || "").toLowerCase().includes(search.toLowerCase()) : true
     )
+    .filter((c) => {
+      if (!applicationFilter) return true;
+      const ownerId = c.application?.assignedTo?.employeeId;
+      if (applicationFilter === "NOT_TAKEN") return !ownerId && c.application?.status !== "COMPLETED";
+      return String(ownerId || "") === applicationFilter;
+    })
+    .filter((c) => {
+      if (!followupFilter) return true;
+      const inFollowup = c.followup?.status && c.followup.status !== "NONE";
+      const ownerId = c.followup?.assignedTo?.employeeId;
+      if (followupFilter === "UNASSIGNED") return inFollowup && !ownerId;
+      return String(ownerId || "") === followupFilter;
+    })
     .filter((c) => {
       if (!dateFrom && !dateTo) return true;
       if (!c.loanDate) return false;
@@ -77,18 +116,23 @@ export default function LoanProcessReport() {
   // ── Export current filtered list to Excel — needs the auth header, so a
   // plain window.open() won't work; fetch as a blob and trigger download ──
   const handleExportExcel = async () => {
+    if (displayedCustomers.length === 0) {
+      alert("No customers to export for the current filters.");
+      return;
+    }
     setExporting(true);
     try {
-      const params = new URLSearchParams();
-      if (staffFilter) params.append("staffId", staffFilter);
-      if (dateFrom) params.append("dateFrom", dateFrom);
-      if (dateTo) params.append("dateTo", dateTo);
-      if (search) params.append("search", search); // FIX: was missing, so name search never reached the export route
-
-      const res = await fetch(`${API}/api/loan-process/report/export?${params.toString()}`, {
-        headers: authHeaders(),
+      const res = await fetch(`${API}/api/loan-process/report/export`, {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        // exactly what's visible on screen (all filters applied)
+        body: JSON.stringify({ ids: displayedCustomers.map((c) => c._id) }),
       });
-      if (!res.ok) throw new Error("Export failed");
+      if (!res.ok) {
+        let msg = "";
+        try { msg = (await res.json()).message || ""; } catch { /* not json */ }
+        throw new Error(`${res.status} ${msg}`.trim());
+      }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -101,7 +145,7 @@ export default function LoanProcessReport() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("REPORT EXPORT ERROR", err);
-      alert("Excel export aagala, konjam nerathula try pannunga.");
+      alert(`Excel export failed: ${err.message}`);
     } finally {
       setExporting(false);
     }
@@ -225,6 +269,30 @@ export default function LoanProcessReport() {
             <span className="lpr-summary-chevron">{summaryOpen ? "▲" : "▼"}</span>
           </div>
 
+           {summaryOpen && (
+            <>
+            <div style={{ display: "flex", gap: 8, margin: "4px 0 14px", flexWrap: "wrap" }}>
+              {[
+                ["telecaller", `Telecallers (${staffBreakdown.length})`],
+                ["application", `Application Team (${applicationBreakdown.length})`],
+                ["followup", `Followup Team (${followupBreakdown.length})`],
+              ].map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setSummaryTab(k)}
+                  style={{
+                    padding: "6px 14px", borderRadius: 999, cursor: "pointer", fontSize: 13, fontWeight: 600,
+                    border: "1px solid var(--lp-border)",
+                    background: summaryTab === k ? "#2a3eb1" : "var(--lp-bg)",
+                    color: summaryTab === k ? "#fff" : "var(--lp-text-muted)",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
           {summaryOpen && (
             <table className="lpr-summary-table">
               <thead>
@@ -259,7 +327,71 @@ export default function LoanProcessReport() {
                   );
                 })}
               </tbody>
-            </table>
+                       </table>
+            )}
+
+            {summaryTab === "application" && (
+              <table className="lpr-summary-table">
+                <thead>
+                  <tr>
+                    <th>#</th><th>Employee</th><th>Taken</th><th>In Progress</th>
+                    <th>Completed</th><th>Completion %</th><th>Completed Loan Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {applicationBreakdown.length === 0 && (
+                    <tr><td colSpan={7} style={{ color: "var(--lp-text-muted)" }}>No applications taken yet.</td></tr>
+                  )}
+                  {applicationBreakdown.map((s, i) => (
+                    <tr key={s._id}>
+                      <td><span className={`lpr-rank-badge ${i === 0 ? "gold" : ""}`}>{i + 1}</span></td>
+                      <td style={{ fontWeight: 600 }}>{s.name}</td>
+                      <td>{s.taken}</td>
+                      <td>{s.inProgress}</td>
+                      <td>{s.completed}</td>
+                      <td>{s.completionRate}%</td>
+                      <td>{formatRupee(s.completedValue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
+            {summaryTab === "followup" && (
+              <>
+                {followupUnassigned > 0 && (
+                  <div style={{ fontSize: 13, color: "var(--lp-text-muted)", marginBottom: 8 }}>
+                    ⚠ {followupUnassigned} lead(s) are with the Followup team but not taken by anyone yet.
+                  </div>
+                )}
+                <table className="lpr-summary-table">
+                  <thead>
+                    <tr>
+                      <th>#</th><th>Employee</th><th>Leads Taken</th><th>In Progress</th>
+                      <th>Sanctioned</th><th>Not Sanctioned</th><th>Sanction %</th><th>Sanctioned Loan Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {followupBreakdown.length === 0 && (
+                      <tr><td colSpan={8} style={{ color: "var(--lp-text-muted)" }}>No followup leads taken yet.</td></tr>
+                    )}
+                    {followupBreakdown.map((s, i) => (
+                      <tr key={s._id}>
+                        <td><span className={`lpr-rank-badge ${i === 0 ? "gold" : ""}`}>{i + 1}</span></td>
+                        <td style={{ fontWeight: 600 }}>{s.name}</td>
+                        <td>{s.taken}</td>
+                        <td>{s.inProgress}</td>
+                        <td>{s.sanctioned}</td>
+                        <td>{s.notSanctioned}</td>
+                        <td>{s.sanctionRate}%</td>
+                        <td>{formatRupee(s.sanctionedValue)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+            </>
           )}
         </div>
 
@@ -273,6 +405,20 @@ export default function LoanProcessReport() {
             <option value="">All Telecallers</option>
             {staffBreakdown.map((s) => (
               <option key={s._id} value={s._id}>{s.staffName}</option>
+            ))}
+          </select>
+          <select value={applicationFilter} onChange={(e) => setApplicationFilter(e.target.value)}>
+            <option value="">All Application Employees</option>
+            <option value="NOT_TAKEN">Application not taken</option>
+            {applicationStaffOptions.map(([id, name]) => (
+              <option key={id} value={id}>{name}</option>
+            ))}
+          </select>
+          <select value={followupFilter} onChange={(e) => setFollowupFilter(e.target.value)}>
+            <option value="">All Followup Employees</option>
+            <option value="UNASSIGNED">Unassigned (Followup)</option>
+            {followupStaffOptions.map(([id, name]) => (
+              <option key={id} value={id}>{name}</option>
             ))}
           </select>
           <input
@@ -324,6 +470,24 @@ export default function LoanProcessReport() {
                   <div className="lpr-sub">
                     {c.contactNo} {c.loanDate ? `· ${new Date(c.loanDate).toLocaleDateString()}` : ""}
                   </div>
+                  {c.application?.assignedTo?.name && (
+                    <div className="lpr-sub">
+                      {c.application.status === "COMPLETED" ? "✅" : "📝"} Application: {c.application.assignedTo.name}
+                      {c.application.status === "COMPLETED" && c.application.completedAt
+                        ? ` · ${new Date(c.application.completedAt).toLocaleDateString()}`
+                        : " (in progress)"}
+                    </div>
+                  )}
+                  {c.followup?.status && c.followup.status !== "NONE" && (
+                    <div className="lpr-sub">
+                      {c.followup.status === "COMPLETED" ? "✅" : "📞"} Followup: {c.followup.assignedTo?.name || "Unassigned"}
+                      {c.followup.status === "COMPLETED"
+                        ? ` · Sanctioned ${fmtDate(c.followup.completedAt)}`
+                        : c.followup.loanSanctioned?.value === "NO"
+                          ? " · Not sanctioned"
+                          : " · in progress"}
+                    </div>
+                  )}
                 </div>
                 <div className="lpr-staff-chip">{c.staffId?.name || c.staffName || "Unknown"}</div>
                 <span className={`lpr-badge ${c.status === "COMPLETED" ? "done" : "progress"}`}>
@@ -337,17 +501,62 @@ export default function LoanProcessReport() {
                   <div className="lpr-section-title">Customer Details</div>
                   <div className="lpr-info-grid">
                     <div className="lpr-info-item"><b>Business Type</b>{c.businessType || "—"}</div>
-                                        <div className="lpr-info-item"><b>Business Sub-Type</b>{c.businessSubType || "—"}</div>
+                    <div className="lpr-info-item"><b>Business Sub-Type</b>{c.businessSubType || "—"}</div>
 
                     <div className="lpr-info-item"><b>Scheme</b>{c.scheme || "—"}</div>
                     <div className="lpr-info-item"><b>Loan Value</b>{c.loanValue ? formatRupee(c.loanValue) : "—"}</div>
                     <div className="lpr-info-item"><b>Contact No</b>{c.contactNo || "—"}</div>
                     <div className="lpr-info-item"><b>Mail ID</b>{c.mailId || "—"}</div>
+                    <div className="lpr-info-item"><b>Application By</b>{c.application?.assignedTo?.name || "—"}</div>
+                    <div className="lpr-info-item">
+                      <b>Application Date</b>
+                      {c.application?.status === "COMPLETED" && c.application?.completedAt
+                        ? new Date(c.application.completedAt).toLocaleDateString() : "—"}
+                    </div>
                     <div className="lpr-info-item"><b>Bank Name</b>{c.bankName || "—"}</div>
                     <div className="lpr-info-item"><b>IFSC Code</b>{c.ifscCode || "—"}</div>
                     <div className="lpr-info-item"><b>Communication Address</b>{c.communicationAddress || "—"}</div>
                     <div className="lpr-info-item"><b>Unit Address</b>{c.unitAddress || "—"}</div>
                   </div>
+
+                  {(c.application?.assignedTo?.employeeId || c.application?.status === "COMPLETED") && (
+                    <>
+                      <div className="lpr-section-title" style={{ marginTop: 16 }}>Application</div>
+                      <div className="lpr-info-grid">
+                        <div className="lpr-info-item"><b>Handled by</b>{c.application?.assignedTo?.name || "—"}</div>
+                        <div className="lpr-info-item"><b>Taken on</b>{fmtDate(c.application?.assignedTo?.assignedAt)}</div>
+                        <div className="lpr-info-item"><b>Status</b>{c.application?.status === "COMPLETED" ? "Completed" : "In progress"}</div>
+                        <div className="lpr-info-item"><b>Completed on</b>{c.application?.status === "COMPLETED" ? fmtDate(c.application?.completedAt) : "—"}</div>
+                      </div>
+                    </>
+                  )}
+
+                  {c.followup?.status && c.followup.status !== "NONE" && (
+                    <>
+                      <div className="lpr-section-title" style={{ marginTop: 16 }}>Followup</div>
+                      <div className="lpr-info-grid">
+                        <div className="lpr-info-item"><b>Handed over</b>{fmtDate(c.followup.handedOverAt)}</div>
+                        <div className="lpr-info-item"><b>Handled by</b>{c.followup.assignedTo?.name || "Unassigned"}</div>
+                        <div className="lpr-info-item"><b>Taken on</b>{fmtDate(c.followup.assignedTo?.assignedAt)}</div>
+                        <div className="lpr-info-item">
+                          <b>DIC Office</b>
+                          {STEP_TEXT[c.followup.dicOffice?.state] || "Not updated"}
+                          {c.followup.dicOffice?.state === "NOT_COMPLETED" && c.followup.dicOffice?.reason ? ` — ${c.followup.dicOffice.reason}` : ""}
+                        </div>
+                        <div className="lpr-info-item">
+                          <b>Bank Process</b>
+                          {STEP_TEXT[c.followup.bank?.state] || "Not updated"}
+                          {c.followup.bank?.state === "NOT_COMPLETED" && c.followup.bank?.reason ? ` — ${c.followup.bank.reason}` : ""}
+                        </div>
+                        <div className="lpr-info-item">
+                          <b>Loan Sanctioned</b>
+                          {c.followup.loanSanctioned?.value === "YES" ? "Yes" : c.followup.loanSanctioned?.value === "NO" ? "No" : "Not updated"}
+                          {c.followup.loanSanctioned?.updatedByName ? ` · by ${c.followup.loanSanctioned.updatedByName}` : ""}
+                        </div>
+                        <div className="lpr-info-item"><b>Completed on</b>{c.followup.status === "COMPLETED" ? fmtDate(c.followup.completedAt) : "—"}</div>
+                      </div>
+                    </>
+                  )}
 
                   <div className="lpr-section-title" style={{ marginTop: 16 }}>Process Checklist</div>
                   <div className="lpr-checklist-grid">
@@ -357,7 +566,7 @@ export default function LoanProcessReport() {
                           <input
                             type="checkbox"
                             checked={!!c.checklist?.[stage.key]}
-                            onChange={() => {}}
+                            onChange={() => { }}
                             onClick={(e) => e.preventDefault()}
                           />
                           {stage.label}
@@ -367,7 +576,7 @@ export default function LoanProcessReport() {
                             📝 {c.checklistRemarks[stage.key]}
                           </div>
                         )}
-                                                {c.checklistDates?.[stage.key] && (
+                        {c.checklistDates?.[stage.key] && (
                           <div style={{ fontSize: 11, color: "var(--lp-text-muted)", marginLeft: 22, marginTop: -2 }}>
                             📅 {new Date(c.checklistDates[stage.key]).toLocaleDateString()}
                           </div>
@@ -375,6 +584,11 @@ export default function LoanProcessReport() {
                         {stage.key === "documentPayment" && c.checklistAmounts?.documentPayment != null && (
                           <div style={{ fontSize: 11, color: "var(--lp-text-muted)", marginLeft: 22, marginTop: -2 }}>
                             💰 ₹{Number(c.checklistAmounts.documentPayment).toLocaleString("en-IN")}
+                          </div>
+                        )}
+                        {stage.key === "documentPayment" && c.documentPaymentExternal && (
+                          <div style={{ fontSize: 11, color: "#b45309", marginLeft: 22, marginTop: -2 }}>
+                            🏷 Done elsewhere · no incentive
                           </div>
                         )}
                       </div>

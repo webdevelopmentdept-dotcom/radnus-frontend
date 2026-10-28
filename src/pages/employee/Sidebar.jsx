@@ -4,7 +4,7 @@ import {
   FileText, Building2, LayoutDashboard, User,
   LogOut, TrendingUp, ClipboardList, Wallet,
   Bell, Settings, CalendarCheck, X,
-  ChevronRight, Sun, Moon, Sparkles, MessageCircle, Lock, LifeBuoy, MessageSquarePlus,Target,
+  ChevronRight, Sun, Moon, Sparkles, MessageCircle, Lock, LifeBuoy, MessageSquarePlus, Target,
   Package, Users
 } from "lucide-react";
 
@@ -85,7 +85,7 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
   // "Assignment to constant variable" crash. Loan Process only shows for
   // BDE telecallers HR flagged (Employee.canManageLoanProcess, same source
   // as employee prop above, from GET /api/employee/me/:id).
-  if (employee?.canManageLoanProcess) {
+  if (employee?.canManageLoanProcess || employee?.isLoanProcessHead) {
     navItems = [
       ...navItems.slice(0, -2),
       { href: "/employee/loan-process", icon: ClipboardList, label: "Loan Process" },
@@ -677,9 +677,9 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
               </div>
               <div className="esb-profile-info">
                 <div className="esb-profile-name">{employee.name}</div>
-               <div className="esb-profile-role">
-  {isTeamLead ? "Team Lead · " : ""}{employee.department || employee.designation || "Employee"}
-</div>
+                <div className="esb-profile-role">
+                  {isTeamLead ? "Team Lead · " : ""}{employee.department || employee.designation || "Employee"}
+                </div>
               </div>
               {/* ✅ CHANGED — Active badge only when approved, else Pending badge */}
               {isApproved ? (

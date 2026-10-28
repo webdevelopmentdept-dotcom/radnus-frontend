@@ -67,7 +67,7 @@ function RadnusHome() {
   </script>
 </Helmet>
       {/* ===== SHADE OF TRUST TICKER ===== */}
-<ShadeOfTrustTicker />
+{/* <ShadeOfTrustTicker /> */}
 
       {/* ===== HERO SECTION ===== */}
       <section
