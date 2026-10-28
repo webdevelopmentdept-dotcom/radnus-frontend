@@ -517,6 +517,15 @@ export default function LoanProcessReport() {
                     <div className="lpr-info-item"><b>IFSC Code</b>{c.ifscCode || "—"}</div>
                     <div className="lpr-info-item"><b>Communication Address</b>{c.communicationAddress || "—"}</div>
                     <div className="lpr-info-item"><b>Unit Address</b>{c.unitAddress || "—"}</div>
+                                        <div className="lpr-info-item"><b>Father Name</b>{c.fatherName || "—"}</div>
+                    <div className="lpr-info-item"><b>Father Occupation</b>{c.fatherOccupation || "—"}</div>
+                    <div className="lpr-info-item"><b>Marital Status</b>{c.maritalStatus || "—"}</div>
+                    {c.maritalStatus === "Married" && (
+                      <>
+                        <div className="lpr-info-item"><b>Spouse Name</b>{c.spouseName || "—"}</div>
+                        <div className="lpr-info-item"><b>Spouse Occupation</b>{c.spouseOccupation || "—"}</div>
+                      </>
+                    )}
                   </div>
 
                   {(c.application?.assignedTo?.employeeId || c.application?.status === "COMPLETED") && (

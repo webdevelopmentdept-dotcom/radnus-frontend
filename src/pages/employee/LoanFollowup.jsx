@@ -399,6 +399,15 @@ export default function LoanFollowup() {
                     <div className="lf-info"><b>Telecaller</b>{c.staffName || "—"}</div>
                     <div className="lf-info"><b>Communication Address</b>{c.communicationAddress || "—"}</div>
                     <div className="lf-info"><b>Unit Address</b>{c.unitAddress || "—"}</div>
+                                     <div className="lf-info"><b>Father Name</b>{c.fatherName || "—"}</div>
+                    <div className="lf-info"><b>Father Occupation</b>{c.fatherOccupation || "—"}</div>
+                    <div className="lf-info"><b>Marital Status</b>{c.maritalStatus || "—"}</div>
+                    {c.maritalStatus === "Married" && (
+                      <>
+                        <div className="lf-info"><b>Spouse Name</b>{c.spouseName || "—"}</div>
+                        <div className="lf-info"><b>Spouse Occupation</b>{c.spouseOccupation || "—"}</div>
+                      </>
+                    )}
                   </div>
 
                   <div className="lf-steps">

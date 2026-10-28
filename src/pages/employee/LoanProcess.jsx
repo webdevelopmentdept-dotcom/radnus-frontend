@@ -201,6 +201,11 @@ const BLANK_FORM = {
     mailId: "",
     bankName: "",
     ifscCode: "",
+    fatherName: "",
+    fatherOccupation: "",
+    maritalStatus: "",
+    spouseName: "",
+    spouseOccupation: "",
 };
 
 // ── Searchable dropdown (combobox) ──────────────────────────────────────────
@@ -316,11 +321,11 @@ export default function LoanProcess() {
     const [appDate, setAppDate] = useState({});         // { [customerId]: "YYYY-MM-DD" }
     const [appSavingId, setAppSavingId] = useState(null);
     const [appSearch, setAppSearch] = useState("");
+    const [appSort, setAppSort] = useState("newest"); // "newest" | "oldest"
     const [appFrom, setAppFrom] = useState("");   // YYYY-MM-DD
     const [appTo, setAppTo] = useState("");       // YYYY-MM-DD
     const myEmployeeId = localStorage.getItem("employeeId");
-    const todayStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
-
+    const todayDate = new Date().toLocaleDateString("en-CA");
     /* ------------------------ LOAD CHECKLIST TAB ------------------------ */
     const loadCustomers = async () => {
         setLoadingList(true);
@@ -393,12 +398,19 @@ export default function LoanProcess() {
         appCall(c._id, "release", "POST");
     };
     const completeApplication = (c) => {
-        const date = appDate[c._id] || todayStr;
+        const date = appDate[c._id] || todayDate;
         if (!window.confirm(`Mark ${c.customerName}'s application as COMPLETED on ${date}?`)) return;
         appCall(c._id, "complete", "PATCH", { date });
     };
 
-    const pendingApps = allCustomers.filter((c) => c.application?.status !== "COMPLETED");
+    const byNewest = (a, b) => new Date(b.createdAt) - new Date(a.createdAt);
+    const byOldest = (a, b) =>
+        new Date(a.loanDate || a.createdAt) - new Date(b.loanDate || b.createdAt) ||
+        new Date(a.createdAt) - new Date(b.createdAt);
+
+    const pendingApps = allCustomers
+        .filter((c) => c.application?.status !== "COMPLETED")
+        .sort(appSort === "oldest" ? byOldest : byNewest);
     const completedApps = allCustomers
         .filter((c) => c.application?.status === "COMPLETED")
         .sort((a, b) => new Date(b.application.completedAt) - new Date(a.application.completedAt));
@@ -530,6 +542,10 @@ export default function LoanProcess() {
 
         if (!form.unitAddress.trim()) {
             fErrs.unitAddress = "Unit Address is required.";
+        }
+
+        if (!form.maritalStatus) {
+            fErrs.maritalStatus = "Marital Status is required.";
         }
 
         // ---- Govt Documents: every document upload mandatory ----
@@ -793,6 +809,11 @@ export default function LoanProcess() {
             mailId: customer.mailId || "",
             bankName: customer.bankName || "",
             ifscCode: customer.ifscCode || "",
+            fatherName: customer.fatherName || "",
+            fatherOccupation: customer.fatherOccupation || "",
+            maritalStatus: customer.maritalStatus || "",
+            spouseName: customer.spouseName || "",
+            spouseOccupation: customer.spouseOccupation || "",
         });
         setEditFiles({});
         setEditFieldErrors({});
@@ -873,6 +894,7 @@ export default function LoanProcess() {
 
         if (!editForm.communicationAddress.trim()) fErrs.communicationAddress = "Communication Address is required.";
         if (!editForm.unitAddress.trim()) fErrs.unitAddress = "Unit Address is required.";
+        if (!editForm.maritalStatus) fErrs.maritalStatus = "Marital Status is required.";
 
         // A document is "missing" only if there's no existing uploaded doc AND no new file chosen now
         // (skip this check entirely for docs marked optional, e.g. Gas Bill, EB Bill)
@@ -1311,6 +1333,42 @@ export default function LoanProcess() {
                                     />
                                     {fieldErrors.unitAddress && <div className="lp-field-error">{fieldErrors.unitAddress}</div>}
                                 </div>
+
+                                <div className="lp-field">
+                                    <label>Father Name</label>
+                                    <input name="fatherName" value={form.fatherName} onChange={handleChange} />
+                                </div>
+                                <div className="lp-field">
+                                    <label>Father Occupation</label>
+                                    <input name="fatherOccupation" value={form.fatherOccupation} onChange={handleChange} />
+                                </div>
+                                <div className="lp-field">
+                                    <label>Marital Status *</label>
+                                    <select
+                                        name="maritalStatus"
+                                        value={form.maritalStatus}
+                                        onChange={handleChange}
+                                        required
+                                        className={fieldErrors.maritalStatus ? "lp-input-invalid" : ""}
+                                    >
+                                        <option value="">Select</option>
+                                        <option value="Married">Married</option>
+                                        <option value="Unmarried">Unmarried</option>
+                                    </select>
+                                    {fieldErrors.maritalStatus && <div className="lp-field-error">{fieldErrors.maritalStatus}</div>}
+                                </div>
+                                {form.maritalStatus === "Married" && (
+                                    <>
+                                        <div className="lp-field">
+                                            <label>Spouse Name</label>
+                                            <input name="spouseName" value={form.spouseName} onChange={handleChange} />
+                                        </div>
+                                        <div className="lp-field">
+                                            <label>Spouse Occupation</label>
+                                            <input name="spouseOccupation" value={form.spouseOccupation} onChange={handleChange} />
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -1647,6 +1705,42 @@ export default function LoanProcess() {
                                                         <div className="lp-field-error">{editFieldErrors.unitAddress}</div>
                                                     )}
                                                 </div>
+                                                <div className="lp-field">
+                                                    <label>Father Name</label>
+                                                    <input name="fatherName" value={editForm.fatherName} onChange={handleEditChange} />
+                                                </div>
+                                                <div className="lp-field">
+                                                    <label>Father Occupation</label>
+                                                    <input name="fatherOccupation" value={editForm.fatherOccupation} onChange={handleEditChange} />
+                                                </div>
+                                                <div className="lp-field">
+                                                    <label>Marital Status *</label>
+                                                    <select
+                                                        name="maritalStatus"
+                                                        value={editForm.maritalStatus}
+                                                        onChange={handleEditChange}
+                                                        className={editFieldErrors.maritalStatus ? "lp-input-invalid" : ""}
+                                                    >
+                                                        <option value="">Select</option>
+                                                        <option value="Married">Married</option>
+                                                        <option value="Unmarried">Unmarried</option>
+                                                    </select>
+                                                    {editFieldErrors.maritalStatus && (
+                                                        <div className="lp-field-error">{editFieldErrors.maritalStatus}</div>
+                                                    )}
+                                                </div>
+                                                {editForm.maritalStatus === "Married" && (
+                                                    <>
+                                                        <div className="lp-field">
+                                                            <label>Spouse Name</label>
+                                                            <input name="spouseName" value={editForm.spouseName} onChange={handleEditChange} />
+                                                        </div>
+                                                        <div className="lp-field">
+                                                            <label>Spouse Occupation</label>
+                                                            <input name="spouseOccupation" value={editForm.spouseOccupation} onChange={handleEditChange} />
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
 
                                             <div className="lp-section-title">
@@ -1934,6 +2028,14 @@ export default function LoanProcess() {
                                 onChange={(e) => setAppSearch(e.target.value)}
                                 style={{ flex: "1 1 260px", padding: "9px 14px", border: "1px solid var(--lp-border)", borderRadius: 8, fontSize: 14 }}
                             />
+                            <select
+                                value={appSort}
+                                onChange={(e) => setAppSort(e.target.value)}
+                                style={{ padding: "9px 12px", border: "1px solid var(--lp-border)", borderRadius: 8, fontSize: 14 }}
+                            >
+                                <option value="newest">Newest first</option>
+                                <option value="oldest">Oldest first</option>
+                            </select>
                             <label style={{ fontSize: 12, color: "var(--lp-text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
                                 From
                                 <input type="date" value={appFrom} max={appTo || undefined} onChange={(e) => setAppFrom(e.target.value)}
@@ -2027,6 +2129,10 @@ export default function LoanProcess() {
                                                     <div className="lp-view-value">{c.mailId || "—"}</div>
                                                 </div>
                                                 <div className="lp-view-item">
+                                                    <div className="lp-view-label">Contact No</div>
+                                                    <div className="lp-view-value">{c.contactNo || "—"}</div>
+                                                </div>
+                                                <div className="lp-view-item">
                                                     <div className="lp-view-label">Loan Value</div>
                                                     <div className="lp-view-value">{c.loanValue || "—"}</div>
                                                 </div>
@@ -2046,6 +2152,30 @@ export default function LoanProcess() {
                                                     <div className="lp-view-label">Unit Address</div>
                                                     <div className="lp-view-value">{c.unitAddress || "—"}</div>
                                                 </div>
+                                                <div className="lp-view-item">
+                                                    <div className="lp-view-label">Father Name</div>
+                                                    <div className="lp-view-value">{c.fatherName || "—"}</div>
+                                                </div>
+                                                <div className="lp-view-item">
+                                                    <div className="lp-view-label">Father Occupation</div>
+                                                    <div className="lp-view-value">{c.fatherOccupation || "—"}</div>
+                                                </div>
+                                                <div className="lp-view-item">
+                                                    <div className="lp-view-label">Marital Status</div>
+                                                    <div className="lp-view-value">{c.maritalStatus || "—"}</div>
+                                                </div>
+                                                {c.maritalStatus === "Married" && (
+                                                    <>
+                                                        <div className="lp-view-item">
+                                                            <div className="lp-view-label">Spouse Name</div>
+                                                            <div className="lp-view-value">{c.spouseName || "—"}</div>
+                                                        </div>
+                                                        <div className="lp-view-item">
+                                                            <div className="lp-view-label">Spouse Occupation</div>
+                                                            <div className="lp-view-value">{c.spouseOccupation || "—"}</div>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
 
                                             <div style={{ marginTop: 16 }}>
@@ -2118,8 +2248,8 @@ export default function LoanProcess() {
                                                 <span>✅ You are handling this application.</span>
                                                 <input
                                                     type="date"
-                                                    max={todayStr}
-                                                    value={appDate[c._id] || todayStr}
+                                                    max={todayDate}
+                                                    value={appDate[c._id] || todayDate}
                                                     onChange={(e) => setAppDate((p) => ({ ...p, [c._id]: e.target.value }))}
                                                 />
                                                 <button className="lp-btn-sm edit" disabled={busy} onClick={() => completeApplication(c)}>Complete</button>
