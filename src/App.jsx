@@ -74,9 +74,9 @@ import MyTeamKpi from "./pages/employee/MyTeamKpi";
 import LoanFollowup from "./pages/employee/LoanFollowup";
 import TeamLeaveRequests from "./pages/employee/TeamLeaveRequests";
 import MyLifeVision from "./pages/employee/MyLifeVision";
-
-
 import TeamSharedGoals from "./pages/employee/Teamsharedgoals";
+import Admission from "./pages/employee/Admission";
+import AdmissionReport from "./pages/employee/AdmissionReport";
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
@@ -158,6 +158,9 @@ import AdminPendingApprovals from "./components/admin/AdminPendingApprovals";
 import AdminLoanAnalytics from "./components/admin/AdminLoanAnalytics";
 import ManageHrAccounts from "./pages/admin/ManageHrAccounts";
 import HrActivity from "./pages/admin/HrActivity";
+import AdminAdmission from "./components/admin/AdminAdmission";
+import AdminAdmissionAccess from "./components/admin/AdminAdmissionAccess";
+import AdminAdmissionSettings from "./components/admin/AdminAdmissionSettings";
 
 /* Channel */
 import ChannelDashboard from "./pages/Channel/ChannelDashboard";
@@ -282,21 +285,13 @@ function App() {
         <Route path="/employee/raise-ticket" element={<RaiseTicket />} />
         <Route path="/employee/feedback" element={<EmployeeFeedback />} />
         <Route path="/employee/my-advance" element={<MyAdvances />} />
-        <Route path="/employee/products" element={<EmployeeProtectedRoute> <EmployeeProductManagement />  </EmployeeProtectedRoute>
-        }
-        />
-        <Route path="/employee/loan-process" element={<EmployeeProtectedRoute>  <LoanProcess /> </EmployeeProtectedRoute>
-        }
-        />
-        <Route path="/employee/loan-process-report" element={<EmployeeProtectedRoute>  <LoanProcessReport /> </EmployeeProtectedRoute>
-        }
-        />
-        <Route path="/employee/loan-followup" element={<EmployeeProtectedRoute>  <LoanFollowup /> </EmployeeProtectedRoute>
-        }
-        />
-        <Route path="/employee/loan-incentive-payouts" element={<EmployeeProtectedRoute>  <LoanIncentivePayouts /> </EmployeeProtectedRoute>
-        }
-        />
+        <Route path="/employee/products" element={<EmployeeProtectedRoute> <EmployeeProductManagement />  </EmployeeProtectedRoute>} />
+        <Route path="/employee/loan-process" element={<EmployeeProtectedRoute>  <LoanProcess /> </EmployeeProtectedRoute>} />
+        <Route path="/employee/loan-process-report" element={<EmployeeProtectedRoute>  <LoanProcessReport /> </EmployeeProtectedRoute>} />
+        <Route path="/employee/loan-followup" element={<EmployeeProtectedRoute>  <LoanFollowup /> </EmployeeProtectedRoute>} />
+        <Route path="/employee/admission" element={<EmployeeProtectedRoute> <Admission /> </EmployeeProtectedRoute>} />
+        <Route path="/employee/admission-report" element={<EmployeeProtectedRoute> <AdmissionReport /> </EmployeeProtectedRoute>} />
+        <Route path="/employee/loan-incentive-payouts" element={<EmployeeProtectedRoute>  <LoanIncentivePayouts /> </EmployeeProtectedRoute>} />
 
         {/* HR Routes */}
 
@@ -404,6 +399,9 @@ function App() {
           <Route path="loan-process/access" element={<AdminLoanAccess />} />
 
           <Route path="loan-analytics" element={<AdminLoanAnalytics />} />
+          <Route path="admission" element={<AdminAdmission />} />
+          <Route path="admission/access" element={<AdminAdmissionAccess />} />
+          <Route path="admission/settings" element={<AdminAdmissionSettings />} />
           <Route path="applicants" element={<ApplicantList />} />
           <Route path="partners" element={<PartnerList />} />
           <Route path="leads" element={<LeadList />} />
