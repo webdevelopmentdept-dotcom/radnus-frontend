@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import {
   CheckCircle, Clock, ChevronDown, ChevronUp,
@@ -602,8 +602,12 @@ export default function SelfAssessment() {
     return Math.round(total);
   };
 
+  const submittingRef = useRef(false); // double-click guard
+
   const handleSubmit = async () => {
+    if (submittingRef.current) return;
     if (!isFormValid()) return showToast("Please fill all your KPI values", "error");
+    submittingRef.current = true;
     setSaving(true);
     try {
       const payload = {
@@ -635,6 +639,7 @@ export default function SelfAssessment() {
     } catch (err) {
       showToast(err.response?.data?.message || "Server error", "error");
     } finally {
+      submittingRef.current = false;
       setSaving(false);
     }
   };
