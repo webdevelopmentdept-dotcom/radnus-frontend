@@ -16,7 +16,7 @@ const BLANK = {
   batchNo: "", billNo: "",
 };
 
-const toInputDate = (d) => (d ? new Date(d).toISOString().slice(0, 10) : ""); 
+const toInputDate = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
 const digits = (v, max) => String(v).replace(/\D/g, "").slice(0, max);
 
 // Server student → form state (when editing a draft)
@@ -213,11 +213,9 @@ export default function Admission() {
       const done = cData.data;
       setSuccess(
         `Application ${done.applicationNo} completed. ` +
-        (cData.emailStatus === "SENT"
-          ? `PDF emailed to ${done.email}.`
-          : done.email
-            ? "Email could not be sent. Use “Send Email” in the Completed tab, or download the PDF."
-            : "No email given, so download the PDF from the Completed tab.")
+        (done.email
+          ? "Use “Send Email” in the Completed tab to send the PDF to the student."
+          : "No email given, so download the PDF from the Completed tab.")
       );
       resetForm();
       await loadStudents();
@@ -338,7 +336,7 @@ export default function Admission() {
 
         <h4 style={{ fontWeight: 700, marginBottom: 4 }}>Admission</h4>
         <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 20 }}>
-          Fill the application, complete it to send the PDF to the student, then track installments.
+         Fill the application, complete it, send the PDF to the student from the Completed tab, then track installments
         </p>
 
         {access.loaded && !access.canManage && (
@@ -462,7 +460,7 @@ export default function Admission() {
                     ))}
                     {field("Pin code", <input inputMode="numeric" value={form.pincode} onChange={(e) => set("pincode", digits(e.target.value, 6))} />, { req: true })}
                     {field("Mobile No", <input inputMode="numeric" value={form.mobileNo} onChange={(e) => set("mobileNo", digits(e.target.value, 10))} placeholder="10 digits" />, { req: true })}
-                    {field("Email", <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />, { hint: "The application PDF is emailed here" })}
+                    {field("Email", <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />, { hint: "Used when you send the application PDF from the Completed tab" })}
                     {field("Emergency Mobile No", <input inputMode="numeric" value={form.emergencyMobile} onChange={(e) => set("emergencyMobile", digits(e.target.value, 10))} />)}
                     {field("Differently Abled", (
                       <div className="adm-radio-row">
