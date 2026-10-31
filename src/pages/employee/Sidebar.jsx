@@ -110,6 +110,22 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
     ];
   }
 
+    if (employee?.canManageAdmission) {
+    navItems = [
+      ...navItems.slice(0, -2),
+      { href: "/employee/admission", icon: ClipboardList, label: "Admission" },
+      ...navItems.slice(-2),
+    ];
+  }
+
+  if (employee?.admissionReportAccess) {
+    navItems = [
+      ...navItems.slice(0, -2),
+      { href: "/employee/admission-report", icon: ClipboardList, label: "Admission Report" },
+      ...navItems.slice(-2),
+    ];
+  }
+
   if (employee?.canApproveLoanIncentive) {
     navItems = [
       ...navItems.slice(0, -2),

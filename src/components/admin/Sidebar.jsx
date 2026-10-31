@@ -75,11 +75,13 @@ export default function AdminSidebar() {
         { name: "Loan Analytics", path: "/admin/loan-analytics", icon: "bi-graph-up-arrow" },
         { name: "Loan Process", path: "/admin/loan-process", icon: "bi-cash-coin" },
         { name: "Loan Process Access", path: "/admin/loan-process/access", icon: "bi-person-check-fill" },
-
+        { name: "Admission", path: "/admin/admission", icon: "bi-mortarboard-fill" },
+        { name: "Admission Access", path: "/admin/admission/access", icon: "bi-person-check-fill" },
+        { name: "Admission Settings", path: "/admin/admission/settings", icon: "bi-gear-fill" },
       ],
     },
 
-        {
+    {
       module: "HR Access",
       items: [
         { name: "Manage HR Accounts", path: "/admin/hr-accounts", icon: "bi-shield-lock-fill" },
@@ -105,7 +107,7 @@ export default function AdminSidebar() {
   const handleLogout = () => {
     localStorage.removeItem("admin-theme");
     localStorage.removeItem("admin-role");
-        localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminToken");
     window.location.replace("/login");
   };
 
