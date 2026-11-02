@@ -1,7 +1,19 @@
 import React, { useState, useEffect } from "react";
 import EmployeeLayout from "./EmployeeLayout";
 
-const STATE_LABEL = { COMPLETED: "Completed", NOT_COMPLETED: "Not Completed" };
+const STATE_LABEL = { PENDING: "Pending", PROCESS: "Process", SANCTIONED: "Sanctioned", REJECTED: "Rejected", FORWARDED: "Forwarded", COMPLETED: "Completed", NOT_COMPLETED: "Not Completed" };
+
+const DIC_OPTIONS = [
+  { value: "PENDING", label: "Pending", cls: "on-warn" },
+  { value: "REJECTED", label: "Rejected", cls: "on-no" },
+  { value: "FORWARDED", label: "Forwarded", cls: "on-yes" },
+];
+const BANK_OPTIONS = [
+  { value: "PENDING", label: "Pending", cls: "on-warn" },
+  { value: "PROCESS", label: "Process", cls: "on-proc" },
+  { value: "SANCTIONED", label: "Sanctioned", cls: "on-yes" },
+  { value: "REJECTED", label: "Rejected", cls: "on-no" },
+];
 
 const VIEWS = [
   { key: "mine", label: "My Leads" },
@@ -33,7 +45,6 @@ export default function LoanFollowup() {
   const [expandedId, setExpandedId] = useState(null);
   const [reasonDraft, setReasonDraft] = useState({}); // { "id-dicOffice": text }
   const [savingKey, setSavingKey] = useState("");
-  const [completeDate, setCompleteDate] = useState({}); // { [customerId]: "YYYY-MM-DD" }
 
   const load = async () => {
     setLoading(true);
@@ -81,31 +92,32 @@ export default function LoanFollowup() {
       if (!data.success) {
         alert(data.message || "Couldn't save — please try again.");
         await load();
-        return;
+        return false;
       }
-      await load(); // sanction = YES la customer Pending → Completed tab ku pogum
+      await load(); // Bank = Sanctioned na lead Completed tab ku pogum
+      return true;
     } catch (err) {
       console.error("FOLLOWUP SAVE ERROR", err);
       alert("Network error — please try again.");
+      return false;
     } finally {
       setSavingKey("");
     }
   };
 
-  // state: "COMPLETED" | "NOT_COMPLETED" | "" (clear)
-  const saveStep = (c, step, state) => {
-    const reason = (reasonDraft[`${c._id}-${step}`] ?? c.followup?.[step]?.reason ?? "").trim();
-    if (state === "NOT_COMPLETED" && !reason) {
-      alert("Please enter the reason before saving 'Not Completed'.");
+  const saveStep = async (c, step, state) => {
+    const key = `${c._id}-${step}`;
+    const cur = c.followup?.[step] || {};
+    const draft = reasonDraft[key];
+    const reason = state === ""
+      ? ""
+      : String(draft !== undefined ? draft : cur.state === state ? cur.reason || "" : "").trim();
+    if (state === "REJECTED" && !reason) {
+      alert("Please enter the reason before saving 'Rejected'.");
       return;
     }
-    callApi(`${c._id}-${step}`, `/api/loan-followup/${c._id}/step`, { step, state, reason });
-  };
-
-  // value: "YES" | "NO" | "" (clear)
-  const saveSanction = (c, value) => {
-    // if (value === "YES" && !window.confirm(`Mark ${c.customerName}'s loan as SANCTIONED? It will move to the Completed tab.`)) return;
-    callApi(`${c._id}-sanction`, `/api/loan-followup/${c._id}/sanction`, { value });
+    const ok = await callApi(key, `/api/loan-followup/${c._id}/step`, { step, state, reason });
+    if (ok) setReasonDraft((p) => { const n = { ...p }; delete n[key]; return n; });
   };
 
   // ── Claim / Release ──
@@ -140,37 +152,31 @@ export default function LoanFollowup() {
 
   const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-IN") : "—");
 
-  const todayStr = new Date().toLocaleDateString("en-CA");
-  const completeLead = (c) => {
-    const date = completeDate[c._id] || todayStr;
-    if (!window.confirm(`Submit ${c.customerName} as COMPLETED on ${date}? It will move to the Completed tab.`)) return;
-    callApi(`${c._id}-complete`, `/api/loan-followup/${c._id}/complete`, { date });
-  };
 
   // NOTE: normal function (not a nested component) so the reason input keeps focus while typing.
-  const renderStep = (c, step, title) => {
+  const renderStep = (c, step, title, options) => {
     const s = c.followup?.[step] || {};
     const key = `${c._id}-${step}`;
-    const canEdit = tab === "pending" && c.isMine;
+    const locked = step === "bank" && !["FORWARDED", "COMPLETED"].includes(c.followup?.dicOffice?.state);
+    const canEdit = tab === "pending" && c.isMine && !locked;
     return (
       <div className="lf-step" key={step}>
         <div className="lf-step-title">{title}</div>
         <div className="lf-btn-row">
-          <button
-            className={`lf-opt ${s.state === "COMPLETED" ? "on-yes" : ""}`}
-            disabled={!canEdit || savingKey === key}
-            onClick={() => saveStep(c, step, "COMPLETED")}
-          >
-            Completed
-          </button>
-          <button
-            className={`lf-opt ${s.state === "NOT_COMPLETED" ? "on-no" : ""}`}
-            disabled={!canEdit || savingKey === key}
-            onClick={() => saveStep(c, step, "NOT_COMPLETED")}
-          >
-            Not Completed
-          </button>
+          {options.map((o) => (
+            <button
+              key={o.value}
+              className={`lf-opt ${s.state === o.value ? o.cls : ""}`}
+              disabled={!canEdit || savingKey === key}
+              onClick={() => saveStep(c, step, o.value)}
+            >
+              {o.label}
+            </button>
+          ))}
         </div>
+        {locked && tab === "pending" && (
+          <div className="lf-note">🔒 Unlocks after DIC Office is Forwarded.</div>
+        )}
         {canEdit && s.state && (
           <button
             className="lf-clear"
@@ -186,19 +192,17 @@ export default function LoanFollowup() {
         {canEdit && (
           <input
             className="lf-reason"
-            placeholder="Reason (required if Not Completed)"
-            value={reasonDraft[key] ?? s.reason ?? ""}
+            placeholder="Reason (required for Rejected) — type, then click an option"
+            value={reasonDraft[key] ?? ""}
             onChange={(e) => setReasonDraft((p) => ({ ...p, [key]: e.target.value }))}
           />
-        )}
-        {!canEdit && s.state === "NOT_COMPLETED" && s.reason && (
-          <div className="lf-note">📝 {s.reason}</div>
         )}
         {s.state && (
           <div className="lf-note">
             {STATE_LABEL[s.state]} · {fmtDate(s.updatedAt)} · {s.updatedByName}
           </div>
         )}
+        {s.reason && <div className="lf-note">📝 {s.reason}</div>}
       </div>
     );
   };
@@ -242,8 +246,11 @@ export default function LoanFollowup() {
         .lf-steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }
         .lf-step { background:#fff; border:1px solid #E4E7EE; border-radius:10px; padding:12px; }
         .lf-step-title { font-weight:700; margin-bottom:8px; }
-        .lf-btn-row { display:flex; gap:8px; margin-bottom:8px; }
-        .lf-opt { flex:1; padding:7px 10px; border-radius:8px; border:1px solid #CBD5E1; background:#fff; cursor:pointer; font-weight:600; font-size:13px; }
+        .lf-btn-row { flex-wrap:wrap; display:flex; gap:8px; margin-bottom:8px; }
+        .lf-opt { flex:1; padding:7px 10px; border-radius:8px; border:1px solid #CBD5E1; background:#fff; cursor:pointer; font-weight:600; font-size:13px; min-width:90px; }
+       .lf-opt.on-warn { background:#fff4d6; color:#8a6100; border-color:#8a6100; }
+.lf-opt.on-proc { background:#EEF1FD; color:#2A3EB1; border-color:#2A3EB1; }
+.lf-badge.rejected { background:#fee2e2; color:#b91c1c; }
         .lf-opt:disabled { opacity:.6; cursor:not-allowed; }
         .lf-opt.on-yes { background:#E7F7F2; color:#0F9D80; border-color:#0F9D80; }
         .lf-opt.on-no { background:#fee2e2; color:#b91c1c; border-color:#b91c1c; }
@@ -259,7 +266,7 @@ export default function LoanFollowup() {
       <div className="lf-root">
         <h4 style={{ fontWeight: 700, marginBottom: 4 }}>Loan Followup</h4>
         <p style={{ color: "#64748B", fontSize: 14, marginBottom: 16 }}>
-          Customers whose loan process is completed by the telecaller. Take a lead, then update DIC Office, Bank Process and Loan Sanction.
+          Customers whose loan process is completed by the telecaller. Take a lead, then update DIC Office and Bank Process.
         </p>
 
         <div className="lf-tabs">
@@ -310,11 +317,10 @@ export default function LoanFollowup() {
 
         {visibleList.map((c) => {
           const isOpen = expandedId === c._id;
-          const sanc = c.followup?.loanSanctioned?.value;
+          const rejected = c.followup?.dicOffice?.state === "REJECTED" || c.followup?.bank?.state === "REJECTED";
           const owner = c.followup?.assignedTo;
           const hasOwner = !!owner?.employeeId;
           const canTake = tab === "pending" && !hasOwner;
-          const canEdit = tab === "pending" && c.isMine;
 
           return (
             <div className={`lf-card ${c.isMine ? "mine" : ""}`} key={c._id}>
@@ -345,8 +351,8 @@ export default function LoanFollowup() {
                   </button>
                 )}
 
-                <span className={`lf-badge ${tab === "completed" ? "done" : "pending"}`}>
-                  {tab === "completed" ? "Sanctioned" : sanc === "NO" ? "Not Sanctioned" : "Pending"}
+                <span className={`lf-badge ${tab === "completed" ? "done" : rejected ? "rejected" : "pending"}`}>
+                  {tab === "completed" ? "Sanctioned" : rejected ? "Rejected" : "Pending"}
                 </span>
                 <span style={{ color: "#64748B" }}>{isOpen ? "▲" : "▼"}</span>
               </div>
@@ -368,7 +374,7 @@ export default function LoanFollowup() {
                   )}
                   {tab === "pending" && !hasOwner && (
                     <div className="lf-banner">
-                      <span>Nobody is handling this lead yet. Take it to update DIC Office, Bank and Sanction.</span>
+                      <span>Nobody is handling this lead yet. Take it to update DIC Office and Bank Process.</span>
                       <button
                         className="lf-take"
                         disabled={savingKey === `${c._id}-claim`}
@@ -385,7 +391,7 @@ export default function LoanFollowup() {
                   )}
                   {tab === "completed" && hasOwner && (
                     <div className="lf-banner mine">
-                     <span>Handled by {c.isMine ? "you" : owner.name} · Completed on {fmtDate(c.followup?.completedAt)}</span>
+                      <span>Handled by {c.isMine ? "you" : owner.name} · Completed on {fmtDate(c.followup?.completedAt)}</span>
                     </div>
                   )}
 
@@ -399,7 +405,7 @@ export default function LoanFollowup() {
                     <div className="lf-info"><b>Telecaller</b>{c.staffName || "—"}</div>
                     <div className="lf-info"><b>Communication Address</b>{c.communicationAddress || "—"}</div>
                     <div className="lf-info"><b>Unit Address</b>{c.unitAddress || "—"}</div>
-                                     <div className="lf-info"><b>Father Name</b>{c.fatherName || "—"}</div>
+                    <div className="lf-info"><b>Father Name</b>{c.fatherName || "—"}</div>
                     <div className="lf-info"><b>Father Occupation</b>{c.fatherOccupation || "—"}</div>
                     <div className="lf-info"><b>Marital Status</b>{c.maritalStatus || "—"}</div>
                     {c.maritalStatus === "Married" && (
@@ -409,71 +415,9 @@ export default function LoanFollowup() {
                       </>
                     )}
                   </div>
-
                   <div className="lf-steps">
-                    {renderStep(c, "dicOffice", "1. DIC Office")}
-                    {renderStep(c, "bank", "2. Bank Process")}
-
-                    <div className="lf-step">
-                      <div className="lf-step-title">3. Loan Sanctioned</div>
-                      <div className="lf-btn-row">
-                        <button
-                          className={`lf-opt ${sanc === "YES" ? "on-yes" : ""}`}
-                          disabled={!canEdit || savingKey === `${c._id}-sanction`}
-                          onClick={() => saveSanction(c, "YES")}
-                        >
-                          Yes
-                        </button>
-                        <button
-                          className={`lf-opt ${sanc === "NO" ? "on-no" : ""}`}
-                          disabled={!canEdit || savingKey === `${c._id}-sanction`}
-                          onClick={() => saveSanction(c, "NO")}
-                        >
-                          No
-                        </button>
-                      </div>
-                      {canEdit && sanc && (
-                        <button
-                          className="lf-clear"
-                          disabled={savingKey === `${c._id}-sanction`}
-                          onClick={() => saveSanction(c, "")}
-                        >
-                          ✕ Clear
-                        </button>
-                      )}
-                      {sanc && (
-                        <div className="lf-note">
-                          {sanc === "YES" ? "Yes" : "No"} · {fmtDate(c.followup.loanSanctioned.updatedAt)} · {c.followup.loanSanctioned.updatedByName}
-                        </div>
-                      )}
-                      {canEdit && (
-                        <div className="lf-note">You can mark "Yes" only after both DIC Office and Bank Process are Completed.</div>
-                      )}
-                    </div>
-                    {canEdit && (
-                      <div className="lf-step">
-                        <div className="lf-step-title">4. Submit as Completed</div>
-                        <div className="lf-btn-row">
-                          <input
-                            type="date"
-                            className="lf-search"
-                            max={todayStr}
-                            value={completeDate[c._id] || todayStr}
-                            onChange={(e) => setCompleteDate((p) => ({ ...p, [c._id]: e.target.value }))}
-                          />
-                          <button
-                            className="lf-take"
-                            disabled={sanc !== "YES" || savingKey === `${c._id}-complete`}
-                            onClick={() => completeLead(c)}
-                          >
-                            Complete
-                          </button>
-                        </div>
-                        {sanc !== "YES" && (
-                          <div className="lf-note">Enabled after DIC Office & Bank = Completed and Loan Sanctioned = Yes.</div>
-                        )}
-                      </div>
-                    )}
+                    {renderStep(c, "dicOffice", "1. DIC Office", DIC_OPTIONS)}
+                    {renderStep(c, "bank", "2. Bank Process", BANK_OPTIONS)}
                   </div>
                 </div>
               )}

@@ -14,8 +14,17 @@ const CHECKLIST_STAGES = [
   { key: "courier", label: "Courier" },
   { key: "completed", label: "Completed" },
 ];
-const STEP_TEXT = { COMPLETED: "Completed", NOT_COMPLETED: "Not Completed" };
+const STEP_TEXT = { PENDING: "Pending", PROCESS: "Process", SANCTIONED: "Sanctioned", REJECTED: "Rejected", FORWARDED: "Forwarded", COMPLETED: "Completed", NOT_COMPLETED: "Not Completed" };
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-IN") : "—");
+const fmtDateTime = (d) =>
+  d
+    ? new Date(d).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "—";
+const stepTone = (s) =>
+  s === "FORWARDED" || s === "SANCTIONED" || s === "COMPLETED" ? "ok"
+    : s === "REJECTED" ? "bad"
+      : s ? "warn" : "na";
+const stepIcon = (s) => (stepTone(s) === "ok" ? "✅" : stepTone(s) === "bad" ? "❌" : s ? "⏳" : "↩️");
 
 export default function LoanProcessReport() {
   const API = import.meta.env.VITE_API_BASE_URL;
@@ -248,6 +257,28 @@ export default function LoanProcessReport() {
           .lpr-checklist-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 16px; }
           .lpr-stage-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
           .lpr-stage-row input { accent-color: var(--lp-accent); }
+
+          /* ── Followup cards + history timeline ── */
+          .lpr-fu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin: 12px 0; }
+          .lpr-fu-card { background: var(--lp-surface); border: 1px solid var(--lp-border); border-left: 4px solid #CBD5E1; border-radius: 10px; padding: 10px 12px; }
+          .lpr-fu-card.ok { border-left-color: var(--lp-accent); }
+          .lpr-fu-card.bad { border-left-color: #dc2626; }
+          .lpr-fu-card.warn { border-left-color: #d49b00; }
+          .lpr-fu-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--lp-text-muted); margin-bottom: 6px; }
+          .lpr-fu-badge { display: inline-block; font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: #EEF1F6; color: var(--lp-text-muted); }
+          .lpr-fu-badge.ok { background: var(--lp-accent-soft); color: var(--lp-accent); }
+          .lpr-fu-badge.bad { background: #fee2e2; color: #b91c1c; }
+          .lpr-fu-badge.warn { background: #fff4d6; color: #8a6100; }
+          .lpr-fu-reason { font-size: 12.5px; margin-top: 8px; padding: 6px 8px; background: var(--lp-bg); border-radius: 6px; }
+          .lpr-fu-by { font-size: 11px; color: var(--lp-text-muted); margin-top: 6px; }
+
+          .lpr-timeline { background: var(--lp-surface); border: 1px solid var(--lp-border); border-radius: 10px; padding: 6px 14px; margin-bottom: 4px; }
+          .lpr-tl-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--lp-border); font-size: 13px; }
+          .lpr-tl-item:last-child { border-bottom: none; }
+          .lpr-tl-icon { width: 22px; flex-shrink: 0; text-align: center; }
+          .lpr-tl-main { flex: 1; font-weight: 600; }
+          .lpr-tl-sub { font-size: 12px; color: var(--lp-text-muted); font-weight: 500; margin-top: 2px; }
+          .lpr-tl-date { font-size: 11.5px; color: var(--lp-text-muted); white-space: nowrap; }
         `}</style>
 
         <div className="lpr-header-row">
@@ -269,128 +300,128 @@ export default function LoanProcessReport() {
             <span className="lpr-summary-chevron">{summaryOpen ? "▲" : "▼"}</span>
           </div>
 
-           {summaryOpen && (
-            <>
-            <div style={{ display: "flex", gap: 8, margin: "4px 0 14px", flexWrap: "wrap" }}>
-              {[
-                ["telecaller", `Telecallers (${staffBreakdown.length})`],
-                ["application", `Application Team (${applicationBreakdown.length})`],
-                ["followup", `Followup Team (${followupBreakdown.length})`],
-              ].map(([k, label]) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setSummaryTab(k)}
-                  style={{
-                    padding: "6px 14px", borderRadius: 999, cursor: "pointer", fontSize: 13, fontWeight: 600,
-                    border: "1px solid var(--lp-border)",
-                    background: summaryTab === k ? "#2a3eb1" : "var(--lp-bg)",
-                    color: summaryTab === k ? "#fff" : "var(--lp-text-muted)",
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
           {summaryOpen && (
-            <table className="lpr-summary-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Employee</th>
-                  <th>Applications</th>
-                  <th>Revenue</th>
-                  <th>Completed</th>
-                  <th>Conv. %</th>
-                  <th>Doc Payments</th>
-                  <th>Doc Payment Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {staffBreakdown.length === 0 && (
-                  <tr><td colSpan={8} style={{ color: "var(--lp-text-muted)" }}>No data yet.</td></tr>
-                )}
-                {staffBreakdown.map((s, i) => {
-                  const conv = s.conversionRate ?? (s.applications ? Math.round((s.completedCount / s.applications) * 100) : 0);
-                  return (
-                    <tr key={s._id || s.staffName}>
-                      <td><span className={`lpr-rank-badge ${i === 0 ? "gold" : ""}`}>{i + 1}</span></td>
-                      <td style={{ fontWeight: 600 }}>{s.staffName || "Unknown"}</td>
-                      <td>{s.applications}</td>
-                      <td>{formatRupee(s.revenue)}</td>
-                      <td>{s.completedCount}</td>
-                      <td>{conv}%</td>
-                      <td>{s.docPaymentCount || 0}</td>
-                      <td>{formatRupee(s.docPaymentTotal || 0)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-                       </table>
-            )}
+            <>
+              <div style={{ display: "flex", gap: 8, margin: "4px 0 14px", flexWrap: "wrap" }}>
+                {[
+                  ["telecaller", `Telecallers (${staffBreakdown.length})`],
+                  ["application", `Application Team (${applicationBreakdown.length})`],
+                  ["followup", `Followup Team (${followupBreakdown.length})`],
+                ].map(([k, label]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setSummaryTab(k)}
+                    style={{
+                      padding: "6px 14px", borderRadius: 999, cursor: "pointer", fontSize: 13, fontWeight: 600,
+                      border: "1px solid var(--lp-border)",
+                      background: summaryTab === k ? "#2a3eb1" : "var(--lp-bg)",
+                      color: summaryTab === k ? "#fff" : "var(--lp-text-muted)",
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-            {summaryTab === "application" && (
-              <table className="lpr-summary-table">
-                <thead>
-                  <tr>
-                    <th>#</th><th>Employee</th><th>Taken</th><th>In Progress</th>
-                    <th>Completed</th><th>Completion %</th><th>Completed Loan Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {applicationBreakdown.length === 0 && (
-                    <tr><td colSpan={7} style={{ color: "var(--lp-text-muted)" }}>No applications taken yet.</td></tr>
-                  )}
-                  {applicationBreakdown.map((s, i) => (
-                    <tr key={s._id}>
-                      <td><span className={`lpr-rank-badge ${i === 0 ? "gold" : ""}`}>{i + 1}</span></td>
-                      <td style={{ fontWeight: 600 }}>{s.name}</td>
-                      <td>{s.taken}</td>
-                      <td>{s.inProgress}</td>
-                      <td>{s.completed}</td>
-                      <td>{s.completionRate}%</td>
-                      <td>{formatRupee(s.completedValue)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-
-            {summaryTab === "followup" && (
-              <>
-                {followupUnassigned > 0 && (
-                  <div style={{ fontSize: 13, color: "var(--lp-text-muted)", marginBottom: 8 }}>
-                    ⚠ {followupUnassigned} lead(s) are with the Followup team but not taken by anyone yet.
-                  </div>
-                )}
+              {summaryTab === "telecaller" && (
                 <table className="lpr-summary-table">
                   <thead>
                     <tr>
-                      <th>#</th><th>Employee</th><th>Leads Taken</th><th>In Progress</th>
-                      <th>Sanctioned</th><th>Not Sanctioned</th><th>Sanction %</th><th>Sanctioned Loan Value</th>
+                      <th>#</th>
+                      <th>Employee</th>
+                      <th>Applications</th>
+                      <th>Revenue</th>
+                      <th>Completed</th>
+                      <th>Conv. %</th>
+                      <th>Doc Payments</th>
+                      <th>Doc Payment Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {followupBreakdown.length === 0 && (
-                      <tr><td colSpan={8} style={{ color: "var(--lp-text-muted)" }}>No followup leads taken yet.</td></tr>
+                    {staffBreakdown.length === 0 && (
+                      <tr><td colSpan={8} style={{ color: "var(--lp-text-muted)" }}>No data yet.</td></tr>
                     )}
-                    {followupBreakdown.map((s, i) => (
+                    {staffBreakdown.map((s, i) => {
+                      const conv = s.conversionRate ?? (s.applications ? Math.round((s.completedCount / s.applications) * 100) : 0);
+                      return (
+                        <tr key={s._id || s.staffName}>
+                          <td><span className={`lpr-rank-badge ${i === 0 ? "gold" : ""}`}>{i + 1}</span></td>
+                          <td style={{ fontWeight: 600 }}>{s.staffName || "Unknown"}</td>
+                          <td>{s.applications}</td>
+                          <td>{formatRupee(s.revenue)}</td>
+                          <td>{s.completedCount}</td>
+                          <td>{conv}%</td>
+                          <td>{s.docPaymentCount || 0}</td>
+                          <td>{formatRupee(s.docPaymentTotal || 0)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+
+              {summaryTab === "application" && (
+                <table className="lpr-summary-table">
+                  <thead>
+                    <tr>
+                      <th>#</th><th>Employee</th><th>Taken</th><th>In Progress</th>
+                      <th>Completed</th><th>Completion %</th><th>Completed Loan Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {applicationBreakdown.length === 0 && (
+                      <tr><td colSpan={7} style={{ color: "var(--lp-text-muted)" }}>No applications taken yet.</td></tr>
+                    )}
+                    {applicationBreakdown.map((s, i) => (
                       <tr key={s._id}>
                         <td><span className={`lpr-rank-badge ${i === 0 ? "gold" : ""}`}>{i + 1}</span></td>
                         <td style={{ fontWeight: 600 }}>{s.name}</td>
                         <td>{s.taken}</td>
                         <td>{s.inProgress}</td>
-                        <td>{s.sanctioned}</td>
-                        <td>{s.notSanctioned}</td>
-                        <td>{s.sanctionRate}%</td>
-                        <td>{formatRupee(s.sanctionedValue)}</td>
+                        <td>{s.completed}</td>
+                        <td>{s.completionRate}%</td>
+                        <td>{formatRupee(s.completedValue)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </>
-            )}
+              )}
+
+              {summaryTab === "followup" && (
+                <>
+                  {followupUnassigned > 0 && (
+                    <div style={{ fontSize: 13, color: "var(--lp-text-muted)", marginBottom: 8 }}>
+                      ⚠ {followupUnassigned} lead(s) are with the Followup team but not taken by anyone yet.
+                    </div>
+                  )}
+                  <table className="lpr-summary-table">
+                    <thead>
+                      <tr>
+                        <th>#</th><th>Employee</th><th>Leads Taken</th><th>Pending</th>
+                        <th>Rejected (in Pending)</th><th>Completed</th><th>Sanction %</th><th>Sanctioned Loan Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {followupBreakdown.length === 0 && (
+                        <tr><td colSpan={8} style={{ color: "var(--lp-text-muted)" }}>No followup leads taken yet.</td></tr>
+                      )}
+                      {followupBreakdown.map((s, i) => (
+                        <tr key={s._id}>
+                          <td><span className={`lpr-rank-badge ${i === 0 ? "gold" : ""}`}>{i + 1}</span></td>
+                          <td style={{ fontWeight: 600 }}>{s.name}</td>
+                          <td>{s.taken}</td>
+                          <td>{s.pending}</td>
+                          <td>{s.rejected}</td>
+                          <td>{s.sanctioned}</td>
+                          <td>{s.sanctionRate}%</td>
+                          <td>{formatRupee(s.sanctionedValue)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
             </>
           )}
         </div>
@@ -483,8 +514,8 @@ export default function LoanProcessReport() {
                       {c.followup.status === "COMPLETED" ? "✅" : "📞"} Followup: {c.followup.assignedTo?.name || "Unassigned"}
                       {c.followup.status === "COMPLETED"
                         ? ` · Sanctioned ${fmtDate(c.followup.completedAt)}`
-                        : c.followup.loanSanctioned?.value === "NO"
-                          ? " · Not sanctioned"
+                        : (c.followup.dicOffice?.state === "REJECTED" || c.followup.bank?.state === "REJECTED")
+                          ? " · Rejected"
                           : " · in progress"}
                     </div>
                   )}
@@ -517,7 +548,7 @@ export default function LoanProcessReport() {
                     <div className="lpr-info-item"><b>IFSC Code</b>{c.ifscCode || "—"}</div>
                     <div className="lpr-info-item"><b>Communication Address</b>{c.communicationAddress || "—"}</div>
                     <div className="lpr-info-item"><b>Unit Address</b>{c.unitAddress || "—"}</div>
-                                        <div className="lpr-info-item"><b>Father Name</b>{c.fatherName || "—"}</div>
+                    <div className="lpr-info-item"><b>Father Name</b>{c.fatherName || "—"}</div>
                     <div className="lpr-info-item"><b>Father Occupation</b>{c.fatherOccupation || "—"}</div>
                     <div className="lpr-info-item"><b>Marital Status</b>{c.maritalStatus || "—"}</div>
                     {c.maritalStatus === "Married" && (
@@ -547,23 +578,50 @@ export default function LoanProcessReport() {
                         <div className="lpr-info-item"><b>Handed over</b>{fmtDate(c.followup.handedOverAt)}</div>
                         <div className="lpr-info-item"><b>Handled by</b>{c.followup.assignedTo?.name || "Unassigned"}</div>
                         <div className="lpr-info-item"><b>Taken on</b>{fmtDate(c.followup.assignedTo?.assignedAt)}</div>
-                        <div className="lpr-info-item">
-                          <b>DIC Office</b>
-                          {STEP_TEXT[c.followup.dicOffice?.state] || "Not updated"}
-                          {c.followup.dicOffice?.state === "NOT_COMPLETED" && c.followup.dicOffice?.reason ? ` — ${c.followup.dicOffice.reason}` : ""}
-                        </div>
-                        <div className="lpr-info-item">
-                          <b>Bank Process</b>
-                          {STEP_TEXT[c.followup.bank?.state] || "Not updated"}
-                          {c.followup.bank?.state === "NOT_COMPLETED" && c.followup.bank?.reason ? ` — ${c.followup.bank.reason}` : ""}
-                        </div>
-                        <div className="lpr-info-item">
-                          <b>Loan Sanctioned</b>
-                          {c.followup.loanSanctioned?.value === "YES" ? "Yes" : c.followup.loanSanctioned?.value === "NO" ? "No" : "Not updated"}
-                          {c.followup.loanSanctioned?.updatedByName ? ` · by ${c.followup.loanSanctioned.updatedByName}` : ""}
-                        </div>
                         <div className="lpr-info-item"><b>Completed on</b>{c.followup.status === "COMPLETED" ? fmtDate(c.followup.completedAt) : "—"}</div>
                       </div>
+
+                      {/* DIC Office / Bank Process cards */}
+                      <div className="lpr-fu-grid">
+                        {[
+                          { title: "1. DIC Office", s: c.followup.dicOffice },
+                          { title: "2. Bank Process", s: c.followup.bank },
+                        ].map(({ title, s }) => (
+                          <div className={`lpr-fu-card ${stepTone(s?.state)}`} key={title}>
+                            <div className="lpr-fu-title">{title}</div>
+                            <div className={`lpr-fu-badge ${stepTone(s?.state)}`}>
+                              {s?.state ? `${stepIcon(s.state)} ${STEP_TEXT[s.state]}` : "— Not updated"}
+                            </div>
+                            {s?.reason && <div className="lpr-fu-reason">📝 {s.reason}</div>}
+                            {s?.updatedByName && (
+                              <div className="lpr-fu-by">{s.updatedByName} · {fmtDateTime(s.updatedAt)}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* History timeline */}
+                      {(c.followup.history || []).length > 0 && (
+                        <>
+                          <div className="lpr-section-title" style={{ marginTop: 14 }}>Followup History</div>
+                          <div className="lpr-timeline">
+                            {[...c.followup.history]
+                              .sort((a, b) => new Date(a.at) - new Date(b.at))
+                              .map((h, i) => (
+                                <div className="lpr-tl-item" key={i}>
+                                  <div className="lpr-tl-icon">{stepIcon(h.state)}</div>
+                                  <div className="lpr-tl-main">
+                                    {h.step === "dicOffice" ? "DIC Office" : "Bank Process"}: {h.state ? STEP_TEXT[h.state] : "Cleared"}
+                                    <div className="lpr-tl-sub">
+                                      {h.byName || "—"}{h.reason ? ` · 📝 ${h.reason}` : ""}
+                                    </div>
+                                  </div>
+                                  <div className="lpr-tl-date">{fmtDateTime(h.at)}</div>
+                                </div>
+                              ))}
+                          </div>
+                        </>
+                      )}
                     </>
                   )}
 

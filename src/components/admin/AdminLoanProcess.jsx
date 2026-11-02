@@ -35,24 +35,28 @@ const getStageKey = (c) => {
   const st = c.followup?.status;
   if (st === "COMPLETED") return "SANCTIONED";
   if (st === "PENDING") {
-    return c.followup?.loanSanctioned?.value === "NO" ? "NOT_SANCTIONED" : "WITH_FOLLOWUP";
+    const rej = c.followup?.dicOffice?.state === "REJECTED" || c.followup?.bank?.state === "REJECTED";
+    return rej ? "NOT_SANCTIONED" : "WITH_FOLLOWUP"; // NOT_SANCTIONED = Rejected (still Pending)
   }
   return "IN_PROGRESS";
 };
 
 const STAGE_LABEL = {
   WITH_FOLLOWUP: "With Followup",
-  NOT_SANCTIONED: "Not Sanctioned",
+  NOT_SANCTIONED: "Rejected",
   SANCTIONED: "Sanctioned",
 };
 
-const STEP_TEXT = { COMPLETED: "Completed", NOT_COMPLETED: "Not Completed" };
+const STEP_TEXT = { PENDING: "Pending", PROCESS: "Process", SANCTIONED: "Sanctioned", REJECTED: "Rejected", FORWARDED: "Forwarded", COMPLETED: "Completed", NOT_COMPLETED: "Not Completed" };
 
 const stepDotClass = (state) =>
-  state === "COMPLETED" ? "ok" : state === "NOT_COMPLETED" ? "bad" : "na";
+  state === "FORWARDED" || state === "SANCTIONED" || state === "COMPLETED" ? "ok"
+    : state === "REJECTED" ? "bad"
+      : state === "PENDING" || state === "PROCESS" || state === "NOT_COMPLETED" ? "warn"
+        : "na";
 
-const sanctionDotClass = (value) =>
-  value === "YES" ? "ok" : value === "NO" ? "bad" : "na";
+const stepIcon = (state) =>
+  state === "FORWARDED" || state === "SANCTIONED" || state === "COMPLETED" ? "✅" : state === "REJECTED" ? "❌" : state ? "⏳" : "↩️";
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-IN") : "—");
 
@@ -64,32 +68,27 @@ const buildTimeline = (fu) => {
   };
 
   push(fu.handedOverAt, "📤", "Handed over to Followup team");
-
   if (fu.assignedTo?.employeeId) {
     push(fu.assignedTo.assignedAt, "🎯", `Taken by ${fu.assignedTo.name || "employee"}`);
   }
 
-  [
-    { label: "DIC Office", s: fu.dicOffice },
-    { label: "Bank Process", s: fu.bank },
-  ].forEach(({ label, s }) => {
-    if (!s?.state) return;
+  // Old leads-ku history irukkaadhu -> latest value-a timeline-la kaattu
+  if (!(fu.history || []).length) {
+    [{ label: "DIC Office", s: fu.dicOffice }, { label: "Bank Process", s: fu.bank }].forEach(({ label, s }) => {
+      if (!s?.state) return;
+      push(s.updatedAt, stepIcon(s.state), `${label}: ${STEP_TEXT[s.state]}`, `${s.updatedByName || ""}${s.reason ? ` -- ${s.reason}` : ""}`);
+    });
+  }
+
+  const label = (step) => (step === "dicOffice" ? "DIC Office" : "Bank Process");
+  (fu.history || []).forEach((h) => {
     push(
-      s.updatedAt,
-      s.state === "COMPLETED" ? "✅" : "❌",
-      `${label}: ${STEP_TEXT[s.state]}`,
-      `${s.updatedByName || ""}${s.state === "NOT_COMPLETED" && s.reason ? ` — ${s.reason}` : ""}`
+      h.at,
+      stepIcon(h.state),
+      `${label(h.step)}: ${h.state ? STEP_TEXT[h.state] : "Cleared"}`,
+      `${h.byName || ""}${h.reason ? ` -- ${h.reason}` : ""}`
     );
   });
-
-  if (fu.loanSanctioned?.value) {
-    push(
-      fu.loanSanctioned.updatedAt,
-      fu.loanSanctioned.value === "YES" ? "🏁" : "❌",
-      `Loan Sanctioned: ${fu.loanSanctioned.value === "YES" ? "Yes" : "No"}`,
-      fu.loanSanctioned.updatedByName || ""
-    );
-  }
 
   return ev.sort((a, b) => a.date - b.date);
 };
@@ -288,8 +287,8 @@ export default function AdminLoanProcess() {
         } else {
           w.pending += 1;
           if (st === "NOT_SANCTIONED") w.notSanctioned += 1;
-          if (c.followup?.dicOffice?.state !== "COMPLETED") w.dicPending += 1;
-          if (c.followup?.bank?.state !== "COMPLETED") w.bankPending += 1;
+          if (!["FORWARDED", "COMPLETED"].includes(c.followup?.dicOffice?.state)) w.dicPending += 1;
+          if (!["SANCTIONED", "COMPLETED"].includes(c.followup?.bank?.state)) w.bankPending += 1;
         }
         return w;
       },
@@ -356,7 +355,7 @@ export default function AdminLoanProcess() {
     { key: "", label: "All", count: baseCustomers.length },
     { key: "IN_PROGRESS", label: "In Progress", count: stageCounts.IN_PROGRESS },
     { key: "WITH_FOLLOWUP", label: "With Followup", count: stageCounts.WITH_FOLLOWUP },
-    { key: "NOT_SANCTIONED", label: "Not Sanctioned", count: stageCounts.NOT_SANCTIONED },
+    { key: "NOT_SANCTIONED", label: "Rejected", count: stageCounts.NOT_SANCTIONED },
     { key: "SANCTIONED", label: "Sanctioned", count: stageCounts.SANCTIONED },
   ];
 
@@ -472,6 +471,9 @@ export default function AdminLoanProcess() {
         .alp-dot.ok { background: var(--lp-accent); }
         .alp-dot.bad { background: #dc2626; }
         .alp-dot.na { background: #CBD5E1; }
+        .alp-dot.warn { background: var(--lp-warn); }
+        .alp-fu-card.warn { border-left-color: var(--lp-warn); }
+        .alp-fu-value.warn { color: var(--lp-warn); }
 
         .alp-detail { padding: 12px 14px; border-top: 1px solid var(--lp-border); background: var(--lp-bg); }
         .alp-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--lp-text-muted); margin-bottom: 6px; }
@@ -634,7 +636,7 @@ export default function AdminLoanProcess() {
             <div className="alp-wl-item warn"><b>{workload.dicPending}</b><span>DIC Pending</span></div>
             <div className="alp-wl-item warn"><b>{workload.bankPending}</b><span>Bank Pending</span></div>
             <div className="alp-wl-item ok"><b>{workload.sanctioned}</b><span>Sanctioned</span></div>
-            <div className="alp-wl-item bad"><b>{workload.notSanctioned}</b><span>Not Sanctioned</span></div>
+            <div className="alp-wl-item bad"><b>{workload.notSanctioned}</b><span>Rejected</span></div>
             <div className="alp-wl-item ok"><b>{formatRupee(workload.sanctionedValue)}</b><span>Sanctioned Value</span></div>
           </div>
         </div>
@@ -670,7 +672,6 @@ export default function AdminLoanProcess() {
         const fu = c.followup || {};
         const dic = fu.dicOffice || {};
         const bank = fu.bank || {};
-        const sanc = fu.loanSanctioned || {};
         const owner = fu.assignedTo || {};
         const app = c.application || {};
         const appOwner = app.assignedTo || {};
@@ -681,9 +682,10 @@ export default function AdminLoanProcess() {
               : stageKey === "WITH_FOLLOWUP" ? "followup"
                 : "progress";
 
-        const dicTip = `DIC Office: ${STEP_TEXT[dic.state] || "Not updated"}${dic.state === "NOT_COMPLETED" && dic.reason ? ` — ${dic.reason}` : ""}`;
-        const bankTip = `Bank Process: ${STEP_TEXT[bank.state] || "Not updated"}${bank.state === "NOT_COMPLETED" && bank.reason ? ` — ${bank.reason}` : ""}`;
-        const sancTip = `Loan Sanctioned: ${sanc.value === "YES" ? "Yes" : sanc.value === "NO" ? "No" : "Not updated"}`;
+        const dicTip = `DIC Office: ${STEP_TEXT[dic.state] || "Not updated"}${dic.reason ? ` -- ${dic.reason}` : ""}`;
+        const bankTip = `Bank Process: ${STEP_TEXT[bank.state] || "Not updated"}${bank.reason ? ` -- ${bank.reason}` : ""}`;
+        const rejStep = dic.state === "REJECTED" ? dic : bank.state === "REJECTED" ? bank : null;
+        const stageBy = stageKey === "SANCTIONED" ? bank : stageKey === "NOT_SANCTIONED" ? rejStep : null;
 
         return (
           <div className="alp-card" key={c._id}>
@@ -726,9 +728,6 @@ export default function AdminLoanProcess() {
                     <span className="alp-dot-item" title={bankTip}>
                       <span className={`alp-dot ${stepDotClass(bank.state)}`} />Bank
                     </span>
-                    <span className="alp-dot-item" title={sancTip}>
-                      <span className={`alp-dot ${sanctionDotClass(sanc.value)}`} />Loan
-                    </span>
                   </>
                 )}
               </div>
@@ -738,9 +737,9 @@ export default function AdminLoanProcess() {
                 <span className={`alp-badge ${badgeClass}`}>
                   {hasFollowup ? STAGE_LABEL[stageKey] : `${pct}%`}
                 </span>
-                {(stageKey === "SANCTIONED" || stageKey === "NOT_SANCTIONED") && sanc.updatedByName && (
-                  <span className="alp-stage-by" title={`Updated by ${sanc.updatedByName}`}>
-                    by {sanc.updatedByName} · {fmtDate(sanc.updatedAt)}
+                {stageBy?.updatedByName && (
+                  <span className="alp-stage-by" title={`Updated by ${stageBy.updatedByName}`}>
+                    by {stageBy.updatedByName} · {fmtDate(stageBy.updatedAt)}
                   </span>
                 )}
               </div>
@@ -822,26 +821,14 @@ export default function AdminLoanProcess() {
                         <div className={`alp-fu-card ${stepDotClass(s.state)}`} key={title}>
                           <div className="alp-fu-title">{title}</div>
                           <div className={`alp-fu-value ${stepDotClass(s.state)}`}>
-                            {s.state === "COMPLETED" ? "✅ Completed" : s.state === "NOT_COMPLETED" ? "❌ Not Completed" : "— Not updated"}
+                            {s.state ? `${stepIcon(s.state)} ${STEP_TEXT[s.state]}` : "— Not updated"}
                           </div>
-                          {s.state === "NOT_COMPLETED" && s.reason && (
-                            <div className="alp-fu-reason">📝 {s.reason}</div>
-                          )}
+                          {s.reason && <div className="alp-fu-reason">📝 {s.reason}</div>}
                           {s.updatedByName && (
                             <div className="alp-fu-by">{s.updatedByName} · {fmtDate(s.updatedAt)}</div>
                           )}
                         </div>
                       ))}
-
-                      <div className={`alp-fu-card ${sanctionDotClass(sanc.value)}`}>
-                        <div className="alp-fu-title">3. Loan Sanctioned</div>
-                        <div className={`alp-fu-value ${sanctionDotClass(sanc.value)}`}>
-                          {sanc.value === "YES" ? "✅ Yes" : sanc.value === "NO" ? "❌ No" : "— Not updated"}
-                        </div>
-                        {sanc.updatedByName && (
-                          <div className="alp-fu-by">{sanc.updatedByName} · {fmtDate(sanc.updatedAt)}</div>
-                        )}
-                      </div>
                     </div>
 
                     <div className="alp-section-title">Followup Timeline</div>
