@@ -92,6 +92,9 @@ const BUSINESS_TYPE_OPTIONS = [
     "Manufacturing Of Steel Rack",
     "1 Gram Gold Jewellery ",
     "Aqua purifier",
+    "AC Spare Parts",
+    "Man Power Agency",
+    "Construction",
     // ── Agriculture & Allied Activities ──
     "Paddy Cultivation",
     "Vegetable Farming",

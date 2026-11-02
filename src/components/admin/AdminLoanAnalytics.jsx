@@ -69,9 +69,9 @@ export default function AdminLoanAnalytics() {
     ? [
       { key: "total", label: "Total Applications", count: totalApps, base: null },
       { key: "handed", label: `${staffLabel} Completed (Handed over)`, count: fu.handedOver || 0, base: totalApps },
-      { key: "dic", label: "DIC Office Completed", count: fu.dicCompleted || 0, base: fu.handedOver || 0 },
-      { key: "bank", label: "Bank Process Completed", count: fu.bankCompleted || 0, base: fu.handedOver || 0 },
-      { key: "sanctioned", label: "Loan Sanctioned", count: fu.sanctioned || 0, base: fu.handedOver || 0 },
+      { key: "dic", label: "DIC Office Forwarded", count: fu.dicForwarded || 0, base: fu.handedOver || 0 },
+      { key: "bank", label: "Bank Process Started", count: fu.bankReached || 0, base: fu.handedOver || 0 },
+      { key: "sanctioned", label: "Bank Sanctioned (Completed)", count: fu.sanctioned || 0, base: fu.handedOver || 0 },
     ]
     : [];
 
@@ -301,8 +301,8 @@ export default function AdminLoanAnalytics() {
               <div className="ala-metric-value accent">{fu.sanctioned || 0}</div>
             </div>
             <div className="ala-metric-card">
-              <div className="ala-metric-label">Not Sanctioned</div>
-              <div className="ala-metric-value danger">{fu.notSanctioned || 0}</div>
+              <div className="ala-metric-label">Rejected</div>
+              <div className="ala-metric-value danger">{fu.rejected || 0}</div>
             </div>
             <div className="ala-metric-card">
               <div className="ala-metric-label">Sanction Rate</div>
@@ -481,10 +481,10 @@ export default function AdminLoanAnalytics() {
                       <th>Employee</th>
                       <th>Leads Taken</th>
                       <th>Pending</th>
-                      <th>DIC Done</th>
-                      <th>Bank Done</th>
-                      <th>Sanctioned</th>
-                      <th>Not Sanctioned</th>
+                      <th>DIC Forwarded</th>
+                      <th>Bank Started</th>
+                      <th>Completed</th>
+                      <th>Rejected</th>
                       <th>Sanction %</th>
                       <th>Sanctioned Revenue</th>
                       <th>Avg Days to Sanction</th>
@@ -498,10 +498,10 @@ export default function AdminLoanAnalytics() {
                         <td style={{ fontWeight: 600 }}>{s.name}</td>
                         <td><b>{s.taken}</b></td>
                         <td><span className="ala-pill warn">{s.pending}</span></td>
-                        <td>{s.dicCompleted}</td>
-                        <td>{s.bankCompleted}</td>
+                        <td>{s.dicForwarded}</td>
+                        <td>{s.bankReached}</td>
                         <td><span className="ala-pill ok">{s.sanctioned}</span></td>
-                        <td>{s.notSanctioned ? <span className="ala-pill bad">{s.notSanctioned}</span> : <span className="ala-pill mute">0</span>}</td>
+                        <td>{s.rejected ? <span className="ala-pill bad">{s.rejected}</span> : <span className="ala-pill mute">0</span>}</td>
                         <td>{s.sanctionRate}%</td>
                         <td>{formatRupee(s.sanctionedRevenue)}</td>
                         <td>{s.avgDaysToSanction === null ? "—" : `${s.avgDaysToSanction} d`}</td>

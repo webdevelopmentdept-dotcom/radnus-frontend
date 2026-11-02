@@ -436,7 +436,7 @@ export default function Admission() {
                       field("Hybrid details", <input value={form.hybridNote} onChange={(e) => set("hybridNote", e.target.value)} placeholder="e.g. Weekend online + offline lab" />, { req: true, span: "adm-span2" })}
 
                     {field("Timing", <input value={form.timing} onChange={(e) => set("timing", e.target.value)} />)}
-                    {field("Shop Name", <input value={form.shopName} onChange={(e) => set("shopName", e.target.value)} />, { req: true })}
+                    {field("Shop Name", <input value={form.shopName} onChange={(e) => set("shopName", e.target.value)} />)}
                     {field("Aadhaar No", <input inputMode="numeric" value={form.aadhaarNo} onChange={(e) => set("aadhaarNo", digits(e.target.value, 12))} placeholder="12 digits" />, { req: true })}
                     {field("Date of Birth", <input type="date" value={form.dateOfBirth} onChange={(e) => set("dateOfBirth", e.target.value)} />, { req: true })}
                     {field("Gender", (
