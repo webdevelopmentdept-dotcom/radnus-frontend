@@ -96,7 +96,7 @@ export default function AdminAdmission() {
         <div className="adm-empty">{loading ? "Loading…" : "No admissions found."}</div>
       ) : (
         students.map((s) => (
-          <StudentCard key={s._id} s={s} headers={adminHeaders} />
+          <StudentCard key={s._id} s={s} headers={adminHeaders} showBda />
         ))
       )}
     </div>

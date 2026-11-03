@@ -45,6 +45,8 @@ export default function LoanFollowup() {
   const [expandedId, setExpandedId] = useState(null);
   const [reasonDraft, setReasonDraft] = useState({}); // { "id-dicOffice": text }
   const [savingKey, setSavingKey] = useState("");
+  const [exporting, setExporting] = useState(false);
+
 
   const load = async () => {
     setLoading(true);
@@ -66,6 +68,34 @@ export default function LoanFollowup() {
       setLoadError("Network error — couldn't load the list.");
     } finally {
       setLoading(false);
+    }
+  };
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams({ tab, view });
+      if (search) params.append("search", search);
+      if (staffFilter) params.append("staff", staffFilter);
+      const res = await fetch(`${API}/api/loan-followup/export?${params}`, { headers: authHeaders() });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || "Export failed.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `loan-followup-${view}-${tab}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("EXPORT ERROR", e);
+      alert("Network error — export failed.");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -307,6 +337,13 @@ export default function LoanFollowup() {
               <option key={n} value={n}>{n}</option>
             ))}
           </select>
+          <button
+            onClick={exportExcel}
+            disabled={exporting || visibleList.length === 0}
+            style={{ padding: "10px 18px", borderRadius: 10, border: "none", background: "#16a34a", color: "#fff", fontWeight: 600, cursor: "pointer" }}
+          >
+            {exporting ? "Exporting..." : `Export Excel (${visibleList.length})`}
+          </button>
         </div>
 
         {loadError && <p style={{ color: "#b91c1c" }}>⚠ {loadError}</p>}
