@@ -260,7 +260,7 @@ function PayModal({ student, headers, onClose, onDone }) {
 // canPay → Add Payment   canUndo → Remove payment   canEditRefs → Batch/Bill No   canEmail → Send / Resend email
 // canEdit + onEdit(student) → Edit Application (completed students)
 // onChanged(updatedStudent) / onDelete(student) / extraActions(student)
-export function StudentCard({ s, headers, canPay, canUndo, canEditRefs, canEmail, canEdit, onEdit, onChanged, onDelete, extraActions }) {
+export function StudentCard({ s, headers, canPay, canUndo, canEditRefs, canEmail, canEdit, onEdit, onChanged, onDelete, extraActions, showBda }) {
   const [open, setOpen] = useState(false);
   const [showPay, setShowPay] = useState(false);
   const [batchNo, setBatchNo] = useState(s.batchNo || "");
@@ -327,6 +327,9 @@ export function StudentCard({ s, headers, canPay, canUndo, canEditRefs, canEmail
         <div className="hn">
           <div className="adm-name">{s.fullName}</div>
           <div className="adm-sub">{s.applicationNo || "Draft (no application no yet)"} · {s.mobileNo}</div>
+        {showBda && (
+    <div className="adm-sub">BDA: <b style={{ color: "var(--text, inherit)" }}>{s.staffName || "—"}</b></div>
+  )}
         </div>
         <div className="hc">
           <div style={{ fontSize: 13.5, fontWeight: 600 }}>{s.scheme?.name || s.course?.name || "—"}</div>

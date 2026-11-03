@@ -99,7 +99,7 @@ export default function AdmissionReport() {
         {data.length === 0 ? (
           <div className="adm-empty">{loading ? "Loading…" : "No admissions found."}</div>
         ) : (
-          data.map((s) => <StudentCard key={s._id} s={s} headers={empHeaders} />)
+          data.map((s) => <StudentCard key={s._id} s={s} headers={empHeaders} showBda />)
         )}
       </div>
     </EmployeeLayout>
