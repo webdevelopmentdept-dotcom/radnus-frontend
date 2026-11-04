@@ -17,6 +17,18 @@ export const fmtDate = (d) => {
   if (isNaN(x)) return "—";
   return `${String(x.getDate()).padStart(2, "0")}/${String(x.getMonth() + 1).padStart(2, "0")}/${x.getFullYear()}`;
 };
+export const fmtDateTime = (d) => {
+  if (!d) return "—";
+  return new Date(d).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
+  });
+};
 export const maskAadhaar = (a) => {
   const d = String(a || "").replace(/\D/g, "");
   return d.length >= 4 ? `XXXX XXXX ${d.slice(-4)}` : d || "—";
@@ -107,6 +119,23 @@ export const ADM_CSS = `
 .adm-stat .l { font-size:12px; color:var(--muted); margin-top:2px; }
 .adm-filters { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
 .adm-filters input, .adm-filters select { padding:9px 14px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:#fff; min-width:170px; flex:1 1 170px; max-width:100%; }
+/* ── Admin admission: compact filters ── */
+.adm-filters-admin { display:grid; grid-template-columns:minmax(200px,1.6fr) repeat(2,minmax(150px,1fr)) repeat(2,minmax(130px,0.8fr)) auto; gap:10px; align-items:stretch; }
+.adm-filters-admin input, .adm-filters-admin select { min-width:0; flex:none; height:38px; padding:0 12px; font-size:13px; }
+.adm-excel-btn { height:38px; padding:0 16px; border:none; border-radius:8px; background:#16a34a; color:#fff; font-weight:600; font-size:13px; cursor:pointer; white-space:nowrap; }
+.adm-excel-btn:disabled { opacity:.6; cursor:not-allowed; }
+.adm-resultbar { display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:var(--muted); margin:-4px 2px 10px; }
+.adm-resultbar button { border:none; background:none; color:var(--primary); font-weight:600; font-size:12.5px; cursor:pointer; }
+/* ── Compact student card + telecaller table (admin) ── */
+.adm-root .adm-student { margin-bottom:8px; border-radius:12px; }
+.adm-root .adm-student-head { padding:10px 16px; gap:10px; }
+.adm-root .adm-name { font-size:14px; }
+.adm-root .adm-sub { font-size:11.5px; margin-top:1px; }
+.adm-root .adm-student-head .hb { flex-direction:row; flex-wrap:wrap; gap:6px; }
+.adm-root .adm-badge { font-size:11px; padding:2px 9px; }
+.adm-root .adm-card .adm-table-wrap { max-height:260px; overflow:auto; }
+.adm-root .adm-card .adm-table th { position:sticky; top:0; z-index:1; }
+.adm-root .adm-card .adm-table td { padding:7px 10px; }
 .adm-chips { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
 .adm-chip { padding:5px 14px; border-radius:20px; border:1px solid var(--border); background:#fff; font-size:12.5px; font-weight:600; cursor:pointer; color:var(--muted); }
 .adm-chip.active { background:var(--primary); border-color:var(--primary); color:#fff; }
@@ -132,6 +161,8 @@ export const ADM_CSS = `
 @media (max-width:900px) {
   .adm-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .adm-grid.addrow { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .adm-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .adm-filters-admin { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .adm-filters-admin .f-search, .adm-filters-admin .adm-excel-btn { grid-column:1 / -1; }
   .adm-kv { grid-template-columns:repeat(2,minmax(0,1fr)); }
   /* student row becomes a compact card: name / course / amounts + status */
   .adm-student-head { grid-template-columns:minmax(0,1fr) 24px; grid-template-areas:"n x" "c c" "m m" "b b"; gap:8px 10px; padding:14px; }
@@ -327,9 +358,13 @@ export function StudentCard({ s, headers, canPay, canUndo, canEditRefs, canEmail
         <div className="hn">
           <div className="adm-name">{s.fullName}</div>
           <div className="adm-sub">{s.applicationNo || "Draft (no application no yet)"} · {s.mobileNo}</div>
-        {showBda && (
-    <div className="adm-sub">BDA: <b style={{ color: "var(--text, inherit)" }}>{s.staffName || "—"}</b></div>
-  )}
+          {(showBda || s.updatedAt) && (
+            <div className="adm-sub">
+              {showBda && <>BDA: <b style={{ color: "var(--text, inherit)" }}>{s.staffName || "—"}</b></>}
+              {showBda && s.updatedAt && " · "}
+              {s.updatedAt && <>Updated {fmtDateTime(s.updatedAt)}</>}
+            </div>
+          )}
         </div>
         <div className="hc">
           <div style={{ fontSize: 13.5, fontWeight: 600 }}>{s.scheme?.name || s.course?.name || "—"}</div>
@@ -353,6 +388,7 @@ export function StudentCard({ s, headers, canPay, canUndo, canEditRefs, canEmail
           <div className="adm-kv">
             {kv("Register No", s.registerNo)}
             {kv("Application date", fmtDate(s.applicationDate))}
+            {kv("Last updated", fmtDateTime(s.updatedAt))}
             {kv("BDA", s.staffName)}
             {kv("Date of joining", fmtDate(s.dateOfJoining))}
             {kv("Date of birth", fmtDate(s.dateOfBirth))}
