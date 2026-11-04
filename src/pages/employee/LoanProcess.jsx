@@ -141,6 +141,10 @@ const BUSINESS_TYPE_OPTIONS = [
     "Dry Cleaning and Laundry Service",
     "Photography and Video Studio",
     " Gymnasium/Gym",
+    "Cane Furniture Manufacturing",
+    "Centering Business",
+    "Travels",
+    "Transport Business",
     // ── Transport Sector ──
     "Auto-Rickshaw Service",
     "E-Rickshaw Service",
