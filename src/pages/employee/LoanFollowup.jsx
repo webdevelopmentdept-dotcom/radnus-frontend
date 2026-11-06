@@ -42,6 +42,8 @@ export default function LoanFollowup() {
   const [loadError, setLoadError] = useState("");
   const [search, setSearch] = useState("");
   const [staffFilter, setStaffFilter] = useState("");
+  const [dicFilter, setDicFilter] = useState(""); // "" | PENDING | REJECTED | FORWARDED
+  const [bankFilter, setBankFilter] = useState(""); // "" | PENDING | PROCESS | SANCTIONED | REJECTED
   const [expandedId, setExpandedId] = useState(null);
   const [reasonDraft, setReasonDraft] = useState({}); // { "id-dicOffice": text }
   const [savingKey, setSavingKey] = useState("");
@@ -53,6 +55,8 @@ export default function LoanFollowup() {
     try {
       const params = new URLSearchParams({ tab, view });
       if (search) params.append("search", search);
+      if (dicFilter) params.append("dic", dicFilter);
+      if (bankFilter) params.append("bank", bankFilter);
       const res = await fetch(`${API}/api/loan-followup/list?${params}`, { headers: authHeaders() });
       const data = await res.json();
       if (data.success) {
@@ -76,6 +80,8 @@ export default function LoanFollowup() {
       const params = new URLSearchParams({ tab, view });
       if (search) params.append("search", search);
       if (staffFilter) params.append("staff", staffFilter);
+      if (dicFilter) params.append("dic", dicFilter);
+      if (bankFilter) params.append("bank", bankFilter);
       const res = await fetch(`${API}/api/loan-followup/export?${params}`, { headers: authHeaders() });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -103,7 +109,7 @@ export default function LoanFollowup() {
     const t = setTimeout(load, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, view, search]);
+  }, [tab, view, search, dicFilter, bankFilter]);
 
   // Tab / view maathumbodhu telecaller filter reset aagum
   useEffect(() => {
@@ -337,6 +343,34 @@ export default function LoanFollowup() {
               <option key={n} value={n}>{n}</option>
             ))}
           </select>
+          <select
+            className="lf-search"
+            value={dicFilter}
+            onChange={(e) => setDicFilter(e.target.value)}
+          >
+            <option value="">DIC Office: All</option>
+            {DIC_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>DIC Office: {o.label}</option>
+            ))}
+          </select>
+          <select
+            className="lf-search"
+            value={bankFilter}
+            onChange={(e) => setBankFilter(e.target.value)}
+          >
+            <option value="">Bank Process: All</option>
+            {BANK_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>Bank Process: {o.label}</option>
+            ))}
+          </select>
+          {(dicFilter || bankFilter || staffFilter || search) && (
+            <button
+              onClick={() => { setDicFilter(""); setBankFilter(""); setStaffFilter(""); setSearch(""); }}
+              style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #CBD5E1", background: "#fff", color: "#b91c1c", fontWeight: 600, cursor: "pointer" }}
+            >
+              ✕ Clear filters
+            </button>
+          )}
           <button
             onClick={exportExcel}
             disabled={exporting || visibleList.length === 0}
