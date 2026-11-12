@@ -336,7 +336,7 @@ export default function Admission() {
 
         <h4 style={{ fontWeight: 700, marginBottom: 4 }}>Admission</h4>
         <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 20 }}>
-         Fill the application, complete it, send the PDF to the student from the Completed tab, then track installments
+          Fill the application, complete it, send the PDF to the student from the Completed tab, then track installments
         </p>
 
         {access.loaded && !access.canManage && (
@@ -448,8 +448,7 @@ export default function Admission() {
                       <select value={form.bloodGroup} onChange={(e) => set("bloodGroup", e.target.value)}>
                         <option value="">Select</option>{BLOOD.map((b) => <option key={b}>{b}</option>)}
                       </select>
-                    ), { req: true })}
-
+                    ))}
                     {field("Postal Address", <textarea rows={2} value={form.postalAddress} onChange={(e) => set("postalAddress", e.target.value)} />, { req: true, span: "adm-span3" })}
                     {field("District", <input value={form.district} onChange={(e) => set("district", e.target.value)} />, { req: true })}
                     {field("State", (

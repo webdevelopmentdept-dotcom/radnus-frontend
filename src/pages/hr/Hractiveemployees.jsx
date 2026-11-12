@@ -284,7 +284,7 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
     try {
       let url = fileUrl;
       if (docId) {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("hrToken");
         const res = await fetch(`${API_BASE}/api/employee/view-doc/${docId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -358,7 +358,7 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
               ) : "Not uploaded yet"}
             </div>
           )}
-        
+
           {hasFile && isHrDoc && uploadedByName && (
             <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, marginTop: 2 }}>
               Uploaded by {uploadedByName}
@@ -375,12 +375,16 @@ const DocRow = ({ docType, label, fileUrl: initialFileUrl, required, docId, empl
                   if (!docId) { setPreview(fileUrl); return; } // fallback old docs
                   const newTab = window.open('', '_blank');
                   newTab.document.write('<p style="font-family:sans-serif;padding:20px;">Loading...</p>');
-                  const token = localStorage.getItem("token");
+                  const token = localStorage.getItem("hrToken");
                   const res = await fetch(`${API_BASE}/api/employee/view-doc/${docId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                   });
                   const data = await res.json();
-                  if (data.url) newTab.location.href = getPreviewUrl(data.url);
+                  if (data.url) {
+                    newTab.location.href = getPreviewUrl(data.url);
+                  } else {
+                    newTab.document.body.innerHTML = `<p style="padding:20px;color:red;">${data.message || "Failed to load document"}</p>`;
+                  }
                 }} title="Preview" style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", border: "1px solid #e5e7eb", borderRadius: 7, background: "#fff", color: "#374151", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                   <EyeIcon /> View
                 </button>

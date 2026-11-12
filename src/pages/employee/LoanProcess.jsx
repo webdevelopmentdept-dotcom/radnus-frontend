@@ -224,6 +224,25 @@ const BLANK_FORM = {
     spouseOccupation: "",
 };
 
+// ── Draft + auto-save helpers ─────────────────────────────────────────────
+const AUTOSAVE_PREFIX = "loanFormAutosave_"; // + employeeId  (localStorage)
+
+const draftToForm = (d) => {
+    const out = { ...BLANK_FORM };
+    Object.keys(BLANK_FORM).forEach((k) => { out[k] = d[k] ?? ""; });
+    out.loanDate = d.loanDate ? String(d.loanDate).slice(0, 10) : todayStr();
+    out.loanValue = d.loanValue ? String(d.loanValue) : "";
+    return out;
+};
+
+const draftDocs = (d) => {
+    const out = {};
+    DOC_FIELDS.forEach(({ key }) => {
+        if (d.documents?.[key]?.url) out[key] = d.documents[key].url;
+    });
+    return out;
+};
+
 // ── Searchable dropdown (combobox) ──────────────────────────────────────────
 // Reused for Business Type + Bank Name so employees pick from the fixed list
 // instead of typing free text (keeps report data consistent). Works with the
@@ -309,6 +328,16 @@ export default function LoanProcess() {
     const [fieldErrors, setFieldErrors] = useState({}); // { customerName: "message", ... }
     const [docErrors, setDocErrors] = useState({}); // { aadharCard: "message", ... }
 
+    // ── Drafts ──
+    const [drafts, setDrafts] = useState([]);
+    const [draftId, setDraftId] = useState(null);
+    const [existingDocs, setExistingDocs] = useState({});
+    const [draftSaving, setDraftSaving] = useState(false);
+    const [draftMsg, setDraftMsg] = useState("");
+    const [deletingDraftId, setDeletingDraftId] = useState(null);
+    const [restoredNotice, setRestoredNotice] = useState(false);
+    const autosaveReady = useRef(false);
+
     const [customers, setCustomers] = useState([]);
     const [loadingList, setLoadingList] = useState(false);
     const [expandedId, setExpandedId] = useState(null);
@@ -341,6 +370,7 @@ export default function LoanProcess() {
     const [appFrom, setAppFrom] = useState("");   // YYYY-MM-DD
     const [appTo, setAppTo] = useState("");       // YYYY-MM-DD
     const myEmployeeId = localStorage.getItem("employeeId");
+    const autosaveKey = `${AUTOSAVE_PREFIX}${myEmployeeId}`;
     const todayDate = new Date().toLocaleDateString("en-CA");
     /* ------------------------ LOAD CHECKLIST TAB ------------------------ */
     const loadCustomers = async () => {
@@ -359,7 +389,56 @@ export default function LoanProcess() {
     useEffect(() => {
         if (tab === "checklist" || tab === "data") loadCustomers();
         if (tab === "viewAll") loadAllCustomers();
+        if (tab === "drafts") loadDrafts();
     }, [tab]);
+
+    /* ------------------------ DRAFTS (server) ------------------------ */
+    const loadDrafts = async () => {
+        try {
+            const res = await fetch(`${API}/api/loan-process/drafts`, { headers: authHeaders() });
+            const data = await res.json();
+            if (data.success) {
+                setDrafts(data.data || []);
+                return data.data || [];
+            }
+        } catch (err) {
+            console.error("LOAD LOAN DRAFTS ERROR", err);
+        }
+        return [];
+    };
+
+    /* ------------------------ AUTO-SAVE (localStorage) ------------------------ */
+    // page open aagum bodhu: refresh/error-nala poina data restore
+    useEffect(() => {
+        (async () => {
+            let saved = null;
+            try { saved = JSON.parse(localStorage.getItem(autosaveKey) || "null"); } catch { /* ignore */ }
+
+            const list = await loadDrafts();
+            if (saved?.form) {
+                setForm({ ...BLANK_FORM, ...saved.form });
+                setRestoredNotice(true);
+                if (saved.draftId) {
+                    const d = list.find((x) => x._id === saved.draftId);
+                    if (d) { setDraftId(d._id); setExistingDocs(draftDocs(d)); }
+                }
+            }
+            autosaveReady.current = true;
+        })();
+    }, []);
+
+    // form maarum bodhellaam (400ms debounce) localStorage-la save
+    useEffect(() => {
+        if (!autosaveReady.current) return;
+        const t = setTimeout(() => {
+            try {
+                const hasData = Object.entries(form).some(([k, v]) => k !== "loanDate" && String(v ?? "").trim() !== "");
+                if (hasData) localStorage.setItem(autosaveKey, JSON.stringify({ form, draftId }));
+                else localStorage.removeItem(autosaveKey);
+            } catch { /* ignore */ }
+        }, 400);
+        return () => clearTimeout(t);
+    }, [form, draftId]);
 
     // Telecaller / Application access — token vachu backend la irundhu edukkurom
     useEffect(() => {
@@ -495,11 +574,110 @@ export default function LoanProcess() {
         }
     };
 
+    const clearAutosave = () => {
+        try { localStorage.removeItem(autosaveKey); } catch { /* ignore */ }
+    };
+
     const resetForm = () => {
         setForm({ ...BLANK_FORM, loanDate: todayStr() });
         setFiles({});
         setFieldErrors({});
         setDocErrors({});
+        setDraftId(null);
+        setExistingDocs({});
+        setRestoredNotice(false);
+        clearAutosave();
+    };
+
+    const formHasData = () =>
+        Object.entries(form).some(([k, v]) => k !== "loanDate" && String(v ?? "").trim() !== "") ||
+        Object.values(files).some(Boolean);
+
+    const buildFormData = () => {
+        const fd = new FormData();
+        Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+        Object.entries(files).forEach(([k, file]) => {
+            if (file) fd.append(k, file);
+        });
+        return fd; // don't set Content-Type — browser sets multipart boundary
+    };
+
+    /* ------------------------ DRAFT ACTIONS ------------------------ */
+    const flashDraftMsg = (msg) => {
+        setDraftMsg(msg);
+        setTimeout(() => setDraftMsg(""), 4000);
+    };
+
+    const saveDraft = async () => {
+        setError("");
+        setSuccessMsg("");
+        if (!formHasData()) {
+            setError("Nothing to save yet — fill at least one field or upload a document.");
+            return;
+        }
+        setDraftSaving(true);
+        try {
+            const url = draftId
+                ? `${API}/api/loan-process/drafts/${draftId}`
+                : `${API}/api/loan-process/drafts`;
+            const res = await fetch(url, {
+                method: draftId ? "PUT" : "POST",
+                headers: authHeaders(),
+                body: buildFormData(),
+            });
+            const data = await res.json();
+            if (!data.success) {
+                setError(data.message || "Could not save the draft. Please try again.");
+                return;
+            }
+            resetForm();
+            await loadDrafts();
+            setTab("drafts");
+            flashDraftMsg("Draft saved. You can finish it later from this tab.");
+        } catch (err) {
+            console.error("SAVE LOAN DRAFT ERROR", err);
+            setError("Server error. Please try again.");
+        } finally {
+            setDraftSaving(false);
+        }
+    };
+
+    const openDraft = (d) => {
+        if (formHasData() && !window.confirm("The form has unsaved data. Replace it with this draft?")) return;
+        setForm(draftToForm(d));
+        setFiles({});
+        setFieldErrors({});
+        setDocErrors({});
+        setError("");
+        setSuccessMsg("");
+        setRestoredNotice(false);
+        setDraftId(d._id);
+        setExistingDocs(draftDocs(d));
+        setTab("form");
+    };
+
+    const deleteDraft = async (id) => {
+        if (!window.confirm("Delete this draft permanently?")) return;
+        setDeletingDraftId(id);
+        try {
+            const res = await fetch(`${API}/api/loan-process/drafts/${id}`, {
+                method: "DELETE",
+                headers: authHeaders(),
+            });
+            const data = await res.json();
+            if (!data.success) {
+                flashDraftMsg(data.message || "Could not delete the draft.");
+            } else {
+                if (id === draftId) resetForm();
+                await loadDrafts();
+                flashDraftMsg("Draft deleted.");
+            }
+        } catch (err) {
+            console.error("DELETE LOAN DRAFT ERROR", err);
+            flashDraftMsg("Server error. Please try again.");
+        } finally {
+            setDeletingDraftId(null);
+        }
     };
 
     /* ------------------------ VALIDATION ------------------------ */
@@ -589,7 +767,7 @@ export default function LoanProcess() {
         // ---- Govt Documents: every document upload mandatory ----
         DOC_FIELDS.forEach((doc) => {
             if (doc.optional) return;
-            if (!files[doc.key]) {
+            if (!files[doc.key] && !existingDocs[doc.key]) {
                 dErrs[doc.key] = `${doc.label} is required.`;
             }
         });
@@ -612,18 +790,33 @@ export default function LoanProcess() {
 
         setSaving(true);
         try {
-            const fd = new FormData();
-            Object.entries(form).forEach(([k, v]) => fd.append(k, v));
-            Object.entries(files).forEach(([k, file]) => {
-                if (file) fd.append(k, file);
-            });
-
-            const res = await fetch(`${API}/api/loan-process/create`, {
-                method: "POST",
-                headers: authHeaders(), // NOTE: don't set Content-Type — browser sets multipart boundary
-                body: fd,
-            });
-            const data = await res.json();
+            let data;
+            if (draftId) {
+                // 1) latest edits-a draft-la save  2) draft → real customer
+                const syncRes = await fetch(`${API}/api/loan-process/drafts/${draftId}`, {
+                    method: "PUT",
+                    headers: authHeaders(),
+                    body: buildFormData(),
+                });
+                const syncData = await syncRes.json();
+                if (!syncData.success) {
+                    setError(syncData.message || "Something went wrong. Please try again.");
+                    setSaving(false);
+                    return;
+                }
+                const res = await fetch(`${API}/api/loan-process/drafts/${draftId}/submit`, {
+                    method: "POST",
+                    headers: authHeaders(),
+                });
+                data = await res.json();
+            } else {
+                const res = await fetch(`${API}/api/loan-process/create`, {
+                    method: "POST",
+                    headers: authHeaders(),
+                    body: buildFormData(),
+                });
+                data = await res.json();
+            }
 
             if (!data.success) {
                 setError(data.message || "Something went wrong. Please try again.");
@@ -632,7 +825,9 @@ export default function LoanProcess() {
             }
 
             setSuccessMsg(`${form.customerName} saved. Switching to Checklist…`);
+            const wasDraft = !!draftId;
             resetForm();
+            if (wasDraft) loadDrafts();
             setSaving(false);
 
             setTimeout(() => {
@@ -1135,6 +1330,14 @@ export default function LoanProcess() {
           }
           .lp-btn-primary:hover { background: var(--lp-primary-dark); }
           .lp-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+                    .lp-btn-secondary {
+            background: var(--lp-surface); color: var(--lp-primary); border: 1px solid var(--lp-primary);
+            padding: 12px 24px; border-radius: var(--lp-radius-sm); font-weight: 600; font-size: 14px; cursor: pointer;
+          }
+          .lp-btn-secondary:hover { background: var(--lp-primary-soft); }
+          .lp-btn-secondary.danger { color: var(--lp-danger); border-color: var(--lp-danger); }
+          .lp-btn-secondary.danger:hover { background: var(--lp-danger-soft); }
+          .lp-btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
           .lp-alert-error { background: var(--lp-danger-soft); color: var(--lp-danger); padding: 10px 14px; border-radius: var(--lp-radius-sm); font-size: 13px; margin-bottom: 16px; }
           .lp-alert-success { background: var(--lp-accent-soft); color: var(--lp-accent); padding: 10px 14px; border-radius: var(--lp-radius-sm); font-size: 13px; margin-bottom: 16px; }
           .lp-cust-card { border: 1px solid var(--lp-border); border-radius: var(--lp-radius-md); margin-bottom: 14px; overflow: visible; }
@@ -1194,6 +1397,9 @@ export default function LoanProcess() {
                             <button className={`lp-tab-btn ${tab === "form" ? "active" : ""}`} onClick={() => setTab("form")}>
                                 Customer Details
                             </button>
+                            <button className={`lp-tab-btn ${tab === "drafts" ? "active" : ""}`} onClick={() => setTab("drafts")}>
+                                Drafts {drafts.length > 0 && `(${drafts.length})`}
+                            </button>
                             <button className={`lp-tab-btn ${tab === "data" ? "active" : ""}`} onClick={() => setTab("data")}>
                                 Customer Data {customers.length > 0 && `(${customers.length})`}
                             </button>
@@ -1218,6 +1424,16 @@ export default function LoanProcess() {
                     <form onSubmit={handleSubmit}>
                         {error && <div className="lp-alert-error">{error}</div>}
                         {successMsg && <div className="lp-alert-success">{successMsg}</div>}
+
+                        {restoredNotice && (
+                            <div className="lp-alert-success" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                                <span>Your unsaved form was restored (documents need to be selected again).</span>
+                                <button type="button" className="lp-btn-sm delete" onClick={resetForm}>Discard</button>
+                            </div>
+                        )}
+                        {draftId && (
+                            <div className="lp-alert-success">Editing a saved draft — documents already uploaded are kept.</div>
+                        )}
 
                         <div className="lp-card">
                             <div className="lp-section-title">Customer Basic Details</div>
@@ -1419,14 +1635,17 @@ export default function LoanProcess() {
                                 {DOC_FIELDS.map((doc) => (
                                     <div key={doc.key}>
                                         <label
-                                            className={`lp-doc-box ${files[doc.key] ? "filled" : ""} ${docErrors[doc.key] ? "invalid" : ""
-                                                }`}
+                                            className={`lp-doc-box ${files[doc.key] || existingDocs[doc.key] ? "filled" : ""} ${docErrors[doc.key] ? "invalid" : ""}`}
                                         >
                                             <div className="lp-doc-label">
                                                 {doc.label} {doc.optional ? <span style={{ fontWeight: 400, color: "var(--lp-text-muted)" }}>(optional)</span> : "*"}
                                             </div>
                                             <div className="lp-doc-status">
-                                                {files[doc.key] ? `✅ ${files[doc.key].name}` : "Click to upload"}
+                                                {files[doc.key]
+                                                    ? `✅ ${files[doc.key].name}`
+                                                    : existingDocs[doc.key]
+                                                        ? "✅ Already uploaded — click to replace"
+                                                        : "Click to upload"}
                                             </div>
                                             <input
                                                 type="file"
@@ -1435,16 +1654,84 @@ export default function LoanProcess() {
                                                 onChange={(e) => handleFile(doc.key, e.target.files[0])}
                                             />
                                         </label>
+                                        {!files[doc.key] && existingDocs[doc.key] && (
+    <div style={{ fontSize: 12, marginTop: 4 }}>
+        <a href={existingDocs[doc.key]} target="_blank" rel="noreferrer">View uploaded file</a>
+    </div>
+)}
                                         {docErrors[doc.key] && <div className="lp-doc-error">{docErrors[doc.key]}</div>}
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <button type="submit" className="lp-btn-primary" disabled={saving}>
-                            {saving ? "Saving…" : "Submit"}
-                        </button>
+                                              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                            <button type="submit" className="lp-btn-primary" disabled={saving || draftSaving}>
+                                {saving ? "Saving…" : "Submit"}
+                            </button>
+                            <button type="button" className="lp-btn-secondary" onClick={saveDraft} disabled={saving || draftSaving}>
+                                {draftSaving ? "Saving draft…" : draftId ? "Update Draft" : "Save Draft"}
+                            </button>
+                            {(draftId || formHasData()) && (
+                                <button
+                                    type="button"
+                                    className="lp-btn-secondary danger"
+                                    disabled={saving || draftSaving}
+                                    onClick={() => { if (window.confirm("Clear the whole form?")) resetForm(); }}
+                                >
+                                    Clear form
+                                </button>
+                            )}
+                        </div>
                     </form>
+                )}
+
+                {/* ══════════════ DRAFTS TAB ══════════════ */}
+                {tab === "drafts" && isTelecaller && (
+                    <div className="lp-card">
+                        <div className="lp-section-title">My Drafts</div>
+                        {draftMsg && <div className="lp-alert-success">{draftMsg}</div>}
+                        {drafts.length === 0 && (
+                            <p style={{ color: "var(--lp-text-muted)" }}>
+                                No drafts yet. Click "Save Draft" in the Customer Details tab to keep a half-filled form.
+                            </p>
+                        )}
+                        {drafts.map((d) => {
+                            const docCount = Object.keys(draftDocs(d)).length;
+                            return (
+                                <div
+                                    key={d._id}
+                                    style={{
+                                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                                        gap: 12, flexWrap: "wrap", padding: "12px 0", borderTop: "1px solid var(--lp-border)",
+                                    }}
+                                >
+                                    <div>
+                                        <div style={{ fontWeight: 700 }}>{d.customerName || "Untitled draft"}</div>
+                                        <div style={{ fontSize: 12.5, color: "var(--lp-text-muted)" }}>
+                                            {d.contactNo || "No contact"} · {d.scheme || "No scheme"} · {docCount} doc(s) uploaded
+                                        </div>
+                                        <div style={{ fontSize: 12, color: "var(--lp-text-muted)" }}>
+                                            Last saved: {fmtAdded(d.updatedAt)}
+                                        </div>
+                                    </div>
+                                    <div className="lp-row-actions">
+                                        <button type="button" className="lp-btn-sm edit" onClick={() => openDraft(d)}>
+                                            Continue
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="lp-btn-sm delete"
+                                            disabled={deletingDraftId === d._id}
+                                            onClick={() => deleteDraft(d._id)}
+                                        >
+                                            {deletingDraftId === d._id ? "Deleting…" : "Delete"}
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 )}
 
                 {/* ══════════════ TAB 2 — CUSTOMER DATA (view / edit / delete) ══════════════ */}
