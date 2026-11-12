@@ -10,23 +10,23 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const COLORS = {
-  blue:   "#2563eb",
-  green:  "#16a34a",
-  amber:  "#d97706",
-  red:    "#dc2626",
+  blue: "#2563eb",
+  green: "#16a34a",
+  amber: "#d97706",
+  red: "#dc2626",
   purple: "#7c3aed",
-  gray:   "#6b7280",
+  gray: "#6b7280",
 };
 
 const RATING_COLORS = {
   Excellent: COLORS.green,
-  Good:      COLORS.blue,
-  Average:   COLORS.amber,
-  Poor:      COLORS.red,
-  "":        COLORS.gray,
+  Good: COLORS.blue,
+  Average: COLORS.amber,
+  Poor: COLORS.red,
+  "": COLORS.gray,
 };
 
-const TYPE_OPTIONS   = ["Annual", "Half-Yearly", "Quarterly", "Probation", "Special"];
+const TYPE_OPTIONS = ["Annual", "Half-Yearly", "Quarterly", "Probation", "Special"];
 const RATING_OPTIONS = ["Excellent", "Good", "Average", "Poor"];
 
 const STYLES = `
@@ -268,7 +268,7 @@ const AppraisalCard = ({ a, onView, onEdit, onPublish, onDelete }) => (
         <p style={{ margin: "2px 0 0", fontSize: 11, color: "#374151", fontWeight: 600 }}>
           {a.period_from ? new Date(a.period_from).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "—"}
           {" – "}
-          {a.period_to   ? new Date(a.period_to).toLocaleDateString("en-IN",   { day: "numeric", month: "short", year: "2-digit" }) : "—"}
+          {a.period_to ? new Date(a.period_to).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" }) : "—"}
         </p>
       </div>
     </div>
@@ -276,33 +276,33 @@ const AppraisalCard = ({ a, onView, onEdit, onPublish, onDelete }) => (
     {/* Action buttons */}
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
       <button onClick={() => onView(a)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "7px 10px", background: "#f3f4f6", border: "none", borderRadius: 7, cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#374151" }}>
-        <Eye size={13}/> View
+        <Eye size={13} /> View
       </button>
       <button onClick={() => onEdit(a)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "7px 10px", background: "#eff6ff", border: "none", borderRadius: 7, cursor: "pointer", fontSize: 12, fontWeight: 600, color: COLORS.blue }}>
-        <Edit2 size={13}/> Edit
+        <Edit2 size={13} /> Edit
       </button>
       {a.status === "Draft" && (
         <button onClick={() => onPublish(a._id)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "7px 10px", background: "#f0fdf4", border: "none", borderRadius: 7, cursor: "pointer", fontSize: 12, fontWeight: 600, color: COLORS.green }}>
-          <Send size={13}/> Publish
+          <Send size={13} /> Publish
         </button>
       )}
       <button onClick={() => onDelete(a._id)} style={{ flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center", padding: "7px 10px", background: "#fef2f2", border: "none", borderRadius: 7, cursor: "pointer" }}>
-        <Trash2 size={13} color={COLORS.red}/>
+        <Trash2 size={13} color={COLORS.red} />
       </button>
     </div>
   </div>
 );
 
 export default function AppraisalHub() {
-  const [appraisals,   setAppraisals]   = useState([]);
-  const [employees,    setEmployees]    = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [search,       setSearch]       = useState("");
+  const [appraisals, setAppraisals] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
-  const [showCreate,   setShowCreate]   = useState(false);
-  const [showView,     setShowView]     = useState(null);
-  const [showEdit,     setShowEdit]     = useState(null);
-  const [saving,       setSaving]       = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showView, setShowView] = useState(null);
+  const [showEdit, setShowEdit] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [refreshingRecognition, setRefreshingRecognition] = useState(false);
 
   const emptyForm = {
@@ -321,7 +321,7 @@ export default function AppraisalHub() {
 
   const fetchActiveEmployees = async () => {
     try {
-      const res  = await fetch(`${API_BASE}/api/hr/employees`);
+      const res = await fetch(`${API_BASE}/api/hr/employees`);
       const data = await res.json();
       const active = Array.isArray(data)
         ? data.filter(emp => emp.status === "active")
@@ -335,7 +335,7 @@ export default function AppraisalHub() {
   const fetchAppraisals = async () => {
     setLoading(true);
     try {
-      const res  = await axios.get(`${API_BASE}/api/appraisals`);
+      const res = await axios.get(`${API_BASE}/api/appraisals`);
       const data = res.data?.data || res.data || [];
       setAppraisals(data);
     } catch (e) {
@@ -409,17 +409,17 @@ export default function AppraisalHub() {
 
   const openEdit = (a) => {
     setForm({
-      title:             a.title || "",
-      period_from:       a.period_from ? a.period_from.substring(0, 10) : "",
-      period_to:         a.period_to   ? a.period_to.substring(0, 10)   : "",
-      appraisal_type:    a.appraisal_type || "Annual",
-      employee_id:       a.employee_id?._id || a.employee_id || "",
-      hr_rating:         a.hr_rating || "",
+      title: a.title || "",
+      period_from: a.period_from ? a.period_from.substring(0, 10) : "",
+      period_to: a.period_to ? a.period_to.substring(0, 10) : "",
+      appraisal_type: a.appraisal_type || "Annual",
+      employee_id: a.employee_id?._id || a.employee_id || "",
+      hr_rating: a.hr_rating || "",
       increment_percent: a.increment_percent || 0,
-      promotion:         a.promotion || false,
-      new_designation:   a.new_designation || "",
-      remarks:           a.remarks || "",
-      status:            a.status || "Draft",
+      promotion: a.promotion || false,
+      new_designation: a.new_designation || "",
+      remarks: a.remarks || "",
+      status: a.status || "Draft",
     });
     setShowEdit(a);
   };
@@ -433,9 +433,9 @@ export default function AppraisalHub() {
     return matchSearch && matchStatus;
   });
 
-  const total     = appraisals.length;
+  const total = appraisals.length;
   const published = appraisals.filter(a => a.status === "Published").length;
-  const draft     = appraisals.filter(a => a.status === "Draft").length;
+  const draft = appraisals.filter(a => a.status === "Draft").length;
   const excellent = appraisals.filter(a => a.hr_rating === "Excellent").length;
 
   return (
@@ -465,10 +465,10 @@ export default function AppraisalHub() {
       {/* Stats */}
       <div className="ah-stats" style={{ display: "grid", gap: 16, marginBottom: 24 }}>
         {[
-          { label: "Total Appraisals", value: total,     Icon: Users,       color: COLORS.blue   },
-          { label: "Published",        value: published, Icon: CheckCircle, color: COLORS.green  },
-          { label: "Drafts",           value: draft,     Icon: Clock,       color: COLORS.amber  },
-          { label: "Excellent Rating", value: excellent, Icon: TrendingUp,  color: COLORS.purple },
+          { label: "Total Appraisals", value: total, Icon: Users, color: COLORS.blue },
+          { label: "Published", value: published, Icon: CheckCircle, color: COLORS.green },
+          { label: "Drafts", value: draft, Icon: Clock, color: COLORS.amber },
+          { label: "Excellent Rating", value: excellent, Icon: TrendingUp, color: COLORS.purple },
         ].map((s, i) => (
           <div key={i} style={{
             background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12,
@@ -541,7 +541,7 @@ export default function AppraisalHub() {
                       onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{a.title}</div>
-                        <ActionedBy id={a._id} version={a.status} />                
+                        <ActionedBy id={a._id} version={a.status} />
                       </td>
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -563,7 +563,7 @@ export default function AppraisalHub() {
                       <td style={{ padding: "14px 16px", fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>
                         {a.period_from ? new Date(a.period_from).toLocaleDateString("en-IN") : "—"}
                         {" → "}
-                        {a.period_to   ? new Date(a.period_to).toLocaleDateString("en-IN")   : "—"}
+                        {a.period_to ? new Date(a.period_to).toLocaleDateString("en-IN") : "—"}
                       </td>
                       <td style={{ padding: "14px 16px" }}>
                         {a.hr_rating
@@ -669,16 +669,16 @@ export default function AppraisalHub() {
           <div style={{ padding: "20px 24px" }}>
             <div className="ah-view-grid" style={{ display: "grid", gap: 16 }}>
               {[
-                { label: "Employee",         value: showView.employee_id?.name || "—" },
-                { label: "Department",        value: showView.employee_id?.department || "—" },
-                { label: "Type",              value: showView.appraisal_type || "—" },
-                { label: "Status",            value: showView.status || "—" },
-                { label: "Period From",       value: showView.period_from ? new Date(showView.period_from).toLocaleDateString("en-IN") : "—" },
-                { label: "Period To",         value: showView.period_to   ? new Date(showView.period_to).toLocaleDateString("en-IN")   : "—" },
+                { label: "Employee", value: showView.employee_id?.name || "—" },
+                { label: "Department", value: showView.employee_id?.department || "—" },
+                { label: "Type", value: showView.appraisal_type || "—" },
+                { label: "Status", value: showView.status || "—" },
+                { label: "Period From", value: showView.period_from ? new Date(showView.period_from).toLocaleDateString("en-IN") : "—" },
+                { label: "Period To", value: showView.period_to ? new Date(showView.period_to).toLocaleDateString("en-IN") : "—" },
                 { label: "Performance Score", value: showView.performance_score ? `${showView.performance_score}%` : "—" },
-                { label: "HR Rating",         value: showView.hr_rating || "—" },
-                { label: "Increment",         value: showView.increment_percent > 0 ? `+${showView.increment_percent}%` : "—" },
-                { label: "Promotion",         value: showView.promotion ? `Yes — ${showView.new_designation || ""}` : "No" },
+                { label: "HR Rating", value: showView.hr_rating || "—" },
+                { label: "Increment", value: showView.increment_percent > 0 ? `+${showView.increment_percent}%` : "—" },
+                { label: "Promotion", value: showView.promotion ? `Yes — ${showView.new_designation || ""}` : "No" },
               ].map((item, i) => (
                 <div key={i} style={{ background: "#f8fafc", borderRadius: 10, padding: "12px 14px" }}>
                   <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>{item.label}</div>
@@ -709,11 +709,12 @@ export default function AppraisalHub() {
                 </button>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 10 }}>
                 {[
-                  { label: "Spot Awards",   icon: <Zap size={13} color="#f59e0b" />,       key: "spot",         color: "#f59e0b" },
-                  { label: "Monthly Star",  icon: <Star size={13} color="#3b82f6" />,       key: "monthly_star", color: "#3b82f6" },
-                  { label: "Innovation",    icon: <Lightbulb size={13} color="#8b5cf6" />,  key: "innovation",   color: "#8b5cf6" },
+                  { label: "Spot Awards", icon: <Zap size={13} color="#f59e0b" />, key: "spot", color: "#f59e0b" },
+                  { label: "Monthly Star", icon: <Star size={13} color="#3b82f6" />, key: "monthly_star", color: "#3b82f6" },
+                  { label: "Innovation", icon: <Lightbulb size={13} color="#8b5cf6" />, key: "innovation", color: "#8b5cf6" },
+                  { label: "Award programme", icon: <Award size={13} color="#10b981" />, key: "awards_program", color: "#10b981" },
                 ].map(row => {
                   const b = showView.recognition_breakdown?.[row.key] || { count: 0, points: 0 };
                   return (

@@ -11,7 +11,7 @@ import {
   ArrowUpRight, CheckCircle2, XCircle, AlertCircle,
   Megaphone, UserCheck, Briefcase, Target, Layers,
   CircleDot, BadgeCheck, Banknote, CalendarDays,
-  ShieldCheck, ListChecks, Gauge, Info
+  ShieldCheck, ListChecks, Gauge, Info, Trash2
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import ActionedBy from "../../components/hr/ActionedBy";
@@ -410,6 +410,15 @@ export default function AwardsDashboard() {
   const [search, setSearch]             = useState("");
   const [leaderboardPeriod, setLeaderboardPeriod] = useState("all");
 
+    const [, bumpPoints] = useState(0);
+  useEffect(() => {
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/recognition-config`).then((r) => {
+      const p = r.data.data.legacy_points;
+      Object.keys(p).forEach((k) => { if (AWARD_CONFIG[k]) AWARD_CONFIG[k].points = p[k]; });
+      bumpPoints((n) => n + 1);          // redraw with the saved points
+    }).catch(() => {});
+  }, []);
+  
   useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
@@ -453,16 +462,20 @@ export default function AwardsDashboard() {
         showToastMsg("Status updated");
       }
       fetchAll();
-    } catch { showToastMsg("Update failed", "error"); }
-  };
+} catch (err) { showToastMsg(err?.response?.data?.message || "Update failed", "error"); }
+    };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this nomination?")) return;
+  const handleDelete = async (a) => {
+    const announced = a.status === "announced";
+    const msg = announced
+      ? `Delete this ANNOUNCED award for ${a.employee_id?.name || "this employee"}?\n\nIt will be removed from the Wall of Fame, leaderboard and the employee's recognition points. This cannot be undone.`
+      : "Delete this nomination?";
+    if (!window.confirm(msg)) return;
     try {
-      await axios.delete(`${API_BASE}/api/employee-awards/${id}`);
+      await axios.delete(`${API_BASE}/api/employee-awards/${a._id}`, { params: announced ? { force: "true" } : {} });
       showToastMsg("Deleted");
       fetchAll();
-    } catch { showToastMsg("Failed", "error"); }
+    } catch (err) { showToastMsg(err?.response?.data?.message || "Failed", "error"); }
   };
 
   // Leaderboard — filterable by This Month / This Quarter / All Time
@@ -782,6 +795,9 @@ export default function AwardsDashboard() {
                                     <X size={11}/>
                                   </button>
                                 )}
+                                <button className="aw-action" title="Delete" onClick={()=>handleDelete(a)} style={{ padding:"4px 8px", background:"#fff", border:"1px solid #fecaca", borderRadius:6, color:"#dc2626", fontSize:11, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
+                                  <Trash2 size={11}/> Delete
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -819,6 +835,7 @@ export default function AwardsDashboard() {
                           {a.status==="nominated" && <button onClick={()=>handleStatus(a._id,"dept_validated")} style={{ flex:1, padding:"7px", background:"#fffbeb", border:"1px solid #fde68a", borderRadius:8, color:"#92400e", fontWeight:700, cursor:"pointer", fontSize:12 }}>Validate</button>}
                           {a.status==="dept_validated" && <button onClick={()=>handleStatus(a._id,"hr_approved")} style={{ flex:1, padding:"7px", background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:8, color:"#1e40af", fontWeight:700, cursor:"pointer", fontSize:12 }}>Approve</button>}
                           {a.status==="hr_approved" && <button onClick={()=>handleStatus(a._id,"announced")} style={{ flex:1, padding:"7px", background:"#10b981", border:"none", borderRadius:8, color:"#fff", fontWeight:700, cursor:"pointer", fontSize:12 }}>Announce</button>}
+                          <button onClick={()=>handleDelete(a)} style={{ padding:"7px 12px", background:"#fff", border:"1px solid #fecaca", borderRadius:8, color:"#dc2626", fontWeight:700, cursor:"pointer", fontSize:12 }}>Delete</button>
                         </div>
                       </div>
                     );

@@ -10,10 +10,10 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const RATING_COLORS = {
   Excellent: { bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
-  Good:      { bg: "#eff6ff", color: "#2563eb", border: "#bfdbfe" },
-  Average:   { bg: "#fffbeb", color: "#d97706", border: "#fde68a" },
-  Poor:      { bg: "#fef2f2", color: "#dc2626", border: "#fecaca" },
-  "":        { bg: "#f3f4f6", color: "#6b7280", border: "#e5e7eb" },
+  Good: { bg: "#eff6ff", color: "#2563eb", border: "#bfdbfe" },
+  Average: { bg: "#fffbeb", color: "#d97706", border: "#fde68a" },
+  Poor: { bg: "#fef2f2", color: "#dc2626", border: "#fecaca" },
+  "": { bg: "#f3f4f6", color: "#6b7280", border: "#e5e7eb" },
 };
 
 const Modal = ({ children, onClose }) => (
@@ -33,8 +33,8 @@ const Modal = ({ children, onClose }) => (
 
 export default function EmployeeAppraisal() {
   const [appraisals, setAppraisals] = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [selected,   setSelected]   = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
 
   const employeeId = localStorage.getItem("employeeId");
 
@@ -100,15 +100,15 @@ export default function EmployeeAppraisal() {
               <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 20 }}>
                 {latest.appraisal_type} •{" "}
                 {latest.period_from ? new Date(latest.period_from).toLocaleDateString("en-IN") : ""} —{" "}
-                {latest.period_to   ? new Date(latest.period_to).toLocaleDateString("en-IN")   : ""}
+                {latest.period_to ? new Date(latest.period_to).toLocaleDateString("en-IN") : ""}
               </div>
               <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
                 {[
                   { label: "Performance Score", value: `${latest.performance_score || 0}%` },
-                  { label: "HR Rating",         value: latest.hr_rating || "—"             },
+                  { label: "HR Rating", value: latest.hr_rating || "—" },
                   { label: "Recognition Score", value: `${latest.recognition_score || 0} pts` },
-                  { label: "Increment",         value: latest.increment_percent > 0 ? `+${latest.increment_percent}%` : "—" },
-                  { label: "Promotion",         value: latest.promotion ? "Yes ✅" : "No"  },
+                  { label: "Increment", value: latest.increment_percent > 0 ? `+${latest.increment_percent}%` : "—" },
+                  { label: "Promotion", value: latest.promotion ? "Yes ✅" : "No" },
                 ].map((s, i) => (
                   <div key={i} style={{ background: "rgba(255,255,255,0.12)", borderRadius: 10, padding: "10px 16px" }}>
                     <div style={{ fontSize: 10, opacity: 0.7, fontWeight: 600, textTransform: "uppercase", marginBottom: 3 }}>{s.label}</div>
@@ -178,7 +178,7 @@ export default function EmployeeAppraisal() {
                         <Clock size={12} />
                         {a.period_from ? new Date(a.period_from).toLocaleDateString("en-IN") : ""}
                         {" → "}
-                        {a.period_to   ? new Date(a.period_to).toLocaleDateString("en-IN")   : ""}
+                        {a.period_to ? new Date(a.period_to).toLocaleDateString("en-IN") : ""}
                       </span>
                       {a.increment_percent > 0 && (
                         <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
@@ -226,14 +226,14 @@ export default function EmployeeAppraisal() {
             <div style={{ padding: "20px 24px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 {[
-                  { label: "Appraisal Type",   value: selected.appraisal_type },
-                  { label: "Status",            value: selected.status },
-                  { label: "Period From",       value: selected.period_from ? new Date(selected.period_from).toLocaleDateString("en-IN") : "—" },
-                  { label: "Period To",         value: selected.period_to   ? new Date(selected.period_to).toLocaleDateString("en-IN")   : "—" },
+                  { label: "Appraisal Type", value: selected.appraisal_type },
+                  { label: "Status", value: selected.status },
+                  { label: "Period From", value: selected.period_from ? new Date(selected.period_from).toLocaleDateString("en-IN") : "—" },
+                  { label: "Period To", value: selected.period_to ? new Date(selected.period_to).toLocaleDateString("en-IN") : "—" },
                   { label: "Performance Score", value: `${selected.performance_score || 0}%` },
-                  { label: "HR Rating",         value: selected.hr_rating || "—" },
-                  { label: "Increment",         value: selected.increment_percent > 0 ? `+${selected.increment_percent}%` : "—" },
-                  { label: "Promotion",         value: selected.promotion ? `Yes${selected.new_designation ? ` → ${selected.new_designation}` : ""}` : "No" },
+                  { label: "HR Rating", value: selected.hr_rating || "—" },
+                  { label: "Increment", value: selected.increment_percent > 0 ? `+${selected.increment_percent}%` : "—" },
+                  { label: "Promotion", value: selected.promotion ? `Yes${selected.new_designation ? ` → ${selected.new_designation}` : ""}` : "No" },
                 ].map((item, i) => (
                   <div key={i} style={{ background: "#f8fafc", borderRadius: 10, padding: "12px 14px" }}>
                     <div style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>{item.label}</div>
@@ -254,11 +254,12 @@ export default function EmployeeAppraisal() {
                   <Award size={14} color="#2563eb" />
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>Recognition Score</span>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
                   {[
-                    { label: "Spot",         key: "spot" },
+                    { label: "Spot", key: "spot" },
                     { label: "Monthly Star", key: "monthly_star" },
-                    { label: "Innovation",   key: "innovation" },
+                    { label: "Innovation", key: "innovation" },
+                    { label: "Award programme", key: "awards_program" },
                   ].map(row => {
                     const b = selected.recognition_breakdown?.[row.key] || { count: 0, points: 0 };
                     return (

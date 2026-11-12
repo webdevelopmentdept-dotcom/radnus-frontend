@@ -79,7 +79,7 @@ const HR_MENU = [
     icon: MailSend01Icon,
     items: [
       { to: "/hr/dashboard/applicants", end: false, icon: MailSend01Icon, size: 20, label: "Applicants ✅", flow: null, notif: false },
-      { to: "/hr/dashboard/internships", end: false, icon: MailSend01Icon, size: 20, label: "Internships ", flow: null, notif: false }, 
+      { to: "/hr/dashboard/internships", end: false, icon: MailSend01Icon, size: 20, label: "Internships ", flow: null, notif: false },
       { to: "/hr/dashboard/job-postings", end: false, icon: TaskDone01Icon, size: 20, label: "Job Postings ✅", flow: null, notif: false },
       { to: "/hr/dashboard/hr-induction", end: false, icon: TaskDone01Icon, size: 20, label: "HR Induction", flow: null, notif: false },
     ],
@@ -95,7 +95,7 @@ const HR_MENU = [
       { to: "/hr/dashboard/hr-approved", end: false, icon: CheckmarkCircle01Icon, size: 20, label: "Approved ✅", flow: null, notif: false },
       { to: "/hr/dashboard/hr-reject", end: false, icon: CancelCircleIcon, size: 20, label: "Rejected ✅", flow: null, notif: false },
       { to: "/hr/dashboard/active-employees", end: false, icon: BarChartIcon, size: 20, label: "Activated Employees ✅", flow: null, notif: false },
-   { to: "/hr/dashboard/team-leaders", end: false, icon: UserMultiple02Icon, size: 20, label: "Team Leaders", flow: null, notif: false },
+      { to: "/hr/dashboard/team-leaders", end: false, icon: UserMultiple02Icon, size: 20, label: "Team Leaders", flow: null, notif: false },
     ],
   },
   {
@@ -167,8 +167,16 @@ const HR_MENU = [
     title: "Recognition",
     icon: Award01Icon,
     items: [
-      { to: "/hr/dashboard/recognition/awards", end: false, icon: Medal01Icon, size: 20, label: "Awards Hub", flow: null, notif: false },
-      { to: "/hr/dashboard/recognition/impact-bonus", end: false, icon: Medal01Icon, size: 20, label: "Impact Bonus", flow: null, notif: false },
+      { to: "/hr/dashboard/recognition/awards", end: false, icon: Medal01Icon, size: 20, label: "Award Hub", flow: null, notif: false },
+      {
+        to: "/hr/dashboard/recognition/award-config", end: false, icon: Target01Icon, size: 20, label: "Award Schemes", flow: null, notif: false,
+        also: ["/hr/dashboard/recognition/settings"]
+      },
+      {
+        to: "/hr/dashboard/recognition/award-approvals", end: false, icon: TaskDone01Icon, size: 20, label: "Approvals & Rewards", flow: null, notif: false,
+        also: ["/hr/dashboard/recognition/rewards-register"]
+      },
+      { to: "/hr/dashboard/recognition/impact-bonus", end: false, icon: MoneyBag01Icon, size: 20, label: "Impact Bonus", flow: null, notif: false },
       { to: "/hr/dashboard/recognition/engagement-calendar", end: false, icon: CalendarCheckIn01Icon, size: 20, label: "Engagement Calendar", flow: null, notif: false },
     ],
   },
@@ -216,7 +224,7 @@ const HR_MENU = [
       { to: "/hr/dashboard/incentives/plans", end: false, icon: ChartAverageIcon, size: 18, label: "Incentive Plans", flow: "1", notif: false },
       { to: "/hr/dashboard/incentives/assign", end: false, icon: UserMultiple02Icon, size: 18, label: "Assign Plans", flow: "2", notif: false },
       { to: "/hr/dashboard/incentives/results", end: false, icon: Medal01Icon, size: 18, label: "Results & Payout", flow: "3", notif: false },
-      { to: "/hr/dashboard/incentives/loan-payouts", end: false, icon: MoneyBag01Icon, size: 18, label: "Loan Incentive Payouts", flow: "4", notif: false }, 
+      { to: "/hr/dashboard/incentives/loan-payouts", end: false, icon: MoneyBag01Icon, size: 18, label: "Loan Incentive Payouts", flow: "4", notif: false },
     ],
   },
   {
@@ -343,17 +351,19 @@ export default function HrSidebar({ onHoverChange } = {}) {
   const isEmployee = hrRole === "employee";
   const MENU = isEmployee ? EMPLOYEE_MENU : HR_MENU;
 
-useEffect(() => {
-  const match = MENU.find(
-    (g) => g.type === "group" && g.items.some((it) => location.pathname.startsWith(it.to))
-  );
-  if (match) {
-    setOpenGroup(match.key);
-    setActiveGroup(match.key);
-  } else {
-    setActiveGroup(null);
-  }
-}, [location.pathname, isEmployee]);
+  useEffect(() => {
+    const match = MENU.find(
+      (g) => g.type === "group" && g.items.some((it) =>
+  location.pathname.startsWith(it.to) ||
+  it.also?.some((p) => location.pathname.startsWith(p)))
+    );
+    if (match) {
+      setOpenGroup(match.key);
+      setActiveGroup(match.key);
+    } else {
+      setActiveGroup(null);
+    }
+  }, [location.pathname, isEmployee]);
 
   const toggleGroup = (key) => {
     setOpenGroup((prev) => (prev === key ? null : key)); // accordion: opening one closes the rest
@@ -381,7 +391,7 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, []);
 
-    const logout = async () => {
+  const logout = async () => {
     await unsubscribeFromPush("hr", localStorage.getItem("hrId"));
     localStorage.clear();
     navigate("/login");
@@ -646,15 +656,15 @@ useEffect(() => {
 
             // Accordion group
             const isOpen = openGroup === entry.key;
-const isActiveGroup = activeGroup === entry.key;
-return (
-  <div key={entry.key} className="hr-accordion">
-    <button
-      type="button"
-      className={`hr-accordion-header ${isOpen ? "open" : ""} ${isActiveGroup ? "active-group" : ""}`}
-      onClick={() => toggleGroup(entry.key)}
-      onMouseEnter={() => setOpenGroup(entry.key)}
-    >
+            const isActiveGroup = activeGroup === entry.key;
+            return (
+              <div key={entry.key} className="hr-accordion">
+                <button
+                  type="button"
+                  className={`hr-accordion-header ${isOpen ? "open" : ""} ${isActiveGroup ? "active-group" : ""}`}
+                  onClick={() => toggleGroup(entry.key)}
+                  onMouseEnter={() => setOpenGroup(entry.key)}
+                >
                   <HugeiconsIcon icon={entry.icon} size={21} color="currentColor" strokeWidth={1.8} />
                   <span className="hr-label">{entry.title}</span>
                   <span className="hr-chevron">
@@ -669,7 +679,10 @@ return (
                         key={item.to}
                         to={item.to}
                         end={item.end}
-                        className={({ isActive }) => (isActive ? "active hr-sub-item" : "hr-sub-item")}
+                        className={({ isActive }) => {
+                          const alsoActive = item.also?.some((p) => location.pathname.startsWith(p));
+                          return (isActive || alsoActive) ? "active hr-sub-item" : "hr-sub-item";
+                        }}
                         onClick={close}
                       >
                         <HugeiconsIcon icon={item.icon} size={item.size} color="currentColor" strokeWidth={1.8} />
