@@ -26,6 +26,28 @@ const stepTone = (s) =>
       : s ? "warn" : "na";
 const stepIcon = (s) => (stepTone(s) === "ok" ? "✅" : stepTone(s) === "bad" ? "❌" : s ? "⏳" : "↩️");
 
+// ── Followup filter / summary options (same values as the Followup module) ──
+const DIC_STATES = ["PENDING", "REJECTED", "FORWARDED", "NOT_COMPLETED", "COMPLETED"];
+const BANK_STATES = ["PENDING", "PROCESS", "REJECTED", "NOT_COMPLETED", "COMPLETED"]; // SANCTIONED = lead completed, so not a "pending" bucket
+const BANK_FILTER_STATES = ["PENDING", "PROCESS", "SANCTIONED", "REJECTED", "NOT_COMPLETED", "COMPLETED"];
+const STUCK_OPTIONS = [3, 5, 10];
+
+// Telecaller: first un-ticked stage = "current stage" ("completed" = every stage done)
+const currentStageKey = (c) => {
+  const open = CHECKLIST_STAGES.slice(0, -1).find((st) => !c.checklist?.[st.key]);
+  return open ? open.key : "completed";
+};
+
+// Followup: days since the last DIC / Bank update (falls back to hand-over date)
+const followupPendingDays = (c) => {
+  const f = c.followup || {};
+  const times = [f.dicOffice?.updatedAt, f.bank?.updatedAt, f.handedOverAt]
+    .filter(Boolean)
+    .map((d) => new Date(d).getTime());
+  if (!times.length) return null;
+  return Math.max(0, Math.floor((Date.now() - Math.max(...times)) / 86400000));
+};
+
 export default function LoanProcessReport() {
   const API = import.meta.env.VITE_API_BASE_URL;
   const authHeaders = () => ({
@@ -46,9 +68,32 @@ export default function LoanProcessReport() {
   const [dateTo, setDateTo] = useState("");
   const [expandedId, setExpandedId] = useState(null);
   const [exporting, setExporting] = useState(false);
-  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(true);
   const [applicationFilter, setApplicationFilter] = useState("");
   const [followupFilter, setFollowupFilter] = useState("");
+
+  // ── Tab-wise filters ──
+  const [tcStatus, setTcStatus] = useState("");     // telecaller: IN_PROGRESS | COMPLETED
+  const [tcStage, setTcStage] = useState("");       // telecaller: current checklist stage key
+  const [tcScheme, setTcScheme] = useState("");     // telecaller: scheme
+  const [appStatus, setAppStatus] = useState("");   // application: NOT_TAKEN | IN_PROGRESS | COMPLETED
+  const [fuStatus, setFuStatus] = useState("");     // followup: PENDING | COMPLETED
+  const [fuDic, setFuDic] = useState("");           // followup: DIC Office state (NOT_SET = not started)
+  const [fuBank, setFuBank] = useState("");         // followup: Bank state (NOT_SET = not started)
+  const [fuStuck, setFuStuck] = useState("");       // followup: stuck for N+ days (3 / 5 / 10)
+
+  const resetFilters = () => {
+    setSearch(""); setDateFrom(""); setDateTo(""); setExpandedId(null);
+    setStaffFilter(""); setTcStatus(""); setTcStage(""); setTcScheme("");
+    setApplicationFilter(""); setAppStatus("");
+    setFollowupFilter(""); setFuStatus(""); setFuDic(""); setFuBank(""); setFuStuck("");
+  };
+  // oru tab-oda filter innoru tab-ku leak aagaama, tab maarum bodhu ellaathaiyum reset
+  const switchTab = (k) => {
+    if (k === summaryTab) return;
+    resetFilters();
+    setSummaryTab(k);
+  };
 
   const loadReport = async () => {
     setLoading(true);
@@ -95,33 +140,80 @@ export default function LoanProcessReport() {
     ).entries()
   );
 
-  const displayedCustomers = customers
-    .filter((c) => (staffFilter ? (c.staffId?._id || c.staffId) === staffFilter : true))
-    .filter((c) =>
-      search ? (c.customerName || "").toLowerCase().includes(search.toLowerCase()) : true
-    )
-    .filter((c) => {
-      if (!applicationFilter) return true;
-      const ownerId = c.application?.assignedTo?.employeeId;
-      if (applicationFilter === "NOT_TAKEN") return !ownerId && c.application?.status !== "COMPLETED";
-      return String(ownerId || "") === applicationFilter;
-    })
-    .filter((c) => {
-      if (!followupFilter) return true;
-      const inFollowup = c.followup?.status && c.followup.status !== "NONE";
-      const ownerId = c.followup?.assignedTo?.employeeId;
-      if (followupFilter === "UNASSIGNED") return inFollowup && !ownerId;
-      return String(ownerId || "") === followupFilter;
-    })
-    .filter((c) => {
-      if (!dateFrom && !dateTo) return true;
+  const schemeOptions = Array.from(new Set(customers.map((c) => c.scheme).filter(Boolean))).sort();
+
+  // ── Common filters (search + date) — every tab ──
+  const matchCommon = (c) => {
+    if (search && !(c.customerName || "").toLowerCase().includes(search.toLowerCase())) return false;
+    if (dateFrom || dateTo) {
       if (!c.loanDate) return false;
       const d = new Date(c.loanDate);
       if (dateFrom && d < new Date(dateFrom)) return false;
       if (dateTo && d > new Date(`${dateTo}T23:59:59`)) return false;
-      return true;
-    });
+    }
+    return true;
+  };
 
+  // ── Followup helpers ──
+  const inFollowup = (c) => c.followup?.status && c.followup.status !== "NONE";
+  const matchFuOwner = (c) => {
+    if (!followupFilter) return true;
+    const ownerId = c.followup?.assignedTo?.employeeId;
+    if (followupFilter === "UNASSIGNED") return !ownerId;
+    return String(ownerId || "") === followupFilter;
+  };
+  const matchFuStuck = (c) => {
+    if (!fuStuck) return true;
+    if (c.followup?.status !== "PENDING") return false;
+    const d = followupPendingDays(c);
+    return d !== null && d >= Number(fuStuck);
+  };
+  const matchFuState = (c, step, want) =>
+    !want || (c.followup?.[step]?.state || "") === (want === "NOT_SET" ? "" : want);
+
+  const displayedCustomers = customers.filter(matchCommon).filter((c) => {
+    // ── Telecaller tab ──
+    if (summaryTab === "telecaller") {
+      if (staffFilter && (c.staffId?._id || c.staffId) !== staffFilter) return false;
+      if (tcStatus === "COMPLETED" && c.status !== "COMPLETED") return false;
+      if (tcStatus === "IN_PROGRESS" && c.status === "COMPLETED") return false;
+      if (tcStage && currentStageKey(c) !== tcStage) return false;
+      if (tcScheme && c.scheme !== tcScheme) return false;
+      return true;
+    }
+    // ── Application tab ──
+    if (summaryTab === "application") {
+      const ownerId = c.application?.assignedTo?.employeeId;
+      const done = c.application?.status === "COMPLETED";
+      if (applicationFilter && String(ownerId || "") !== applicationFilter) return false;
+      if (appStatus === "COMPLETED" && !done) return false;
+      if (appStatus === "IN_PROGRESS" && (!ownerId || done)) return false;
+      if (appStatus === "NOT_TAKEN" && (ownerId || done)) return false;
+      return true;
+    }
+    // ── Followup tab ──
+    if (!inFollowup(c)) return false;
+    if (!matchFuOwner(c)) return false;
+    if (fuStatus && c.followup.status !== fuStatus) return false;
+    if (!matchFuState(c, "dicOffice", fuDic)) return false;
+    if (!matchFuState(c, "bank", fuBank)) return false;
+    if (!matchFuStuck(c)) return false;
+    return true;
+  });
+
+  // ── Followup summary cards: counts of PENDING leads (employee / date / search / stuck filters apply) ──
+  const fuBase = customers.filter(
+    (c) => inFollowup(c) && c.followup.status === "PENDING" && matchCommon(c) && matchFuOwner(c) && matchFuStuck(c)
+  );
+  const fuCount = (step, st) => fuBase.filter((c) => matchFuState(c, step, st)).length;
+  const pickFuState = (kind, st) => {
+    setFuStatus("PENDING");
+    if (kind === "dic") setFuDic((v) => (v === st ? "" : st));
+    else setFuBank((v) => (v === st ? "" : st));
+  };
+
+  const hasFilters = [search, dateFrom, dateTo, staffFilter, tcStatus, tcStage, tcScheme, applicationFilter,
+    appStatus, followupFilter, fuStatus, fuDic, fuBank, fuStuck].some(Boolean);
   // ── Export current filtered list to Excel — needs the auth header, so a
   // plain window.open() won't work; fetch as a blob and trigger download ──
   const handleExportExcel = async () => {
@@ -198,6 +290,17 @@ export default function LoanProcessReport() {
           .lpr-summary-chevron {
             color: var(--lp-text-muted); font-size: 12px; transition: transform 0.15s ease;
           }
+                      .lpr-stat-title { font-size: 12px; font-weight: 700; color: var(--lp-text-muted); text-transform: uppercase; letter-spacing: .04em; margin: 6px 0; }
+          .lpr-stat-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+          .lpr-stat {
+            min-width: 112px; padding: 8px 14px; text-align: left; cursor: pointer;
+            border: 1px solid var(--lp-border); border-radius: 10px; background: var(--lp-bg); color: var(--lp-text);
+          }
+          .lpr-stat b { display: block; font-size: 20px; line-height: 1.2; }
+          .lpr-stat span { font-size: 12px; color: var(--lp-text-muted); }
+          .lpr-stat:hover { border-color: var(--lp-primary); }
+          .lpr-stat.active { border-color: var(--lp-primary); background: var(--lp-primary-soft); }
+          .lpr-stat.active b, .lpr-stat.active span { color: var(--lp-primary); }
           .lpr-summary-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
           .lpr-summary-table th {
             text-align: left; padding: 8px 12px; color: var(--lp-text-muted);
@@ -290,39 +393,45 @@ export default function LoanProcessReport() {
           </div>
         </div>
 
-        {/* ── Per-employee summary (leaderboard style, collapsed by default) ── */}
+        {/* ── Main tabs: Telecaller / Application / Followup ── */}
+        <div style={{ display: "flex", gap: 8, margin: "0 0 12px", flexWrap: "wrap" }}>
+          {[
+            ["telecaller", `Telecallers (${staffBreakdown.length})`],
+            ["application", `Application Team (${applicationBreakdown.length})`],
+            ["followup", `Followup Team (${followupBreakdown.length})`],
+          ].map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => switchTab(k)}
+              style={{
+                padding: "8px 18px", borderRadius: 999, cursor: "pointer", fontSize: 13.5, fontWeight: 600,
+                border: "1px solid var(--lp-border)",
+                background: summaryTab === k ? "#2a3eb1" : "var(--lp-surface)",
+                color: summaryTab === k ? "#fff" : "var(--lp-text-muted)",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Summary for the selected tab ── */}
         <div className="lpr-summary-card">
           <div className="lpr-summary-header" onClick={() => setSummaryOpen((v) => !v)}>
             <div>
-              <div className="lpr-section-title" style={{ marginBottom: 2 }}>Employee-wise Summary</div>
-              <div style={{ fontSize: 11.5, color: "var(--lp-text-muted)" }}>Ranked by revenue</div>
+              <div className="lpr-section-title" style={{ marginBottom: 2 }}>
+                {summaryTab === "telecaller" ? "Telecaller Summary" : summaryTab === "application" ? "Application Team Summary" : "Followup Team Summary"}
+              </div>
+              <div style={{ fontSize: 11.5, color: "var(--lp-text-muted)" }}>
+                {summaryTab === "telecaller" ? "Ranked by revenue" : summaryTab === "application" ? "Ranked by completed" : "Ranked by sanctioned · cards show pending leads — click a card to filter"}
+              </div>
             </div>
             <span className="lpr-summary-chevron">{summaryOpen ? "▲" : "▼"}</span>
           </div>
 
           {summaryOpen && (
             <>
-              <div style={{ display: "flex", gap: 8, margin: "4px 0 14px", flexWrap: "wrap" }}>
-                {[
-                  ["telecaller", `Telecallers (${staffBreakdown.length})`],
-                  ["application", `Application Team (${applicationBreakdown.length})`],
-                  ["followup", `Followup Team (${followupBreakdown.length})`],
-                ].map(([k, label]) => (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() => setSummaryTab(k)}
-                    style={{
-                      padding: "6px 14px", borderRadius: 999, cursor: "pointer", fontSize: 13, fontWeight: 600,
-                      border: "1px solid var(--lp-border)",
-                      background: summaryTab === k ? "#2a3eb1" : "var(--lp-bg)",
-                      color: summaryTab === k ? "#fff" : "var(--lp-text-muted)",
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
 
               {summaryTab === "telecaller" && (
                 <table className="lpr-summary-table">
@@ -395,63 +504,169 @@ export default function LoanProcessReport() {
                       ⚠ {followupUnassigned} lead(s) are with the Followup team but not taken by anyone yet.
                     </div>
                   )}
-                  <table className="lpr-summary-table">
-                    <thead>
-                      <tr>
-                        <th>#</th><th>Employee</th><th>Leads Taken</th><th>Pending</th>
-                        <th>Rejected (in Pending)</th><th>Completed</th><th>Sanction %</th><th>Sanctioned Loan Value</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {followupBreakdown.length === 0 && (
-                        <tr><td colSpan={8} style={{ color: "var(--lp-text-muted)" }}>No followup leads taken yet.</td></tr>
-                      )}
-                      {followupBreakdown.map((s, i) => (
-                        <tr key={s._id}>
-                          <td><span className={`lpr-rank-badge ${i === 0 ? "gold" : ""}`}>{i + 1}</span></td>
-                          <td style={{ fontWeight: 600 }}>{s.name}</td>
-                          <td>{s.taken}</td>
-                          <td>{s.pending}</td>
-                          <td>{s.rejected}</td>
-                          <td>{s.sanctioned}</td>
-                          <td>{s.sanctionRate}%</td>
-                          <td>{formatRupee(s.sanctionedValue)}</td>
+
+                  <div className="lpr-stat-title">DIC Office — pending leads</div>
+                  <div className="lpr-stat-grid">
+                    {[["NOT_SET", "Not started"], ...DIC_STATES.map((st) => [st, STEP_TEXT[st]])].map(([st, label]) => (
+                      <button
+                        key={st}
+                        type="button"
+                        className={`lpr-stat ${fuDic === st ? "active" : ""}`}
+                        onClick={() => pickFuState("dic", st)}
+                      >
+                        <b>{fuCount("dicOffice", st)}</b><span>{label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="lpr-stat-title">Bank — pending leads</div>
+                  <div className="lpr-stat-grid">
+                    {[["NOT_SET", "Not started"], ...BANK_STATES.map((st) => [st, STEP_TEXT[st]])].map(([st, label]) => (
+                      <button
+                        key={st}
+                        type="button"
+                        className={`lpr-stat ${fuBank === st ? "active" : ""}`}
+                        onClick={() => pickFuState("bank", st)}
+                      >
+                        <b>{fuCount("bank", st)}</b><span>{label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="lpr-summary-table">
+                      <thead>
+                        <tr>
+                          <th>#</th><th>Employee</th><th>Taken</th><th>Pending</th>
+                          <th>DIC Pending</th><th>DIC Rejected</th><th>DIC Forwarded</th>
+                          <th>Bank Pending</th><th>Bank Process</th><th>Bank Rejected</th>
+                          <th>Completed</th><th>Sanction %</th><th>Sanctioned Loan Value</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {followupBreakdown.length === 0 && (
+                          <tr><td colSpan={13} style={{ color: "var(--lp-text-muted)" }}>No followup leads taken yet.</td></tr>
+                        )}
+                        {followupBreakdown.map((s, i) => (
+                          <tr key={s._id}>
+                            <td><span className={`lpr-rank-badge ${i === 0 ? "gold" : ""}`}>{i + 1}</span></td>
+                            <td style={{ fontWeight: 600 }}>{s.name}</td>
+                            <td>{s.taken}</td>
+                            <td>{s.pending}</td>
+                            <td>{s.dicPending || 0}</td>
+                            <td>{s.dicRejected || 0}</td>
+                            <td>{s.dicForwarded || 0}</td>
+                            <td>{s.bankPending || 0}</td>
+                            <td>{s.bankProcess || 0}</td>
+                            <td>{s.bankRejected || 0}</td>
+                            <td>{s.sanctioned}</td>
+                            <td>{s.sanctionRate}%</td>
+                            <td>{formatRupee(s.sanctionedValue)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </>
               )}
             </>
           )}
         </div>
 
-        <div className="lpr-filters">
+                <div className="lpr-filters">
           <input
             placeholder="Search customer name…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <select value={staffFilter} onChange={(e) => setStaffFilter(e.target.value)}>
-            <option value="">All Telecallers</option>
-            {staffBreakdown.map((s) => (
-              <option key={s._id} value={s._id}>{s.staffName}</option>
-            ))}
-          </select>
-          <select value={applicationFilter} onChange={(e) => setApplicationFilter(e.target.value)}>
-            <option value="">All Application Employees</option>
-            <option value="NOT_TAKEN">Application not taken</option>
-            {applicationStaffOptions.map(([id, name]) => (
-              <option key={id} value={id}>{name}</option>
-            ))}
-          </select>
-          <select value={followupFilter} onChange={(e) => setFollowupFilter(e.target.value)}>
-            <option value="">All Followup Employees</option>
-            <option value="UNASSIGNED">Unassigned (Followup)</option>
-            {followupStaffOptions.map(([id, name]) => (
-              <option key={id} value={id}>{name}</option>
-            ))}
-          </select>
+
+          {/* ── Telecaller tab filters ── */}
+          {summaryTab === "telecaller" && (
+            <>
+              <select value={staffFilter} onChange={(e) => setStaffFilter(e.target.value)}>
+                <option value="">All Telecallers</option>
+                {staffBreakdown.map((s) => (
+                  <option key={s._id} value={s._id}>{s.staffName}</option>
+                ))}
+              </select>
+              <select value={tcStatus} onChange={(e) => setTcStatus(e.target.value)}>
+                <option value="">All Status</option>
+                <option value="IN_PROGRESS">In progress</option>
+                <option value="COMPLETED">Completed</option>
+              </select>
+              <select value={tcStage} onChange={(e) => setTcStage(e.target.value)}>
+                <option value="">Any current stage</option>
+                {CHECKLIST_STAGES.slice(0, -1).map((st) => (
+                  <option key={st.key} value={st.key}>At: {st.label}</option>
+                ))}
+                <option value="completed">All stages done</option>
+              </select>
+              <select value={tcScheme} onChange={(e) => setTcScheme(e.target.value)}>
+                <option value="">All Schemes</option>
+                {schemeOptions.map((sc) => (
+                  <option key={sc} value={sc}>{sc}</option>
+                ))}
+              </select>
+            </>
+          )}
+
+          {/* ── Application tab filters ── */}
+          {summaryTab === "application" && (
+            <>
+              <select value={applicationFilter} onChange={(e) => setApplicationFilter(e.target.value)}>
+                <option value="">All Application Employees</option>
+                {applicationStaffOptions.map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+              <select value={appStatus} onChange={(e) => setAppStatus(e.target.value)}>
+                <option value="">All Status</option>
+                <option value="NOT_TAKEN">Not taken</option>
+                <option value="IN_PROGRESS">In progress</option>
+                <option value="COMPLETED">Completed</option>
+              </select>
+            </>
+          )}
+
+          {/* ── Followup tab filters ── */}
+          {summaryTab === "followup" && (
+            <>
+              <select value={followupFilter} onChange={(e) => setFollowupFilter(e.target.value)}>
+                <option value="">All Followup Employees</option>
+                <option value="UNASSIGNED">Unassigned (Followup)</option>
+                {followupStaffOptions.map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+              <select value={fuStatus} onChange={(e) => setFuStatus(e.target.value)}>
+                <option value="">All Status</option>
+                <option value="PENDING">Pending</option>
+                <option value="COMPLETED">Completed (Sanctioned)</option>
+              </select>
+              <select value={fuDic} onChange={(e) => setFuDic(e.target.value)}>
+                <option value="">All DIC Office states</option>
+                <option value="NOT_SET">DIC: Not started</option>
+                {DIC_STATES.map((st) => (
+                  <option key={st} value={st}>DIC: {STEP_TEXT[st]}</option>
+                ))}
+              </select>
+              <select value={fuBank} onChange={(e) => setFuBank(e.target.value)}>
+                <option value="">All Bank states</option>
+                <option value="NOT_SET">Bank: Not started</option>
+                {BANK_FILTER_STATES.map((st) => (
+                  <option key={st} value={st}>Bank: {STEP_TEXT[st]}</option>
+                ))}
+              </select>
+              <select value={fuStuck} onChange={(e) => setFuStuck(e.target.value)}>
+                <option value="">Stuck: any time</option>
+                {STUCK_OPTIONS.map((d) => (
+                  <option key={d} value={d}>Stuck {d}+ days</option>
+                ))}
+              </select>
+            </>
+          )}
+
+          {/* ── Common: dates (every tab) ── */}
           <input
             type="date"
             value={dateFrom}
@@ -476,10 +691,26 @@ export default function LoanProcessReport() {
               ✕ Clear dates
             </button>
           )}
+          {hasFilters && (
+            <button
+              type="button"
+              className="lpr-export-btn"
+              style={{ borderColor: "var(--lp-border)", background: "var(--lp-bg)", color: "var(--lp-text-muted)" }}
+              onClick={resetFilters}
+            >
+              ✕ Reset filters
+            </button>
+          )}
           <button type="button" className="lpr-export-btn" onClick={handleExportExcel} disabled={exporting}>
             {exporting ? "Exporting…" : "⬇ Export Excel"}
           </button>
         </div>
+
+        {!loading && !error && (
+          <div style={{ fontSize: 12.5, color: "var(--lp-text-muted)", marginBottom: 8 }}>
+            {displayedCustomers.length} customer(s)
+          </div>
+        )}
 
         {error && <p style={{ color: "#DC2626" }}>{error}</p>}
         {loading && <p style={{ color: "var(--lp-text-muted)" }}>Loading…</p>}
@@ -513,10 +744,8 @@ export default function LoanProcessReport() {
                     <div className="lpr-sub">
                       {c.followup.status === "COMPLETED" ? "✅" : "📞"} Followup: {c.followup.assignedTo?.name || "Unassigned"}
                       {c.followup.status === "COMPLETED"
-                        ? ` · Sanctioned ${fmtDate(c.followup.completedAt)}`
-                        : (c.followup.dicOffice?.state === "REJECTED" || c.followup.bank?.state === "REJECTED")
-                          ? " · Rejected"
-                          : " · in progress"}
+                         ? ` · Sanctioned ${fmtDate(c.followup.completedAt)}`
+                        : ` · DIC: ${STEP_TEXT[c.followup.dicOffice?.state] || "—"} · Bank: ${STEP_TEXT[c.followup.bank?.state] || "—"} · ${followupPendingDays(c) ?? 0}d since update`}
                     </div>
                   )}
                 </div>
