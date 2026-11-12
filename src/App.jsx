@@ -77,6 +77,8 @@ import MyLifeVision from "./pages/employee/MyLifeVision";
 import TeamSharedGoals from "./pages/employee/Teamsharedgoals";
 import Admission from "./pages/employee/Admission";
 import AdmissionReport from "./pages/employee/AdmissionReport";
+import MyAwards from "./pages/employee/MyAwards";
+
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
 import HrApplicants from "./pages/hr/HrApplicants";
@@ -139,6 +141,12 @@ import HrInternships from "./pages/hr/HrInternships";
 import HrInduction from "./pages/hr/HrInduction";
 import KpiLeaderAccess from "./pages/hr/KpiLeaderAccess";
 import HrSharedGoals from "./pages/hr/Hrsharedgoals";
+import AwardConfig from "./pages/hr/AwardConfig";
+import AwardEvaluation from "./pages/hr/AwardEvaluation";
+import SchemeProgress from "./pages/hr/SchemeProgress";
+import RewardsRegister from "./pages/hr/RewardsRegister";
+import AwardApprovals from "./pages/hr/AwardApprovals";   
+import RecognitionSettings from "./pages/hr/RecognitionSettings";  
 
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
@@ -265,6 +273,7 @@ function App() {
         <Route path="/employee/profile" element={<MyProfile />} />
         <Route path="/employee/360-feedback" element={<FeedbackFill />} />
         <Route path="/employee/dashboard/impact-bonus" element={<ImpactBonusEmployee />} />
+        <Route path="/employee/my-awards" element={<MyAwards />} />
         <Route path="/employee/wellness" element={<WellnessEmployee />} />
         <Route path="/employee/clubs" element={<Myclubs />} />
         <Route path="/employee/leadership-track" element={<EmployeeLeadershipTrack />} />
@@ -362,6 +371,12 @@ function App() {
           <Route path="notifications" element={<HrNotifications />} />
 
           <Route path="recognition/awards" element={<AwardsDashboard />} />
+          <Route path="recognition/award-config" element={<AwardConfig />} />
+          <Route path="recognition/award-config/:id/evaluate" element={<AwardEvaluation />} />
+          <Route path="recognition/award-config/:id/progress" element={<SchemeProgress />} /> 
+          <Route path="recognition/rewards-register" element={<RewardsRegister />} />
+          <Route path="recognition/award-approvals" element={<AwardApprovals />} />   
+          <Route path="recognition/settings" element={<RecognitionSettings />} />                 
           <Route path="recognition/impact-bonus" element={<ImpactBonusDashboard />} />
           <Route path="recognition/engagement-calendar" element={<EngagementCalendar />} />
 
@@ -413,6 +428,7 @@ function App() {
           <Route path="hr-accounts" element={<ManageHrAccounts />} />
           <Route path="hr-activity" element={<HrActivity />} />
           <Route path="pending-approvals" element={<AdminPendingApprovals />} />
+          <Route path="award-approvals" element={<AwardApprovals />} />
           <Route
             path="radnus-connect/shop-owners"
             element={<ShopOwnerList />}

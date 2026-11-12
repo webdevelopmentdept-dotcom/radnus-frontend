@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { href: "/employee/appraisal", icon: TrendingUp, label: "My Appraisals" },
   { href: "/employee/my-incentive", icon: Wallet, label: "My Incentive" },
   { href: "/employee/dashboard/impact-bonus", icon: Sparkles, label: "Impact Bonus" },
+    { href: "/employee/my-awards", icon: Sparkles, label: "My Awards" },
   { href: "/employee/my-documents", icon: FileText, label: "My Documents" },
   { href: "/employee/wellness", icon: Sparkles, label: "Wellness" },
   { href: "/employee/alumni-network", icon: User, label: "Alumni Network" },

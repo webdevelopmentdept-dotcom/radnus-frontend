@@ -86,6 +86,7 @@ export default function AdminSidebar() {
       items: [
         { name: "Manage HR Accounts", path: "/admin/hr-accounts", icon: "bi-shield-lock-fill" },
         { name: "HR Activity", path: "/admin/hr-activity", icon: "bi-clock-history" },
+        { name: "Award Approvals", path: "/admin/award-approvals", icon: "bi-award-fill" },   // ← new
       ],
     },
 
