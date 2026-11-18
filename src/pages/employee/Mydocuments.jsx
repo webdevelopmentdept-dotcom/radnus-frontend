@@ -124,21 +124,25 @@ export default function MyDocuments() {
 
   const fileRefs = useRef({});
 
-  const fetchAll = async (id) => {
-    try {
-      const empRes = await axios.get(`${API_BASE}/api/employee/me/${id}`);
-      setEmployee(empRes.data);
-      setUploadedDocs(empRes.data.documents || []);
-      const status = empRes.data.status;
-      setIsEmployeeActive(status === "active" || status === "approved");
-      const hrRes = await axios.get(`${API_BASE}/api/hr/activation/docs/${id}`);
-      if (hrRes.data.success) setHrDocs(hrRes.data.data || []);
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+ const fetchAll = async (id) => {
+  try {
+    const empRes = await axios.get(`${API_BASE}/api/employee/me/${id}`);
+    setEmployee(empRes.data);
+
+    const allDocs = empRes.data.documents || [];
+    const hrTypes = HR_DOC_TYPES.map(d => d.type);
+
+    setHrDocs(allDocs.filter(d => hrTypes.includes(d.docType)));
+    setUploadedDocs(allDocs.filter(d => !hrTypes.includes(d.docType)));
+
+    const status = empRes.data.status;
+    setIsEmployeeActive(status === "active" || status === "approved");
+  } catch (err) {
+    console.log(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     const id = localStorage.getItem("employeeId");
