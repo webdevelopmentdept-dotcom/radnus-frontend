@@ -37,6 +37,24 @@ axios.interceptors.request.use((config) => {
   return config;
 });
 
+/* ---------- admin: expired / invalid token → login ---------- */
+         const isAdminArea = () =>
+           window.location.pathname.startsWith("/admin") &&
+           !window.location.pathname.startsWith("/admin/login");
+
+         axios.interceptors.response.use(
+           (r) => r,
+           (err) => {
+             try {
+               if (err?.response?.status === 401 && isAdminArea() && isApiUrl(err.config?.url)) {
+                 localStorage.removeItem("adminToken");
+                 window.location.replace("/login");
+               }
+             } catch (e) { /* ignore */ }
+             return Promise.reject(err);
+           }
+         );
+
 /* ---------- fetch ---------- */
 const originalFetch = window.fetch.bind(window);
 window.fetch = (input, init = {}) => {
@@ -55,5 +73,14 @@ window.fetch = (input, init = {}) => {
       }
     }
   } catch (e) { /* never break a request */ }
-  return originalFetch(input, init);
+  return originalFetch(input, init).then((res) => {
+           try {
+             const u = typeof input === "string" ? input : input?.url;
+             if (res.status === 401 && isAdminArea() && isApiUrl(u)) {
+               localStorage.removeItem("adminToken");
+               window.location.replace("/login");
+             }
+           } catch (e) { /* ignore */ }
+           return res;
+         });
 };

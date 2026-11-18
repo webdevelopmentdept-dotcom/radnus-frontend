@@ -43,6 +43,7 @@ export async function subscribeToPush(role, userId) {
 
   await axios.post(`${API_BASE}/api/notifications/push/subscribe`, {
     subscription: sub.toJSON(),
+    token: role === "admin" ? localStorage.getItem("adminToken") : undefined,
     recipient_id: String(userId),
     recipient_role: role,
   });
