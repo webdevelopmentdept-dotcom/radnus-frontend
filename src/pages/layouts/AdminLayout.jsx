@@ -1,12 +1,15 @@
 import React from "react";
 import AdminSidebar from "../../components/admin/Sidebar";
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
+import AdminNotificationBell from "../../components/admin/AdminNotificationBell";
 
 export default function AdminLayout() {
+  // 🔐 no admin token → back to login
+  if (!localStorage.getItem("adminToken")) return <Navigate to="/login" replace />;
   return (
     <>
-        <style>
-  {`
+      <style>
+        {`
     /* FULL WIDTH ON MOBILE */
     @media(max-width: 768px){
       .content-area {
@@ -25,12 +28,13 @@ export default function AdminLayout() {
       
     }
   `}
-</style>
+      </style>
 
       <div style={{ display: "flex" }}>
 
         {/* LEFT SIDEBAR */}
         <AdminSidebar />
+        <AdminNotificationBell />
 
         {/* FIXED MAIN CONTENT AREA */}
         <div

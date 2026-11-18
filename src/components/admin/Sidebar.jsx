@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import { unsubscribeFromPush } from "../../utils/pushNotifications";
 
 export default function AdminSidebar() {
   const location = useLocation();
@@ -30,6 +31,7 @@ export default function AdminSidebar() {
       module: "Main",
       items: [
         { name: "Dashboard", path: "/admin/dashboard", icon: "bi-speedometer2" },
+        { name: "Notifications", path: "/admin/notifications", icon: "bi-bell" },
       ],
     },
 
@@ -105,7 +107,8 @@ export default function AdminSidebar() {
     : allMenu;
 
   // ✅ Logout - role clear பண்ணு
-  const handleLogout = () => {
+    const handleLogout = async () => {
+    await unsubscribeFromPush("admin", "admin_001");
     localStorage.removeItem("admin-theme");
     localStorage.removeItem("admin-role");
     localStorage.removeItem("adminToken");

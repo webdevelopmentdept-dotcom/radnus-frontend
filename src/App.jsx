@@ -165,6 +165,7 @@ import AdminLoanAccess from "./components/admin/Adminloanaccess";
 import AdminPendingApprovals from "./components/admin/AdminPendingApprovals";
 import AdminLoanAnalytics from "./components/admin/AdminLoanAnalytics";
 import ManageHrAccounts from "./pages/admin/ManageHrAccounts";
+import AdminNotifications from "./pages/admin/AdminNotifications";
 import HrActivity from "./pages/admin/HrActivity";
 import AdminAdmission from "./components/admin/AdminAdmission";
 import AdminAdmissionAccess from "./components/admin/AdminAdmissionAccess";
@@ -429,6 +430,7 @@ function App() {
           <Route path="hr-activity" element={<HrActivity />} />
           <Route path="pending-approvals" element={<AdminPendingApprovals />} />
           <Route path="award-approvals" element={<AwardApprovals />} />
+                    <Route path="notifications" element={<AdminNotifications />} />
           <Route
             path="radnus-connect/shop-owners"
             element={<ShopOwnerList />}

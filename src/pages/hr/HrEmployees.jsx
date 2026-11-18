@@ -579,9 +579,10 @@ const viewDoc = async (doc, label) => {
         <div className="card-body table-responsive">
           <table
             className="table table-hover align-middle"
-            style={{ tableLayout: "fixed", minWidth: 1100 }}
+            style={{ tableLayout: "fixed", minWidth: 1190 }}
           >
             <colgroup>
+              <col style={{ width: "60px" }} />{/* Sl.No */}
               <col style={{ width: "100px" }} />{/* Emp ID */}
               <col style={{ width: "170px" }} />{/* Name */}
               <col style={{ width: "210px" }} />{/* Email */}
@@ -591,6 +592,7 @@ const viewDoc = async (doc, label) => {
             </colgroup>
             <thead>
               <tr>
+                <th className="text-nowrap">Sl.No</th>
                 <th className="text-nowrap">Emp ID</th>
                 <th>Name</th>
                 <th>Email</th>
@@ -602,13 +604,14 @@ const viewDoc = async (doc, label) => {
             <tbody>
               {filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center text-muted">
+                  <td colSpan="7" className="text-center text-muted">
                     No employees found
                   </td>
                 </tr>
               ) : (
-                filteredEmployees.map((emp) => (
+                filteredEmployees.map((emp, index) => (
                   <tr key={emp._id}>
+                    <td className="text-nowrap">{index + 1}</td>
                     <td className="text-nowrap">{emp.employeeId}</td>
                     <td className="text-truncate" title={emp.name}>
                       {getExitType(emp) ? (

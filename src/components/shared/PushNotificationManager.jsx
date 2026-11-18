@@ -17,7 +17,7 @@ function getHrId() {
       const o = JSON.parse(raw);
       const id = o?._id || o?.id || o?.hrId || o?.userId;
       if (id) return String(id);
-    } catch (_) {}
+    } catch (_) { }
   }
   const id = localStorage.getItem("hrId");
   if (id && id !== "undefined" && id !== "null" && id.trim() !== "") return id.trim();
@@ -27,6 +27,11 @@ function getHrId() {
 // Which logged-in area are we in?  → { role, userId } or null
 function getContext(pathname) {
   const p = pathname.toLowerCase();
+  // ✅ ADMIN area ("employee" admin-role = Radnus Connect-only login → skip)
+  if (p.startsWith("/admin") && p !== "/admin/login") {
+    if (localStorage.getItem("admin-role") === "employee") return null;
+    return localStorage.getItem("adminToken") ? { role: "admin", userId: "admin_001" } : null;
+  }
   if (p.startsWith("/hr") && p !== "/hr/login") {
     if ((localStorage.getItem("hrRole") || "hr") === "employee") return null; // same rule as HrDashboard
     const id = getHrId();
@@ -101,7 +106,11 @@ export default function PushNotificationManager() {
       <div style={S.icon}>🔔</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={S.title}>Turn on notifications</div>
-        <div style={S.sub}>Get leave, salary &amp; HR alerts on your device — even when this tab is closed.</div>
+        <div style={S.sub}>
+          {ctx.role === "admin"
+            ? "Get approvals, new applications & registrations on your device — even when this tab is closed."
+            : "Get leave, salary & HR alerts on your device — even when this tab is closed."}
+        </div>
         <div style={S.row}>
           <button style={S.primary} onClick={onEnable} disabled={busy}>
             {busy ? "Enabling…" : "Enable"}
