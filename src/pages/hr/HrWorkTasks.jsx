@@ -151,7 +151,7 @@ padding:28px 32px 48px;color:var(--ink);font-size:14px;max-width:1440px}
 export default function HrWorkTasks({ role = "hr" }) {
     const isHr = role === "hr";
     const TABS = isHr ? HR_TABS : TL_TABS;
-    const MAIN_TABS = isHr ? [...BASE_TABS, ["test", "Test Jobs"]] : BASE_TABS;
+    const MAIN_TABS = BASE_TABS;
 
     const [mainTab, setMainTab] = useState("overview");
     const [emps, setEmps] = useState([]);
