@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/employee/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/employee/profile", icon: User, label: "My Profile" },
   { href: "/employee/attendance", icon: CalendarCheck, label: "Attendance" },
+  // { href: "/employee/work-day", icon: ClipboardList, label: "My Work Day" },
   { href: "/employee/performance", icon: TrendingUp, label: "My Performance" },
   { href: "/employee/training", icon: TrendingUp, label: "Training Roadmap" },
   { href: "/employee/self-assessment", icon: ClipboardList, label: "Self Assessment" },
@@ -26,7 +27,7 @@ const NAV_ITEMS = [
   { href: "/employee/appraisal", icon: TrendingUp, label: "My Appraisals" },
   { href: "/employee/my-incentive", icon: Wallet, label: "My Incentive" },
   { href: "/employee/dashboard/impact-bonus", icon: Sparkles, label: "Impact Bonus" },
-    { href: "/employee/my-awards", icon: Sparkles, label: "My Awards" },
+  { href: "/employee/my-awards", icon: Sparkles, label: "My Awards" },
   { href: "/employee/my-documents", icon: FileText, label: "My Documents" },
   { href: "/employee/wellness", icon: Sparkles, label: "Wellness" },
   { href: "/employee/alumni-network", icon: User, label: "Alumni Network" },
@@ -62,7 +63,9 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
   const [unreadCount, setUnreadCount] = useState(0);
   const [isKpiLeader, setIsKpiLeader] = useState(false);
   const [isTeamLead, setIsTeamLead] = useState(false);
+  const [teamHasWfh, setTeamHasWfh] = useState(false);
   const [isLeaveApprover, setIsLeaveApprover] = useState(false);
+  const [showWorkDay, setShowWorkDay] = useState(false);
   const [active, setActive] = useState(window.location.pathname);
   const [lockToast, setLockToast] = useState(false); // ✅ NEW — lock message toast
 
@@ -111,7 +114,7 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
     ];
   }
 
-    if (employee?.canManageAdmission) {
+  if (employee?.canManageAdmission) {
     navItems = [
       ...navItems.slice(0, -2),
       { href: "/employee/admission", icon: ClipboardList, label: "Admission" },
@@ -150,6 +153,21 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
     ];
   }
 
+  if (showWorkDay) {
+    // Attendance-ku keezhe "My Work Day" insert
+    const at = Math.max(navItems.findIndex((n) => n.href === "/employee/attendance"), 2);
+    const workDayItem = { href: "/employee/work-day", icon: ClipboardList, label: "My Work Day" };
+    navItems = [...navItems.slice(0, at + 1), workDayItem, ...navItems.slice(at + 1)];
+  }
+
+  if (isTeamLead && teamHasWfh) {
+    navItems = [
+      ...navItems.slice(0, -2),
+      { href: "/employee/team-tasks", icon: ClipboardList, label: "WFH Team Tasks" },
+      ...navItems.slice(-2),
+    ];
+  }
+
   useEffect(() => {
     localStorage.setItem("esb-theme", dark ? "dark" : "light");
   }, [dark]);
@@ -175,10 +193,35 @@ export default function EmployeeSidebar({ handleLogout, employee, isOpen, setIsO
         });
         setIsKpiLeader(res.data?.kpiAccess ?? !!res.data?.isLeader);
         setIsTeamLead(!!res.data?.isLeader);
+        if (res.data?.isLeader) {
+          try {
+            const tm = await axios.get(`${API_BASE}/api/work/assignable`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const list = tm.data?.data || [];
+            setTeamHasWfh(list.some((e) => e.workMode === "wfh" || e.workMode === "hybrid"));
+          } catch (e) {
+            setTeamHasWfh(false);
+          }
+        }
         setIsLeaveApprover(!!res.data?.leaveAccess);
       } catch (e) { /* not a leader / no access */ }
     };
     checkLeader();
+
+    // WFH / Hybrid employee-ku mattum "My Work Day" menu
+    (async () => {
+      try {
+        const token = localStorage.getItem("employeeToken") || sessionStorage.getItem("employeeToken");
+        if (!token) return;
+        const res = await axios.get(`${API_BASE}/api/work-mode/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const wm = res.data?.data?.workMode;
+        setShowWorkDay(wm === "wfh" || wm === "hybrid");
+      } catch (e) { /* menu theriyaadhu */ }
+    })();
+
   }, []);
 
   // ── Fetch unread notifications ───────────────────────────────────────────

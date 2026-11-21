@@ -111,6 +111,17 @@ const HR_MENU = [
   },
   {
     type: "group",
+    key: "WFH",
+    title: "WFH Module",
+    icon: Home01Icon,
+    items: [
+      { to: "/hr/dashboard/work-mode", end: false, icon: Clock01Icon, size: 20, label: "Work Mode", flow: null, notif: false },
+      { to: "/hr/dashboard/work-tasks", end: false, icon: Task01Icon, size: 20, label: "WFH Tasks", flow: null, notif: false },
+      { to: "/hr/dashboard/work-reports", end: false, icon: BarChartIcon, size: 20, label: "WFH Reports", flow: null, notif: false },
+    ],
+  },
+  {
+    type: "group",
     key: "Payroll",
     title: "Payroll",
     icon: BarChartIcon,
@@ -354,8 +365,8 @@ export default function HrSidebar({ onHoverChange } = {}) {
   useEffect(() => {
     const match = MENU.find(
       (g) => g.type === "group" && g.items.some((it) =>
-  location.pathname.startsWith(it.to) ||
-  it.also?.some((p) => location.pathname.startsWith(p)))
+        location.pathname.startsWith(it.to) ||
+        it.also?.some((p) => location.pathname.startsWith(p)))
     );
     if (match) {
       setOpenGroup(match.key);
