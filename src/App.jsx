@@ -78,6 +78,8 @@ import TeamSharedGoals from "./pages/employee/Teamsharedgoals";
 import Admission from "./pages/employee/Admission";
 import AdmissionReport from "./pages/employee/AdmissionReport";
 import MyAwards from "./pages/employee/MyAwards";
+import EmployeeWorkDay from "./pages/employee/EmployeeWorkDay";
+import EmployeeTeamTasks from "./pages/employee/EmployeeTeamTasks";
 
 /* HR */
 import HrDashboard from "./pages/hr/HrDashboard";
@@ -147,6 +149,9 @@ import SchemeProgress from "./pages/hr/SchemeProgress";
 import RewardsRegister from "./pages/hr/RewardsRegister";
 import AwardApprovals from "./pages/hr/AwardApprovals";   
 import RecognitionSettings from "./pages/hr/RecognitionSettings";  
+import WorkModeManager from "./pages/hr/WorkModeManager";
+import HrWorkTasks from "./pages/hr/HrWorkTasks";
+import HrWorkReports from "./pages/hr/HrWorkReports";
 
 /* Admin */
 import AdminLayout from "./pages/layouts/AdminLayout";
@@ -270,6 +275,8 @@ function App() {
         <Route path="/employee/my-salary" element={<MyPackage />} />
         <Route path="/employee/my-documents" element={<MyDocuments />} />
         <Route path="/employee/attendance" element={<EmployeeAttendance />} />
+        <Route path="/employee/work-day" element={<EmployeeWorkDay />} />
+        <Route path="/employee/team-tasks" element={<EmployeeTeamTasks />} />
         <Route path="/employee/notifications" element={<EmployeeNotifications />} />
         <Route path="/employee/profile" element={<MyProfile />} />
         <Route path="/employee/360-feedback" element={<FeedbackFill />} />
@@ -320,7 +327,9 @@ function App() {
           <Route path="hr-reject" element={<HrRejected />} />
 
           <Route path="active-employees" element={<HrActiveEmployees />} />
-
+          <Route path="work-mode" element={<WorkModeManager />} /> 
+          <Route path="work-tasks" element={<HrWorkTasks />} />
+          <Route path="work-reports" element={<HrWorkReports />} /> 
           <Route path="attendance/daily" element={<HRAttendancePage />} />
           <Route path="attendance/monthly" element={<HRAttendancePage />} />
 
