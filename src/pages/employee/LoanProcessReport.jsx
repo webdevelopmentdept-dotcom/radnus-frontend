@@ -730,7 +730,7 @@ export default function LoanProcessReport() {
                 <div>
                   <div className="lpr-name">{c.customerName}</div>
                   <div className="lpr-sub">
-                    {c.contactNo} {c.loanDate ? `· ${new Date(c.loanDate).toLocaleDateString()}` : ""}
+                    {c.contactNo}{c.alternateContactNo ? " / " + c.alternateContactNo : ""} {c.loanDate ? `· ${new Date(c.loanDate).toLocaleDateString()}` : ""}
                   </div>
                   {c.application?.assignedTo?.name && (
                     <div className="lpr-sub">
@@ -765,7 +765,8 @@ export default function LoanProcessReport() {
 
                     <div className="lpr-info-item"><b>Scheme</b>{c.scheme || "—"}</div>
                     <div className="lpr-info-item"><b>Loan Value</b>{c.loanValue ? formatRupee(c.loanValue) : "—"}</div>
-                    <div className="lpr-info-item"><b>Contact No</b>{c.contactNo || "—"}</div>
+                  <div className="lpr-info-item"><b>Contact No</b>{c.contactNo || "—"}</div>
+                    <div className="lpr-info-item"><b>Alternate Contact No</b>{c.alternateContactNo || "—"}</div>
                     <div className="lpr-info-item"><b>Mail ID</b>{c.mailId || "—"}</div>
                     <div className="lpr-info-item"><b>Application By</b>{c.application?.assignedTo?.name || "—"}</div>
                     <div className="lpr-info-item">

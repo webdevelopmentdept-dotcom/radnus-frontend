@@ -692,7 +692,7 @@ export default function AdminLoanProcess() {
             <div className="alp-row" onClick={() => setExpandedId(isOpen ? null : c._id)}>
               <div>
                 <div className="alp-name">{c.customerName}</div>
-                <div className="alp-sub">{c.contactNo} {c.mailId ? `· ${c.mailId}` : ""}</div>
+               <div className="alp-sub">{c.contactNo}{c.alternateContactNo ? " / " + c.alternateContactNo : ""} {c.mailId ? `· ${c.mailId}` : ""}</div>
                 {(appOwner.employeeId || app.status === "COMPLETED") && (
                   <div className={`alp-assign-chip ${app.status === "COMPLETED" ? "on" : ""}`}>
                     {app.status === "COMPLETED"
@@ -756,7 +756,7 @@ export default function AdminLoanProcess() {
                   <div className="alp-info-item"><b>Scheme</b>{c.scheme || "—"}</div>
                   <div className="alp-info-item"><b>Loan Value</b>{c.loanValue ? `₹${c.loanValue}` : "—"}</div>
                   <div className="alp-info-item"><b>Contact No</b>{c.contactNo || "—"}</div>
-
+                  <div className="alp-info-item"><b>Alternate Contact No</b>{c.alternateContactNo || "—"}</div>
                   <div className="alp-info-item"><b>Bank Name</b>{c.bankName || "—"}</div>
                   <div className="alp-info-item"><b>IFSC Code</b>{c.ifscCode || "—"}</div>
                   <div className="alp-info-item"><b>Communication Address</b>{c.communicationAddress || "—"}</div>
