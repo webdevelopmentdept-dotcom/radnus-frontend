@@ -398,7 +398,7 @@ export default function LoanFollowup() {
               <div className="lf-head" onClick={() => setExpandedId(isOpen ? null : c._id)}>
                 <div>
                   <div className="lf-name">{c.customerName}</div>
-                  <div className="lf-sub">{c.contactNo} {c.mailId ? `· ${c.mailId}` : ""}</div>
+                  <div className="lf-sub">{c.contactNo}{c.alternateContactNo ? ` / ${c.alternateContactNo}` : ""} {c.mailId ? `· ${c.mailId}` : ""}</div>
                 </div>
                 <span className="lf-staff">👤 {c.staffName || "Unknown"}</span>
 
@@ -473,6 +473,8 @@ export default function LoanFollowup() {
                     <div className="lf-info"><b>Loan Value</b>{c.loanValue ? `₹${Number(c.loanValue).toLocaleString("en-IN")}` : "—"}</div>
                     <div className="lf-info"><b>Bank Name</b>{c.bankName || "—"}</div>
                     <div className="lf-info"><b>IFSC Code</b>{c.ifscCode || "—"}</div>
+                       <div className="lf-info"><b>Contact No</b>{c.contactNo || "—"}</div>
+                    <div className="lf-info"><b>Alternate Contact No</b>{c.alternateContactNo || "—"}</div>
                     <div className="lf-info"><b>Telecaller</b>{c.staffName || "—"}</div>
                     <div className="lf-info"><b>Communication Address</b>{c.communicationAddress || "—"}</div>
                     <div className="lf-info"><b>Unit Address</b>{c.unitAddress || "—"}</div>

@@ -214,6 +214,7 @@ const BLANK_FORM = {
     scheme: "",
     loanValue: "",
     contactNo: "",
+    alternateContactNo: "",
     mailId: "",
     bankName: "",
     ifscCode: "",
@@ -534,7 +535,7 @@ export default function LoanProcess() {
     const matchesAppFilter = (c) => {
         const q = appSearch.trim().toLowerCase();
         if (q) {
-            const hay = `${c.customerName || ""} ${c.contactNo || ""} ${c.staffId?.name || c.staffName || ""}`.toLowerCase();
+           const hay = `${c.customerName || ""} ${c.contactNo || ""} ${c.alternateContactNo || ""} ${c.staffId?.name || c.staffName || ""}`.toLowerCase();
             if (!hay.includes(q)) return false;
         }
         // Pending tab → customer date (loanDate), Completed tab → completed date
@@ -716,6 +717,14 @@ export default function LoanProcess() {
             fErrs.contactNo = "Contact No is required.";
         } else if (!PHONE_RE.test(form.contactNo.trim())) {
             fErrs.contactNo = "Enter a valid 10 digit mobile number.";
+        }
+
+        if (form.alternateContactNo.trim()) {
+            if (!PHONE_RE.test(form.alternateContactNo.trim())) {
+                fErrs.alternateContactNo = "Enter a valid 10 digit mobile number.";
+            } else if (form.alternateContactNo.trim() === form.contactNo.trim()) {
+                fErrs.alternateContactNo = "Alternate number must be different from Contact No.";
+            }
         }
 
         if (!form.mailId.trim()) {
@@ -1039,6 +1048,7 @@ export default function LoanProcess() {
             scheme: customer.scheme || "",
             loanValue: customer.loanValue ?? "",
             contactNo: customer.contactNo || "",
+            alternateContactNo: customer.alternateContactNo || "",
             mailId: customer.mailId || "",
             bankName: customer.bankName || "",
             ifscCode: customer.ifscCode || "",
@@ -1097,6 +1107,14 @@ export default function LoanProcess() {
             fErrs.contactNo = "Contact No is required.";
         } else if (!PHONE_RE.test(editForm.contactNo.trim())) {
             fErrs.contactNo = "Enter a valid 10 digit mobile number.";
+        }
+
+        if (editForm.alternateContactNo.trim()) {
+            if (!PHONE_RE.test(editForm.alternateContactNo.trim())) {
+                fErrs.alternateContactNo = "Enter a valid 10 digit mobile number.";
+            } else if (editForm.alternateContactNo.trim() === editForm.contactNo.trim()) {
+                fErrs.alternateContactNo = "Alternate number must be different from Contact No.";
+            }
         }
 
         if (!editForm.mailId.trim()) {
@@ -1475,6 +1493,18 @@ export default function LoanProcess() {
                                     {fieldErrors.contactNo && <div className="lp-field-error">{fieldErrors.contactNo}</div>}
                                 </div>
                                 <div className="lp-field">
+                                    <label>Alternate Contact No (optional)</label>
+                                    <input
+                                        name="alternateContactNo"
+                                        value={form.alternateContactNo}
+                                        onChange={handleChange}
+                                        maxLength={10}
+                                        inputMode="numeric"
+                                        className={fieldErrors.alternateContactNo ? "lp-input-invalid" : ""}
+                                    />
+                                    {fieldErrors.alternateContactNo && <div className="lp-field-error">{fieldErrors.alternateContactNo}</div>}
+                                </div>
+                                <div className="lp-field">
                                     <label>Mail ID *</label>
                                     <input
                                         name="mailId"
@@ -1655,17 +1685,17 @@ export default function LoanProcess() {
                                             />
                                         </label>
                                         {!files[doc.key] && existingDocs[doc.key] && (
-    <div style={{ fontSize: 12, marginTop: 4 }}>
-        <a href={existingDocs[doc.key]} target="_blank" rel="noreferrer">View uploaded file</a>
-    </div>
-)}
+                                            <div style={{ fontSize: 12, marginTop: 4 }}>
+                                                <a href={existingDocs[doc.key]} target="_blank" rel="noreferrer">View uploaded file</a>
+                                            </div>
+                                        )}
                                         {docErrors[doc.key] && <div className="lp-doc-error">{docErrors[doc.key]}</div>}
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                                              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
                             <button type="submit" className="lp-btn-primary" disabled={saving || draftSaving}>
                                 {saving ? "Saving…" : "Submit"}
                             </button>
@@ -1709,7 +1739,7 @@ export default function LoanProcess() {
                                     <div>
                                         <div style={{ fontWeight: 700 }}>{d.customerName || "Untitled draft"}</div>
                                         <div style={{ fontSize: 12.5, color: "var(--lp-text-muted)" }}>
-                                            {d.contactNo || "No contact"} · {d.scheme || "No scheme"} · {docCount} doc(s) uploaded
+                                            {d.contactNo || "No contact"}{d.alternateContactNo ? " / " + d.alternateContactNo : ""} · {d.scheme || "No scheme"} · {docCount} doc(s) uploaded
                                         </div>
                                         <div style={{ fontSize: 12, color: "var(--lp-text-muted)" }}>
                                             Last saved: {fmtAdded(d.updatedAt)}
@@ -1760,7 +1790,7 @@ export default function LoanProcess() {
                                         <div>
                                             <div style={{ fontWeight: 700, fontSize: 15 }}>{c.customerName}</div>
                                             <div style={{ fontSize: 12, color: "var(--lp-text-muted)" }}>
-                                                {c.contactNo} {c.businessType && `· ${c.businessType}`}
+                                                {c.contactNo}{c.alternateContactNo ? " / " + c.alternateContactNo : ""} {c.businessType && `· ${c.businessType}`}
                                             </div>
                                         </div>
                                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1793,6 +1823,10 @@ export default function LoanProcess() {
                                                 <div className="lp-view-item">
                                                     <div className="lp-view-label">Contact No</div>
                                                     <div className="lp-view-value">{c.contactNo || "—"}</div>
+                                                </div>
+                                                <div className="lp-view-item">
+                                                    <div className="lp-view-label">Alternate Contact No</div>
+                                                    <div className="lp-view-value">{c.alternateContactNo || "—"}</div>
                                                 </div>
                                                 <div className="lp-view-item">
                                                     <div className="lp-view-label">Date</div>
@@ -1907,6 +1941,20 @@ export default function LoanProcess() {
                                                     />
                                                     {editFieldErrors.contactNo && (
                                                         <div className="lp-field-error">{editFieldErrors.contactNo}</div>
+                                                    )}
+                                                </div>
+                                                <div className="lp-field">
+                                                    <label>Alternate Contact No (optional)</label>
+                                                    <input
+                                                        name="alternateContactNo"
+                                                        value={editForm.alternateContactNo}
+                                                        onChange={handleEditChange}
+                                                        maxLength={10}
+                                                        inputMode="numeric"
+                                                        className={editFieldErrors.alternateContactNo ? "lp-input-invalid" : ""}
+                                                    />
+                                                    {editFieldErrors.alternateContactNo && (
+                                                        <div className="lp-field-error">{editFieldErrors.alternateContactNo}</div>
                                                     )}
                                                 </div>
                                                 <div className="lp-field">
@@ -2157,7 +2205,7 @@ export default function LoanProcess() {
                                     <div className="lp-cust-head" onClick={() => setExpandedId(isOpen ? null : c._id)}>
                                         <div>
                                             <div style={{ fontWeight: 700, fontSize: 15 }}>{c.customerName}</div>
-                                            <div style={{ fontSize: 12, color: "var(--lp-text-muted)" }}>{c.contactNo}</div>
+                                            <div style={{ fontSize: 12, color: "var(--lp-text-muted)" }}>{c.contactNo}{c.alternateContactNo ? " / " + c.alternateContactNo : ""}</div>
                                         </div>
                                         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                                             {c.incentive?.eligibility === "Eligible for Processing" && (
@@ -2405,7 +2453,7 @@ export default function LoanProcess() {
                                         <div>
                                             <div style={{ fontWeight: 700, fontSize: 15 }}>{c.customerName}</div>
                                             <div style={{ fontSize: 12, color: "var(--lp-text-muted)" }}>
-                                                {c.contactNo} · {staffLabel} · {c.loanDate ? new Date(c.loanDate).toLocaleDateString("en-IN") : "—"}
+                                                {c.contactNo}{c.alternateContactNo ? " / " + c.alternateContactNo : ""} · {staffLabel} · {c.loanDate ? new Date(c.loanDate).toLocaleDateString("en-IN") : "—"}
                                             </div>
                                             <div style={{ fontSize: 12, color: "var(--lp-text-muted)", marginTop: 2 }}>
                                                 🕒 Added: {fmtAdded(c.createdAt)}
@@ -2463,6 +2511,10 @@ export default function LoanProcess() {
                                                 <div className="lp-view-item">
                                                     <div className="lp-view-label">Contact No</div>
                                                     <div className="lp-view-value">{c.contactNo || "—"}</div>
+                                                </div>
+                                                <div className="lp-view-item">
+                                                    <div className="lp-view-label">Alternate Contact No</div>
+                                                    <div className="lp-view-value">{c.alternateContactNo || "—"}</div>
                                                 </div>
                                                 <div className="lp-view-item">
                                                     <div className="lp-view-label">Loan Value</div>
